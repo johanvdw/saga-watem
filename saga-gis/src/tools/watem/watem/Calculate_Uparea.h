@@ -25,12 +25,18 @@ public:
 	bool On_Execute();
 
 private:
-	CSG_Grid *m_pDEM, *m_pUp_Area, *m_pPRC, *m_Pit;
+	CSG_Grid *m_pDEM, *m_pUp_Area, *m_pPRC, *m_pPit, *m_pFINISH, *m_pAspect;
 
 	void CalculateUparea();
+	void CalculatePitStuff();
+	void DistributeTilDirEvent (long i, long j, double *AREA,  double *massbalance
+		);
 	std::vector<TPitData> PitDat;
 	std::vector<Trivdata> RivDat;
 	int pitnum = 0;
+	int pitwin;
+	double TFCAtoCropLand = 100;
+	double TFCAtoForestOrPasture = 100;
 
 };
 
