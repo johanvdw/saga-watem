@@ -228,7 +228,8 @@ double CCalculate_LS_Watem::Get_LS(int x, int y)
 
 		if (Area / (x * Get_Cellsize()) < 5.0)
 		{
-		//Sfactor: = 3.0*(power(SIN(slope[i, j]), 0.8)) + 0.56
+			//opm: dit staat zo in oorspronkelijke pascal code - niet volgens documentatie
+			//Sfactor: = 3.0*(power(SIN(slope[i, j]), 0.8)) + 0.56
 			S = 3.0 * pow(sin_Slope, 0.8) + 0.56;
 		}
 		if (Slope < 0.08975817419)		// <  9% (= atan(0.09)), ca. 5 Degree

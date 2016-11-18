@@ -8,7 +8,7 @@ typedef enum {
 } TRoutingAlgorithm;
 
  typedef struct  {
-	long outr, outc, aantal, r, c, PTEF, oldvlag =0;
+	long outr, outc, aantal, r, c, PTEF, oldvlag =0;//outr: outrow, outc:outcolumn
 	double input, output, deposition, hoogte =0;
 	bool river = false;
 	long riverid = 0;
