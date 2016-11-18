@@ -68,6 +68,11 @@ bool CCalculate_Uparea::On_Execute(void)
 	m_pPit = Parameters("PIT")->asGrid();
 	m_pPRC = Parameters("PRC")->asGrid();
 	m_pUp_Area = Parameters("UPSLOPE_AREA")->asGrid();
+	// make sure m_pUp_Area is empty (as we only add)
+	for (int i = 0; i < Get_NX(); i++)
+		#pragma omp parallel for
+		for (int j = 0; j < Get_NY(); j++)
+			m_pUp_Area->Set_Value(i, j, 0);
 	//m_pAspect = Parameters("ASPECT")->asGrid();
 	//pitwin = Parameters("PITWIN")->asInt();
 	pitwin = 200;
@@ -80,6 +85,11 @@ bool CCalculate_Uparea::On_Execute(void)
 	// Execute calculation...
 	CalculatePitStuff();
 	CalculateUparea();
+
+	//clean stuff
+	m_pFINISH->Delete();
+	PitDat.empty();
+	pitnum = 0;
 
 	return true;
 }
@@ -401,12 +411,13 @@ void CCalculate_Uparea::DistributeTilDirEvent(long i, long j, double *AREA, doub
 {
 	int nrow = Get_NY();
 	int ncol = Get_NX();
+
 	if (i == 0 || j == 0 || i == ncol - 1 || j == nrow - 1) // skip the borders
 		return;
 
 	double CSN, SN, MINIMUM, MINIMUM2;
 	double PART1 = 0.0, PART2 = 0.0;
-	int K1 = 0, K2 = 0, L2 = 0, L2 = 0;
+	int K1 = 0, K2 = 0, L1 = 0, L2 = 0;
 	int ROWMIN, COLMIN, ROWMIN2, COLMIN2, K, L;
 	bool parequal;
 	bool closeriver = false;
@@ -416,7 +427,7 @@ void CCalculate_Uparea::DistributeTilDirEvent(long i, long j, double *AREA, doub
 
 	for (K = -1; K <= 1; K++) {
 		for (L = -1; L <= 1; L++) {
-			if (m_pPRC->asInt(i + K, j + L) == -1) {
+			if (is_InGrid(i+K,j+L) && m_pPRC->asInt(i + K, j + L) == -1) {
 				if (m_pDEM->asDouble(i + K, j + L) < m_pDEM->asDouble(i, j))
 					closeriver = true;
 				else
@@ -428,7 +439,7 @@ void CCalculate_Uparea::DistributeTilDirEvent(long i, long j, double *AREA, doub
 	if (closeriver) {
 		for (K = -1; K <= 1; K++) {
 			for (L = -1; L <= 1; L++) {
-				if (K == 0 && L == 0) {
+				if (!is_InGrid(i+K,j+L)||(K == 0 && L == 0)) {
 					continue;
 
 				}
@@ -450,21 +461,16 @@ void CCalculate_Uparea::DistributeTilDirEvent(long i, long j, double *AREA, doub
 		return;
 	}
 
-
 	// nieuwe code, verbruikt minder geheugen, volgens mij beter
 	double localslope;
 	m_pDEM->Get_Gradient(i, j, localslope, Direction);
-	//optioneel als andere aspect opgegeven is:
-	 //Direction = m_pAspect->asDouble(i, j);
-
-	// code hieronder kan drastisch eenvoudiger
 	CSN = fabs(cos(Direction)) / (fabs(sin(Direction)) + fabs(cos(Direction)));
-	SN = fabs(sin(Direction)) / (fabs(sin(Direction)) + fabs(cos(Direction)));
+	SN = 1 - CSN;
 	if (Direction <= M_PI / 2) {
 		PART1 = *AREA * CSN;
 		PART2 = *AREA * SN;
-		K1 = -1;
-		L2 = 0;
+		K1 = 1;
+		L1 = 0;
 		K2 = 0;
 		L2 = 1;
 	}
@@ -472,28 +478,28 @@ void CCalculate_Uparea::DistributeTilDirEvent(long i, long j, double *AREA, doub
 		if (Direction > M_PI / 2 && Direction < M_PI) {
 			PART1 = *AREA * SN;
 			PART2 = *AREA * CSN;
-			K1 = 0;
-			L2 = 1;
-			K2 = 1;
-			L2 = 0;
+			K1 = 1;
+			L1 = 0;
+			K2 = 0;
+			L2 = -1;
 		}
 		else {
 			if (Direction >= M_PI && Direction <= M_PI * 1.5) {
 				PART1 = *AREA * CSN;
 				PART2 = *AREA * SN;
-				K1 = 1;
+				K1 = 0;
+				L1 = -1;
+				K2 = -1;
 				L2 = 0;
-				K2 = 0;
-				L2 = -1;
 			}
 			else {
 				if (Direction > M_PI * 1.5) {
 					PART1 = *AREA * SN;
 					PART2 = *AREA * CSN;
-					K1 = 0;
-					L2 = -1;
-					K2 = -1;
-					L2 = 0;
+					K1 = -1;
+					L1 = 0;
+					K2 = 0;
+					L2 = 1;
 
 
 				}
@@ -502,12 +508,9 @@ void CCalculate_Uparea::DistributeTilDirEvent(long i, long j, double *AREA, doub
 		}
 	}
 
-	/* p2c: unitSurfacetildir.pas:
-	* Note: Eliminated unused assignment statement [338] */
-	/* p2c: unitSurfacetildir.pas:
-	* Note: Eliminated unused assignment statement [338] */
-	if (((m_pPit->asInt(i + K1, j + L2) != 0) | (m_pPit->asInt(i + K2, j + L2) != 0))) {
-		vlag = m_pPit->asInt(i + K1, j + L2);
+
+	if (((m_pPit->asInt(i + K1, j + L1) != 0) | (m_pPit->asInt(i + K2, j + L2) != 0))) {
+		vlag = m_pPit->asInt(i + K1, j + L1);
 		if (vlag == 0)
 			vlag = m_pPit->asInt(i + K2, j + L2);
 
@@ -554,7 +557,7 @@ void CCalculate_Uparea::DistributeTilDirEvent(long i, long j, double *AREA, doub
 
 	else {
 
-		if (m_pFINISH->asInt(i + K1, j + L2) == 1) {
+		if (m_pFINISH->asInt(i + K1, j + L1) == 1) {
 			if (m_pFINISH->asInt(i + K2, j + L2) == 1) {
 
 				PART1 = 0.0;
@@ -583,7 +586,7 @@ void CCalculate_Uparea::DistributeTilDirEvent(long i, long j, double *AREA, doub
 
 
 
-		if (m_pDEM->asDouble(i + K1, j + L2) > m_pDEM->asDouble(i, j)) {
+		if (m_pDEM->asDouble(i + K1, j + L1) > m_pDEM->asDouble(i, j)) {
 			if (m_pDEM->asDouble(i + K2, j + L2) > m_pDEM->asDouble(i, j)) {
 				PART1 = 0.0;
 				PART2 = 0.0;
@@ -603,7 +606,7 @@ void CCalculate_Uparea::DistributeTilDirEvent(long i, long j, double *AREA, doub
 		else {
 
 			if (m_pDEM->asDouble(i + K2, j + L2) > m_pDEM->asDouble(i, j)) {
-				if (m_pPRC->asInt(i + K1, j + L2) != m_pPRC->asInt(i, j)) {
+				if (m_pPRC->asInt(i + K1, j + L1) != m_pPRC->asInt(i, j)) {
 					PART2 = 0.0;
 					PART1 = 0.0;
 				}
@@ -613,7 +616,7 @@ void CCalculate_Uparea::DistributeTilDirEvent(long i, long j, double *AREA, doub
 				}
 			}
 			else {
-				if (m_pPRC->asInt(i + K1, j + L2) != m_pPRC->asInt(i, j)) {
+				if (m_pPRC->asInt(i + K1, j + L1) != m_pPRC->asInt(i, j)) {
 					if (m_pPRC->asInt(i + K2, j + L2) != m_pPRC->asInt(i, j)) {
 						PART1 = 0.0;
 						PART2 = 0.0;
@@ -780,8 +783,8 @@ void CCalculate_Uparea::DistributeTilDirEvent(long i, long j, double *AREA, doub
 		else {
 
 
-			if ((i + K1 < 1 || i + K1 > nrow || j + L2 < 1 || j + L2 > ncol) |
-				(m_pPRC->asInt(i + K1, j + L2) == 0) | (m_pPRC->asInt(i + K1, j + L2) == 9999)) {
+			if ((i + K1 < 1 || i + K1 > nrow || j + L1 < 1 || j + L1 > ncol) |
+				(m_pPRC->asInt(i + K1, j + L1) == 0) | (m_pPRC->asInt(i + K1, j + L1) == 9999)) {
 
 				*massbalance += PART1;
 			}
@@ -790,7 +793,7 @@ void CCalculate_Uparea::DistributeTilDirEvent(long i, long j, double *AREA, doub
 
 				*massbalance += PART2;
 			}
-			m_pUp_Area->Add_Value(i + K1, j + L2, PART1);
+			m_pUp_Area->Add_Value(i + K1, j + L1, PART1);
 			m_pUp_Area->Add_Value(i + K2, j + L2, PART2);
 
 
