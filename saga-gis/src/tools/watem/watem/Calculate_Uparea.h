@@ -35,8 +35,10 @@ private:
 	std::vector<Trivdata> RivDat;
 	int pitnum = 0;
 	int pitwin;
-	double TFCAtoCropLand = 70;
+	double TFCAtoCropLand;
 	double TFCAtoForestOrPasture = 100;
+
+	CSG_Table *pPitDataTable;
 
 };
 
