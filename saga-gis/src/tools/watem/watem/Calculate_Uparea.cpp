@@ -97,18 +97,22 @@ bool CCalculate_Uparea::On_Execute(void)
 	//export pitdata table if this is defined
 	if (pPitDataTable != NULL) {
 		pPitDataTable->Del_Records();
-		pPitDataTable->Add_Field("ID", SG_DATATYPE_Int);
-		pPitDataTable->Add_Field("OutRow", SG_DATATYPE_Int);
-		pPitDataTable->Add_Field("OutCol", SG_DATATYPE_Int);
-		pPitDataTable->Add_Field("Number", SG_DATATYPE_Int);
+		if (pPitDataTable->Get_Field("ID")==-1)
+			pPitDataTable->Add_Field("ID", SG_DATATYPE_Int);
+		if (pPitDataTable->Get_Field("OutRow") == -1)
+			pPitDataTable->Add_Field("OutRow", SG_DATATYPE_Int);
+		if (pPitDataTable->Get_Field("OutCol") == -1)
+			pPitDataTable->Add_Field("OutCol", SG_DATATYPE_Int);
+		if (pPitDataTable->Get_Field("Number") == -1)
+			pPitDataTable->Add_Field("Number", SG_DATATYPE_Int);
 		int i = 0;
 		for each (TPitData pit in PitDat)
 		{
 			CSG_Table_Record * row = pPitDataTable->Add_Record();
-			row->Add_Value(0, i++);
-			row->Add_Value(1, pit.outr);
-			row->Add_Value(2, pit.outc);
-			row->Add_Value(3, pit.aantal);
+			row->Add_Value("ID", i++);
+			row->Add_Value("OutRow", pit.outr);
+			row->Add_Value("OutCol", pit.outc);
+			row->Add_Value("Number", pit.aantal);
 		}
 	}
 
@@ -165,12 +169,13 @@ void CCalculate_Uparea::CalculateUparea()
 			continue;
 		}
 
-
-		OPPCOR = Get_Cellarea();
+		double ptef = 0; 
+		if (m_pPRC->asInt(i, j) == 10000) ptef = 0.75;
+		OPPCOR = Get_Cellarea() * (1-ptef);
 		AREA = m_pUp_Area->asDouble(i, j) + OPPCOR;
 
 		DistributeTilDirEvent(i, j, &AREA, &massbalance);
-		m_pUp_Area->Set_Value(i, j, AREA);
+		m_pUp_Area->Add_Value(i, j, OPPCOR);
 
 		if (m_pPRC->asInt(i, j) == -1) {
 			rivvlag = 1;
@@ -201,6 +206,8 @@ void CCalculate_Uparea::CalculateUparea()
 			RivDat[vlag].outuparea = RivDat[vlag].latuparea;
 		}
 	}
+
+
 
 
 	for (j = 1; j <= maxorder; j++) {
@@ -246,7 +253,6 @@ void CCalculate_Uparea::CalculateUparea()
 		}
 	}
 	for (i = 1; i <= nrow; i++) {
-#pragma omp parallel for
 		for (j = 1; j <= ncol; j++) {
 			if (m_pPRC->asInt(i, j) == -1) {
 				rivvlag = 1;
