@@ -7,7 +7,7 @@ CCalculate_Uparea::CCalculate_Uparea()
 
 	Set_Name(_TL("02: Uparea berekening"));
 
-	Set_Author(_TL("Copyrights (c) 2016 by Johan Van de Wauw"));
+	Set_Author(_TL("Copyrights (c) 2016 by KULeuven. Converted to SAGA/C++ by Johan Van de Wauw"));
 
 	Set_Description(_TW(
 		"(c) 2016")
@@ -76,6 +76,15 @@ bool CCalculate_Uparea::On_Execute(void)
 	pPitDataTable = Parameters("PITDATA")->asTable();
 
 	TFCAtoCropLand = Parameters("PCTOCROP")->asDouble();
+
+
+	//-----------------------------------------------------
+	// Check for valid parameter settings...
+
+
+	//-----------------------------------------------------
+	// Execute calculation...
+
 	// make sure m_pUp_Area is empty (as we only add) -- TODO check if this is really necessary
 	for (int i = 0; i < Get_NX(); i++)
 #pragma omp parallel for
@@ -84,13 +93,9 @@ bool CCalculate_Uparea::On_Execute(void)
 	//m_pAspect = Parameters("ASPECT")->asGrid();
 	//pitwin = Parameters("PITWIN")->asInt();
 	pitwin = 200;
+	pitnum = 0;
+	PitDat.empty();
 
-	//-----------------------------------------------------
-	// Check for valid parameter settings...
-
-
-	//-----------------------------------------------------
-	// Execute calculation...
 	CalculatePitStuff();
 	CalculateUparea();
 
@@ -140,14 +145,12 @@ void CCalculate_Uparea::CalculateUparea()
 	long Nextsegmentid;
 	std::vector<long> rivsegmentlatinputcheck;
 	std::vector<long> rivsegmentupcheck;
-	long maxorder = 0;
+	long maxorder = 1;
 	long a, b, c, e, f;
 	double d;
 
 
-	/* gedeelte rivdata verwijderd*/
-	//(tijdelijk om hier iets in nvlag en pitnum te hebben: )
-	nvlag = pitnum + 1;
+	nvlag = 1;
 
 	rivsegmentlatinputcheck.resize(nvlag);
 	rivsegmentupcheck.resize(nvlag);
@@ -178,7 +181,7 @@ void CCalculate_Uparea::CalculateUparea()
 		m_pUp_Area->Add_Value(i, j, OPPCOR);
 
 		if (m_pPRC->asInt(i, j) == -1) {
-			rivvlag = 1;
+			rivvlag = 0;
 			RivDat[rivvlag].outuparea = RivDat[rivvlag].latuparea;
 			RivDat[rivvlag].check = 1;
 
@@ -201,7 +204,7 @@ void CCalculate_Uparea::CalculateUparea()
 		b = PitDat[i].outc;
 		if (m_pPRC->asInt(a, b) == -1) {
 
-			vlag = 1;
+			vlag = 0;
 			RivDat[vlag].latuparea += PitDat[i].input;
 			RivDat[vlag].outuparea = RivDat[vlag].latuparea;
 		}
@@ -211,7 +214,7 @@ void CCalculate_Uparea::CalculateUparea()
 
 
 	for (j = 1; j <= maxorder; j++) {
-		for (i = 1; i < nvlag; i++) {
+		for (i = 0; i < nvlag; i++) {
 			if (RivDat[i].check == 1) {
 				if (RivDat[i].order == j) {
 					Nextsegmentid = RivDat[i].segmentdown;
@@ -255,8 +258,8 @@ void CCalculate_Uparea::CalculateUparea()
 	for (i = 1; i <= nrow; i++) {
 		for (j = 1; j <= ncol; j++) {
 			if (m_pPRC->asInt(i, j) == -1) {
-				rivvlag = 1;
-				m_pUp_Area->Set_Value(i, j, RivDat[rivvlag].outuparea);
+				rivvlag = 0;
+				m_pUp_Area->Add_Value(i, j, RivDat[rivvlag].outuparea);
 			}
 		}
 	}
@@ -278,16 +281,16 @@ void CCalculate_Uparea::CalculatePitStuff()
 
 	// dit kan zéker efficienter - misschien zelfs weggelaten worden
 
-	for (i = 1; i <= nrow; i++) {
+	for (i = 0; i < ncol; i++) {
 #pragma omp parallel for
-		for (j = 1; j <= ncol; j++) {
+		for (j = 0; j < nrow; j++) {
 			m_pPit->Set_Value(i, j, 0);
 		}
 	}
 
 	//vraag: is dit paralleliseerbaar?
-	for (j = 1; j < ncol; j++) {
-		for (i = 1; i < nrow; i++) {
+	for (i = 1; i < ncol; i++) {
+		for (j = 1; j < nrow; j++) {
 			if (m_pPit->asInt(i, j) != 0 || m_pPRC->asInt(i, j) == 0) {
 				continue;
 			}
@@ -295,6 +298,9 @@ void CCalculate_Uparea::CalculatePitStuff()
 
 			for (k = -1; k <= 1; k++) {
 				for (l = -1; l <= 1; l++) {
+					if (!is_InGrid(i + k, j + l))
+						continue;
+
 					if (k == 0 && l == 0) {
 						continue;
 					}
@@ -352,11 +358,8 @@ void CCalculate_Uparea::CalculatePitStuff()
 									if (m == 0 && n == 0) {
 										continue;
 									}
-									if (i + k + m < 1 || i + k + m > nrow || j + l + n < 1 ||
-										j + l + n > ncol) {
-
+									if  (!is_InGrid(i+k+m,j+l+n) || !is_InGrid(i + k, j + l)) {
 										continue;
-
 									}
 									if (m_pDEM->asDouble(i + k + m, j + l + n) < m_pDEM->asDouble(i + k, j + l) &&
 										m_pPit->asInt(i + k + m, j + l + n) != nvlag &&
@@ -395,9 +398,9 @@ void CCalculate_Uparea::CalculatePitStuff()
 
 
 
-		for (i = 1; i < nrow; i++) {
+		for (i = 1; i < ncol; i++) {
 
-			for (j = 1; j < ncol; j++) {
+			for (j = 1; j < nrow; j++) {
 				if (m_pPit->asInt(i, j) != 0 && m_pPRC->asInt(i, j) == -1) {
 					vlag = m_pPit->asInt(i, j);
 					PitDat[vlag].outr = i;
@@ -408,19 +411,36 @@ void CCalculate_Uparea::CalculatePitStuff()
 
 	}
 
-	// eventueel de tabel met pitdata nog genereren om te controleren of dit identiek is.
-	// kan door een niet verplichte tabel
 
-	/*printf("%12ld\n", inttostr(nvlag));
-	if (nvlag != 0) {
-	for (i = 1; i <= nvlag; i++)
-	printf("%12ld\t%12ld\t%12ld\t%12ld\n",
-	inttostr(i), inttostr(PitDat[i].outr), inttostr(PitDat[i].outc),
-	inttostr(PitDat[i].aantal));
+
+	//nagaan of rivier door de pit gaat
+	for (int i = 1; i < ncol - 1; i++)
+	{
+		for (int j = 1; j < nrow - 1; j++)
+		{
+			if ((m_pPit->asDouble(i, j) != 0) && (m_pPRC->asDouble(i, j) == -1))
+			{
+				vlag = m_pPit->asDouble(i, j);
+				PitDat[vlag].outr = i;
+				PitDat[vlag].outc = j;
+
+			}
+
+		}
+
 	}
+	/*for i: = 2 to nrow - 1 do
+		for j : = 2 to ncol - 1 do
+			if (Pit[i, j]<>0) and (PRC[i, j] = -1) then      //zo ja: pitoutlet gaat naar rivier
+				begin
+				vlag : = Pit[i, j];
+	Pitdat[vlag].outr: = i;
+	Pitdat[vlag].outc: = j;
+	end;
 
-
-	*/
+	end
+			else nvlag: = 0;
+			*/
 	pitnum = nvlag;
 }
 
@@ -435,9 +455,6 @@ void CCalculate_Uparea::DistributeTilDirEvent(long i, long j, double *AREA, doub
 {
 	int nrow = Get_NY();
 	int ncol = Get_NX();
-
-	//if (i == 0 || j == 0 || i == ncol - 1 || j == nrow - 1) // skip the borders
-	//	return;
 
 	double CSN, SN, MINIMUM, MINIMUM2;
 	double PART1 = 0.0, PART2 = 0.0;
@@ -471,7 +488,7 @@ void CCalculate_Uparea::DistributeTilDirEvent(long i, long j, double *AREA, doub
 				if ((m_pPRC->asInt(i + K, j + L) == -1) & (m_pDEM->asDouble(i + K, j + L) < m_pDEM->asDouble(i, j))) {
 					ROWMIN = K;
 					COLMIN = L;
-					rivvlag = 1;
+					rivvlag = 0;
 					RivDat[rivvlag].latuparea += *AREA;
 
 					*AREA = 0.0;
@@ -696,7 +713,7 @@ void CCalculate_Uparea::DistributeTilDirEvent(long i, long j, double *AREA, doub
 					v = PitDat[vlag].outr;
 					w = PitDat[vlag].outc;
 					if (m_pPRC->asInt(v, w) == -1) {
-						rivvlag = 1;
+						rivvlag = 0;
 						RivDat[rivvlag].latinput += *AREA;
 						/* p2c: unitSurfacetildir.pas, line 445:
 						* Warning: Index on a non-array variable [287] */
@@ -736,7 +753,7 @@ void CCalculate_Uparea::DistributeTilDirEvent(long i, long j, double *AREA, doub
 					v = PitDat[vlag].outr;
 					w = PitDat[vlag].outc;
 					if (m_pPRC->asInt(v, w) == -1) {
-						rivvlag = 1;
+						rivvlag = 0;
 						RivDat[rivvlag].latinput += *AREA;
 						*AREA = 0.0;
 					}
