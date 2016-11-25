@@ -34,7 +34,7 @@ private:
 	std::vector<TPitData> PitDat;
 	std::vector<Trivdata> RivDat;
 	int pitnum = 0;
-	int pitwin;
+	int pitwin = 200;
 	double TFCAtoCropLand;
 	double TFCAtoForestOrPasture = 100;
 
