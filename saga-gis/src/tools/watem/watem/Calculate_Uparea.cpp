@@ -95,7 +95,7 @@ bool CCalculate_Uparea::On_Execute(void)
 	pitwin = 200;
 	pitnum = 0;
 	PitDat.empty();
-
+	//Message_Add("Start calculating pits");
 	CalculatePitStuff();
 	CalculateUparea();
 
@@ -114,13 +114,13 @@ bool CCalculate_Uparea::On_Execute(void)
 			pPitDataTable->Add_Field("C", SG_DATATYPE_Int);
 		if (pPitDataTable->Get_Field("R") == -1)
 			pPitDataTable->Add_Field("R", SG_DATATYPE_Int);
-		int i = 0;
+		int i = 1;
 		for each (TPitData pit in PitDat)
 		{
 			CSG_Table_Record * row = pPitDataTable->Add_Record();
 			row->Add_Value("ID", i++);
-			row->Add_Value("OutRow", pit.outr);
-			row->Add_Value("OutCol", pit.outc);
+			row->Add_Value("OutRow", pit.outr==0?0:Get_NY() - pit.outr);
+			row->Add_Value("OutCol", pit.outc==0?0:pit.outc +1);
 			row->Add_Value("Number", pit.aantal);
 			row->Add_Value("C", pit.c+1);
 			row->Add_Value("R", Get_NY() - pit.r);
@@ -174,6 +174,7 @@ void CCalculate_Uparea::CalculateUparea()
 	{
 		int i, j;
 		m_pDEM->Get_Sorted(t, i, j);
+//		Message_Add("Grid Sorted");
 		if (m_pPRC->asInt(i, j) == 0) {
 			continue;
 		}
@@ -208,7 +209,7 @@ void CCalculate_Uparea::CalculateUparea()
 	for (i = 0; i < pitnum; i++) {
 		a = PitDat[i].outr;
 		b = PitDat[i].outc;
-		if (m_pPRC->asInt(a, b) == -1) {
+		if (m_pPRC->asInt(b, a) == -1) {
 
 			vlag = 0;
 			RivDat[vlag].latuparea += PitDat[i].input;
@@ -564,14 +565,14 @@ void CCalculate_Uparea::DistributeTilDirEvent(long i, long j, double *AREA, doub
 		* Warning: Index on a non-array variable [287] */
 		/* p2c: unitSurfacetildir.pas, line 265:
 		* Warning: No field called OUTC in that record [288] */
-		if (m_pPit->asInt(v, w) == -1) {
+		if (m_pPit->asInt(w, v) == -1) {
 			rivvlag = 1;
 			RivDat[rivvlag].latinput += *AREA;
 			PitDat[vlag].input += *AREA;
 
 		}
 		else {
-			m_pUp_Area->Set_Value(PitDat[vlag].outr, PitDat[vlag].outc, *AREA);
+			m_pUp_Area->Set_Value(PitDat[vlag].outc, PitDat[vlag].outr, *AREA);
 
 			PitDat[vlag].input += *AREA;
 
