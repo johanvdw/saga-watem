@@ -110,6 +110,10 @@ bool CCalculate_Uparea::On_Execute(void)
 			pPitDataTable->Add_Field("OutCol", SG_DATATYPE_Int);
 		if (pPitDataTable->Get_Field("Number") == -1)
 			pPitDataTable->Add_Field("Number", SG_DATATYPE_Int);
+		if (pPitDataTable->Get_Field("C") == -1)
+			pPitDataTable->Add_Field("C", SG_DATATYPE_Int);
+		if (pPitDataTable->Get_Field("R") == -1)
+			pPitDataTable->Add_Field("R", SG_DATATYPE_Int);
 		int i = 0;
 		for each (TPitData pit in PitDat)
 		{
@@ -118,6 +122,8 @@ bool CCalculate_Uparea::On_Execute(void)
 			row->Add_Value("OutRow", pit.outr);
 			row->Add_Value("OutCol", pit.outc);
 			row->Add_Value("Number", pit.aantal);
+			row->Add_Value("C", pit.c+1);
+			row->Add_Value("R", Get_NY() - pit.r);
 		}
 	}
 
@@ -247,16 +253,16 @@ void CCalculate_Uparea::CalculateUparea()
 	floattostr(Rivdat[i].latuparea),chr(9),floattostr(Rivdat[i].inuparea),chr(9),floattostr(Rivdat[i].outuparea),chr(9));
 	end;
 	closefile(output);*/
-	for (i = 0; i < nrow; i++) {
-		for (j = 0; j < ncol; j++) {
+	for (i = 0; i < ncol; i++) {
+		for (j = 0; j < nrow; j++) {
 			if (m_pPit->asInt(i, j) != 0) {
 				vlag = m_pPit->asInt(i, j);
-				m_pUp_Area->Set_Value(i, j, PitDat[vlag].input);
+				m_pUp_Area->Add_Value(i, j, PitDat[vlag].input);
 			}
 		}
 	}
-	for (i = 1; i <= nrow; i++) {
-		for (j = 1; j <= ncol; j++) {
+	for (i = 1; i <= ncol; i++) {
+		for (j = 1; j < nrow; j++) {
 			if (m_pPRC->asInt(i, j) == -1) {
 				rivvlag = 0;
 				m_pUp_Area->Add_Value(i, j, RivDat[rivvlag].outuparea);
@@ -271,7 +277,7 @@ void CCalculate_Uparea::CalculatePitStuff()
 {
 
 	long vlag, i, j, k, l, m, n, W;
-	long nvlag = 0;
+	long nvlag = -1;
 	long hulp;
 	bool check;
 	double minimum;
@@ -280,17 +286,20 @@ void CCalculate_Uparea::CalculatePitStuff()
 	int ncol = Get_NX();
 
 	// dit kan zéker efficienter - misschien zelfs weggelaten worden
-
-	for (i = 0; i < ncol; i++) {
+	for (j = 0; j < nrow; j++)
+	{
 #pragma omp parallel for
-		for (j = 0; j < nrow; j++) {
+		for (i = 0; i < ncol; i++)
+		 {
 			m_pPit->Set_Value(i, j, 0);
 		}
 	}
 
 	//vraag: is dit paralleliseerbaar?
-	for (i = 1; i < ncol; i++) {
-		for (j = 1; j < nrow; j++) {
+	for (j = nrow -2; j >0; j--)
+	{
+		for (i = 1; i < ncol-1; i++)
+		 {
 			if (m_pPit->asInt(i, j) != 0 || m_pPRC->asInt(i, j) == 0) {
 				continue;
 			}
@@ -310,13 +319,15 @@ void CCalculate_Uparea::CalculatePitStuff()
 			}
 			if (hulp == 0) { // indien er een pit is
 				nvlag++; //depressie zoeken
-				m_pPit->Set_Value(i, j, nvlag);
+				m_pPit->Set_Value(i, j, nvlag+1);
 
 				//setlength(PitDat, nvlag + 1);
 				TPitData p = {};
 				p.aantal = 0;
 				PitDat.resize(nvlag + 1);
 				PitDat[nvlag] = p;
+				PitDat[nvlag].c = i;
+				PitDat[nvlag].r = j;
 				W = 0;
 				minimum = 999999999.9;
 
@@ -330,8 +341,6 @@ void CCalculate_Uparea::CalculatePitStuff()
 							if (!is_InGrid(i + k, j + l)) {
 								continue;
 							}
-
-
 
 
 							if (m_pDEM->asDouble(i + k, j + l) == m_pDEM->asDouble(i, j)) {
@@ -366,11 +375,11 @@ void CCalculate_Uparea::CalculatePitStuff()
 										m_pPit->asInt(i + k, j + l) == nvlag) {
 
 										if (m_pDEM->asDouble(i + k + m, j + l + n) < minimum) {
-											PitDat[nvlag].outr = i + k + m;
-											PitDat[nvlag].outc = j + l + n;
+											PitDat[nvlag].outc = i + k + m;
+											PitDat[nvlag].outr = j + l + n;
 											minimum = m_pDEM->asDouble(i + k + m, j + l + n);
-											PitDat[nvlag].r = i + k;
-											PitDat[nvlag].c = j + l;
+											PitDat[nvlag].c = i + k;
+											PitDat[nvlag].r = j + l;
 
 										}
 									}
@@ -403,8 +412,8 @@ void CCalculate_Uparea::CalculatePitStuff()
 			for (j = 1; j < nrow; j++) {
 				if (m_pPit->asInt(i, j) != 0 && m_pPRC->asInt(i, j) == -1) {
 					vlag = m_pPit->asInt(i, j);
-					PitDat[vlag].outr = i;
-					PitDat[vlag].outc = j;
+					PitDat[vlag].outr = j;
+					PitDat[vlag].outc = i;
 				}
 			}
 		}
@@ -421,34 +430,20 @@ void CCalculate_Uparea::CalculatePitStuff()
 			if ((m_pPit->asDouble(i, j) != 0) && (m_pPRC->asDouble(i, j) == -1))
 			{
 				vlag = m_pPit->asDouble(i, j);
-				PitDat[vlag].outr = i;
-				PitDat[vlag].outc = j;
+				PitDat[vlag].outr = j;
+				PitDat[vlag].outc = i;
 
 			}
 
 		}
 
 	}
-	/*for i: = 2 to nrow - 1 do
-		for j : = 2 to ncol - 1 do
-			if (Pit[i, j]<>0) and (PRC[i, j] = -1) then      //zo ja: pitoutlet gaat naar rivier
-				begin
-				vlag : = Pit[i, j];
-	Pitdat[vlag].outr: = i;
-	Pitdat[vlag].outc: = j;
-	end;
-
-	end
-			else nvlag: = 0;
-			*/
+	
 	pitnum = nvlag;
 }
 
 
 
-/* extern Void DistributeTilDirEvent PP((long i, long j, double *AREA,
-	Rraster_ *UPAREA, GSmallIntRaster *FINISH, double *massbalance, int Topo,
-	Trivdatarray *Rivdat));*/
 
 void CCalculate_Uparea::DistributeTilDirEvent(long i, long j, double *AREA, double * massbalance)
 
