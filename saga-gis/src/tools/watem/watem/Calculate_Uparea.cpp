@@ -172,6 +172,7 @@ void CCalculate_Uparea::CalculateUparea()
 	//eerst sorteren, dan van hoogste naar laagste pixel gaan.
 	for (int t = 0; t < ncol*nrow; t++)
 	{
+		Set_Progress_NCells(t);
 		int i, j;
 		m_pDEM->Get_Sorted(t, i, j);
 //		Message_Add("Grid Sorted");
