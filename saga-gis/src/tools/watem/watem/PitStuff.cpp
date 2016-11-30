@@ -75,9 +75,9 @@ bool CPitstuff::On_Execute(void)
 void CPitstuff::CalculatePitStuff()
 {
 
-	long vlag, i, j, k, l, m, n, W;
-	long nvlag = 0;
-	long hulp;
+	int vlag, i, j, k, l, m, n, W;
+	int nvlag = 0;
+	int hulp;
 	bool check;
 	double minimum;
 
@@ -129,8 +129,8 @@ void CPitstuff::CalculatePitStuff()
 							if (labs(k) != W && labs(l) != W) {
 								continue;
 							}
-							if ((unsigned long)(i + k) > nrow ||
-								(unsigned long)(j + l) > ncol) {
+							if ((unsigned int)(i + k) > nrow ||
+								(unsigned int)(j + l) > ncol) {
 								continue;
 							}
 
