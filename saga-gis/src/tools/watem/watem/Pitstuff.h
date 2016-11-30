@@ -8,7 +8,7 @@ typedef enum {
 } TRoutingAlgorithm;
 
  typedef struct  {
-	long outr, outc, aantal, r, c =0;//outr: outrow, outc:outcolumn
+	int outr, outc, aantal, r, c =0;//outr: outrow, outc:outcolumn
 	double input=0;
 
  }  TPitData;
