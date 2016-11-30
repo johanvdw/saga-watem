@@ -10,7 +10,7 @@ CXX_INCS           = -I$(top_srcdir)/src/saga_core
 AM_CXXFLAGS        = -fPIC $(CXX_INCS) $(DEF_SAGA) $(DBGFLAGS) $(GOMPFLAGS)
 AM_LDFLAGS         = -fPIC -shared -avoid-version 
 pkglib_LTLIBRARIES = la
-libwatem_la_SOURCES =\
+lib_watem_la_SOURCES =\
 Calculate_LS_Watem.cpp\
 Calculate_Uparea.cpp\
 Pitstuff.cpp\
@@ -21,5 +21,5 @@ Calculate_Uparea.h\
 Pitstuff.h\
 
 
-libwatem_la_LIBADD = $(top_srcdir)/src/saga_core/saga_api/libsaga_api.la
+lib_watem_la_LIBADD = $(top_srcdir)/src/saga_core/saga_api/libsaga_api.la
 
