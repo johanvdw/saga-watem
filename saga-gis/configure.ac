@@ -365,4 +365,5 @@ AC_OUTPUT(Makefile \
 	src/tools/tin/Makefile \
 	src/tools/tin/tin_tools/Makefile \
 	src/tools/tin/tin_viewer/Makefile \
+	src/tools/watem/watem/Makefile \
 )
