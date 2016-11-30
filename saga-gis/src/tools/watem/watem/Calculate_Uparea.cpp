@@ -166,7 +166,7 @@ void CCalculate_Uparea::CalculateUparea()
 	int ncol = Get_NX();
 	double res = Get_Cellsize();
 
-	m_pFINISH = new CSG_Grid(*Get_System(), SG_DATATYPE_Int);
+	m_pFINISH = new CSG_Grid(*Get_System(), SG_DATATYPE_Bit);
 
 
 	//eerst sorteren, dan van hoogste naar laagste pixel gaan.
@@ -397,9 +397,9 @@ void CCalculate_Uparea::CalculatePitStuff()
 	}
 	if (nvlag != 0) {
 		for (i = 1; i <= nvlag; i++) {
-			k = PitDat[i].outr;
-			l = PitDat[i].outc;
-			if (m_pPit->asInt(k, l) != 0) {
+			int row = PitDat[i].outr;
+			int col = PitDat[i].outc;
+			if (m_pPit->asInt(col, row) != 0) {
 				vlag = m_pPit->asInt(k, l);
 				PitDat[i].outr = PitDat[vlag].outr;
 				PitDat[i].outc = PitDat[vlag].outc;
@@ -711,14 +711,7 @@ void CCalculate_Uparea::DistributeTilDirEvent(long i, long j, double *AREA, doub
 					if (m_pPRC->asInt(v, w) == -1) {
 						rivvlag = 0;
 						RivDat[rivvlag].latinput += *AREA;
-						/* p2c: unitSurfacetildir.pas, line 445:
-						* Warning: Index on a non-array variable [287] */
-						/* p2c: unitSurfacetildir.pas, line 445:
-						* Warning: No field called LATINPUT in that record [288] */
-						/* p2c: unitSurfacetildir.pas, line 445:
-						* Warning: Index on a non-array variable [287] */
-						/* p2c: unitSurfacetildir.pas, line 445:
-						* Warning: No field called LATINPUT in that record [288] */
+		
 
 						*AREA = 0.0;
 					}
@@ -755,7 +748,7 @@ void CCalculate_Uparea::DistributeTilDirEvent(long i, long j, double *AREA, doub
 					}
 					else {
 
-						m_pUp_Area->Add_Value(PitDat[vlag].outr, PitDat[vlag].outc, *AREA);
+						m_pUp_Area->Add_Value(PitDat[vlag].outc, PitDat[vlag].outr, *AREA);
 
 						PitDat[vlag].input += *AREA;
 
