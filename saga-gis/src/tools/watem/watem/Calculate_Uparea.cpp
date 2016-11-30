@@ -115,7 +115,7 @@ bool CCalculate_Uparea::On_Execute(void)
 		if (pPitDataTable->Get_Field("R") == -1)
 			pPitDataTable->Add_Field("R", SG_DATATYPE_Int);
 		int i = 1;
-		for each (TPitData pit in PitDat)
+		for (TPitData& pit :PitDat)
 		{
 			CSG_Table_Record * row = pPitDataTable->Add_Record();
 			row->Add_Value("ID", i++);
@@ -324,7 +324,7 @@ void CCalculate_Uparea::CalculatePitStuff()
 				m_pPit->Set_Value(i, j, nvlag+1);
 
 				//setlength(PitDat, nvlag + 1);
-				TPitData p = {};
+				TPitData p ;
 				p.aantal = 0;
 				PitDat.resize(nvlag + 1);
 				PitDat[nvlag] = p;
