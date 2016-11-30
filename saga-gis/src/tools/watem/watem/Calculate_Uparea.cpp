@@ -706,9 +706,9 @@ void CCalculate_Uparea::DistributeTilDirEvent(long i, long j, double *AREA, doub
 				if (m_pPit->asInt(i + ROWMIN, j + COLMIN) != 0) {
 
 					vlag = m_pPit->asInt(i + ROWMIN, j + COLMIN);
-					v = PitDat[vlag].outr;
-					w = PitDat[vlag].outc;
-					if (m_pPRC->asInt(v, w) == -1) {
+					int row = PitDat[vlag].outr;
+					int col = PitDat[vlag].outc;
+					if (m_pPRC->asInt(col, row) == -1) {
 						rivvlag = 0;
 						RivDat[rivvlag].latinput += *AREA;
 		
@@ -717,7 +717,7 @@ void CCalculate_Uparea::DistributeTilDirEvent(long i, long j, double *AREA, doub
 					}
 					else {
 
-						m_pUp_Area->Add_Value(PitDat[vlag].outr, PitDat[vlag].outc, *AREA);
+						m_pUp_Area->Add_Value(PitDat[vlag].outc, PitDat[vlag].outr, *AREA);
 
 						PitDat[vlag].input += *AREA;
 
@@ -739,9 +739,9 @@ void CCalculate_Uparea::DistributeTilDirEvent(long i, long j, double *AREA, doub
 			else {
 				if (m_pPit->asInt(i + ROWMIN2, j + COLMIN2) != 0) {
 					vlag = m_pPit->asInt(i + ROWMIN2, j + COLMIN2);
-					v = PitDat[vlag].outr;
-					w = PitDat[vlag].outc;
-					if (m_pPRC->asInt(v, w) == -1) {
+					int row = PitDat[vlag].outr;
+					int col = PitDat[vlag].outc;
+					if (m_pPRC->asInt(col, row) == -1) {
 						rivvlag = 0;
 						RivDat[rivvlag].latinput += *AREA;
 						*AREA = 0.0;
