@@ -146,13 +146,13 @@ CCalculate_Uparea::~CCalculate_Uparea()
 void CCalculate_Uparea::CalculateUparea()
 
 {
-	long i, j, vlag, nvlag, rivvlag;
+	int i, j, vlag, nvlag, rivvlag;
 	double OPPCOR, AREA, massbalance;
-	long Nextsegmentid;
-	std::vector<long> rivsegmentlatinputcheck;
-	std::vector<long> rivsegmentupcheck;
-	long maxorder = 1;
-	long a, b, c, e, f;
+	int Nextsegmentid;
+	std::vector<int> rivsegmentlatinputcheck;
+	std::vector<int> rivsegmentupcheck;
+	int maxorder = 1;
+	int a, b, c, e, f;
 	double d;
 
 
@@ -278,9 +278,9 @@ void CCalculate_Uparea::CalculateUparea()
 void CCalculate_Uparea::CalculatePitStuff()
 {
 
-	long vlag, i, j, k, l, m, n, W;
-	long nvlag = -1;
-	long hulp;
+	int vlag, i, j, k, l, m, n, W;
+	int nvlag = -1;
+	int hulp;
 	bool check;
 	double minimum;
 
@@ -447,7 +447,7 @@ void CCalculate_Uparea::CalculatePitStuff()
 
 
 
-void CCalculate_Uparea::DistributeTilDirEvent(long i, long j, double *AREA, double * massbalance)
+void CCalculate_Uparea::DistributeTilDirEvent(int i, int j, double *AREA, double * massbalance)
 
 {
 	int nrow = Get_NY();
