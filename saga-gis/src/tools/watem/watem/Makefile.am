@@ -9,8 +9,8 @@ DEF_SAGA           = -D_SAGA_LINUX -D_TYPEDEF_BYTE -D_TYPEDEF_WORD -D_SAGA_UNICO
 CXX_INCS           = -I$(top_srcdir)/src/saga_core
 AM_CXXFLAGS        = -fPIC $(CXX_INCS) $(DEF_SAGA) $(DBGFLAGS) $(GOMPFLAGS)
 AM_LDFLAGS         = -fPIC -shared -avoid-version 
-pkglib_LTLIBRARIES = la
-lib_watem_la_SOURCES =\
+pkglib_LTLIBRARIES = libwatem.la
+libwatem_la_SOURCES =\
 Calculate_LS_Watem.cpp\
 Calculate_Uparea.cpp\
 Pitstuff.cpp\
@@ -21,5 +21,5 @@ Calculate_Uparea.h\
 Pitstuff.h\
 
 
-lib_watem_la_LIBADD = $(top_srcdir)/src/saga_core/saga_api/libsaga_api.la
+libwatem_la_LIBADD = $(top_srcdir)/src/saga_core/saga_api/libsaga_api.la
 
