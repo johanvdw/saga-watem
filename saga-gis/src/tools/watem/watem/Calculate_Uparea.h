@@ -9,7 +9,7 @@ typedef struct  {
 	double latinput, rivinput, rivoutput, bedloadrivinput, bedloadrivoutput,
 		bankerosion, gullycontribution, floodplainloss, totalsedimentload,
 		latuparea, outuparea, inuparea, length, slope, maf, Qb;
-	long segmentid, fnode, tnode, segmentdown, order, check, pondSTE, pondnr_;
+	int segmentid, fnode, tnode, segmentdown, order, check, pondSTE, pondnr_;
 
 } Trivdata;
 
@@ -29,7 +29,7 @@ private:
 
 	void CalculateUparea();
 	void CalculatePitStuff();
-	void DistributeTilDirEvent (long i, long j, double *AREA,  double *massbalance
+	void DistributeTilDirEvent (int i, int j, double *AREA,  double *massbalance
 		);
 	std::vector<TPitData> PitDat;
 	std::vector<Trivdata> RivDat;
