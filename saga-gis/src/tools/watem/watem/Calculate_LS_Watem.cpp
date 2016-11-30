@@ -232,18 +232,22 @@ double CCalculate_LS_Watem::Get_LS(int x, int y)
 			//Sfactor: = 3.0*(power(SIN(slope[i, j]), 0.8)) + 0.56
 			S = 3.0 * pow(sin_Slope, 0.8) + 0.56;
 		}
-		if (Slope < 0.08975817419)		// <  9% (= atan(0.09)), ca. 5 Degree
+		else
 		{
-			S = 10.8 * sin_Slope + 0.03;
+			if (Slope < 0.08975817419)		// <  9% (= atan(0.09)), ca. 5 Degree
+			{
+				S = 10.8 * sin_Slope + 0.03;
+			}
+			else if (m_Stability == 0)		// >= 9%, stable
+			{
+				S = 16.8 * sin_Slope - 0.5;
+			}
+			else							// >= 9%, thawing, unstable
+			{
+				S = pow(sin_Slope / 0.896, 0.6);
+			}
 		}
-		else if (m_Stability == 0)		// >= 9%, stable
-		{
-			S = 16.8 * sin_Slope - 0.5;
-		}
-		else							// >= 9%, thawing, unstable
-		{
-			S = pow(sin_Slope / 0.896, 0.6);
-		}
+
 
 		LS = L * S;
 	}
