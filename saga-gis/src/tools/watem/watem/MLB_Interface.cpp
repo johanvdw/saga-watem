@@ -99,7 +99,6 @@ CSG_String Get_Info(int i)
 
 #include "Calculate_LS_Watem.h"
 #include "Calculate_Uparea.h"
-#include "Pitstuff.h"
 
 
 //---------------------------------------------------------
@@ -115,8 +114,7 @@ CSG_Tool *		Create_Tool(int i)
 	switch( i )
 	{
 	case  0:	return( new CCalculate_LS_Watem);
-	case  1:    return(new CPitstuff);
-	case  2:    return(new CCalculate_Uparea);
+	case  1:    return(new CCalculate_Uparea);
 
 
 	default:	return( NULL );
