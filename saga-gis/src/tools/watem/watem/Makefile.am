@@ -16,6 +16,6 @@ Calculate_Uparea.cpp\
 MLB_Interface.cpp\
 MLB_Interface.h\
 Calculate_LS_Watem.h\
-Calculate_Uparea.h\
+Calculate_Uparea.h
 
 libwatem_la_LIBADD = $(top_srcdir)/src/saga_core/saga_api/libsaga_api.la
