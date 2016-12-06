@@ -1,6 +1,5 @@
 #pragma once
 #include "MLB_Interface.h"
-#include "Pitstuff.h"
 #include <vector>
 
 
@@ -12,6 +11,12 @@ typedef struct  {
 	int segmentid, fnode, tnode, segmentdown, order, check, pondSTE, pondnr_;
 
 } Trivdata;
+
+typedef struct {
+	int outr, outc, aantal, r, c = 0;//outr: outrow, outc:outcolumn
+	double input = 0;
+
+}  TPitData;
 
 
 class CCalculate_Uparea :
