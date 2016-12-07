@@ -5,12 +5,15 @@ CCalculate_Uparea::CCalculate_Uparea()
 	//-----------------------------------------------------
 	// Give some information about your tool...
 
-	Set_Name(_TL("02: Uparea berekening"));
+	Set_Name(_TL("01: Uparea berekening"));
 
-	Set_Author(_TL("Copyrights (c) 2016 by KULeuven. Converted to SAGA/C++ by Johan Van de Wauw"));
+	Set_Author(_TL("Copyright (c) 2006 - 2016 by KULeuven. Converted to SAGA/C++ by Johan Van de Wauw"));
 
 	Set_Description(_TW(
-		"(c) 2016")
+		"This module converts a digital elevation model grid and a parcel grid and converts it to an uplope area.\n\n" 
+		"The method takes into account parcel borders, rivers (grid value -2) and landuse (forest has value 10000).\n" 
+		"Pits are taken into account. Optionally a grid with Pits and a table with pit information can be generated. "
+		)
 	);
 
 
@@ -38,20 +41,20 @@ CCalculate_Uparea::CCalculate_Uparea()
 
 	Parameters.Add_Grid(
 		NULL, "PIT", "Pit",
-		"",
+		"Gridfile met pits",
 		PARAMETER_OUTPUT
 	);
 
 
 	Parameters.Add_Grid(
 		NULL, "UPSLOPE_AREA", _TL("Upslope Length Factor"),
-		"This contains the output Upslope Area",
+		"Upslope Area",
 		PARAMETER_OUTPUT
 	);
 
 	Parameters.Add_Table(
 		NULL, "PITDATA", _TL("Pit data"),
-		"",
+		"Tabel met gegevens per pit. Coordinaten volgens het grid in watem.",
 		PARAMETER_OUTPUT_OPTIONAL
 	);
 
@@ -502,6 +505,7 @@ void CCalculate_Uparea::DistributeTilDirEvent(int i, int j, double *AREA, double
 	// nieuwe code, verbruikt minder geheugen, volgens mij beter - maakt geen gebruik van vooraf berekend aspect
 	double localslope;
 	m_pDEM->Get_Gradient(i, j, localslope, Direction);
+
 	CSN = fabs(cos(Direction)) / (fabs(sin(Direction)) + fabs(cos(Direction)));
 	SN = 1 - CSN;
 	if (Direction <= M_PI / 2) {
@@ -808,3 +812,52 @@ void CCalculate_Uparea::DistributeTilDirEvent(int i, int j, double *AREA, double
 m_pFINISH->Set_Value(i, j, 1.0);
 
 }
+
+// nog niet gebruikt. Bedoeling is om dit tussen tillage erosion en watererosie te delen
+//
+//static void DistributeFlow(double &Direction, double &PART1, double &PART2, int &K1, int &K2, int &L1, int& L2, double &AREA)
+//{
+//	double CSN = fabs(cos(Direction)) / (fabs(sin(Direction)) + fabs(cos(Direction)));
+//	double SN = 1 - CSN;
+//	if (Direction <= M_PI / 2) {
+//		PART1 = AREA * SN;
+//		PART2 = AREA * CSN;
+//		K1 = 1;
+//		L1 = 0;
+//		K2 = 0;
+//		L2 = 1;
+//	}
+//	else {
+//		if (Direction > M_PI / 2 && Direction < M_PI) {
+//			PART1 = AREA * SN;
+//			PART2 = AREA * CSN;
+//			K1 = 1;
+//			L1 = 0;
+//			K2 = 0;
+//			L2 = -1;
+//		}
+//		else {
+//			if (Direction >= M_PI && Direction <= M_PI * 1.5) {
+//				PART1 = AREA * CSN;
+//				PART2 = AREA * SN;
+//				K1 = 0;
+//				L1 = -1;
+//				K2 = -1;
+//				L2 = 0;
+//			}
+//			else {
+//				if (Direction > M_PI * 1.5) {
+//					PART1 = AREA * SN;
+//					PART2 = AREA * CSN;
+//					K1 = -1;
+//					L1 = 0;
+//					K2 = 0;
+//					L2 = 1;
+//
+//
+//				}
+//
+//			}
+//		}
+//	}
+//}

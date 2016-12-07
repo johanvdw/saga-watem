@@ -1,7 +1,3 @@
-/**********************************************************
- * Version $Id: Exercise_01.cpp 1921 2014-01-09 10:24:11Z oconrad $
- *********************************************************/
-
 ///////////////////////////////////////////////////////////
 //                                                       //
 //                         SAGA                          //
@@ -9,45 +5,11 @@
 //      System for Automated Geoscientific Analyses      //
 //                                                       //
 //                     Tool Library                      //
-//                       Lectures                        //
+//                         Watem                         //
 //                                                       //
 //-------------------------------------------------------//
 //                                                       //
-//                   Exercise_01.cpp                     //
-//                                                       //
-//                 Copyright (C) 2003 by                 //
-//                      Olaf Conrad                      //
-//                                                       //
-//-------------------------------------------------------//
-//                                                       //
-// This file is part of 'SAGA - System for Automated     //
-// Geoscientific Analyses'. SAGA is free software; you   //
-// can redistribute it and/or modify it under the terms  //
-// of the GNU General Public License as published by the //
-// Free Software Foundation; version 2 of the License.   //
-//                                                       //
-// SAGA is distributed in the hope that it will be       //
-// useful, but WITHOUT ANY WARRANTY; without even the    //
-// implied warranty of MERCHANTABILITY or FITNESS FOR A  //
-// PARTICULAR PURPOSE. See the GNU General Public        //
-// License for more details.                             //
-//                                                       //
-// You should have received a copy of the GNU General    //
-// Public License along with this program; if not,       //
-// write to the Free Software Foundation, Inc.,          //
-// 51 Franklin Street, 5th Floor, Boston, MA 02110-1301, //
-// USA.                                                  //
-//                                                       //
-//-------------------------------------------------------//
-//                                                       //
-//    e-mail:     oconrad@saga-gis.org                   //
-//                                                       //
-//    contact:    Olaf Conrad                            //
-//                Institute of Geography                 //
-//                University of Goettingen               //
-//                Goldschmidtstr. 5                      //
-//                37077 Goettingen                       //
-//                Germany                                //
+//               Calculate_LS_Watem.cpp                  //
 //                                                       //
 ///////////////////////////////////////////////////////////
 
@@ -76,13 +38,13 @@ CCalculate_LS_Watem::CCalculate_LS_Watem(void)
 	//-----------------------------------------------------
 	// Give some information about your tool...
 
-	Set_Name	(_TL("01: LS berekening"));
+	Set_Name	(_TL("02: LS berekening"));
 
-	Set_Author	(_TL("Copyrights (c) 2016 by Johan Van de Wauw"));
+	Set_Author	(_TL("Copyright (c) 2003 Olaf Conrad. Modified by Johan Van de Wauw (2016) to make model identical to Watem"));
 
 	Set_Description	(_TW(
-		"(c) 2003 by Olaf Conrad, Goettingen\n"
-		"email: oconrad@gwdg.de")
+		"Berekening van de LS factor analoog aan de bereking in Watem/sedem."
+	)
 	);
 
 
