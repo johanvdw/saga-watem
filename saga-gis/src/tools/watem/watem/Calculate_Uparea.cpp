@@ -172,9 +172,10 @@ void CCalculate_Uparea::CalculateUparea()
 	//eerst sorteren, dan van hoogste naar laagste pixel gaan.
 	for (int t = 0; t < ncol*nrow; t++)
 	{
-		Set_Progress_NCells(t);
+		if (t%ncol == 0) Set_Progress_NCells(t);
 		int i, j;
 		m_pDEM->Get_Sorted(t, i, j);
+		
 //		Message_Add("Grid Sorted");
 		if (m_pPRC->asInt(i, j) == 0) {
 			continue;
@@ -288,17 +289,16 @@ void CCalculate_Uparea::CalculatePitStuff()
 	int ncol = Get_NX();
 
 	// dit kan zéker efficienter - misschien zelfs weggelaten worden
-	for (j = 0; j < nrow; j++)
-	{
-#pragma omp parallel for
-		for (i = 0; i < ncol; i++)
-		 {
-			m_pPit->Set_Value(i, j, 0);
-		}
-	}
 
-	//vraag: is dit paralleliseerbaar?
-	for (j = nrow -2; j >0; j--)
+	#pragma omp parallel for
+		for (i = 0; i < Get_NCells(); i++)
+		 {
+			m_pPit->Set_Value(i, 0);
+		}
+
+
+	//vraag: is dit paralleliseerbaar? ~eventueel zelf eerst in grote blocks onderverdelen?
+	for (j = nrow -2; j >0; j--) // buitenste rand niet meenemen. Van beneden naar boven zoals watem
 	{
 		for (i = 1; i < ncol-1; i++)
 		 {
