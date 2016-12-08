@@ -294,9 +294,9 @@ void CCalculate_Uparea::CalculatePitStuff()
 	// dit kan zéker efficienter - misschien zelfs weggelaten worden
 
 	#pragma omp parallel for
-		for (i = 0; i < Get_NCells(); i++)
+		for (int pi = 0; pi < Get_NCells(); pi++)
 		 {
-			m_pPit->Set_Value(i, 0);
+			m_pPit->Set_Value(pi, 0);
 		}
 
 
@@ -329,6 +329,8 @@ void CCalculate_Uparea::CalculatePitStuff()
 				//setlength(PitDat, nvlag + 1);
 				TPitData p ;
 				p.aantal = 0;
+				p.outr = 0;
+				p.outc = 0;
 				PitDat.resize(nvlag + 1);
 				PitDat[nvlag] = p;
 				PitDat[nvlag].c = i;
