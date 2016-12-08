@@ -30,7 +30,7 @@ public:
 	bool On_Execute();
 
 private:
-	CSG_Grid *m_pDEM, *m_pUp_Area, *m_pPRC, *m_pPit, *m_pFINISH, *m_pAspect;
+	CSG_Grid *DEM, *Up_Area, *PRC, *Pit, *FINISH, *m_pAspect;
 
 	void CalculateUparea();
 	void CalculatePitStuff();
