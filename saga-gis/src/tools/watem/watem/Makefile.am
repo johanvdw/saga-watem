@@ -14,8 +14,10 @@ libwatem_la_SOURCES =\
 Calculate_LS_Watem.cpp\
 Calculate_Uparea.cpp\
 MLB_Interface.cpp\
+Tillage_Erosion.cpp\
 MLB_Interface.h\
 Calculate_LS_Watem.h\
-Calculate_Uparea.h
+Calculate_Uparea.h\
+Tillage_Erosion.h
 
 libwatem_la_LIBADD = $(top_srcdir)/src/saga_core/saga_api/libsaga_api.la
