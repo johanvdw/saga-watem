@@ -55,11 +55,11 @@ bool Tillage_Erosion::On_Execute() {
 	CSG_Grid * FINISH = new CSG_Grid(*Get_System(), SG_DATATYPE_Bit);
 
 
-	for (int ki = 0; ki < Get_NCells(); ki++)
-	{
-		INFLOW->Set_Value(ki, 0);
+	//for (int ki = 0; ki < Get_NCells(); ki++)
+	//{
+	//	INFLOW->Set_Value(ki, 0);
 
-	}
+	//}
 
 
 	int k1, k2, l1, l2;
@@ -139,7 +139,7 @@ bool Tillage_Erosion::On_Execute() {
 		//}
 
 
-		// test met K1 en K2 zijn omgekeerde van in watem omdat grid anders georienteerd is
+		//  K1 en K2 zijn omgekeerde van in watem omdat grid anders georienteerd is
 		if (asp <= 90.0) {
 			PART1 = outflow * CSN;
 			PART2 = outflow * SN;
@@ -205,7 +205,8 @@ bool Tillage_Erosion::On_Execute() {
 
 	}
 
-	//paralelliseren of afschieten 
+	
+#pragma omp parallel for
 	for (int i = 0; i < nrow; i++) {
 		for (int j = 0; j < ncol; j++) {
 

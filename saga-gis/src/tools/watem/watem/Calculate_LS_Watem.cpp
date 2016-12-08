@@ -97,7 +97,7 @@ CCalculate_LS_Watem::~CCalculate_LS_Watem(void)
 bool CCalculate_LS_Watem::On_Execute(void)
 {
 	int		x, y;
-	double	Factor, Value_Input, Value_Output;
+	double	Factor;
 	CSG_Grid	*pLS;
 
 	//-----------------------------------------------------
