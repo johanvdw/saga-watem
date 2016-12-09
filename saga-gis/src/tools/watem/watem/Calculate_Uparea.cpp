@@ -10,10 +10,10 @@ CCalculate_Uparea::CCalculate_Uparea()
 	Set_Author(_TL("Copyright (c) 2006 - 2016 by KULeuven. Converted to SAGA/C++ by Johan Van de Wauw"));
 
 	Set_Description(_TW(
-		"This module converts a digital elevation model grid and a parcel grid and converts it to an uplope area.\n\n" 
-		"The method takes into account parcel borders, rivers (grid value -2) and landuse (forest has value 10000).\n" 
+		"This module converts a digital elevation model grid and a parcel grid and converts it to an uplope area.\n\n"
+		"The method takes into account parcel borders, rivers (grid value -2) and landuse (forest has value 10000).\n"
 		"Pits are taken into account. Optionally a grid with Pits and a table with pit information can be generated. "
-		)
+	)
 	);
 
 
@@ -104,7 +104,7 @@ bool CCalculate_Uparea::On_Execute(void)
 	//export pitdata table if this is defined
 	if (pPitDataTable != NULL) {
 		pPitDataTable->Del_Records();
-		if (pPitDataTable->Get_Field("ID")==-1)
+		if (pPitDataTable->Get_Field("ID") == -1)
 			pPitDataTable->Add_Field("ID", SG_DATATYPE_Int);
 		if (pPitDataTable->Get_Field("OutRow") == -1)
 			pPitDataTable->Add_Field("OutRow", SG_DATATYPE_Int);
@@ -117,14 +117,14 @@ bool CCalculate_Uparea::On_Execute(void)
 		if (pPitDataTable->Get_Field("R") == -1)
 			pPitDataTable->Add_Field("R", SG_DATATYPE_Int);
 		int i = 1;
-		for (TPitData& pit :PitDat)
+		for (TPitData& pit : PitDat)
 		{
 			CSG_Table_Record * row = pPitDataTable->Add_Record();
 			row->Add_Value("ID", i++);
-			row->Add_Value("OutRow", pit.outr==0?0:Get_NY() - pit.outr);
-			row->Add_Value("OutCol", pit.outc==0?0:pit.outc +1);
+			row->Add_Value("OutRow", pit.outr == 0 ? 0 : Get_NY() - pit.outr);
+			row->Add_Value("OutCol", pit.outc == 0 ? 0 : pit.outc + 1);
 			row->Add_Value("Number", pit.aantal);
-			row->Add_Value("C", pit.c+1);
+			row->Add_Value("C", pit.c + 1);
 			row->Add_Value("R", Get_NY() - pit.r);
 		}
 	}
@@ -175,15 +175,15 @@ void CCalculate_Uparea::CalculateUparea()
 		if (t%ncol == 0) Set_Progress_NCells(t);
 		int i, j;
 		DEM->Get_Sorted(t, i, j);
-		
-//		Message_Add("Grid Sorted");
+
+		//		Message_Add("Grid Sorted");
 		if (PRC->asInt(i, j) == 0) {
 			continue;
 		}
 
-		double ptef = 0; 
+		double ptef = 0;
 		if (PRC->asInt(i, j) == 10000) ptef = 0.75;
-		OPPCOR = Get_Cellarea() * (1-ptef);
+		OPPCOR = Get_Cellarea() * (1 - ptef);
 		AREA = Up_Area->asDouble(i, j) + OPPCOR;
 
 		DistributeTilDirEvent(i, j, &AREA, &massbalance);
@@ -284,17 +284,17 @@ void CCalculate_Uparea::CalculatePitStuff()
 	int ncol = Get_NX();
 
 	// dit kan misschien  weggelaten worden
-	#pragma omp parallel for
-		for (int pi = 0; pi < Get_NCells(); pi++)
-		 {
-			Pit->Set_Value(pi, 0);
-		}
-
-
-	for (j = nrow -2; j >0; j--) // buitenste rand niet meenemen. Van beneden naar boven zoals watem
+#pragma omp parallel for
+	for (int pi = 0; pi < Get_NCells(); pi++)
 	{
-		for (i = 1; i < ncol-1; i++)
-		 {
+		Pit->Set_Value(pi, 0);
+	}
+
+
+	for (j = nrow - 2; j > 0; j--) // buitenste rand niet meenemen. Van beneden naar boven zoals watem
+	{
+		for (i = 1; i < ncol - 1; i++)
+		{
 			if (Pit->asInt(i, j) != 0 || PRC->asInt(i, j) == 0) {
 				continue;
 			}
@@ -314,10 +314,10 @@ void CCalculate_Uparea::CalculatePitStuff()
 			}
 			if (hulp == 0) { // indien er een pit is
 				nvlag++; //depressie zoeken
-				Pit->Set_Value(i, j, nvlag+1);
+				Pit->Set_Value(i, j, nvlag + 1);
 
 				//setlength(PitDat, nvlag + 1);
-				TPitData p ;
+				TPitData p;
 				p.aantal = 0;
 				p.outr = 0;
 				p.outc = 0;
@@ -364,7 +364,7 @@ void CCalculate_Uparea::CalculatePitStuff()
 									if (m == 0 && n == 0) {
 										continue;
 									}
-									if  (!is_InGrid(i+k+m,j+l+n) || !is_InGrid(i + k, j + l)) {
+									if (!is_InGrid(i + k + m, j + l + n) || !is_InGrid(i + k, j + l)) {
 										continue;
 									}
 									if (DEM->asDouble(i + k + m, j + l + n) < DEM->asDouble(i + k, j + l) &&
@@ -435,7 +435,7 @@ void CCalculate_Uparea::CalculatePitStuff()
 		}
 
 	}
-	
+
 	pitnum = nvlag;
 }
 
@@ -459,7 +459,7 @@ void CCalculate_Uparea::DistributeTilDirEvent(int i, int j, double *AREA, double
 	int vlag, rivvlag, v, w;
 
 	for (K = -1; K <= 1; K++) {
-		for (L = -1; L <= 1; L++) {
+		for (L = 1; L >= -1; L--) { /*switching solves part of the difference between saga and watem --> an error in watem*/
 			if (is_InGrid(i + K, j + L) && PRC->asInt(i + K, j + L) == -1) {
 				if (DEM->asDouble(i + K, j + L) < DEM->asDouble(i, j))
 					closeriver = true;
@@ -480,7 +480,7 @@ void CCalculate_Uparea::DistributeTilDirEvent(int i, int j, double *AREA, double
 				if ((PRC->asInt(i + K, j + L) == -1) & (DEM->asDouble(i + K, j + L) < DEM->asDouble(i, j))) {
 					ROWMIN = K;
 					COLMIN = L;
-					rivvlag = 0;
+					rivvlag = 0;//constant weinig zinvol zo
 					RivDat[rivvlag].latuparea += *AREA;
 
 					*AREA = 0.0;
@@ -542,7 +542,7 @@ void CCalculate_Uparea::DistributeTilDirEvent(int i, int j, double *AREA, double
 	}
 
 
-
+	// check if receiving cell is a pit
 	if ((is_InGrid(i + K1, j + L1) && (Pit->asInt(i + K1, j + L1) != 0)) ||
 		(is_InGrid(i + K2, j + L2) && (Pit->asInt(i + K2, j + L2) != 0))) {
 		if (is_InGrid(i + K1, j + L1))
@@ -570,9 +570,9 @@ void CCalculate_Uparea::DistributeTilDirEvent(int i, int j, double *AREA, double
 	}
 
 	else {
-
+		//goed checken wanneer en of deze code eigenlijk gebruikt wordt: kan enkel als dem gelijk denk ik. Of misschien bij raar aspect tov pixelwaarden (zadelachtig)
 		if (is_InGrid(i + K1, j + L1) && (FINISH->asInt(i + K1, j + L1) == 1)) {
-			if (is_InGrid(i + K2, j + L2)&& (FINISH->asInt(i + K2, j + L2) == 1)) {
+			if (is_InGrid(i + K2, j + L2) && (FINISH->asInt(i + K2, j + L2) == 1)) {
 
 				PART1 = 0.0;
 
@@ -588,12 +588,7 @@ void CCalculate_Uparea::DistributeTilDirEvent(int i, int j, double *AREA, double
 
 		else {
 			if (is_InGrid(i + K2, j + L2) && (FINISH->asInt(i + K2, j + L2) == 1)) {
-				/* p2c: unitSurfacetildir.pas, line 305:
-				* Warning: Index on a non-array variable [287] */
-				/* p2c: unitSurfacetildir.pas, line 305:
-				* Warning: Index on a non-array variable [287] */
 				PART1 += PART2;
-
 				PART2 = 0.0;
 			}
 		}
@@ -651,8 +646,7 @@ void CCalculate_Uparea::DistributeTilDirEvent(int i, int j, double *AREA, double
 
 
 		if (PART1 == 0.0 && PART2 == 0.0) {
-			/* p2c: unitSurfacetildir.pas:
-			* Note: Eliminated unused assignment statement [338] */
+			// no receiving cells were found (lagergelegen of ander perceel)         
 			parequal = false;
 			ROWMIN = 0;
 			ROWMIN2 = 0;
@@ -680,10 +674,6 @@ void CCalculate_Uparea::DistributeTilDirEvent(int i, int j, double *AREA, double
 					if (((DEM->asDouble(i + K, j + L) < MINIMUM2) & (DEM->asDouble(i + K, j + L) <
 						DEM->asDouble(i, j))) &&
 						FINISH->asInt(i + K, j + L) == 0) {
-						/* p2c: unitSurfacetildir.pas, line 412:
-						* Warning: Index on a non-array variable [287] */
-						/* p2c: unitSurfacetildir.pas, line 412:
-						* Warning: Index on a non-array variable [287] */
 						MINIMUM2 = DEM->asDouble(i + K, j + L);
 						ROWMIN2 = K;
 						COLMIN2 = L;
@@ -700,7 +690,7 @@ void CCalculate_Uparea::DistributeTilDirEvent(int i, int j, double *AREA, double
 					if (PRC->asInt(col, row) == -1) {
 						rivvlag = 0;
 						RivDat[rivvlag].latinput += *AREA;
-		
+
 
 						*AREA = 0.0;
 					}
@@ -722,11 +712,12 @@ void CCalculate_Uparea::DistributeTilDirEvent(int i, int j, double *AREA, double
 
 				}
 			}
-			else {
+			else { //receiving cell belongs to a different parcel
 				if (Pit->asInt(i + ROWMIN2, j + COLMIN2) != 0) {
 					vlag = Pit->asInt(i + ROWMIN2, j + COLMIN2);
 					int row = PitDat[vlag].outr;
 					int col = PitDat[vlag].outc;
+
 					if (PRC->asInt(col, row) == -1) {
 						rivvlag = 0;
 						RivDat[rivvlag].latinput += *AREA;
@@ -744,17 +735,11 @@ void CCalculate_Uparea::DistributeTilDirEvent(int i, int j, double *AREA, double
 
 				}
 				else {
-					if (PRC->asInt(i + ROWMIN2, j + COLMIN2) > 0) {
-						if (PRC->asInt(i + ROWMIN2, j + COLMIN2) < 10000) {
-
-							Abis = *AREA * (100 - TFCAtoCropLand) / 100.0;
-
-						}
-						else {
-							Abis = *AREA * (100 - TFCAtoForestOrPasture) / 100.0;
-
-						}
-					}
+					if (PRC->asInt(i + ROWMIN2, j + COLMIN2) == 10000)
+						Abis = *AREA * (100 - TFCAtoForestOrPasture) / 100.0;
+					else
+						Abis = *AREA * (100 - TFCAtoCropLand) / 100.0;
+										
 					Up_Area->Add_Value(i + ROWMIN2, j + COLMIN2, Abis);
 
 					if (PRC->asInt(i + ROWMIN2, j + COLMIN2) == 9999) {
@@ -771,11 +756,11 @@ void CCalculate_Uparea::DistributeTilDirEvent(int i, int j, double *AREA, double
 		}
 
 
-		else {
+		else { //normal case: part1 and part 2 !=0
 
 
 			if (!is_InGrid(i + K1, j + L1) ||
-				(PRC->asInt(i + K1, j + L1) == 0) | (PRC->asInt(i + K1, j + L1) == 9999)) {
+				(PRC->asInt(i + K1, j + L1) == 0) || (PRC->asInt(i + K1, j + L1) == 9999)) {
 
 				*massbalance += PART1;
 			}
@@ -790,7 +775,7 @@ void CCalculate_Uparea::DistributeTilDirEvent(int i, int j, double *AREA, double
 		}
 	}
 
-FINISH->Set_Value(i, j, 1.0);
+	FINISH->Set_Value(i, j, 1.0);
 
 }
 
