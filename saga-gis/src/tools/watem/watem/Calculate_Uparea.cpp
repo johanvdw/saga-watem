@@ -284,7 +284,6 @@ void CCalculate_Uparea::CalculatePitStuff()
 	int ncol = Get_NX();
 
 	// dit kan misschien  weggelaten worden
-
 	#pragma omp parallel for
 		for (int pi = 0; pi < Get_NCells(); pi++)
 		 {
@@ -292,7 +291,6 @@ void CCalculate_Uparea::CalculatePitStuff()
 		}
 
 
-	//vraag: is dit paralleliseerbaar? ~eventueel zelf eerst in grote blocks onderverdelen?
 	for (j = nrow -2; j >0; j--) // buitenste rand niet meenemen. Van beneden naar boven zoals watem
 	{
 		for (i = 1; i < ncol-1; i++)
