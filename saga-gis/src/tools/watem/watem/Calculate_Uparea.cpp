@@ -454,7 +454,7 @@ void CCalculate_Uparea::DistributeTilDirEvent(int i, int j, double *AREA, double
 	int ROWMIN, COLMIN, ROWMIN2, COLMIN2, K, L;
 	bool parequal;
 	bool closeriver = false;
-	double  Abis = 0;
+	
 	double Direction;
 	int vlag, rivvlag, v, w;
 
@@ -738,8 +738,11 @@ void CCalculate_Uparea::DistributeTilDirEvent(int i, int j, double *AREA, double
 					if (PRC->asInt(i + ROWMIN2, j + COLMIN2) == 10000)
 						Abis = *AREA * (100 - TFCAtoForestOrPasture) / 100.0;
 					else
-						Abis = *AREA * (100 - TFCAtoCropLand) / 100.0;
-										
+					{
+						if (PRC->asInt(i + ROWMIN2, j + COLMIN2) >0)
+							Abis = *AREA * (100 - TFCAtoCropLand) / 100.0;
+					}
+						
 					Up_Area->Add_Value(i + ROWMIN2, j + COLMIN2, Abis);
 
 					if (PRC->asInt(i + ROWMIN2, j + COLMIN2) == 9999) {
