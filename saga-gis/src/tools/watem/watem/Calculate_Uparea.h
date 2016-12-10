@@ -1,8 +1,5 @@
-#pragma once
 #include "MLB_Interface.h"
 #include <vector>
-
-
 
 typedef struct  {
 	double latinput, rivinput, rivoutput, bedloadrivinput, bedloadrivoutput,
