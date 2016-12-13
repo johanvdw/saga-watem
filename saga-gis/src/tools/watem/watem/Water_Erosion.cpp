@@ -81,8 +81,12 @@ bool Water_Erosion::On_Execute()
 			double v = R * K->asDouble(i) * LS->asDouble(i) * C->asDouble(i) * P / corr; //correctiefactor voor 5x5 grid ipv 25x25 grid
 			if (v > 150)
 				v = 150;
+			if (v < -1) v = -99;
 			water_erosion->Set_Value(i, v);
 		}
+
+	water_erosion->Set_NoData_Value(-99);
+	
 	return true;
 }
 
