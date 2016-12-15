@@ -39,7 +39,8 @@ private:
 	int pitwin = 200;
 	double TFCAtoCropLand;
 	double TFCAtoForestOrPasture = 100;
-	double Abis;
+	double TFCAtoRoad = 100;
+
 	CSG_Table *pPitDataTable;
 
 };
