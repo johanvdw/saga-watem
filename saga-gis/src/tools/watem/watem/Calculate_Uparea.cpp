@@ -63,6 +63,16 @@ CCalculate_Uparea::CCalculate_Uparea()
 		"", PARAMETER_TYPE_Double, 70, 0, 100
 	);
 
+	Parameters.Add_Value(
+		NULL, "PCTOFOREST", "Parcel Connectivity to forest",
+		"", PARAMETER_TYPE_Double, 100, 0, 100
+	);
+
+	Parameters.Add_Value(
+		NULL, "PCTOROAD", "Parcel Connectivity to road/built-up areas",
+		"", PARAMETER_TYPE_Double, 70, 0, 100
+	);
+
 }
 
 bool CCalculate_Uparea::On_Execute(void)
@@ -78,6 +88,8 @@ bool CCalculate_Uparea::On_Execute(void)
 	pPitDataTable = Parameters("PITDATA")->asTable();
 
 	TFCAtoCropLand = Parameters("PCTOCROP")->asDouble();
+	TFCAtoForestOrPasture = Parameters("PCTOFOREST")->asDouble();
+	TFCAtoRoad = Parameters("PCTOROAD")->asDouble();
 
 
 	//-----------------------------------------------------
@@ -149,7 +161,7 @@ void CCalculate_Uparea::CalculateUparea()
 
 {
 	int i, j, vlag, nvlag, rivvlag;
-	double OPPCOR, AREA, massbalance;
+	double OPPCOR, AREA, massbalance, Abis;
 	int Nextsegmentid;
 	std::vector<int> rivsegmentlatinputcheck;
 	std::vector<int> rivsegmentupcheck;
@@ -448,7 +460,7 @@ void CCalculate_Uparea::DistributeTilDirEvent(int i, int j, double *AREA, double
 	int nrow = Get_NY();
 	int ncol = Get_NX();
 
-	double CSN, SN, MINIMUM, MINIMUM2;
+	double CSN, SN, MINIMUM, MINIMUM2, Abis;
 	double PART1 = 0.0, PART2 = 0.0;
 	int K1 = 0, K2 = 0, L1 = 0, L2 = 0;
 	int ROWMIN, COLMIN, ROWMIN2, COLMIN2, K, L;
@@ -735,13 +747,20 @@ void CCalculate_Uparea::DistributeTilDirEvent(int i, int j, double *AREA, double
 
 				}
 				else {
+
+
 					if (PRC->asInt(i + ROWMIN2, j + COLMIN2) == 10000)
 						Abis = *AREA * (100 - TFCAtoForestOrPasture) / 100.0;
-					else
+					else if (PRC->asInt(i + ROWMIN2, j + COLMIN2) >0)
 					{
-						if (PRC->asInt(i + ROWMIN2, j + COLMIN2) >0)
+						
 							Abis = *AREA * (100 - TFCAtoCropLand) / 100.0;
 					}
+					else if (PRC->asInt(i + ROWMIN2, j + COLMIN2) == -2)
+					{
+						Abis = *AREA * (100 - TFCAtoRoad) / 100.0;
+					}
+					else Abis = 0;
 						
 					Up_Area->Add_Value(i + ROWMIN2, j + COLMIN2, Abis);
 
