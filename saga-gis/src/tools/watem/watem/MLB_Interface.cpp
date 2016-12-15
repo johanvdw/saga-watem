@@ -80,7 +80,7 @@ CSG_String Get_Info(int i)
 		return( _TL("Watem") );
 
 	case TLB_INFO_Author:
-		return( SG_T("Johan Van de Wauw 2016 - based on earlier code by xxx" ));
+		return( SG_T("Johan Van de Wauw 2016 - based on earlier code by KULeuven" ));
 
 	case TLB_INFO_Description:
 		return( _TL("SAGA version of the WATEM model" ));
@@ -101,6 +101,7 @@ CSG_String Get_Info(int i)
 #include "Calculate_Uparea.h"
 #include "Water_Erosion.h"
 #include "Tillage_Erosion.h"
+#include "Complete.h"
 
 
 //---------------------------------------------------------
@@ -119,6 +120,8 @@ CSG_Tool *		Create_Tool(int i)
 		case  1:	return( new CCalculate_LS_Watem);
 		case 2:     return (new Water_Erosion);
 		case 3:		return (new Tillage_Erosion);
+		case 4:	    return (new Complete);
+
 		default:	return( NULL );
 	}
 }
