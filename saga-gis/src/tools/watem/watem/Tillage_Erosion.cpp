@@ -50,17 +50,7 @@ bool Tillage_Erosion::On_Execute() {
 	CSG_Grid * TILL = Parameters("TILL")->asGrid();
 
 
-
-
 	CSG_Grid * FINISH = new CSG_Grid(*Get_System(), SG_DATATYPE_Bit);
-
-
-	//for (int ki = 0; ki < Get_NCells(); ki++)
-	//{
-	//	INFLOW->Set_Value(ki, 0);
-
-	//}
-
 
 	int k1, k2, l1, l2;
 
@@ -99,46 +89,6 @@ bool Tillage_Erosion::On_Execute() {
 
 		asp = Aspect * (180 / M_PI);
 	
-		//if (asp <= 90.0) {
-		//	PART1 = outflow * CSN;
-		//	PART2 = outflow * SN;
-		//	k1 = -1;
-		//	l1 = 0;
-		//	k2 = 0;
-		//	l2 = 1;
-		//}
-		//else {
-		//	if (asp > 90.0 && asp < 180.0) {
-		//		PART1 = outflow * SN;
-		//		PART2 = outflow * CSN;
-		//		k1 = 0;
-		//		l1 = 1;
-		//		k2 = 1;
-		//		l2 = 0;
-		//	}
-		//	else {
-		//		if (asp >= 180.0 && asp <= 270.0) {
-		//			PART1 = outflow * CSN;
-		//			PART2 = outflow * SN;
-		//			k1 = 1;
-		//			l1 = 0;
-		//			k2 = 0;
-		//			l2 = -1;
-		//		}
-		//		else {
-		//			if (asp > 270.0) {
-		//				PART1 = outflow * SN;
-		//				PART2 = outflow * CSN;
-		//				k1 = 0;
-		//				l1 = -1;
-		//				k2 = -1;
-		//				l2 = 0;
-		//			}
-		//		}
-		//	}
-		//}
-
-
 		//  K1 en K2 zijn omgekeerde van in watem omdat grid anders georienteerd is
 		if (asp <= 90.0) {
 			PART1 = outflow * CSN;
