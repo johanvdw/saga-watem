@@ -300,6 +300,7 @@
   <ItemGroup>
     <ClCompile Include="Calculate_LS_Watem.cpp" />
     <ClCompile Include="Calculate_Uparea.cpp" />
+    <ClCompile Include="Complete.cpp" />
     <ClCompile Include="MLB_Interface.cpp">
       <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">%(PreprocessorDefinitions)</PreprocessorDefinitions>
@@ -322,6 +323,7 @@
     <ClInclude Include="..\..\..\saga_core\saga_api\table_value.h" />
     <ClInclude Include="Calculate_LS_Watem.h" />
     <ClInclude Include="Calculate_Uparea.h" />
+    <ClInclude Include="Complete.h" />
     <ClInclude Include="MLB_Interface.h" />
     <ClInclude Include="..\..\..\saga_core\saga_api\api_core.h" />
     <ClInclude Include="..\..\..\saga_core\saga_api\dataobject.h" />
