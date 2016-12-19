@@ -20,7 +20,7 @@ Complete::Complete()
 	Parameters.Add_Grid(NULL, "UPSLOPE_AREA", _TL("UPAREA"), _TL(""), PARAMETER_OUTPUT);
 	Parameters.Add_Grid(NULL, "PIT", _TL("Pit"), _TL(""), PARAMETER_OUTPUT);
 	Parameters.Add_Grid(NULL, "LS", _TL("LS"), _TL(""), PARAMETER_OUTPUT);
-	//Parameters.Add_Grid(NULL, "TILL_EROSION", _TL("Tillage Erosion"), _TL(""), PARAMETER_OUTPUT_OPTIONAL);
+	Parameters.Add_Grid(NULL, "TILL", _TL("Tillage Erosion"), _TL(""), PARAMETER_OUTPUT_OPTIONAL);
 
 	Parameters.Add_Value(
 		NULL, "R", "regenerosiviteitsfactor (MJ mm ha-1 jaar-1)",
@@ -74,6 +74,31 @@ bool Complete::On_Execute(void)
 		&& SG_TOOL_PARAMETER_SET("PCTOFOREST", Parameters("PCTOFOREST"))
 		&& SG_TOOL_PARAMETER_SET("PCTOROAD", Parameters("PCTOROAD"))
 	);
+
+	SG_RUN_TOOL_ExitOnError("watem", 2, //LS calculation,
+		SG_TOOL_PARAMETER_SET("DEM", Parameters("DEM"))
+		&& SG_TOOL_PARAMETER_SET("UPSLOPE_AREA", Parameters("UPSLOPE_AREA"))
+		&& SG_TOOL_PARAMETER_SET("LS", Parameters("LS"))
+		);
+
+	SG_RUN_TOOL_ExitOnError("watem", 3, //watererosie op basis LS,
+		SG_TOOL_PARAMETER_SET("LS", Parameters("LS"))
+		&& SG_TOOL_PARAMETER_SET("K", Parameters("K"))
+		&& SG_TOOL_PARAMETER_SET("C", Parameters("C"))
+		&& SG_TOOL_PARAMETER_SET("WATER_EROSION", Parameters("WATER_EROSION"))
+		&& SG_TOOL_PARAMETER_SET("R", Parameters("R"))
+		&& SG_TOOL_PARAMETER_SET("P", Parameters("P"))
+		&& SG_TOOL_PARAMETER_SET("CORR", Parameters("CORR"))
+		);
+
+	if (Parameters("TILL")->asGrid() != NULL)
+	{
+		SG_RUN_TOOL_ExitOnError("watem", 4, //tillage erosion op basis LS,
+			SG_TOOL_PARAMETER_SET("DEM", Parameters("DEM"))
+			&& SG_TOOL_PARAMETER_SET("PRC", Parameters("PRC"))
+			&& SG_TOOL_PARAMETER_SET("TILL", Parameters("TILL"))
+		);
+	}
 	return true;
 }
 

@@ -116,11 +116,12 @@ CSG_Tool *		Create_Tool(int i)
 
 	switch( i )
 	{
-		case  0:    return(new CCalculate_Uparea);
-		case  1:	return( new CCalculate_LS_Watem);
-		case 2:     return (new Water_Erosion);
-		case 3:		return (new Tillage_Erosion);
-		case 4:	    return (new Complete);
+		case 0:		return (TLB_INTERFACE_SKIP_TOOL);
+		case  1:    return(new CCalculate_Uparea);
+		case  2:	return( new CCalculate_LS_Watem);
+		case 3:     return (new Water_Erosion);
+		case 4:		return (new Tillage_Erosion);
+		case 5:	    return (new Complete);
 
 		default:	return( NULL );
 	}
