@@ -22,14 +22,14 @@ CCalculate_Uparea::CCalculate_Uparea()
 
 
 	Parameters.Add_Grid(
-		NULL, "DEM", "Elevation",
+		NULL, "DEM", "Digitaal hoogtemodel",
 		"",
 		PARAMETER_INPUT
 	);
 
 	Parameters.Add_Grid(
 		NULL, "PRC", "Percelen",
-		"",
+		"Percelengrid met unieke identifier per perceel. Bossen krijgen waarde 10000. Bebouwde gebieden en wegen -2 en rivieren -1.",
 		PARAMETER_INPUT
 	);
 
@@ -54,7 +54,7 @@ CCalculate_Uparea::CCalculate_Uparea()
 
 	Parameters.Add_Table(
 		NULL, "PITDATA", _TL("Pit data"),
-		"Tabel met gegevens per pit. Coordinaten volgens het grid in watem.",
+		"Tabel met gegevens per gevonden pit. Coordinaten volgens het grid in watem.",
 		PARAMETER_OUTPUT_OPTIONAL
 	);
 
@@ -471,12 +471,13 @@ void CCalculate_Uparea::DistributeTilDirEvent(int i, int j, double *AREA, double
 	int vlag, rivvlag, v, w;
 
 	for (K = -1; K <= 1; K++) {
-		for (L = 1; L >= -1; L--) { /*switching solves part of the difference between saga and watem --> an error in watem*/
+		for (L = 1; L >= -1; L--) {
 			if (is_InGrid(i + K, j + L) && PRC->asInt(i + K, j + L) == -1) {
 				if (DEM->asDouble(i + K, j + L) < DEM->asDouble(i, j))
 					closeriver = true;
-				else
+				else //bug: the else clause should be removed because it is a bug - only the topright pixel is analysed
 					closeriver = false;
+				
 			}
 		}
 	}

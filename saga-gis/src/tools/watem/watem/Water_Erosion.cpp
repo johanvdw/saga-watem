@@ -28,7 +28,7 @@ Water_Erosion::Water_Erosion()
 
 	Parameters.Add_Grid(
 		NULL, "K", "K: bodemerosiegevoeligheidsfactor (ton ha MJ-1 mm-1)",
-		"",
+		"K: bodemerosiegevoeligheidsfactor (ton ha MJ-1 mm-1)",
 		PARAMETER_INPUT
 	);
 
@@ -45,18 +45,18 @@ Water_Erosion::Water_Erosion()
 
 	Parameters.Add_Value(
 		NULL, "P", "de erosiebeheersingsfactor (dimensieloos) ",
-		"", PARAMETER_TYPE_Double, 1, 0, 1
+		"de erosiebeheersingsfactor (dimensieloos)", PARAMETER_TYPE_Double, 1, 0, 1
 	);
 
 	Parameters.Add_Value(
 		NULL, "CORR", "correctiefactor grid",
-		"", PARAMETER_TYPE_Double, 1.4, 0, 20
+		"Correctiefactor omdat de berekeningen bepaald werden op een standaard plot van 22.1 meter. 1.4 voor grids van 5x5", PARAMETER_TYPE_Double, 1.4, 0, 20
 	);
 
 
 	Parameters.Add_Grid(
 		NULL, "WATER_EROSION", _TL("Water erosion"),
-		"A: gemiddeld bodemverlies als gevolg van geul- en intergeulerosie (ton ha-1 jaar-1)",
+		"Gemiddeld bodemverlies als gevolg van geul- en intergeulerosie (ton ha-1 jaar-1)",
 		PARAMETER_OUTPUT
 	);
 }

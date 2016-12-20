@@ -4,12 +4,12 @@
 
 Complete::Complete()
 {
-	Set_Name(_TL("Complete Watem"));
+	Set_Name(_TL("Complete Berekening Erosiekaart"));
 
 	Set_Author("Based on Watem (KULeuven). Converted to SAGA by Johan Van de Wauw (2016)");
 
 	Set_Description(_TW(
-		"All steps of Watem in one go"
+		"Volledige berekening erosiekaart in 1 stap."
 	));
 
 	Parameters.Add_Grid(NULL, "DEM", _TL("DEM"), _TL(""), PARAMETER_INPUT);
@@ -23,18 +23,18 @@ Complete::Complete()
 	Parameters.Add_Grid(NULL, "TILL", _TL("Tillage Erosion"), _TL(""), PARAMETER_OUTPUT_OPTIONAL);
 
 	Parameters.Add_Value(
-		NULL, "R", "regenerosiviteitsfactor (MJ mm ha-1 jaar-1)",
-		"", PARAMETER_TYPE_Double, 880, 0, 1000
+		NULL, "R", "R",
+		"regenerosiviteitsfactor (MJ mm ha-1 jaar-1)", PARAMETER_TYPE_Double, 880, 0, 1000
 	);
 
 	Parameters.Add_Value(
-		NULL, "P", "de erosiebeheersingsfactor (dimensieloos) ",
-		"", PARAMETER_TYPE_Double, 1, 0, 1
+		NULL, "P", "P",
+		"de erosiebeheersingsfactor (dimensieloos) ", PARAMETER_TYPE_Double, 1, 0, 1
 	);
 
 	Parameters.Add_Value(
 		NULL, "CORR", "correctiefactor grid",
-		"", PARAMETER_TYPE_Double, 1.4, 0, 20
+		"Correctiefactor omdat de berekeningen bepaald werden op een standaard plot van 22.1 meter. 1.4 voor grids van 5x5", PARAMETER_TYPE_Double, 1.4, 0, 20
 	);
 
 
