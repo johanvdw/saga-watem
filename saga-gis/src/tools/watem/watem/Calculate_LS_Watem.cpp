@@ -72,12 +72,6 @@ CCalculate_LS_Watem::CCalculate_LS_Watem(void)
 		PARAMETER_OUTPUT
 	);
 
-	Parameters.Add_Value(
-		NULL, "FACTOR"	, _TL("Factor"),
-		_TL("Type in a value that shall be used for the chosen mathematical operation."),
-		PARAMETER_TYPE_Double,
-		1.0
-	);
 
 
 }
@@ -97,7 +91,6 @@ CCalculate_LS_Watem::~CCalculate_LS_Watem(void)
 bool CCalculate_LS_Watem::On_Execute(void)
 {
 	int		x, y;
-	double	Factor;
 	CSG_Grid	*pLS;
 
 	//-----------------------------------------------------
@@ -106,7 +99,6 @@ bool CCalculate_LS_Watem::On_Execute(void)
 	m_pDEM		= Parameters("DEM" )->asGrid();
 	m_pUp_Area = Parameters("UPSLOPE_AREA")->asGrid();
 	pLS		= Parameters("LS")->asGrid();
-	Factor		= Parameters("FACTOR")->asDouble();
 	m_Stability = 0;
 	m_Erosivity = 1;
 	m_Method = 1; //standaard algoritme govers gebruiken

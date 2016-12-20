@@ -10,7 +10,7 @@ Tillage_Erosion::Tillage_Erosion()
 	Set_Author(_TL("Copyright (c) 2006 - 2016 by KULeuven. Converted to SAGA/C++ by Johan Van de Wauw"));
 
 	Set_Description(_TW(
-		""
+		"Berekening van de Bewerkingserosie. Gebaseerd op de code van WATEM (KULeuven)."
 	)
 	);
 
@@ -27,14 +27,14 @@ Tillage_Erosion::Tillage_Erosion()
 
 	Parameters.Add_Grid(
 		NULL, "PRC", "Percelen",
-		"",
+		"Percelengrid met unieke identifier per perceel. Bossen krijgen waarde 10000. Bebouwde gebieden en wegen -2 en rivieren -1.",
 		PARAMETER_INPUT
 	);
 
 
 	Parameters.Add_Grid(
 		NULL, "TILL", "Tillage erosion",
-		"",
+		"Gemiddels bodemverlies als gevolg van bodemerosie  (ton ha-1 jaar-1)",
 		PARAMETER_OUTPUT
 	);
 
