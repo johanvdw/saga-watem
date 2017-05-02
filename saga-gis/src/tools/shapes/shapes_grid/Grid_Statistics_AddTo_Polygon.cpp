@@ -115,7 +115,8 @@ CGrid_Statistics_AddTo_Polygon::CGrid_Statistics_AddTo_Polygon(void)
 			_TL("simple and fast"),
 			_TL("polygon wise (cell centers)"),
 			_TL("polygon wise (cell area)"),
-			_TL("polygon wise (cell area weighted)")
+			_TL("polygon wise (cell area weighted)"),
+			_TL("polygon borders only")
 		), 0
 	);
 
@@ -427,6 +428,27 @@ bool CGrid_Statistics_AddTo_Polygon::Get_Precise(CSG_Grid *pGrid, CSG_Shape_Poly
 					case INTERSECTION_Identical:
 					case INTERSECTION_Contains :	Statistics.Add_Value(pGrid->asDouble(x, y),       Get_Cellarea());	break;
 					case INTERSECTION_Contained:	Statistics.Add_Value(pGrid->asDouble(x, y), pPolygon->Get_Area());	break;
+					case INTERSECTION_Overlaps :
+						pCell->Del_Parts();
+
+						pCell->Add_Point(Cell.xMin, Cell.yMin);	pCell->Add_Point(Cell.xMin, Cell.yMax);
+						pCell->Add_Point(Cell.xMax, Cell.yMax);	pCell->Add_Point(Cell.xMax, Cell.yMin);
+
+						if( SG_Polygon_Intersection(pPolygon, pCell, pArea) )
+						{
+							Statistics.Add_Value(pGrid->asDouble(x, y), pArea->Get_Area());
+						}
+						break;
+					}
+					break;
+
+				case 4:  // only use polygon border
+									switch( pPolygon->Intersects(Cell) )
+					{
+					case INTERSECTION_None     :	
+					case INTERSECTION_Identical:
+					case INTERSECTION_Contains :	
+					case INTERSECTION_Contained:	break;
 					case INTERSECTION_Overlaps :
 						pCell->Del_Parts();
 
