@@ -111,7 +111,7 @@ CGrid_Statistics_AddTo_Polygon::CGrid_Statistics_AddTo_Polygon(void)
 	Parameters.Add_Choice(
 		NULL	, "METHOD"		, _TL("Method"),
 		_TL(""),
-		CSG_String::Format("%s|%s|%s|%s|",
+		CSG_String::Format("%s|%s|%s|%s|%s|",
 			_TL("simple and fast"),
 			_TL("polygon wise (cell centers)"),
 			_TL("polygon wise (cell area)"),
@@ -443,25 +443,14 @@ bool CGrid_Statistics_AddTo_Polygon::Get_Precise(CSG_Grid *pGrid, CSG_Shape_Poly
 					break;
 
 				case 4:  // only use polygon border
-									switch( pPolygon->Intersects(Cell) )
+					if (pPolygon->Contains(Center))
 					{
-					case INTERSECTION_None     :	
-					case INTERSECTION_Identical:
-					case INTERSECTION_Contains :	
-					case INTERSECTION_Contained:	break;
-					case INTERSECTION_Overlaps :
-						pCell->Del_Parts();
-
-						pCell->Add_Point(Cell.xMin, Cell.yMin);	pCell->Add_Point(Cell.xMin, Cell.yMax);
-						pCell->Add_Point(Cell.xMax, Cell.yMax);	pCell->Add_Point(Cell.xMax, Cell.yMin);
-
-						if( SG_Polygon_Intersection(pPolygon, pCell, pArea) )
+						if (pPolygon->Intersects(Cell)==INTERSECTION_Overlaps)
 						{
-							Statistics.Add_Value(pGrid->asDouble(x, y), pArea->Get_Area());
+							Statistics.Add_Value(pGrid->asDouble(x, y));
 						}
-						break;
+						
 					}
-					break;
 				}
 			}
 		}
