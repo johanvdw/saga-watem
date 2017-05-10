@@ -40,6 +40,8 @@ private:
 	double TFCAtoCropLand;
 	double TFCAtoForestOrPasture = 100;
 	double TFCAtoRoad = 100;
+	double Abis; 
+	bool wrong = false;
 
 	CSG_Table *pPitDataTable;
 
