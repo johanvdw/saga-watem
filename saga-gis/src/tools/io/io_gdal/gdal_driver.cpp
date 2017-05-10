@@ -59,12 +59,12 @@
 //---------------------------------------------------------
 #include "gdal_driver.h"
 
-#include <gdal_priv.h>
+#include <gdal_vrt.h>
+
+#include <ogr_srs_api.h>
 
 #include <cpl_string.h>
 #include <cpl_error.h>
-
-#include <vrtdataset.h>
 
 
 ///////////////////////////////////////////////////////////
@@ -97,8 +97,6 @@ CSG_GDAL_Drivers::CSG_GDAL_Drivers(void)
 	// that treat filenames as being in the local encoding.
 	// for more info see: http://trac.osgeo.org/gdal/wiki/ConfigOptions
 	CPLSetConfigOption("GDAL_FILENAME_IS_UTF8", "NO");
-
-	m_pDrivers	= GetGDALDriverManager();
 }
 
 //---------------------------------------------------------
@@ -121,44 +119,58 @@ CSG_String CSG_GDAL_Drivers::Get_Version(void) const
 //---------------------------------------------------------
 int CSG_GDAL_Drivers::Get_Count(void) const
 {
-	return( m_pDrivers->GetDriverCount() );
+	return( GDALGetDriverCount() );
 }
 
 //---------------------------------------------------------
-GDALDriver * CSG_GDAL_Drivers::Get_Driver(const CSG_String &Name) const
+GDALDriverH CSG_GDAL_Drivers::Get_Driver(const CSG_String &Name) const
 {
-	return( (GDALDriver *)GDALGetDriverByName(Name) );
+	return( GDALGetDriverByName(Name) );
 }
 
 //---------------------------------------------------------
-GDALDriver * CSG_GDAL_Drivers::Get_Driver(int Index) const
+GDALDriverH CSG_GDAL_Drivers::Get_Driver(int Index) const
 {
-	return( (GDALDriver *)GDALGetDriver(Index) );
+	return( GDALGetDriver(Index) );
 }
 
 //---------------------------------------------------------
 CSG_String CSG_GDAL_Drivers::Get_Name(int Index) const
 {
-	return( Get_Driver(Index)->GetMetadataItem(GDAL_DMD_LONGNAME) );
+	const char	*s	= GDALGetMetadataItem(Get_Driver(Index), GDAL_DMD_LONGNAME, "");
+
+	return( s ? s : "" );
 }
 
 //---------------------------------------------------------
 CSG_String CSG_GDAL_Drivers::Get_Description(int Index) const
 {
-	return( Get_Driver(Index)->GetDescription() );
+	const char	*s	= GDALGetDescription(Get_Driver(Index));
+
+	return( s ? s : "" );
 }
 
 //---------------------------------------------------------
 CSG_String CSG_GDAL_Drivers::Get_Extension(int Index) const
 {
-	return( Get_Driver(Index)->GetMetadataItem(GDAL_DMD_EXTENSION) );
+	const char	*s	= GDALGetMetadataItem(Get_Driver(Index), GDAL_DMD_EXTENSION, "");
+
+	return( s ? s : "" );
+}
+
+//---------------------------------------------------------
+bool CSG_GDAL_Drivers::has_Capability(GDALDriverH pDriver, const char *Capapility)
+{
+	const char	*s	= GDALGetMetadataItem(pDriver, Capapility, "");
+
+	return( s && SG_STR_CMP(s, "YES") == 0 );
 }
 
 //---------------------------------------------------------
 bool CSG_GDAL_Drivers::is_Raster(int Index) const
 {
 #ifdef USE_GDAL_V2
-	return( Get_Driver(Index) && CSLFetchBoolean(Get_Driver(Index)->GetMetadata(), GDAL_DCAP_RASTER, false) );
+	return( has_Capability(Get_Driver(Index), GDAL_DCAP_RASTER) );
 #else
 	return( true );
 #endif
@@ -167,13 +179,23 @@ bool CSG_GDAL_Drivers::is_Raster(int Index) const
 //---------------------------------------------------------
 bool CSG_GDAL_Drivers::Can_Read(int Index) const
 {
-	return( Get_Driver(Index) != NULL );	// ? CSLFetchBoolean(Get_Driver(Index)->GetMetadata(), GDAL_DCAP_CREATE, false) != 0 : false );
+#ifdef GDAL_DCAP_OPEN
+	return( has_Capability(Get_Driver(Index), GDAL_DCAP_OPEN) );
+#else
+	return( true );
+#endif
 }
 
 //---------------------------------------------------------
 bool CSG_GDAL_Drivers::Can_Write(int Index) const
 {
-	return( Get_Driver(Index) && CSLFetchBoolean(Get_Driver(Index)->GetMetadata(), GDAL_DCAP_CREATE, false) );
+	return( has_Capability(Get_Driver(Index), GDAL_DCAP_CREATE) );
+}
+
+//---------------------------------------------------------
+bool CSG_GDAL_Drivers::Can_Copy(int Index) const
+{
+	return( has_Capability(Get_Driver(Index), GDAL_DCAP_CREATECOPY) );
 }
 
 
@@ -186,17 +208,17 @@ int CSG_GDAL_Drivers::Get_GDAL_Type(TSG_Data_Type Type)
 {
 	switch( Type )
 	{
-	case SG_DATATYPE_Bit: 		return( GDT_Byte );			// Eight bit unsigned integer
-	case SG_DATATYPE_Byte: 		return( GDT_Byte );			// Eight bit unsigned integer
-	case SG_DATATYPE_Char: 		return( GDT_Byte );			// Eight bit unsigned integer
-	case SG_DATATYPE_Word:		return( GDT_UInt16 );		// Sixteen bit unsigned integer
-	case SG_DATATYPE_Short:		return( GDT_Int16 );		// Sixteen bit signed integer
-	case SG_DATATYPE_DWord:		return( GDT_UInt32 );		// Thirty two bit unsigned integer
-	case SG_DATATYPE_Int: 		return( GDT_Int32 );		// Thirty two bit signed integer
-	case SG_DATATYPE_Float: 	return( GDT_Float32 );		// Thirty two bit floating point
-	case SG_DATATYPE_Double: 	return( GDT_Float64 );		// Sixty four bit floating point
+	case SG_DATATYPE_Bit   :	return( GDT_Byte    );	// Eight bit unsigned integer
+	case SG_DATATYPE_Byte  :	return( GDT_Byte    );	// Eight bit unsigned integer
+	case SG_DATATYPE_Char  :	return( GDT_Byte    );	// Eight bit unsigned integer
+	case SG_DATATYPE_Word  :	return( GDT_UInt16  );	// Sixteen bit unsigned integer
+	case SG_DATATYPE_Short :	return( GDT_Int16   );	// Sixteen bit signed integer
+	case SG_DATATYPE_DWord :	return( GDT_UInt32  );	// Thirty two bit unsigned integer
+	case SG_DATATYPE_Int   :	return( GDT_Int32   );	// Thirty two bit signed integer
+	case SG_DATATYPE_Float :	return( GDT_Float32 );	// Thirty two bit floating point
+	case SG_DATATYPE_Double:	return( GDT_Float64 );	// Sixty four bit floating point
 
-	default:					return( GDT_Float64 );
+	default                :	return( GDT_Float64 );
 	}
 }
 
@@ -205,20 +227,20 @@ TSG_Data_Type CSG_GDAL_Drivers::Get_SAGA_Type(int Type)
 {
 	switch( Type )
 	{
-	case GDT_Byte: 		return( SG_DATATYPE_Byte );			// Eight bit unsigned integer
-	case GDT_UInt16:	return( SG_DATATYPE_Word );			// Sixteen bit unsigned integer
-	case GDT_Int16:		return( SG_DATATYPE_Short );		// Sixteen bit signed integer
-	case GDT_UInt32:	return( SG_DATATYPE_DWord );		// Thirty two bit unsigned integer
-	case GDT_Int32: 	return( SG_DATATYPE_Int );			// Thirty two bit signed integer
-	case GDT_Float32: 	return( SG_DATATYPE_Float );		// Thirty two bit floating point
-	case GDT_Float64: 	return( SG_DATATYPE_Double );		// Sixty four bit floating point
+	case GDT_Byte    :	return( SG_DATATYPE_Byte      );	// Eight bit unsigned integer
+	case GDT_UInt16  :	return( SG_DATATYPE_Word      );	// Sixteen bit unsigned integer
+	case GDT_Int16   :	return( SG_DATATYPE_Short     );	// Sixteen bit signed integer
+	case GDT_UInt32  :	return( SG_DATATYPE_DWord     );	// Thirty two bit unsigned integer
+	case GDT_Int32   : 	return( SG_DATATYPE_Int       );	// Thirty two bit signed integer
+	case GDT_Float32 : 	return( SG_DATATYPE_Float     );	// Thirty two bit floating point
+	case GDT_Float64 : 	return( SG_DATATYPE_Double    );	// Sixty four bit floating point
 
-	case GDT_CInt16: 	return( SG_DATATYPE_Undefined );	// Complex Int16
-	case GDT_CInt32: 	return( SG_DATATYPE_Undefined );	// Complex Int32
+	case GDT_CInt16  : 	return( SG_DATATYPE_Undefined );	// Complex Int16
+	case GDT_CInt32  : 	return( SG_DATATYPE_Undefined );	// Complex Int32
 	case GDT_CFloat32: 	return( SG_DATATYPE_Undefined );	// Complex Float32
 	case GDT_CFloat64: 	return( SG_DATATYPE_Undefined );	// Complex Float64
 
-	default:			return( SG_DATATYPE_Undefined );
+	default          :	return( SG_DATATYPE_Undefined );
 	}
 }
 
@@ -265,7 +287,7 @@ bool CSG_GDAL_DataSet::Open_Read(const CSG_String &File_Name)
 {
 	Close();
 
-	if( (m_pDataSet = (GDALDataset *)GDALOpen(File_Name, GA_ReadOnly)) == NULL )
+	if( (m_pDataSet = GDALOpen(File_Name, GA_ReadOnly)) == NULL )
 	{
 		return( false );
 	}
@@ -283,20 +305,20 @@ bool CSG_GDAL_DataSet::Open_Read(const CSG_String &File_Name, const CSG_Grid_Sys
 {
 	Close();
 
-	if( (m_pVrtSource = (GDALDataset *)GDALOpen(File_Name, GA_ReadOnly)) == NULL )
+	if( (m_pVrtSource = GDALOpen(File_Name, GA_ReadOnly)) == NULL )
 	{
 		return( false );
 	}
 
 	//-----------------------------------------------------
-	if( (m_pDataSet = (VRTDataset *)VRTCreate(System.Get_NX(), System.Get_NY())) == NULL )
+	if( (m_pDataSet = VRTCreate(System.Get_NX(), System.Get_NY())) == NULL )
 	{
 		Close();
 
 		return( false );
 	}
 
-	m_pDataSet->SetProjection(m_pVrtSource->GetProjectionRef());
+	GDALSetProjection(m_pDataSet, GDALGetProjectionRef(m_pVrtSource));
 
 	double	Transform[6]	=
 	{
@@ -304,10 +326,10 @@ bool CSG_GDAL_DataSet::Open_Read(const CSG_String &File_Name, const CSG_Grid_Sys
 		System.Get_YMax(true), 0.0, -System.Get_Cellsize()
 	};
 
-	m_pDataSet->SetGeoTransform(Transform);
+	GDALSetGeoTransform(m_pDataSet, Transform);
 
 	//-----------------------------------------------------
-	m_pVrtSource->GetGeoTransform(Transform);
+	GDALGetGeoTransform(m_pVrtSource, Transform);
 
 	if( Transform[2] != 0.0 || Transform[4] != 0.0 )
 	{
@@ -320,16 +342,16 @@ bool CSG_GDAL_DataSet::Open_Read(const CSG_String &File_Name, const CSG_Grid_Sys
 	int	ySize	= (int)     ( System.Get_YRange(true)                 / fabs(Transform[5]) + 0.5  );
 
 	//-----------------------------------------------------
-	for(int i=0; i<m_pVrtSource->GetRasterCount(); i++)
+	for(int i=0; i<GDALGetRasterCount(m_pVrtSource); i++)
 	{
-		GDALRasterBand	*pSrcBand	= m_pVrtSource->GetRasterBand(i + 1);
+		GDALRasterBandH pSrcBand	= GDALGetRasterBand(m_pVrtSource, i + 1);
 
-		m_pDataSet->AddBand(pSrcBand->GetRasterDataType(), NULL);
+		GDALAddBand(m_pDataSet, GDALGetRasterDataType(pSrcBand), NULL);
 
-		VRTSourcedRasterBand	*pVrtBand	= (VRTSourcedRasterBand *)m_pDataSet->GetRasterBand(i + 1);
+		VRTSourcedRasterBandH	pVrtBand	= (VRTSourcedRasterBandH)GDALGetRasterBand(m_pDataSet, i + 1);
 
-		pVrtBand->AddSimpleSource(pSrcBand,
-			xOff, yOff, xSize, ySize, 0, 0, System.Get_NX(), System.Get_NY()
+		VRTAddSimpleSource(pVrtBand, pSrcBand,
+			xOff, yOff, xSize, ySize, 0, 0, System.Get_NX(), System.Get_NY(), "near", VRT_NODATA_UNSET
 		);
 
 //#if GDAL_VERSION_MAJOR >= 2	// instead of pVrtBand->AddSimpleSource(...)
@@ -363,10 +385,10 @@ bool CSG_GDAL_DataSet::_Set_Transformation(void)
 
 	double	Transform[6];
 
-	m_NX	= m_pDataSet->GetRasterXSize();
-	m_NY	= m_pDataSet->GetRasterYSize();
+	m_NX	= GDALGetRasterXSize(m_pDataSet);
+	m_NY	= GDALGetRasterYSize(m_pDataSet);
 
-	if( m_pDataSet->GetGeoTransform(Transform) != CE_None )
+	if( GDALGetGeoTransform(m_pDataSet, Transform) != CE_None )
 	{
 		m_bTransform	= false;
 		m_Cellsize		= 1.0;
@@ -423,30 +445,30 @@ bool CSG_GDAL_DataSet::Open_Write(const CSG_String &File_Name, const CSG_String 
 	}
 
 	//--------------------------------------------------------
-	GDALDriver	*pDriver;
+	GDALDriverH	pDriver;
 
 	if( (pDriver = gSG_GDAL_Drivers.Get_Driver(Driver)) == NULL )
 	{
-		SG_UI_Msg_Add_Error(CSG_String::Format(SG_T("%s: %s"), _TL("driver not found."), Driver.c_str()));
+		SG_UI_Msg_Add_Error(CSG_String::Format("%s: %s", _TL("driver not found."), Driver.c_str()));
 
 		return( false );
 	}
 
 	if( !GDALValidateCreationOptions(pDriver, pOptions) )
 	{
-		SG_UI_Msg_Add_Error(CSG_String::Format(SG_T("%s: %s"), _TL("Creation option(s) not supported by the driver"), Options.c_str()));
+		SG_UI_Msg_Add_Error(CSG_String::Format("%s: %s", _TL("Creation option(s) not supported by the driver"), Options.c_str()));
 
 		return( false );
 	}
 
-	if( CSLFetchBoolean(pDriver->GetMetadata(), GDAL_DCAP_CREATE, false) == false )
+	if( !CSG_GDAL_Drivers::has_Capability(pDriver, GDAL_DCAP_CREATE) )
 	{
 		SG_UI_Msg_Add_Error(_TL("Driver does not support file creation."));
 
 		return( false );
 	}
 
-	if( (m_pDataSet = pDriver->Create(File_Name, System.Get_NX(), System.Get_NY(), NBands, (GDALDataType)gSG_GDAL_Drivers.Get_GDAL_Type(Type), pOptions)) == NULL )
+	if( (m_pDataSet = GDALCreate(pDriver, File_Name, System.Get_NX(), System.Get_NY(), NBands, (GDALDataType)gSG_GDAL_Drivers.Get_GDAL_Type(Type), pOptions)) == NULL )
 	{
 		SG_UI_Msg_Add_Error(_TL("Could not create dataset."));
 
@@ -460,7 +482,7 @@ bool CSG_GDAL_DataSet::Open_Write(const CSG_String &File_Name, const CSG_String 
 
 	if( Projection.is_Okay() )
 	{
-		m_pDataSet->SetProjection(Projection.Get_WKT());
+		GDALSetProjection(m_pDataSet, Projection.Get_WKT());
 	}
 
 	double	Transform[6]	=
@@ -469,10 +491,10 @@ bool CSG_GDAL_DataSet::Open_Write(const CSG_String &File_Name, const CSG_String 
 		System.Get_YMax() + 0.5 * System.Get_Cellsize(), 0.0, -System.Get_Cellsize()
 	};
 
-	m_pDataSet->SetGeoTransform(Transform);
+	GDALSetGeoTransform(m_pDataSet, Transform);
 
-	m_NX			= m_pDataSet->GetRasterXSize();
-	m_NY			= m_pDataSet->GetRasterYSize();
+	m_NX			= GDALGetRasterXSize(m_pDataSet);
+	m_NY			= GDALGetRasterYSize(m_pDataSet);
 
 	m_bTransform	= false;
 	m_Cellsize		= 1.0;
@@ -507,7 +529,7 @@ bool CSG_GDAL_DataSet::Close(void)
 
 	if( strlen(CPLGetLastErrorMsg()) > 3 )
 	{
-		SG_UI_Msg_Add_Error(CSG_String::Format(SG_T("%s: %s"), _TL("Dataset creation failed"), SG_STR_MBTOSG(CPLGetLastErrorMsg())));
+		SG_UI_Msg_Add_Error(CSG_String::Format("%s: %s", _TL("Dataset creation failed"), SG_STR_MBTOSG(CPLGetLastErrorMsg())));
 
 		CPLErrorReset();
 
@@ -523,33 +545,41 @@ bool CSG_GDAL_DataSet::Close(void)
 ///////////////////////////////////////////////////////////
 
 //---------------------------------------------------------
-GDALDriver * CSG_GDAL_DataSet::Get_Driver(void)	const
+GDALDriverH CSG_GDAL_DataSet::Get_Driver(void)	const
 {
-	return( m_pDataSet ? m_pDataSet->GetDriver() : NULL );
+	return( m_pDataSet ? GDALGetDatasetDriver(m_pDataSet) : NULL );
 }
 
 //---------------------------------------------------------
 CSG_String CSG_GDAL_DataSet::Get_DriverID(void)	const
 {
-	return( m_pDataSet && m_pDataSet->GetDriver() && m_pDataSet->GetDriver()->GetDescription() ? m_pDataSet->GetDriver()->GetDescription() : "" );
+	const char	*s	= GDALGetDescription(Get_Driver());
+
+	return( s ? s : "" );
 }
 
 //---------------------------------------------------------
 const char * CSG_GDAL_DataSet::Get_Projection(void)	const
 {
-	return( m_pDataSet && m_pDataSet->GetProjectionRef() ? m_pDataSet->GetProjectionRef() : "" );
+	const char	*s	= GDALGetProjectionRef(m_pDataSet);
+
+	return( s ? s : "" );
 }
 
 //---------------------------------------------------------
 CSG_String CSG_GDAL_DataSet::Get_Name(void)	const
 {
-	return( m_pDataSet ? m_pDataSet->GetMetadataItem(GDAL_DMD_LONGNAME) : "" );
+	const char	*s	= GDALGetMetadataItem(m_pDataSet, GDAL_DMD_LONGNAME, 0);
+
+	return( s ? s : "" );
 }
 
 //---------------------------------------------------------
 CSG_String CSG_GDAL_DataSet::Get_Description(void)	const
 {
-	return( m_pDataSet ? m_pDataSet->GetDescription() : "" );
+	const char	*s	= GDALGetDescription(m_pDataSet);
+
+	return( s ? s : "" );
 }
 
 //---------------------------------------------------------
@@ -561,13 +591,15 @@ CSG_String CSG_GDAL_DataSet::Get_File_Name(void)	const
 //---------------------------------------------------------
 const char * CSG_GDAL_DataSet::Get_MetaData_Item(const char *pszName, const char *pszDomain)	const
 {
-	return( m_pDataSet ? m_pDataSet->GetMetadataItem(pszName, pszDomain) : "" );
+	const char	*s	= GDALGetMetadataItem(m_pDataSet, pszName, pszDomain);
+
+	return( s ? s : "" );
 }
 
 //---------------------------------------------------------
 const char ** CSG_GDAL_DataSet::Get_MetaData(const char *pszDomain)	const
 {
-	return( m_pDataSet ? (const char **)m_pDataSet->GetMetadata(pszDomain) : NULL );
+	return( m_pDataSet ? (const char **)GDALGetMetadata(m_pDataSet, pszDomain) : NULL );
 }
 
 //---------------------------------------------------------
@@ -590,7 +622,7 @@ bool CSG_GDAL_DataSet::Get_MetaData(CSG_MetaData &MetaData)	const
 {
 	if( m_pDataSet && is_Reading() )
 	{
-		char	**pMetaData	= m_pDataSet->GetMetadata() + 0;
+		char	**pMetaData	= GDALGetMetadata(m_pDataSet, 0);
 
 		if( pMetaData )
 		{
@@ -598,7 +630,7 @@ bool CSG_GDAL_DataSet::Get_MetaData(CSG_MetaData &MetaData)	const
 			{
 				CSG_String	s(*pMetaData);
 
-				MetaData.Add_Child(s.BeforeFirst(SG_T('=')), s.AfterFirst(SG_T('=')));
+				MetaData.Add_Child(s.BeforeFirst('='), s.AfterFirst('='));
 
 				pMetaData++;
 			}
@@ -615,7 +647,7 @@ bool CSG_GDAL_DataSet::Get_MetaData(CSG_MetaData &MetaData, const char *pszDomai
 {
 	if( m_pDataSet && is_Reading() )
 	{
-		char	**pMetaData	= m_pDataSet->GetMetadata(pszDomain) + 0;
+		char	**pMetaData	= GDALGetMetadata(m_pDataSet, pszDomain);
 
 		if( pMetaData )
 		{
@@ -623,7 +655,7 @@ bool CSG_GDAL_DataSet::Get_MetaData(CSG_MetaData &MetaData, const char *pszDomai
 			{
 				CSG_String	s(*pMetaData);
 
-				MetaData.Add_Child(s.BeforeFirst(SG_T('=')), s.AfterFirst(SG_T('=')));
+				MetaData.Add_Child(s.BeforeFirst('='), s.AfterFirst('='));
 
 				pMetaData++;
 			}
@@ -643,7 +675,7 @@ bool CSG_GDAL_DataSet::Get_MetaData(CSG_MetaData &MetaData, const char *pszDomai
 //---------------------------------------------------------
 int CSG_GDAL_DataSet::Get_Count(void)	const
 {
-	return( m_pDataSet ? m_pDataSet->GetRasterCount() : 0 );
+	return( m_pDataSet ? GDALGetRasterCount(m_pDataSet) : 0 );
 }
 
 //---------------------------------------------------------
@@ -651,31 +683,31 @@ CSG_String CSG_GDAL_DataSet::Get_Name(int i)	const
 {
 	CSG_String		Name;
 
-	GDALRasterBand	*pBand;
+	GDALRasterBandH	pBand;
 
-	if( is_Reading() && (pBand = m_pDataSet->GetRasterBand(i + 1)) != NULL )
+	if( is_Reading() && (pBand = GDALGetRasterBand(m_pDataSet, i + 1)) != NULL )
 	{
 		const char	*s;
 
 		//-------------------------------------------------
-		if( !SG_STR_CMP(m_pDataSet->GetDriver()->GetDescription(), "GRIB") )
+		if( !Get_DriverID().Cmp("GRIB") )
 		{
-			if( (s = pBand->GetMetadataItem("GRIB_COMMENT")) != NULL && *s )
+			if( (s = GDALGetMetadataItem(pBand, "GRIB_COMMENT", 0)) != NULL && *s )
 			{
 				Name	= s;
 
-				if( (s = pBand->GetMetadataItem("GRIB_ELEMENT"   )) != NULL && *s )	{	Name += "["; Name += s; Name += "]";	}
-				if( (s = pBand->GetMetadataItem("GRIB_SHORT_NAME")) != NULL && *s )	{	Name += "["; Name += s; Name += "]";	}
-				if( (s = pBand->GetMetadataItem("GRIB_VALID_TIME")) != NULL && *s )	{	Name += CSG_String::Format(SG_T("[%s]"), CSG_Time_Converter::Get_String(atoi(s), SG_TIME_FMT_Seconds_Unix).c_str());	}
+				if( (s = GDALGetMetadataItem(pBand, "GRIB_ELEMENT"   , 0)) != NULL && *s )	{	Name += "["; Name += s; Name += "]";	}
+				if( (s = GDALGetMetadataItem(pBand, "GRIB_SHORT_NAME", 0)) != NULL && *s )	{	Name += "["; Name += s; Name += "]";	}
+				if( (s = GDALGetMetadataItem(pBand, "GRIB_VALID_TIME", 0)) != NULL && *s )	{	Name += CSG_String::Format("[%s]", CSG_Time_Converter::Get_String(atoi(s), SG_TIME_FMT_Seconds_Unix).c_str());	}
 			}
 		}
 
 		//-------------------------------------------------
-		if( !SG_STR_CMP(m_pDataSet->GetDriver()->GetDescription(), "netCDF") )
+		if( !Get_DriverID().Cmp("netCDF") )
 		{
-			if( (s = pBand->GetMetadataItem("NETCDF_VARNAME"        )) != NULL && *s )	{	Name += "["; Name += s; Name += "]";	}
-			if( (s = pBand->GetMetadataItem("NETCDF_DIMENSION_time" )) != NULL && *s )	{	Name += "["; Name += s; Name += "]";	}
-			if( (s = pBand->GetMetadataItem("NETCDF_DIMENSION_level")) != NULL && *s )	{	Name += "["; Name += s; Name += "]";	}
+			if( (s = GDALGetMetadataItem(pBand, "NETCDF_VARNAME"        , 0)) != NULL && *s )	{	Name += "["; Name += s; Name += "]";	}
+			if( (s = GDALGetMetadataItem(pBand, "NETCDF_DIMENSION_time" , 0)) != NULL && *s )	{	Name += "["; Name += s; Name += "]";	}
+			if( (s = GDALGetMetadataItem(pBand, "NETCDF_DIMENSION_level", 0)) != NULL && *s )	{	Name += "["; Name += s; Name += "]";	}
 		}
 
 		//-------------------------------------------------
@@ -688,7 +720,7 @@ CSG_String CSG_GDAL_DataSet::Get_Name(int i)	const
 				Name	= _TL("Band");
 			}
 
-			Name	+= CSG_String::Format(SG_T(" %0*d"), SG_Get_Digit_Count(Get_Count() + 1), i + 1);
+			Name	+= CSG_String::Format(" %0*d", SG_Get_Digit_Count(Get_Count() + 1), i + 1);
 		}
 	}
 
@@ -700,11 +732,11 @@ CSG_String CSG_GDAL_DataSet::Get_Description(int i)	const
 {
 	CSG_String		Description;
 
-	GDALRasterBand	*pBand;
+	GDALRasterBandH	pBand;
 
-	if( is_Reading() && (pBand = m_pDataSet->GetRasterBand(i + 1)) != NULL )
+	if( is_Reading() && (pBand = GDALGetRasterBand(m_pDataSet, i + 1)) != NULL )
 	{
-		char	**pMetaData	= pBand->GetMetadata() + 0;
+		char	**pMetaData	= GDALGetMetadata(pBand, 0);
 
 		if( pMetaData )
 		{
@@ -712,7 +744,7 @@ CSG_String CSG_GDAL_DataSet::Get_Description(int i)	const
 			{
 				CSG_String	s(*pMetaData);
 
-				Description	+= s + SG_T("\n");
+				Description	+= s + "\n";
 
 				pMetaData++;
 			}
@@ -725,11 +757,11 @@ CSG_String CSG_GDAL_DataSet::Get_Description(int i)	const
 //---------------------------------------------------------
 bool CSG_GDAL_DataSet::Get_MetaData(int i, CSG_MetaData &MetaData)	const
 {
-	GDALRasterBand	*pBand;
+	GDALRasterBandH	pBand;
 
-	if( is_Reading() && (pBand = m_pDataSet->GetRasterBand(i + 1)) != NULL )
+	if( is_Reading() && (pBand = GDALGetRasterBand(m_pDataSet, i + 1)) != NULL )
 	{
-		char	**pMetaData	= pBand->GetMetadata() + 0;
+		char	**pMetaData	= GDALGetMetadata(pBand, 0);
 
 		if( pMetaData )
 		{
@@ -737,7 +769,7 @@ bool CSG_GDAL_DataSet::Get_MetaData(int i, CSG_MetaData &MetaData)	const
 			{
 				CSG_String	s(*pMetaData);
 
-				MetaData.Add_Child(s.BeforeFirst(SG_T('=')), s.AfterFirst(SG_T('=')));
+				MetaData.Add_Child(s.BeforeFirst('='), s.AfterFirst('='));
 
 				pMetaData++;
 			}
@@ -752,18 +784,18 @@ bool CSG_GDAL_DataSet::Get_MetaData(int i, CSG_MetaData &MetaData)	const
 //---------------------------------------------------------
 const char * CSG_GDAL_DataSet::Get_MetaData_Item(int i, const char *pszName)	const
 {
-	GDALRasterBand	*pBand	= m_pDataSet->GetRasterBand(i + 1);
+	GDALRasterBandH	pBand	= GDALGetRasterBand(m_pDataSet, i + 1);
 
-	return( pBand ? pBand->GetMetadataItem(pszName) : "" );
+	return( pBand ? GDALGetMetadataItem(pBand, pszName, 0) : "" );
 }
 
 bool CSG_GDAL_DataSet::Get_MetaData_Item(int i, const char *pszName, CSG_String &MetaData)	const
 {
-	GDALRasterBand	*pBand;
+	GDALRasterBandH	pBand	= GDALGetRasterBand(m_pDataSet, i + 1);
 
-	if( (pBand = m_pDataSet->GetRasterBand(i + 1)) != NULL )
+	if( pBand != NULL )
 	{
-		const char	*pMetaData	= pBand->GetMetadataItem(pszName);
+		const char	*pMetaData	= GDALGetMetadataItem(pBand, pszName, 0);
 
 		if( pMetaData && *pMetaData )
 		{
@@ -786,7 +818,7 @@ CSG_Grid * CSG_GDAL_DataSet::Read(int i)
 	}
 
 	//-------------------------------------------------
-	GDALRasterBand	*pBand	= m_pDataSet->GetRasterBand(i + 1);
+	GDALRasterBandH	pBand	= GDALGetRasterBand(m_pDataSet, i + 1);
 
 	if( !pBand )
 	{
@@ -794,7 +826,7 @@ CSG_Grid * CSG_GDAL_DataSet::Read(int i)
 	}
 
 	//-------------------------------------------------
-	TSG_Data_Type	Type	= gSG_GDAL_Drivers.Get_SAGA_Type(pBand->GetRasterDataType());
+	TSG_Data_Type	Type	= gSG_GDAL_Drivers.Get_SAGA_Type(GDALGetRasterDataType(pBand));
 
 	CSG_Grid	*pGrid	= SG_Create_Grid(Type, Get_NX(), Get_NY(), Get_Cellsize(), Get_xMin(), Get_yMin());
 
@@ -806,22 +838,41 @@ CSG_Grid * CSG_GDAL_DataSet::Read(int i)
 	//-------------------------------------------------
 	int		bSuccess;
 
-	double	zScale	= pBand->GetScale (&bSuccess);	if( !bSuccess || !zScale )	zScale	= 1.0;
-	double	zOffset	= pBand->GetOffset(&bSuccess);	if( !bSuccess            )	zOffset	= 0.0;
+	double	zScale	= GDALGetRasterScale (pBand, &bSuccess);	if( !bSuccess || !zScale )	zScale	= 1.0;
+	double	zOffset	= GDALGetRasterOffset(pBand, &bSuccess);	if( !bSuccess            )	zOffset	= 0.0;
 
 	pGrid->Set_Name			(Get_Name       (i));
 	pGrid->Set_Description	(Get_Description(i));
-	pGrid->Set_Unit			(CSG_String(pBand->GetUnitType()));
+	pGrid->Set_Unit			(CSG_String(GDALGetRasterUnitType(pBand)));
 	pGrid->Set_Scaling		(zScale, zOffset);
 
-	pGrid->Get_Projection().Create(Get_Projection(), SG_PROJ_FMT_WKT);
+	//-------------------------------------------------
+	OGRSpatialReferenceH	SRef	= OSRNewSpatialReference(Get_Projection());
 
-	Get_MetaData(i, pGrid->Get_MetaData());
+	char	*Proj4	= NULL;
 
-	pGrid->Get_MetaData().Add_Child("GDAL_DRIVER", Get_DriverID());
+	if( OSRExportToProj4(SRef, &Proj4) == OGRERR_NONE )
+	{
+		pGrid->Get_Projection().Create(Get_Projection(), Proj4);
+
+		CPLFree(Proj4);
+	}
+	else
+	{
+		pGrid->Get_Projection().Create(Get_Projection());
+	}
+
+	CPLFree(SRef);
 
 	//-------------------------------------------------
-	double	zNoData	= pBand->GetNoDataValue(&bSuccess);
+	CSG_MetaData	&MetaData	= pGrid->Get_MetaData();
+
+	Get_MetaData(i, MetaData);
+
+	MetaData.Add_Child("GDAL_DRIVER", Get_DriverID());
+
+	//-------------------------------------------------
+	double	zNoData	= GDALGetRasterNoDataValue(pBand, &bSuccess);
 
 	if( bSuccess )
 	{
@@ -847,7 +898,7 @@ CSG_Grid * CSG_GDAL_DataSet::Read(int i)
 	{
 		int	yy	= m_bTransform ? y : Get_NY() - 1 - y;
 
-		if( pBand->RasterIO(GF_Read, 0, y, Get_NX(), 1, zLine, Get_NX(), 1, zType, 0, 0) == CE_None )
+		if( GDALRasterIO(pBand, GF_Read, 0, y, Get_NX(), 1, zLine, Get_NX(), 1, zType, 0, 0) == CE_None )
 		{
 			for(int x=0; x<Get_NX(); x++)
 			{
@@ -874,7 +925,7 @@ bool CSG_GDAL_DataSet::Write(int i, CSG_Grid *pGrid, double noDataValue)
 		return( false );
 	}
 
-	GDALRasterBand	*pBand	= m_pDataSet->GetRasterBand(i + 1);
+	GDALRasterBandH	pBand	= GDALGetRasterBand(m_pDataSet, i + 1);
 
 	//-----------------------------------------------------
 	CPLErr	Error	= CE_None;
@@ -888,7 +939,7 @@ bool CSG_GDAL_DataSet::Write(int i, CSG_Grid *pGrid, double noDataValue)
 			zLine[x]	= pGrid->is_NoData(x, yy) ? noDataValue : pGrid->asDouble(x, yy);
 		}
 
-		Error	= pBand->RasterIO(GF_Write, 0, y, Get_NX(), 1, zLine, Get_NX(), 1, GDT_Float64, 0, 0);
+		Error	= GDALRasterIO(pBand, GF_Write, 0, y, Get_NX(), 1, zLine, Get_NX(), 1, GDT_Float64, 0, 0);
 	}
 
 	SG_Free(zLine);
@@ -896,14 +947,14 @@ bool CSG_GDAL_DataSet::Write(int i, CSG_Grid *pGrid, double noDataValue)
 	//-----------------------------------------------------
 	if( Error != CE_None )
 	{
-		SG_UI_Msg_Add_Error(CSG_String::Format(SG_T("%s"), _TL("Writing dataset failed.")));
+		SG_UI_Msg_Add_Error(CSG_String::Format("%s", _TL("Writing dataset failed.")));
 
 		return( false );
 	}
 
 	//-----------------------------------------------------
-	pBand->SetNoDataValue	(noDataValue);
-	pBand->SetStatistics	(pGrid->Get_ZMin(), pGrid->Get_ZMax(), pGrid->Get_Mean(), pGrid->Get_StdDev());
+	GDALSetRasterNoDataValue(pBand, noDataValue);
+	GDALSetRasterStatistics (pBand, pGrid->Get_ZMin(), pGrid->Get_ZMax(), pGrid->Get_Mean(), pGrid->Get_StdDev());
 
 	return( true );	
 }

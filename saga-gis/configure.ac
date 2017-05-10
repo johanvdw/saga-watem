@@ -3,7 +3,7 @@
 # Process this file with autoconf to produce a configure script.
 
 AC_PREREQ(2.59)
-AC_INIT(saga, 3.1.0, BUG-REPORT-ADDRESS)
+AC_INIT(saga, 4.2.0, BUG-REPORT-ADDRESS)
 AC_CONFIG_SRCDIR([src/saga_core/saga_gui/wksp_data_menu_files.cpp])
 AC_CONFIG_HEADER([config.h])
 AC_CONFIG_MACRO_DIR([m4])
@@ -209,13 +209,27 @@ AC_ARG_WITH(system_dxflib,
     )
 AM_CONDITIONAL(SYSTEM_DXFLIB, [test "$LIBDXFFOUND" -eq 1 -a x$system_libdxf = xtrue])
 
-AC_ARG_WITH(system_svm,
+# check for --with-system-svm
+AC_ARG_WITH([system_svm],
     AS_HELP_STRING([--with-system-svm],[Use system version of svm instead of embedded copy, requires this library (and the header files)]),
-    AC_MSG_RESULT([        using system svm]),
     system_svm=true,
     )
 
-AM_CONDITIONAL(SYSTEM_SVM, test "$SVMFOUND" -eq 1 -a x$system_svm = xtrue)
+AC_MSG_CHECKING([usage of system libsvm])
+
+if test "$with_system_svm" = yes ; then
+    if test "$SVMFOUND" = 1 ; then
+        AC_MSG_RESULT([yes])
+        SYSTEM_SVM=yes
+    else
+        AC_MSG_FAILURE([--with-system-svm was given but test for libsvm failed])
+    fi
+else
+    SYSTEM_SVM=no
+    AC_MSG_RESULT([no])
+fi
+
+AM_CONDITIONAL([SYSTEM_SVM], [test x$SYSTEM_SVM = xyes])
 
 #AM_CONDITIONAL(X86_64, test "`uname -m`" = "x86_64")
     AM_CONDITIONAL(HAVE_CV, test -n "$CVFOUND")
@@ -341,6 +355,7 @@ AC_OUTPUT(Makefile \
 	src/tools/simulation/sim_ecosystems_hugget/Makefile \
 	src/tools/simulation/sim_erosion/Makefile \
 	src/tools/simulation/sim_fire_spreading/Makefile \
+	src/tools/simulation/sim_geomorphology/Makefile \
 	src/tools/simulation/sim_hydrology/Makefile \
 	src/tools/simulation/sim_ihacres/Makefile \
 	src/tools/simulation/sim_qm_of_esp/Makefile \

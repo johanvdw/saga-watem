@@ -137,7 +137,7 @@ CGet_Connection::CGet_Connection(void)
 
 	Parameters.Add_String(NULL,
 		"PG_HOST"	, _TL("Host"),
-		_TL("Password"),
+		_TL(""),
 		"localhost"
 	);
 
@@ -149,25 +149,25 @@ CGet_Connection::CGet_Connection(void)
 
 	Parameters.Add_String(NULL,
 		"PG_USER"	, _TL("User"),
-		_TL("User Name"),
+		_TL(""),
 		"postgres"
 	);
 
 	Parameters.Add_String(NULL,
 		"PG_PWD"	, _TL("Password"),
-		_TL("Password"),
+		_TL(""),
 		"postgres", false, true
 	);
 
 	Parameters.Add_String(NULL,
 		"PG_NAME"	, _TL("Database"),
-		_TL("Database Name"),
+		_TL(""),
 		""
 	);
 
 	Parameters.Add_Choice(NULL,
 		"PG_LIST"	, _TL("Database"),
-		_TL("Database Name"),
+		_TL(""),
 		""
 	)->Set_UseInCMD(false);
 
@@ -204,6 +204,7 @@ int CGet_Connection::On_Parameter_Changed(CSG_Parameters *pParameters, CSG_Param
 				}
 
 				pParameters->Get_Parameter("PG_LIST")->asChoice()->Set_Items(List);
+				pParameters->Get_Parameter("PG_LIST")->Set_Value(pParameters->Get_Parameter("PG_NAME")->asString());
 				pParameters->Set_Enabled  ("PG_LIST",  true);
 				pParameters->Set_Enabled  ("PG_NAME", false);
 				pParameters->Get_Parameter("PG_NAME")->Set_Value(pParameters->Get_Parameter("PG_LIST")->asString());
@@ -241,8 +242,6 @@ bool CGet_Connection::On_Execute(void)
 	}
 
 	CSG_PG_Connection	*pConnection	= SG_PG_Get_Connection_Manager().Add_Connection(
-		Parameters("PG_LIST")->is_Enabled() ?
-		Parameters("PG_LIST")->asString() :
 		Parameters("PG_NAME")->asString(),
 		Parameters("PG_USER")->asString(),
 		Parameters("PG_PWD" )->asString(),
@@ -667,32 +666,32 @@ CDatabase_Create::CDatabase_Create(void)
 	));
 
 	Parameters.Add_String(NULL,
-		"PG_HOST"		, _TL("Host"),
-		_TL("Password"),
+		"PG_HOST"	, _TL("Host"),
+		_TL(""),
 		"localhost"
 	);
 
 	Parameters.Add_Int(NULL,
-		"PG_PORT"		, _TL("Port"),
+		"PG_PORT"	, _TL("Port"),
 		_TL(""),
 		5432, 0, true
 	);
 
 	Parameters.Add_String(NULL,
-		"PG_NAME"		, _TL("Database"),
-		_TL("Database Name"),
+		"PG_NAME"	, _TL("Database"),
+		_TL(""),
 		"geo_test"
 	);
 
 	Parameters.Add_String(NULL,
-		"PG_USER"		, _TL("User"),
-		_TL("User Name"),
+		"PG_USER"	, _TL("User"),
+		_TL(""),
 		"postgres"
 	);
 
 	Parameters.Add_String(NULL,
-		"PG_PWD"		, _TL("Password"),
-		_TL("Password"),
+		"PG_PWD"	, _TL("Password"),
+		_TL(""),
 		"postgres", false, true
 	);
 }
@@ -759,7 +758,7 @@ CDatabase_Destroy::CDatabase_Destroy(void)
 
 	Parameters.Add_String(NULL,
 		"PG_HOST"	, _TL("Host"),
-		_TL("Password"),
+		_TL(""),
 		"localhost"
 	);
 
@@ -771,19 +770,19 @@ CDatabase_Destroy::CDatabase_Destroy(void)
 
 	Parameters.Add_String(NULL,
 		"PG_NAME"	, _TL("Database"),
-		_TL("Database Name"),
+		_TL(""),
 		"geo_test"
 	);
 
 	Parameters.Add_String(NULL,
 		"PG_USER"	, _TL("User"),
-		_TL("User Name"),
+		_TL(""),
 		"postgres"
 	);
 
 	Parameters.Add_String(NULL,
 		"PG_PWD"	, _TL("Password"),
-		_TL("Password"),
+		_TL(""),
 		"postgres", false, true
 	);
 }

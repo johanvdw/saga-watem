@@ -73,17 +73,23 @@
 ///////////////////////////////////////////////////////////
 
 //---------------------------------------------------------
-#define GRID_SYSTEM_PRECISION 10000000000	// 10 decimal digits, precision used for storing cellsize and extent
+int		CSG_Grid_System::m_Precision	= 10;	// 10 decimal digits, default precision used for storing cellsize and extent
 
 //---------------------------------------------------------
-double SG_Get_Limited_Precision(double Value, double Precision)
+int CSG_Grid_System::Set_Precision(int Decimals)
 {
-	if( Precision > 0.0 )
+	if( Decimals >= 0 )
 	{
-		return( floor(Value * Precision + 0.5) / Precision );
+		m_Precision	= Decimals;
 	}
 
-	return( Value );
+	return( m_Precision );
+}
+
+//---------------------------------------------------------
+int CSG_Grid_System::Get_Precision(void)
+{
+	return( m_Precision );
 }
 
 
@@ -238,9 +244,9 @@ bool CSG_Grid_System::Assign(double Cellsize, double xMin, double yMin, int NX, 
 {
 	if( Cellsize > 0.0 && NX > 0 && NY > 0 )
 	{
-		Cellsize	= SG_Get_Limited_Precision(Cellsize, GRID_SYSTEM_PRECISION);
-		xMin		= SG_Get_Limited_Precision(xMin    , GRID_SYSTEM_PRECISION);
-		yMin		= SG_Get_Limited_Precision(yMin    , GRID_SYSTEM_PRECISION);
+		Cellsize	= SG_Get_Rounded(Cellsize, m_Precision);
+		xMin		= SG_Get_Rounded(xMin    , m_Precision);
+		yMin		= SG_Get_Rounded(yMin    , m_Precision);
 
 		if( Cellsize > 0.0 )
 		{
@@ -335,7 +341,7 @@ bool CSG_Grid_Cell_Addressor::Destroy(void)
 //---------------------------------------------------------
 bool CSG_Grid_Cell_Addressor::Add_Parameters(CSG_Parameters &Parameters, const SG_Char *Parent, int Style)
 {
-	Parameters.Add_Choice(NULL, "KERNEL_TYPE", _TL("Kernel Type"),
+	Parameters.Add_Choice("", "KERNEL_TYPE", _TL("Kernel Type"),
 		_TL("The shape of the filter kernel."),
 		"0|1|", 1
 	);
@@ -346,11 +352,11 @@ bool CSG_Grid_Cell_Addressor::Add_Parameters(CSG_Parameters &Parameters, const S
 
 	if( (Style & SG_GRIDCELLADDR_PARM_SIZEDBL) == 0 )
 	{
-		Parameters.Add_Int   (NULL, "KERNEL_RADIUS", _TL("Kernel Radius"), Unit, 2  , 1  , true);
+		Parameters.Add_Int   ("", "KERNEL_RADIUS", _TL("Kernel Radius"), Unit, 2  , 1  , true);
 	}
 	else
 	{
-		Parameters.Add_Double(NULL, "KERNEL_RADIUS", _TL("Kernel Radius"), Unit, 1.0, 0.0, true);
+		Parameters.Add_Double("", "KERNEL_RADIUS", _TL("Kernel Radius"), Unit, 1.0, 0.0, true);
 	}
 
 	//-----------------------------------------------------
@@ -370,15 +376,15 @@ bool CSG_Grid_Cell_Addressor::Add_Parameters(CSG_Parameters &Parameters, const S
 	{
 		Types	+= CSG_String::Format("{%d}%s|", SG_GRIDCELLADDR_PARM_ANNULUS, _TL("Annulus"));
 
-		Parameters.Add_Double(NULL, "KERNEL_INNER", _TL("Inner Kernel Radius"), _TL(""));
+		Parameters.Add_Double("", "KERNEL_INNER", _TL("Inner Kernel Radius"), _TL(""));
 	}
 
 	if( (Style & SG_GRIDCELLADDR_PARM_SECTOR) != 0 )
 	{
 		Types	+= CSG_String::Format("{%d}%s|", SG_GRIDCELLADDR_PARM_SECTOR , _TL("Sector"));
 
-		Parameters.Add_Double(NULL, "KERNEL_DIRECTION", _TL("Kernel Direction"), _TL(""));
-		Parameters.Add_Double(NULL, "KERNEL_TOLERANCE", _TL("Kernel Tolerance"), _TL(""));
+		Parameters.Add_Double("", "KERNEL_DIRECTION", _TL("Kernel Direction"), _TL(""));
+		Parameters.Add_Double("", "KERNEL_TOLERANCE", _TL("Kernel Tolerance"), _TL(""));
 	}
 
 	Parameters("KERNEL_TYPE")->asChoice()->Set_Items(Types);
@@ -424,6 +430,17 @@ bool CSG_Grid_Cell_Addressor::Set_Parameters(CSG_Parameters &Parameters, int Typ
 
 	return( false );
 }
+
+//---------------------------------------------------------
+bool CSG_Grid_Cell_Addressor::Set_Square (CSG_Parameters &Parameters)	{	return( Set_Parameters(Parameters, SG_GRIDCELLADDR_PARM_SQUARE ) );	}
+bool CSG_Grid_Cell_Addressor::Set_Circle (CSG_Parameters &Parameters)	{	return( Set_Parameters(Parameters, SG_GRIDCELLADDR_PARM_CIRCLE ) );	}
+bool CSG_Grid_Cell_Addressor::Set_Annulus(CSG_Parameters &Parameters)	{	return( Set_Parameters(Parameters, SG_GRIDCELLADDR_PARM_ANNULUS) );	}
+bool CSG_Grid_Cell_Addressor::Set_Sector (CSG_Parameters &Parameters)	{	return( Set_Parameters(Parameters, SG_GRIDCELLADDR_PARM_SECTOR ) );	}
+
+
+///////////////////////////////////////////////////////////
+//														 //
+///////////////////////////////////////////////////////////
 
 //---------------------------------------------------------
 bool CSG_Grid_Cell_Addressor::On_Parameters_Enable(CSG_Parameters &Parameters)

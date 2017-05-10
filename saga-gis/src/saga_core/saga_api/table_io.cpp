@@ -127,6 +127,8 @@ bool CSG_Table::Load(const CSG_String &File_Name, int Format, SG_Char Separator)
 	}
 
 	//-----------------------------------------------------
+	Set_Name(SG_File_Get_Name(File_Name, false));
+
 	Load_MetaData(File_Name);
 
 	CSG_MetaData	*pFields	= Get_MetaData_DB().Get_Child("FIELDS");
@@ -177,17 +179,9 @@ bool CSG_Table::Save(const CSG_String &File_Name, int Format, SG_Char Separator)
 
 	switch( Format )
 	{
-	case TABLE_FILETYPE_Text:
-		bResult	= _Save_Text (File_Name, true , Separator);
-		break;
-
-	case TABLE_FILETYPE_Text_NoHeadLine:
-		bResult	= _Save_Text (File_Name, false, Separator);
-		break;
-
-	case TABLE_FILETYPE_DBase:
-		bResult	= _Save_DBase(File_Name);
-		break;
+	case TABLE_FILETYPE_Text:   default:	bResult	= _Save_Text (File_Name, true , Separator);	break;
+	case TABLE_FILETYPE_Text_NoHeadLine:	bResult	= _Save_Text (File_Name, false, Separator);	break;
+	case TABLE_FILETYPE_DBase          :	bResult	= _Save_DBase(File_Name                  );	break;
 	}
 
 	//-----------------------------------------------------
@@ -366,7 +360,15 @@ bool CSG_Table::_Load_Text(const CSG_String &File_Name, bool bHeadline, const SG
 
 			if( Position > 0 )	// value in quotas !!!
 			{
-				sField	= sLine.Mid(1, Position - 2);
+				if( Position - 2 > 0 )
+				{
+					sField	= sLine.Mid(1, Position - 2);
+				}
+				else
+				{
+					sField.Clear();
+				}
+
 				sLine	= sLine.Right(sLine.Length() - Position);
 
 				Type[iField]	= SG_DATATYPE_String;
@@ -415,8 +417,8 @@ bool CSG_Table::_Load_Text(const CSG_String &File_Name, bool bHeadline, const SG
 				{
 					switch( Get_Field_Type(iField) )
 					{
-					default:					pRecord->Set_Value(iField, Table[iRecord].asString(iField));	break;
-					case SG_DATATYPE_Int:		pRecord->Set_Value(iField, Table[iRecord].asInt   (iField));	break;
+					default                :	pRecord->Set_Value(iField, Table[iRecord].asString(iField));	break;
+					case SG_DATATYPE_Int   :	pRecord->Set_Value(iField, Table[iRecord].asInt   (iField));	break;
 					case SG_DATATYPE_Double:	pRecord->Set_Value(iField, Table[iRecord].asDouble(iField));	break;
 					}
 				}
@@ -460,19 +462,26 @@ bool CSG_Table::_Save_Text(const CSG_String &File_Name, bool bHeadline, const SG
 
 		for(int iField=0; iField<Get_Field_Count(); iField++)
 		{
-			if( !pRecord->is_NoData(iField) )
+			switch( Get_Field_Type(iField) )
 			{
-				switch( Get_Field_Type(iField) )
+			case SG_DATATYPE_String:
+			case SG_DATATYPE_Date:
+				if( !pRecord->is_NoData(iField) )
 				{
-				case SG_DATATYPE_String:
-				case SG_DATATYPE_Date:
 					Stream.Printf("\"%s\"", pRecord->asString(iField));
-					break;
-
-				default:
-					Stream.Printf("%s"    , pRecord->asString(iField));
-					break;
 				}
+				else
+				{
+					Stream.Printf("\"\"");
+				}
+				break;
+
+			default:
+				if( !pRecord->is_NoData(iField) )
+				{
+					Stream.Printf("%s", pRecord->asString(iField));
+				}
+				break;
 			}
 
 			Stream.Printf("%c", iField < Get_Field_Count() - 1 ? Separator : '\n');

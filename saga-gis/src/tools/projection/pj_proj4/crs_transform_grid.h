@@ -73,7 +73,7 @@
 ///////////////////////////////////////////////////////////
 
 //---------------------------------------------------------
-class pj_proj4_EXPORT CCRS_Transform_Grid : public CCRS_Transform
+class CCRS_Transform_Grid : public CCRS_Transform
 {
 public:
 	CCRS_Transform_Grid(bool bList);
@@ -85,6 +85,8 @@ protected:
 	virtual int					On_Parameters_Enable		(CSG_Parameters *pParameters, CSG_Parameter *pParameter);
 
 	virtual bool				On_Execute_Transformation	(void);
+
+	bool						Set_Target_System			(CSG_Parameters *pParameters, int Resolution = 256, bool bEdges = true);
 
 
 private:
@@ -108,7 +110,6 @@ private:
 	bool						Transform					(CSG_Parameter_Grid_List *pGrids, CSG_Shapes *pPoints);
 
 	void						Get_MinMax					(TSG_Rect &r, double x, double y);
-	bool						Set_Target_System			(CSG_Parameters *pParameters, int Resolution = 256, bool bEdges = true);
 	bool						Get_Target_System			(const CSG_Grid_System &System, bool bEdge);
 
 	bool						Set_Target_Area				(const CSG_Grid_System &Source, const CSG_Grid_System &Target);

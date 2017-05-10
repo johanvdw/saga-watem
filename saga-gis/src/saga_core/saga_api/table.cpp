@@ -202,9 +202,10 @@ bool CSG_Table::Create(const CSG_String &File_Name, TSG_Table_File_Type Format)
 			CSG_Table	Connections;
 			CSG_String	Connection	= DBName + " [" + Host + ":" + Port + "]";
 
+			pTool->On_Before_Execution();
 			pTool->Settings_Push();
 
-			if( pTool->On_Before_Execution() && SG_TOOL_PARAMETER_SET("CONNECTIONS", &Connections) && pTool->Execute() )	// CGet_Connections
+			if( SG_TOOL_PARAMETER_SET("CONNECTIONS", &Connections) && pTool->Execute() )	// CGet_Connections
 			{
 				for(int i=0; !bResult && i<Connections.Get_Count(); i++)
 				{
@@ -220,13 +221,13 @@ bool CSG_Table::Create(const CSG_String &File_Name, TSG_Table_File_Type Format)
 			//---------------------------------------------
 			if( bResult && (bResult = (pTool = SG_Get_Tool_Library_Manager().Get_Tool("db_pgsql", 12)) != NULL) == true )	// CPGIS_Table_Load
 			{
+				pTool->On_Before_Execution();
 				pTool->Settings_Push();
 
-				bResult	= pTool->On_Before_Execution()
-					&& SG_TOOL_PARAMETER_SET("CONNECTION", Connection)
-					&& SG_TOOL_PARAMETER_SET("TABLES"    , Table)
-					&& SG_TOOL_PARAMETER_SET("TABLE"     , this)
-					&& pTool->Execute();
+				bResult	=  SG_TOOL_PARAMETER_SET("CONNECTION", Connection)
+						&& SG_TOOL_PARAMETER_SET("TABLES"    , Table)
+						&& SG_TOOL_PARAMETER_SET("TABLE"     , this)
+						&& pTool->Execute();
 
 				pTool->Settings_Pop();
 			}
@@ -393,16 +394,16 @@ bool CSG_Table::Assign(CSG_Data_Object *pObject)
 
 	CSG_Table	*pTable	= (CSG_Table *)pObject;
 
-	int		i;
+	Set_NoData_Value_Range(pTable->Get_NoData_Value(), pTable->Get_NoData_hiValue());
 
-	for(i=0; i<pTable->m_nFields; i++)
+	for(int iField=0; iField<pTable->m_nFields; iField++)
 	{
-		Add_Field(pTable->m_Field_Name[i]->c_str(), pTable->m_Field_Type[i]);
+		Add_Field(pTable->m_Field_Name[iField]->c_str(), pTable->m_Field_Type[iField]);
 	}
 
-	for(i=0; i<pTable->m_nRecords; i++)
+	for(int iRecord=0; iRecord<pTable->m_nRecords; iRecord++)
 	{
-		Add_Record(pTable->m_Records[i]);
+		Add_Record(pTable->m_Records[iRecord]);
 	}
 
 	Get_History()	= pTable->Get_History();
@@ -883,7 +884,7 @@ bool CSG_Table::Del_Record(int iRecord)
 //---------------------------------------------------------
 bool CSG_Table::Del_Records(void)
 {
-	if( m_Records > 0 )
+	if( m_nRecords > 0 )
 	{
 		_Index_Destroy();
 
@@ -1094,7 +1095,9 @@ bool CSG_Table::Set_Index(int Field_1, TSG_Table_Index_Order Order_1, int Field_
 	//-----------------------------------------------------
 	if( Get_Selection_Count() > 0 )
 	{
-		for(size_t i=0, n=0; i<(size_t)m_nRecords && n<Get_Selection_Count(); i++)
+		size_t	n	= 0;
+
+		for(int i=0; i<m_nRecords && n<Get_Selection_Count(); i++)
 		{
 			CSG_Table_Record	*pRecord	= Get_Record_byIndex(i);
 

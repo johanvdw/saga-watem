@@ -609,19 +609,17 @@ sLong SG_Grid_Cache_Check(CSG_Grid_System &m_System, int nValueBytes)
 			{
 				CSG_Parameters	p(NULL, _TL("Activate Grid File Cache?"), SG_T(""));
 
-				p.Add_Value(
-					NULL	, SG_T("BUFFERSIZE")	, _TL("Buffer Size [MB]"),
-					SG_T(""),
-					PARAMETER_TYPE_Double, SG_Grid_Cache_Get_Threshold_MB(), 0.0, true
+				p.Add_Double("", "BUFFERSIZE", _TL("Buffer Size [MB]"), "",
+					SG_Grid_Cache_Get_Threshold_MB(), 0.0, true
 				);
 
 				if( SG_UI_Dlg_Parameters(&p, _TL("Activate Grid File Cache?")) )
 				{
 				//	Memory_Type	= GRID_MEMORY_Cache;
 
-				//	Set_Buffer_Size((sLong)(p(SG_T("BUFFERSIZE"))->asDouble() * N_MEGABYTE_BYTES));
+				//	Set_Buffer_Size((sLong)(p("BUFFERSIZE")->asDouble() * N_MEGABYTE_BYTES));
 
-					return( (sLong)(p(SG_T("BUFFERSIZE"))->asDouble() * N_MEGABYTE_BYTES) );
+					return( (sLong)(p("BUFFERSIZE")->asDouble() * N_MEGABYTE_BYTES) );
 				}
 			}
 			break;
@@ -1086,25 +1084,25 @@ bool CSG_Grid_File_Info::Save(const CSG_String &File_Name, int xStart, int yStar
 
 	if(	Stream.Open(File_Name, SG_FILE_W, false) )
 	{
-		Stream.Printf("%s\t= %s\n"   , gSG_Grid_File_Key_Names[GRID_FILE_KEY_NAME           ], m_Name       .c_str()   );
-		Stream.Printf("%s\t= %s\n"   , gSG_Grid_File_Key_Names[GRID_FILE_KEY_DESCRIPTION    ], m_Description.c_str()   );
-		Stream.Printf("%s\t= %s\n"   , gSG_Grid_File_Key_Names[GRID_FILE_KEY_UNITNAME       ], m_Unit       .c_str()   );
-		Stream.Printf("%s\t= %s\n"   , gSG_Grid_File_Key_Names[GRID_FILE_KEY_DATAFORMAT     ], bBinary ? gSG_Data_Type_Identifier[m_Type] : SG_T("ASCII") );
-		Stream.Printf("%s\t= %d\n"   , gSG_Grid_File_Key_Names[GRID_FILE_KEY_DATAFILE_OFFSET], 0                       );
+		Stream.Printf("%s\t= %s\n"  , gSG_Grid_File_Key_Names[GRID_FILE_KEY_NAME           ], m_Name       .c_str()   );
+		Stream.Printf("%s\t= %s\n"  , gSG_Grid_File_Key_Names[GRID_FILE_KEY_DESCRIPTION    ], m_Description.c_str()   );
+		Stream.Printf("%s\t= %s\n"  , gSG_Grid_File_Key_Names[GRID_FILE_KEY_UNITNAME       ], m_Unit       .c_str()   );
+		Stream.Printf("%s\t= %s\n"  , gSG_Grid_File_Key_Names[GRID_FILE_KEY_DATAFORMAT     ], bBinary ? gSG_Data_Type_Identifier[m_Type] : SG_T("ASCII") );
+		Stream.Printf("%s\t= %d\n"  , gSG_Grid_File_Key_Names[GRID_FILE_KEY_DATAFILE_OFFSET], 0                       );
 #ifdef WORDS_BIGENDIAN
-		Stream.Printf("%s\t= %s\n"   , gSG_Grid_File_Key_Names[GRID_FILE_KEY_BYTEORDER_BIG  ], GRID_FILE_KEY_TRUE      );
+		Stream.Printf("%s\t= %s\n"  , gSG_Grid_File_Key_Names[GRID_FILE_KEY_BYTEORDER_BIG  ], GRID_FILE_KEY_TRUE      );
 #else
-		Stream.Printf("%s\t= %s\n"   , gSG_Grid_File_Key_Names[GRID_FILE_KEY_BYTEORDER_BIG  ], GRID_FILE_KEY_FALSE     );
+		Stream.Printf("%s\t= %s\n"  , gSG_Grid_File_Key_Names[GRID_FILE_KEY_BYTEORDER_BIG  ], GRID_FILE_KEY_FALSE     );
 #endif
-		Stream.Printf("%s\t= %s\n"   , gSG_Grid_File_Key_Names[GRID_FILE_KEY_TOPTOBOTTOM    ], GRID_FILE_KEY_FALSE     );
-		Stream.Printf("%s\t= %.10f\n", gSG_Grid_File_Key_Names[GRID_FILE_KEY_POSITION_XMIN  ], xStart * m_System.Get_Cellsize() + m_System.Get_XMin() );
-		Stream.Printf("%s\t= %.10f\n", gSG_Grid_File_Key_Names[GRID_FILE_KEY_POSITION_YMIN  ], yStart * m_System.Get_Cellsize() + m_System.Get_YMin() );
-		Stream.Printf("%s\t= %d\n"   , gSG_Grid_File_Key_Names[GRID_FILE_KEY_CELLCOUNT_X    ], xCount                  );
-		Stream.Printf("%s\t= %d\n"   , gSG_Grid_File_Key_Names[GRID_FILE_KEY_CELLCOUNT_Y    ], yCount                  );
-		Stream.Printf("%s\t= %.10f\n", gSG_Grid_File_Key_Names[GRID_FILE_KEY_CELLSIZE       ], m_System.Get_Cellsize() );
-		Stream.Printf("%s\t= %f\n"   , gSG_Grid_File_Key_Names[GRID_FILE_KEY_Z_FACTOR       ], m_zScale                );
-		Stream.Printf("%s\t= %f\n"   , gSG_Grid_File_Key_Names[GRID_FILE_KEY_Z_OFFSET       ], m_zOffset               );
-		Stream.Printf("%s\t= %f\n"   , gSG_Grid_File_Key_Names[GRID_FILE_KEY_NODATA_VALUE   ], m_NoData                );
+		Stream.Printf("%s\t= %s\n"  , gSG_Grid_File_Key_Names[GRID_FILE_KEY_TOPTOBOTTOM    ], GRID_FILE_KEY_FALSE     );
+		Stream.Printf("%s\t= %.*f\n", gSG_Grid_File_Key_Names[GRID_FILE_KEY_POSITION_XMIN  ], CSG_Grid_System::Get_Precision(), xStart * m_System.Get_Cellsize() + m_System.Get_XMin());
+		Stream.Printf("%s\t= %.*f\n", gSG_Grid_File_Key_Names[GRID_FILE_KEY_POSITION_YMIN  ], CSG_Grid_System::Get_Precision(), yStart * m_System.Get_Cellsize() + m_System.Get_YMin());
+		Stream.Printf("%s\t= %d\n"  , gSG_Grid_File_Key_Names[GRID_FILE_KEY_CELLCOUNT_X    ], xCount                  );
+		Stream.Printf("%s\t= %d\n"  , gSG_Grid_File_Key_Names[GRID_FILE_KEY_CELLCOUNT_Y    ], yCount                  );
+		Stream.Printf("%s\t= %.*f\n", gSG_Grid_File_Key_Names[GRID_FILE_KEY_CELLSIZE       ], CSG_Grid_System::Get_Precision(), m_System.Get_Cellsize() );
+		Stream.Printf("%s\t= %f\n"  , gSG_Grid_File_Key_Names[GRID_FILE_KEY_Z_FACTOR       ], m_zScale                );
+		Stream.Printf("%s\t= %f\n"  , gSG_Grid_File_Key_Names[GRID_FILE_KEY_Z_OFFSET       ], m_zOffset               );
+		Stream.Printf("%s\t= %f\n"  , gSG_Grid_File_Key_Names[GRID_FILE_KEY_NODATA_VALUE   ], m_NoData                );
 
 		if( m_Projection.is_Okay() )
 		{

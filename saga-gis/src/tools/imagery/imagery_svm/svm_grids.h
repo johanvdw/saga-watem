@@ -72,7 +72,11 @@
 //---------------------------------------------------------
 #include "MLB_Interface.h"
 
+#if defined(SYSTEM_SVM)
+#include <libsvm/svm.h>
+#else
 #include "svm/svm.h"
+#endif
 
 
 ///////////////////////////////////////////////////////////
@@ -87,7 +91,7 @@ class CSVM_Grids : public CSG_Tool_Grid
 public:
 	CSVM_Grids(void);
 
-	virtual CSG_String			Get_MenuPath			(void)	{	return( _TL("A:Imagery|Classification") );	}
+	virtual CSG_String			Get_MenuPath			(void)	{	return( _TL("A:Imagery|Classification|Machine Learning") );	}
 
 
 protected:

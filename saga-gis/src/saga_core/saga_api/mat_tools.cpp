@@ -92,14 +92,19 @@ double			SG_Get_Square(double Value)
 //---------------------------------------------------------
 double			SG_Get_Rounded(double Value, int Decimals)
 {
-	if( Decimals <= 0 )
+	if( Decimals < 0 )
 	{
-		return( (int)(0.5 + Value) );
+		return( Value );
 	}
 
-	double	d	= pow(10.0, Decimals);
+	if( Decimals == 0 )
+	{
+		return( floor(0.5 + Value) );
+	}
 
-	return( ((int)(0.5 + d * Value)) / d );
+	double	Precision	= pow(10.0, Decimals);
+
+	return( floor(0.5 + Value * Precision) / Precision );
 }
 
 //---------------------------------------------------------
@@ -344,6 +349,8 @@ bool CSG_Simple_Statistics::Create(const CSG_Simple_Statistics &Statistics)
 	m_Kurtosis		= Statistics.m_Kurtosis;
 	m_Skewness		= Statistics.m_Skewness;
 
+	m_Gini			= Statistics.m_Gini;
+
 	m_bSorted		= Statistics.m_bSorted;
 	m_Values		.Create(Statistics.m_Values);
 
@@ -406,6 +413,8 @@ void CSG_Simple_Statistics::Invalidate(void)
 
 	m_Kurtosis		= 0.0;
 	m_Skewness		= 0.0;
+
+	m_Gini			= -1.0;
 
 	m_bSorted		= false;
 	m_Values		.Destroy();
@@ -564,6 +573,37 @@ double CSG_Simple_Statistics::Get_Quantile(double Quantile)
 	}
 
 	return( m_Mean );
+}
+
+//---------------------------------------------------------
+/**
+  * The Gini coefficient is a measure of statistical dispersion
+  * intended to represent the income or wealth distribution of 
+  * a nation's residents, and is the most commonly used measure
+  * of inequality.
+*/
+double CSG_Simple_Statistics::Get_Gini(void)
+{
+	if( m_Gini < 0.0 && m_Values.Get_Size() > 1 )
+	{
+		if( !m_bSorted )
+		{
+			qsort(m_Values.Get_Array(), m_Values.Get_Size(), sizeof(double), SG_Compare_Double);
+
+			m_bSorted	= true;
+		}
+
+		m_Gini	= 0.0;
+
+		for(int i=0; i<Get_Count(); i++)
+		{
+			m_Gini	+= (i + 1.0) * Get_Value(i);
+		}
+
+		m_Gini	= 2.0 * m_Gini / (Get_Count() * Get_Sum()) - (Get_Count() + 1.0) / Get_Count();
+	}
+
+	return( m_Gini );
 }
 
 
@@ -882,7 +922,7 @@ int CSG_Category_Statistics::Get_Count(int i)	const
 {
 	CSG_Table_Record	*pRecord	= m_pTable->Get_Record_byIndex(i);
 
-	return( pRecord ? pRecord->asInt(1) : 0.0 );
+	return( pRecord ? pRecord->asInt(1) : 0 );
 }
 
 //---------------------------------------------------------

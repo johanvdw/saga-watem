@@ -63,6 +63,7 @@
 //---------------------------------------------------------
 #include <wx/window.h>
 #include <wx/filename.h>
+#include <wx/clipbrd.h>
 
 #include <saga_api/saga_api.h>
 
@@ -113,6 +114,8 @@ BEGIN_EVENT_TABLE(CVIEW_Table_Control, wxGrid)
 
 	EVT_MENU					(ID_CMD_TABLE_FIELD_OPEN_APP	, CVIEW_Table_Control::On_Cell_Open)
 	EVT_MENU					(ID_CMD_TABLE_FIELD_OPEN_DATA	, CVIEW_Table_Control::On_Cell_Open)
+
+	EVT_MENU					(ID_CMD_TABLE_TO_CLIPBOARD		, CVIEW_Table_Control::On_ToClipboard)
 
 	EVT_MENU					(ID_CMD_TABLE_FIELD_ADD			, CVIEW_Table_Control::On_Field_Add)
 	EVT_UPDATE_UI				(ID_CMD_TABLE_FIELD_ADD			, CVIEW_Table_Control::On_Field_Add_UI)
@@ -463,7 +466,7 @@ bool CVIEW_Table_Control::Update_Selection(void)
 	{
 		_Update_Records();
 	}
-	else if( m_pTable->Get_Selection_Count() >= m_pTable->Get_Count() )
+	else if( m_pTable->Get_Selection_Count() >= (size_t)m_pTable->Get_Count() )
 	{
 		SelectAll();
 	}
@@ -815,11 +818,12 @@ void CVIEW_Table_Control::On_LDClick_Label(wxGridEvent &event)
 //---------------------------------------------------------
 bool CVIEW_Table_Control::_Get_DataSource(wxString &Source)
 {
-	if( Source.Find("PGSQL:" ) == 0
-	||	Source.Find("ftp://" ) == 0
-	||	Source.Find("http://") == 0
-	||	Source.Find("file://") == 0
-	||  wxFileExists(Source) )
+	if( Source.Find("PGSQL:"  ) == 0
+	||	Source.Find("ftp://"  ) == 0
+	||	Source.Find("http://" ) == 0
+	||	Source.Find("https://") == 0
+	||	Source.Find("file://" ) == 0
+	||  wxFileExists(Source)  )
 	{
 		return( true );
 	}
@@ -878,6 +882,7 @@ void CVIEW_Table_Control::On_RClick_Label(wxGridEvent &event)
 		CMD_Menu_Add_Item(&Menu, false, ID_CMD_TABLE_FIELD_SORT);
 		CMD_Menu_Add_Item(&Menu, false, ID_CMD_TABLE_FIELD_CALC);
 		Menu.AppendSeparator();
+		CMD_Menu_Add_Item(&Menu, false, ID_CMD_TABLE_TO_CLIPBOARD);
 		CMD_Menu_Add_Item(&Menu, false, ID_CMD_TABLE_AUTOSIZE_COLS);
 
 		PopupMenu(&Menu, event.GetPosition().x, event.GetPosition().y - GetColLabelSize());
@@ -891,6 +896,8 @@ void CVIEW_Table_Control::On_RClick_Label(wxGridEvent &event)
 		if( m_bSelOnly )
 		{
 			CMD_Menu_Add_Item(&Menu,  true, ID_CMD_TABLE_SELECTION_ONLY);
+			Menu.AppendSeparator();
+			CMD_Menu_Add_Item(&Menu, false, ID_CMD_TABLE_TO_CLIPBOARD);
 		}
 		else
 		{
@@ -903,6 +910,8 @@ void CVIEW_Table_Control::On_RClick_Label(wxGridEvent &event)
 			Menu.AppendSeparator();
 			CMD_Menu_Add_Item(&Menu,  true, ID_CMD_TABLE_SELECTION_ONLY);
 			CMD_Menu_Add_Item(&Menu, false, ID_CMD_TABLE_SELECTION_CLEAR);
+			Menu.AppendSeparator();
+			CMD_Menu_Add_Item(&Menu, false, ID_CMD_TABLE_TO_CLIPBOARD);
 		}
 
 		PopupMenu(&Menu, event.GetPosition().x - GetRowLabelSize(), event.GetPosition().y);
@@ -986,6 +995,54 @@ void CVIEW_Table_Control::On_Cell_Open(wxCommandEvent &event)
 			DLG_Message_Show_Error(_TL("failed"), CMD_Get_Name(ID_CMD_TABLE_FIELD_OPEN_DATA));
 		}
 	}
+}
+
+
+///////////////////////////////////////////////////////////
+//														 //
+///////////////////////////////////////////////////////////
+
+//---------------------------------------------------------
+void CVIEW_Table_Control::On_ToClipboard(wxCommandEvent &event)
+{
+	_ToClipboard();
+}
+
+//---------------------------------------------------------
+bool CVIEW_Table_Control::_ToClipboard(void)
+{
+	if( wxTheClipboard->Open() )
+	{
+		wxString	Data;
+
+		int	i, j, n	= m_pTable->Get_Selection_Count()
+			? m_pTable->Get_Selection_Count() : m_pTable->Get_Count();
+
+		for(j=0; j<m_pTable->Get_Field_Count(); j++)
+		{
+			Data	+= m_pTable->Get_Field_Name(j);
+			Data	+= j + 1 < m_pTable->Get_Field_Count() ? '\t' : '\n';
+		}
+
+		for(i=0; i<n; i++)
+		{
+			CSG_Table_Record	*pRecord	= m_pTable->Get_Selection_Count()
+				? m_pTable->Get_Selection(i) : m_pTable->Get_Record_byIndex(i);
+
+			for(j=0; j<m_pTable->Get_Field_Count(); j++)
+			{
+				Data	+= pRecord->asString(j);
+				Data	+= j + 1 < m_pTable->Get_Field_Count() ? '\t' : '\n';
+			}
+		}
+
+		wxTheClipboard->SetData(new wxTextDataObject(Data));
+		wxTheClipboard->Close();
+
+		return( true );
+	}
+
+	return( false );
 }
 
 
@@ -1133,7 +1190,7 @@ void CVIEW_Table_Control::On_Field_Rename(wxCommandEvent &event)
 
 	for(i=0; i<m_pTable->Get_Field_Count(); i++)
 	{
-		P.Add_String(NULL, "", m_pTable->Get_Field_Name(i), _TL(""), m_pTable->Get_Field_Name(i));
+		P.Add_String(NULL, SG_Get_String(i), m_pTable->Get_Field_Name(i), _TL(""), m_pTable->Get_Field_Name(i));
 	}
 
 	//-----------------------------------------------------
@@ -1189,8 +1246,8 @@ void CVIEW_Table_Control::On_Field_Type(wxCommandEvent &event)
 		case SG_DATATYPE_Binary:	Types[i]	= 13;	break;
 		}
 
-        P.Add_Choice(NULL, "", m_pTable->Get_Field_Name(i), _TL(""),
-            CSG_String::Format("%s|%s|%s|%s|%s|%s|%s|%s|%s|%s|%s|%s|%s|%s|",
+		P.Add_Choice("", SG_Get_String(i), m_pTable->Get_Field_Name(i), _TL(""),
+			CSG_String::Format("%s|%s|%s|%s|%s|%s|%s|%s|%s|%s|%s|%s|%s|%s|",
 			SG_Data_Type_Get_Name(SG_DATATYPE_String).c_str(),
 			SG_Data_Type_Get_Name(SG_DATATYPE_Date  ).c_str(),
 			SG_Data_Type_Get_Name(SG_DATATYPE_Color ).c_str(),
@@ -1205,8 +1262,8 @@ void CVIEW_Table_Control::On_Field_Type(wxCommandEvent &event)
 			SG_Data_Type_Get_Name(SG_DATATYPE_Float ).c_str(),
 			SG_Data_Type_Get_Name(SG_DATATYPE_Double).c_str(),
 			SG_Data_Type_Get_Name(SG_DATATYPE_Binary).c_str()
-            ), Types[i]
-        );
+			), Types[i]
+		);
 	}
 
 	//-----------------------------------------------------
@@ -1220,8 +1277,7 @@ void CVIEW_Table_Control::On_Field_Type(wxCommandEvent &event)
 
 			switch( P(i)->asInt() )
 			{
-			default:
-			case  0:	Type	= SG_DATATYPE_String;	break;
+			default:	Type	= SG_DATATYPE_String;	break;
 			case  1:	Type	= SG_DATATYPE_Date  ;	break;
 			case  2:	Type	= SG_DATATYPE_Color ;	break;
 			case  3:	Type	= SG_DATATYPE_Byte  ;	break;
@@ -1319,14 +1375,19 @@ void CVIEW_Table_Control::On_Field_Calc(wxCommandEvent &event)
 		Fields	+= m_pTable->Get_Field_Name(i) + CSG_String("|");
 	}
 
+	Fields	+= _TL("<new>") + CSG_String("|");
+
 	//-----------------------------------------------------
 	if( m_Field_Calc.Get_Count() == 0 )
 	{
-		m_Field_Calc.Set_Name(_TL("Table Field Calculator"));
+		m_Field_Calc.Create(this, _TL("Table Field Calculator"), _TL(""), SG_T("FIELD_CALCULATOR"));
 
-		m_Field_Calc.Add_Choice(NULL, "FIELD"    , _TL("Result"   ), _TL(""), Fields);
-		m_Field_Calc.Add_Bool  (NULL, "SELECTION", _TL("Selection"), _TL(""), true);
-		m_Field_Calc.Add_String(NULL, "FORMULA"  , _TL("Formula"  ), _TL(""), "f1 + f2");
+		m_Field_Calc.Set_Callback_On_Parameter_Changed(_Parameter_Callback);
+
+		m_Field_Calc.Add_Choice(""     , "FIELD"    , _TL("Target Field"), _TL(""), Fields, m_pTable->Get_Field_Count());
+		m_Field_Calc.Add_String("FIELD", "NAME"     , _TL("Field Name"  ), _TL(""), _TL("Result"));
+		m_Field_Calc.Add_Bool  (""     , "SELECTION", _TL("Selection"   ), _TL(""), true);
+		m_Field_Calc.Add_String(""     , "FORMULA"  , _TL("Formula"     ), _TL(""), "f1 + f2");
 	}
 
 	m_Field_Calc("FIELD")->asChoice()->Set_Items(Fields);
@@ -1341,6 +1402,7 @@ void CVIEW_Table_Control::On_Field_Calc(wxCommandEvent &event)
 		SG_RUN_TOOL(bResult, "table_calculus", 1,	// table field calculator
 				SG_TOOL_PARAMETER_SET("TABLE"    , m_pTable)
 			&&	SG_TOOL_PARAMETER_SET("FIELD"    , m_Field_Calc("FIELD"    )->asInt   ())
+			&&	SG_TOOL_PARAMETER_SET("NAME"     , m_Field_Calc("NAME"     )->asString())
 			&&	SG_TOOL_PARAMETER_SET("SELECTION", m_Field_Calc("SELECTION")->asBool  ())
 			&&	SG_TOOL_PARAMETER_SET("FORMULA"  , m_Field_Calc("FORMULA"  )->asString())
 		);
@@ -1350,6 +1412,33 @@ void CVIEW_Table_Control::On_Field_Calc(wxCommandEvent &event)
 void CVIEW_Table_Control::On_Field_Calc_UI(wxUpdateUIEvent &event)
 {
 	event.Enable(m_pTable->Get_Field_Count() > 0);
+}
+
+
+///////////////////////////////////////////////////////////
+//														 //
+///////////////////////////////////////////////////////////
+
+//---------------------------------------------------------
+int CVIEW_Table_Control::_Parameter_Callback(CSG_Parameter *pParameter, int Flags)
+{
+	CSG_Parameters	*pParameters	= pParameter && pParameter->Get_Owner() ? pParameter->Get_Owner() : NULL;
+
+	if( pParameters )
+	{
+		if( !SG_STR_CMP(pParameters->Get_Identifier(), "FIELD_CALCULATOR") )
+		{
+			if( Flags & PARAMETER_CHECK_ENABLE )
+			{
+				if( !SG_STR_CMP(pParameter->Get_Identifier(), "FIELD") )
+				{
+					pParameters->Set_Enabled("NAME", pParameter->asInt() >= pParameter->asChoice()->Get_Count() - 1);
+				}
+			}
+		}
+	}
+
+	return( 0 );
 }
 
 

@@ -127,6 +127,8 @@ void CSG_Tool_Chain::Set_Library_Menu(const CSG_String &Menu)
 //---------------------------------------------------------
 bool CSG_Tool_Chain::Create(const CSG_String &File)
 {
+	bool	bReload	= is_Okay();
+
 	Reset();
 
 	//-----------------------------------------------------
@@ -149,8 +151,6 @@ bool CSG_Tool_Chain::Create(const CSG_String &File)
 
 	if( !m_Chain.Cmp_Name("toolchain") || !m_Chain("identifier") || !m_Chain("parameters") )
 	{
-		SG_UI_Msg_Add_Error(CSG_String::Format("%s: %s", _TL("missing tool chain tags"), File.c_str()));
-
 		Reset();	return( false );
 	}
 
@@ -158,6 +158,8 @@ bool CSG_Tool_Chain::Create(const CSG_String &File)
 	{
 		SG_UI_Msg_Add_Error(CSG_String::Format("%s %s: %s", _TL("WARNING"), _TL("unsupported tool chain version"), File.c_str()));
 	}
+
+	SG_UI_Msg_Add(CSG_String::Format("%s: %s...", bReload ? _TL("Reload tool chain") : _TL("Load tool chain"), File.c_str()), true);
 
 	//-----------------------------------------------------
 	m_File_Name		= File;
@@ -168,6 +170,8 @@ bool CSG_Tool_Chain::Create(const CSG_String &File)
 	Set_Name         (GET_XML_CONTENT(m_Chain, "name"       , _TL("Not Named"     ),  true));
 	Set_Author       (GET_XML_CONTENT(m_Chain, "author"     , _TL("unknown"       ), false));
 	Set_Description  (GET_XML_CONTENT(m_Chain, "description", _TL("no description"),  true));
+
+	Add_References();
 
 	CSG_String	Description	= Get_Description();
 	Description.Replace("[[", "<");	// support for xml/html tags
@@ -245,53 +249,58 @@ bool CSG_Tool_Chain::Create(const CSG_String &File)
 		CSG_String	Desc	= SG_Translate(Parameter.Get_Content("description"));
 
 		CSG_Parameter	*pParent	= Parameters(Parameter.Get_Property("parent"));
+		CSG_String		ParentID(pParent ? pParent->Get_Identifier() : SG_T(""));
 
 		//-------------------------------------------------
 		switch( SG_Parameter_Type_Get_Type(Parameter.Get_Property("type")) )
 		{
-		case PARAMETER_TYPE_Node             : Parameters.Add_Node           (pParent, ID, Name, Desc);	break;
+		case PARAMETER_TYPE_Node             : Parameters.Add_Node           (ParentID, ID, Name, Desc);	break;
 
-		case PARAMETER_TYPE_Bool             : Parameters.Add_Value          (pParent, ID, Name, Desc, PARAMETER_TYPE_Bool  , IS_TRUE_STRING(Value));	break;
-		case PARAMETER_TYPE_Int              : Parameters.Add_Value          (pParent, ID, Name, Desc, PARAMETER_TYPE_Int   , Value.asInt   (), Min, bMin, Max, bMax);	break;
-		case PARAMETER_TYPE_Double           : Parameters.Add_Value          (pParent, ID, Name, Desc, PARAMETER_TYPE_Double, Value.asDouble(), Min, bMin, Max, bMax);	break;
-		case PARAMETER_TYPE_Degree           : Parameters.Add_Value          (pParent, ID, Name, Desc, PARAMETER_TYPE_Degree, Value.asDouble(), Min, bMin, Max, bMax);	break;
+		case PARAMETER_TYPE_Bool             : Parameters.Add_Value          (ParentID, ID, Name, Desc, PARAMETER_TYPE_Bool  , IS_TRUE_STRING(Value));	break;
+		case PARAMETER_TYPE_Int              : Parameters.Add_Value          (ParentID, ID, Name, Desc, PARAMETER_TYPE_Int   , Value.asInt   (), Min, bMin, Max, bMax);	break;
+		case PARAMETER_TYPE_Double           : Parameters.Add_Value          (ParentID, ID, Name, Desc, PARAMETER_TYPE_Double, Value.asDouble(), Min, bMin, Max, bMax);	break;
+		case PARAMETER_TYPE_Degree           : Parameters.Add_Value          (ParentID, ID, Name, Desc, PARAMETER_TYPE_Degree, Value.asDouble(), Min, bMin, Max, bMax);	break;
 
-		case PARAMETER_TYPE_Date             : Parameters.Add_Date           (pParent, ID, Name, Desc, 0.0)->Set_Value(Value);	break;
+		case PARAMETER_TYPE_Date             : Parameters.Add_Date           (ParentID, ID, Name, Desc, 0.0)->Set_Value(Value);	break;
 
-		case PARAMETER_TYPE_Range            : Parameters.Add_Range          (pParent, ID, Name, Desc, Value.BeforeFirst(';').asDouble(), Value.AfterFirst(';').asDouble(), Min, bMin, Max, bMax);	break;
-		case PARAMETER_TYPE_Choice           : Parameters.Add_Choice         (pParent, ID, Name, Desc, Parameter.Get_Content("choices"))->Set_Value(Value);	break;
+		case PARAMETER_TYPE_Range            : Parameters.Add_Range          (ParentID, ID, Name, Desc, Value.BeforeFirst(';').asDouble(), Value.AfterFirst(';').asDouble(), Min, bMin, Max, bMax);	break;
+		case PARAMETER_TYPE_Choice           : Parameters.Add_Choice         (ParentID, ID, Name, Desc, Parameter.Get_Content("choices"))->Set_Value(Value);	break;
 
-		case PARAMETER_TYPE_String           : Parameters.Add_String         (pParent, ID, Name, Desc, Value, false);	break;
-		case PARAMETER_TYPE_Text             : Parameters.Add_String         (pParent, ID, Name, Desc, Value,  true);	break;
+		case PARAMETER_TYPE_String           : Parameters.Add_String         (ParentID, ID, Name, Desc, Value, false);	break;
+		case PARAMETER_TYPE_Text             : Parameters.Add_String         (ParentID, ID, Name, Desc, Value,  true);	break;
 
-		case PARAMETER_TYPE_FilePath         : Parameters.Add_FilePath       (pParent, ID, Name, Desc, Parameter.Get_Content("filter"), Value,
+		case PARAMETER_TYPE_FilePath         : Parameters.Add_FilePath       (ParentID, ID, Name, Desc, Parameter.Get_Content("filter"), Value,
 												IS_TRUE_PROPERTY(Parameter, "save"     ),
 												IS_TRUE_PROPERTY(Parameter, "directory"),
 												IS_TRUE_PROPERTY(Parameter, "multiple" ));	break;
 
 		case PARAMETER_TYPE_Font             : break;
-		case PARAMETER_TYPE_Color            : Parameters.Add_Value          (pParent, ID, Name, Desc, PARAMETER_TYPE_Color, Value.asInt());	break;
-		case PARAMETER_TYPE_Colors           : Parameters.Add_Colors         (pParent, ID, Name, Desc);	break;
+		case PARAMETER_TYPE_Color            : Parameters.Add_Value          (ParentID, ID, Name, Desc, PARAMETER_TYPE_Color, Value.asInt());	break;
+		case PARAMETER_TYPE_Colors           : Parameters.Add_Colors         (ParentID, ID, Name, Desc);	break;
 		case PARAMETER_TYPE_FixedTable       : break;	// to do ?
 
-		case PARAMETER_TYPE_Grid_System      : Parameters.Add_Grid_System    (pParent, ID, Name, Desc);	break;
+		case PARAMETER_TYPE_Grid_System      : Parameters.Add_Grid_System    (ParentID, ID, Name, Desc);	break;
 
-		case PARAMETER_TYPE_Table_Field      : Parameters.Add_Table_Field    (pParent, ID, Name, Desc, (!Value.CmpNoCase("true") || !Value.CmpNoCase("1")));	break;
-		case PARAMETER_TYPE_Table_Fields     : Parameters.Add_Table_Fields   (pParent, ID, Name, Desc);	break;
+		case PARAMETER_TYPE_Table_Field      : Parameters.Add_Table_Field    (ParentID, ID, Name, Desc, (!Value.CmpNoCase("true") || !Value.CmpNoCase("1")));	break;
+		case PARAMETER_TYPE_Table_Fields     : Parameters.Add_Table_Fields   (ParentID, ID, Name, Desc);	break;
 
 		case PARAMETER_TYPE_Grid             : Parameter.Cmp_Property("target", "none") 
-			                                 ? Parameters.Add_Grid_Output    (   NULL, ID, Name, Desc)
-			                                 : Parameters.Add_Grid           (pParent, ID, Name, Desc, Constraint);	break;
-		case PARAMETER_TYPE_Table            : Parameters.Add_Table          (pParent, ID, Name, Desc, Constraint);	break;
-		case PARAMETER_TYPE_Shapes           : Parameters.Add_Shapes         (pParent, ID, Name, Desc, Constraint);	break;
-		case PARAMETER_TYPE_TIN              : Parameters.Add_TIN            (pParent, ID, Name, Desc, Constraint);	break;
-		case PARAMETER_TYPE_PointCloud       : Parameters.Add_PointCloud     (pParent, ID, Name, Desc, Constraint);	break;
+			                                 ? Parameters.Add_Grid_Output    (      "", ID, Name, Desc)
+			                                 : Parameters.Add_Grid           (ParentID, ID, Name, Desc, Constraint);	break;
+		case PARAMETER_TYPE_Table            : Parameters.Add_Table          (ParentID, ID, Name, Desc, Constraint);	break;
+		case PARAMETER_TYPE_Shapes           : Parameters.Add_Shapes         (ParentID, ID, Name, Desc, Constraint,
+												   Parameter.Cmp_Property("feature_type", "point"  ) ? SHAPE_TYPE_Point   :
+												   Parameter.Cmp_Property("feature_type", "points" ) ? SHAPE_TYPE_Points  :
+												   Parameter.Cmp_Property("feature_type", "line"   ) ? SHAPE_TYPE_Line    :
+												   Parameter.Cmp_Property("feature_type", "polygon") ? SHAPE_TYPE_Polygon : SHAPE_TYPE_Undefined);	break;
+		case PARAMETER_TYPE_TIN              : Parameters.Add_TIN            (ParentID, ID, Name, Desc, Constraint);	break;
+		case PARAMETER_TYPE_PointCloud       : Parameters.Add_PointCloud     (ParentID, ID, Name, Desc, Constraint);	break;
 
-		case PARAMETER_TYPE_Grid_List        : Parameters.Add_Grid_List      (pParent, ID, Name, Desc, Constraint, !IS_TRUE_PROPERTY(Parameter, "no_system"));	break;
-		case PARAMETER_TYPE_Table_List       : Parameters.Add_Table_List     (pParent, ID, Name, Desc, Constraint);	break;
-		case PARAMETER_TYPE_Shapes_List      : Parameters.Add_Shapes_List    (pParent, ID, Name, Desc, Constraint);	break;
-		case PARAMETER_TYPE_TIN_List         : Parameters.Add_TIN_List       (pParent, ID, Name, Desc, Constraint);	break;
-		case PARAMETER_TYPE_PointCloud_List  : Parameters.Add_PointCloud_List(pParent, ID, Name, Desc, Constraint);	break;
+		case PARAMETER_TYPE_Grid_List        : Parameters.Add_Grid_List      (ParentID, ID, Name, Desc, Constraint, !IS_TRUE_PROPERTY(Parameter, "no_system"));	break;
+		case PARAMETER_TYPE_Table_List       : Parameters.Add_Table_List     (ParentID, ID, Name, Desc, Constraint);	break;
+		case PARAMETER_TYPE_Shapes_List      : Parameters.Add_Shapes_List    (ParentID, ID, Name, Desc, Constraint);	break;
+		case PARAMETER_TYPE_TIN_List         : Parameters.Add_TIN_List       (ParentID, ID, Name, Desc, Constraint);	break;
+		case PARAMETER_TYPE_PointCloud_List  : Parameters.Add_PointCloud_List(ParentID, ID, Name, Desc, Constraint);	break;
 
 		case PARAMETER_TYPE_DataObject_Output: break;
 		case PARAMETER_TYPE_Parameters       : break;	// to do ?
@@ -301,7 +310,49 @@ bool CSG_Tool_Chain::Create(const CSG_String &File)
 	}
 
 	//-----------------------------------------------------
-	return( is_Okay() );
+	if( is_Okay() )
+	{
+		SG_UI_Msg_Add(_TL("okay"), false, SG_UI_MSG_STYLE_SUCCESS);
+
+		return( true );
+	}
+
+	SG_UI_Msg_Add(_TL("failed"), false, SG_UI_MSG_STYLE_FAILURE);
+
+	return( false );
+}
+
+
+///////////////////////////////////////////////////////////
+//														 //
+///////////////////////////////////////////////////////////
+
+//---------------------------------------------------------
+void CSG_Tool_Chain::Add_References(void)
+{
+	for(int i=0; i<m_Chain.Get_Children_Count(); i++)
+	{
+		if( !m_Chain[i].Get_Name().CmpNoCase("REFERENCE") )
+		{
+			CSG_String	Authors, Year, Title, Where, Link, Link_Text;
+
+			if( m_Chain[i]("AUTHORS"  ) ) Authors   = m_Chain[i].Get_Content("AUTHORS"  );
+			if( m_Chain[i]("YEAR"     ) ) Year      = m_Chain[i].Get_Content("YEAR"     );
+			if( m_Chain[i]("TITLE"    ) ) Title     = m_Chain[i].Get_Content("TITLE"    );
+			if( m_Chain[i]("WHERE"    ) ) Where     = m_Chain[i].Get_Content("WHERE"    );
+			if( m_Chain[i]("LINK"     ) ) Link      = m_Chain[i].Get_Content("LINK"     );
+			if( m_Chain[i]("LINK_TEXT") ) Link_Text = m_Chain[i].Get_Content("LINK_TEXT");
+
+			if( !Authors.is_Empty() && !Year.is_Empty() && !Title.is_Empty() )
+			{
+				Add_Reference(Authors, Year, Title, Where, Link.c_str(), Link_Text.c_str());
+			}
+			else if( !Link.is_Empty() )
+			{
+				Add_Reference(Link, Link_Text.c_str());
+			}
+		}
+	}
 }
 
 
@@ -374,7 +425,7 @@ bool CSG_Tool_Chain::Data_Add(const CSG_String &ID, CSG_Parameter *pData)
 
 	if( pParameter )	// don't add twice with same identifier
 	{
-		if( pParameter->Get_Type() != pData->Get_Type() )
+		if(0&& pParameter->Get_Type() != pData->Get_Type() )
 		{
 			return( false );
 		}
@@ -383,26 +434,26 @@ bool CSG_Tool_Chain::Data_Add(const CSG_String &ID, CSG_Parameter *pData)
 	//-----------------------------------------------------
 	else switch( pData->Get_Type() )
 	{
-	case PARAMETER_TYPE_PointCloud     : pParameter	= m_Data.Add_PointCloud     (NULL, ID, "", "", 0       );	break;
-	case PARAMETER_TYPE_Grid           : pParameter	= m_Data.Add_Grid           (NULL, ID, "", "", 0       );	break;
-	case PARAMETER_TYPE_Table          : pParameter	= m_Data.Add_Table          (NULL, ID, "", "", 0       );	break;
-	case PARAMETER_TYPE_Shapes         : pParameter	= m_Data.Add_Shapes         (NULL, ID, "", "", 0       );	break;
-	case PARAMETER_TYPE_TIN            : pParameter	= m_Data.Add_TIN            (NULL, ID, "", "", 0       );	break;
+	case PARAMETER_TYPE_PointCloud     : pParameter	= m_Data.Add_PointCloud     ("", ID, "", "", 0       );	break;
+	case PARAMETER_TYPE_Grid           : pParameter	= m_Data.Add_Grid           ("", ID, "", "", 0       );	break;
+	case PARAMETER_TYPE_Table          : pParameter	= m_Data.Add_Table          ("", ID, "", "", 0       );	break;
+	case PARAMETER_TYPE_Shapes         : pParameter	= m_Data.Add_Shapes         ("", ID, "", "", 0       );	break;
+	case PARAMETER_TYPE_TIN            : pParameter	= m_Data.Add_TIN            ("", ID, "", "", 0       );	break;
 
-	case PARAMETER_TYPE_PointCloud_List: pParameter	= m_Data.Add_PointCloud_List(NULL, ID, "", "", 0       );	break;
-	case PARAMETER_TYPE_Grid_List      : pParameter	= m_Data.Add_Grid_List      (NULL, ID, "", "", 0, false);	break;
-	case PARAMETER_TYPE_Table_List     : pParameter	= m_Data.Add_Table_List     (NULL, ID, "", "", 0       );	break;
-	case PARAMETER_TYPE_Shapes_List    : pParameter	= m_Data.Add_Shapes_List    (NULL, ID, "", "", 0       );	break;
-	case PARAMETER_TYPE_TIN_List       : pParameter	= m_Data.Add_TIN_List       (NULL, ID, "", "", 0       );	break;
+	case PARAMETER_TYPE_PointCloud_List: pParameter	= m_Data.Add_PointCloud_List("", ID, "", "", 0       );	break;
+	case PARAMETER_TYPE_Grid_List      : pParameter	= m_Data.Add_Grid_List      ("", ID, "", "", 0, false);	break;
+	case PARAMETER_TYPE_Table_List     : pParameter	= m_Data.Add_Table_List     ("", ID, "", "", 0       );	break;
+	case PARAMETER_TYPE_Shapes_List    : pParameter	= m_Data.Add_Shapes_List    ("", ID, "", "", 0       );	break;
+	case PARAMETER_TYPE_TIN_List       : pParameter	= m_Data.Add_TIN_List       ("", ID, "", "", 0       );	break;
 
 	case PARAMETER_TYPE_DataObject_Output:
 		switch( pData->Get_DataObject_Type() )
 		{
-		case DATAOBJECT_TYPE_PointCloud: pParameter	= m_Data.Add_PointCloud     (NULL, ID, "", "", 0       );	break;
-		case DATAOBJECT_TYPE_Grid      : pParameter	= m_Data.Add_Grid           (NULL, ID, "", "", 0       );	break;
-		case DATAOBJECT_TYPE_Table     : pParameter	= m_Data.Add_Table          (NULL, ID, "", "", 0       );	break;
-		case DATAOBJECT_TYPE_Shapes    : pParameter	= m_Data.Add_Shapes         (NULL, ID, "", "", 0       );	break;
-		case DATAOBJECT_TYPE_TIN       : pParameter	= m_Data.Add_TIN            (NULL, ID, "", "", 0       );	break;
+		case DATAOBJECT_TYPE_PointCloud: pParameter	= m_Data.Add_PointCloud     ("", ID, "", "", 0       );	break;
+		case DATAOBJECT_TYPE_Grid      : pParameter	= m_Data.Add_Grid           ("", ID, "", "", 0       );	break;
+		case DATAOBJECT_TYPE_Table     : pParameter	= m_Data.Add_Table          ("", ID, "", "", 0       );	break;
+		case DATAOBJECT_TYPE_Shapes    : pParameter	= m_Data.Add_Shapes         ("", ID, "", "", 0       );	break;
+		case DATAOBJECT_TYPE_TIN       : pParameter	= m_Data.Add_TIN            ("", ID, "", "", 0       );	break;
 		default:
 			return( true );
 		}
@@ -415,8 +466,16 @@ bool CSG_Tool_Chain::Data_Add(const CSG_String &ID, CSG_Parameter *pData)
 	//-----------------------------------------------------
 	if( pData->is_DataObject() )
 	{
-		pParameter->Set_Value(pData->asDataObject());
-		m_Data_Manager.Add   (pData->asDataObject());
+		if( pParameter->is_DataObject() )
+		{
+			pParameter->Set_Value(pData->asDataObject());
+		}
+		else
+		{
+			pParameter->asList()->Add_Item(pData->asDataObject());
+		}
+
+		m_Data_Manager.Add(pData->asDataObject());
 	}
 	else if( pData->is_DataObject_List() )
 	{
@@ -529,9 +588,28 @@ bool CSG_Tool_Chain::Data_Finalize(void)
 
 			if( pParameter && pParameter->is_DataObject() && pParameter->asDataObject() )
 			{
-				if( Parameter("output_name") && !Parameter["output_name"].Get_Content().is_Empty() )
+				if( Parameter("output_name") )
 				{
-					pParameter->asDataObject()->Set_Name(Parameter["output_name"].Get_Content());
+					if( IS_TRUE_PROPERTY(Parameter["output_name"], "input") )
+					{
+						CSG_Parameter	*pInput	= Parameters(Parameter["output_name"].Get_Content());
+
+						if( pInput && pInput->is_DataObject() && pInput->asDataObject() )
+						{
+							CSG_String	Suffix;
+
+							if( Parameter["output_name"].Get_Property("suffix", Suffix) && !Suffix.is_Empty() )
+							{
+								Suffix	= " [" + Suffix + "]";
+							}
+
+							pParameter->asDataObject()->Set_Name(pInput->asDataObject()->Get_Name() + Suffix);
+						}
+					}
+					else if( !Parameter["output_name"].Get_Content().is_Empty() )
+					{
+						pParameter->asDataObject()->Set_Name(Parameter["output_name"].Get_Content());
+					}
 				}
 
 				if( Parameter("colours") )
@@ -680,6 +758,136 @@ bool CSG_Tool_Chain::Check_Condition(const CSG_MetaData &Condition, CSG_Paramete
 ///////////////////////////////////////////////////////////
 
 //---------------------------------------------------------
+bool CSG_Tool_Chain::ForEach(const CSG_MetaData &Commands)
+{
+	CSG_String	ListVarName;
+	
+	if( !Commands.Get_Property("input", ListVarName) )
+	{
+		return( false );
+	}
+
+	//-----------------------------------------------------
+	for(int i=0; i<Commands.Get_Children_Count(); i++)	// add internal target lists, if any..
+	{
+		const CSG_MetaData	&Item	= Commands[i];
+
+		CSG_String	VarName;
+
+		if( Item.Cmp_Name("output") && !m_Data(Item.Get_Content()) )
+		{
+			switch( SG_Parameter_Type_Get_Type(Item.Get_Property("type")) )
+			{
+			default:	break;
+			case PARAMETER_TYPE_PointCloud_List: m_Data.Add_PointCloud_List("", Item.Get_Content(), "", "", 0       );	break;
+			case PARAMETER_TYPE_Grid_List      : m_Data.Add_Grid_List      ("", Item.Get_Content(), "", "", 0, false);	break;
+			case PARAMETER_TYPE_Table_List     : m_Data.Add_Table_List     ("", Item.Get_Content(), "", "", 0       );	break;
+			case PARAMETER_TYPE_Shapes_List    : m_Data.Add_Shapes_List    ("", Item.Get_Content(), "", "", 0       );	break;
+			case PARAMETER_TYPE_TIN_List       : m_Data.Add_TIN_List       ("", Item.Get_Content(), "", "", 0       );	break;
+			}
+		}
+	}
+
+	//-----------------------------------------------------
+	return( ForEach_Object(Commands, ListVarName)
+		||  ForEach_File  (Commands, ListVarName) );
+}
+
+//---------------------------------------------------------
+bool CSG_Tool_Chain::ForEach_Object(const CSG_MetaData &Commands, const CSG_String &ListVarName)
+{
+	CSG_Parameter	*pList	= m_Data(ListVarName);
+
+	if( !pList || !pList->is_DataObject_List() )
+	{
+		return( false );
+	}
+
+	//-----------------------------------------------------
+	bool	bResult	= true;
+
+	for(int iObject=0; bResult && iObject<pList->asList()->Get_Count(); iObject++)
+	{
+		for(int iTool=0; bResult && iTool<Commands.Get_Children_Count(); iTool++)
+		{
+			const CSG_MetaData	&Tool	= Commands[iTool];
+
+			if( Tool.Cmp_Name("tool") )
+			{
+				for(int j=0; j<Tool.Get_Children_Count(); j++)
+				{
+					if( Tool[j].Cmp_Name("input") && Tool[j].Get_Content().Find(ListVarName) == 0 )
+					{
+						Tool(j)->Set_Content(ListVarName + CSG_String::Format("[%d]", iObject));
+					}
+				}
+
+				bResult	= Tool_Run(Tool);
+			}
+		}
+	}
+
+	return( bResult );
+}
+
+//---------------------------------------------------------
+bool CSG_Tool_Chain::ForEach_File(const CSG_MetaData &Commands, const CSG_String &ListVarName)
+{
+	CSG_Parameter	*pList	= Parameters(ListVarName);
+
+	if( !pList || pList->Get_Type() != PARAMETER_TYPE_FilePath )
+	{
+		return( false );
+	}
+
+	CSG_Strings	Files;
+
+	pList->asFilePath()->Get_FilePaths(Files);
+
+	//-----------------------------------------------------
+	bool	bResult	= true;
+
+	for(int iFile=0; bResult && iFile<Files.Get_Count(); iFile++)
+	{
+		for(int iTool=0; bResult && iTool<Commands.Get_Children_Count(); iTool++)
+		{
+			const CSG_MetaData	&Tool	= Commands[iTool];
+
+			if( Tool.Cmp_Name("tool") )
+			{
+				CSG_Array_Int	Input;
+
+				for(int j=0; j<Tool.Get_Children_Count(); j++)
+				{
+					if( Tool[j].Cmp_Name("option") && Tool[j].Get_Content().Find(ListVarName) == 0 && IS_TRUE_PROPERTY(Tool[j], "varname") )
+					{
+						Tool(j)->Set_Content(Files[iFile]);
+						Tool(j)->Set_Property("varname", "false");
+
+						Input	+= j;
+					}
+				}
+
+				bResult	= Tool_Run(Tool);
+
+				for(size_t i=0; i<Input.Get_Size(); i++)
+				{
+					Tool(Input[i])->Set_Content(ListVarName);
+					Tool(Input[i])->Set_Property("varname", "true");
+				}
+			}
+		}
+	}
+
+	return( bResult );
+}
+
+
+///////////////////////////////////////////////////////////
+//														 //
+///////////////////////////////////////////////////////////
+
+//---------------------------------------------------------
 bool CSG_Tool_Chain::Tool_Run(const CSG_MetaData &Tool)
 {
 	//-----------------------------------------------------
@@ -704,6 +912,12 @@ bool CSG_Tool_Chain::Tool_Run(const CSG_MetaData &Tool)
 		}
 
 		return( bResult );
+	}
+
+	//-----------------------------------------------------
+	if( Tool.Cmp_Name("foreach") )
+	{
+		return( ForEach(Tool) );
 	}
 
 	//-----------------------------------------------------
@@ -841,44 +1055,61 @@ bool CSG_Tool_Chain::Tool_Initialize(const CSG_MetaData &Tool, CSG_Tool *pTool)
 			{	// does option want a value from tool chain parameters and do these provide one ?
 				pParameter->Assign(Parameters(Parameter.Get_Content()));
 			}
-			else
+			else switch( pParameter->Get_Type() )
 			{
+			default:
 				pParameter->Set_Value(Parameter.Get_Content());
+				break;
+
+			case PARAMETER_TYPE_FixedTable:
+				if( Parameter("OPTION") )
+				{
+					pParameter->Serialize(*Parameter("OPTION"), false);
+				}
+				break;
 			}
 		}
 		else if( Parameter.Cmp_Name("input") )
 		{
-			CSG_Parameter	*pData	= m_Data(Parameter.Get_Content());
+			bool	bResult	= false;
 
-			if( !pData )	// each input for this tool should be available now !!!
+			int	Index;
+
+			if( Parameter.Get_Content().Find('[') < 1 || !Parameter.Get_Content().AfterFirst('[').asInt(Index) )
 			{
-				Error_Set(CSG_String::Format("%s: %s", _TL("input"), Parameter.Get_Property("id")));
+				Index	= -1;
+			}
+
+			CSG_Parameter	*pData	= m_Data(Index < 0 ? Parameter.Get_Content() : Parameter.Get_Content().BeforeFirst('['));
+
+			if( pData && (pParameter->is_DataObject() || pParameter->is_DataObject_List()) )
+			{
+				if( pParameter->Get_Type() == pData->Get_Type() )
+				{
+					bResult	= pParameter->Assign(pData);
+				}
+				else if( pParameter->is_DataObject_List() && pData->is_DataObject() )
+				{
+					bResult	= pParameter->asList()->Add_Item(pData->asDataObject());
+				}
+				else if( pParameter->is_DataObject() && pData->is_DataObject_List() && Index >= 0 )
+				{
+					bResult	= pParameter->Set_Value(pData->asList()->asDataObject(Index));
+				}
+			}
+
+			if( !bResult )
+			{
+				Error_Set(CSG_String::Format("%s: %s", _TL("set input"), Parameter.Get_Property("id")));
 
 				return( false );
 			}
 
-			if( pParameter->is_DataObject() || pParameter->is_DataObject_List() )
+			pParameter->has_Changed();
+
+			if( pOwner )
 			{
-				if( pParameter->Get_Type() == pData->Get_Type() )
-				{
-					if( !pParameter->Assign(pData) )
-					{
-						Error_Set(CSG_String::Format("%s: %s", _TL("set input"), Parameter.Get_Property("id")));
-
-						return( false );
-					}
-				}
-				else if( pParameter->is_DataObject_List() && pData->is_DataObject() )
-				{
-					pParameter->asList()->Add_Item(pData->asDataObject());
-				}
-
-				pParameter->has_Changed();
-
-				if( pOwner )
-				{
-					pOwner->has_Changed();
-				}
+				pOwner->has_Changed();
 			}
 		}
 		else if( Parameter.Cmp_Name("output") )
@@ -918,12 +1149,23 @@ bool CSG_Tool_Chain::Tool_Initialize(const CSG_MetaData &Tool, CSG_Tool *pTool)
 			{	// does option want a value from tool chain parameters and do these provide one ?
 				pParameter->Assign(Parameters(Parameter.Get_Content()));
 			}
-			else
+			else switch( pParameter->Get_Type() )
 			{
-				CSG_String	Value(Parameter.Get_Content());
+			default:
+				pParameter->Set_Value(Parameter.Get_Content());
+				break;
 
-				if( pParameter->Get_Type() == PARAMETER_TYPE_String )
+			case PARAMETER_TYPE_FixedTable:
+				if( Parameter("OPTION") )
 				{
+					pParameter->Serialize(*Parameter("OPTION"), false);
+				}
+				break;
+
+			case PARAMETER_TYPE_String:
+				{
+					CSG_String	Value(Parameter.Get_Content());
+
 					for(int j=0; j<Parameters.Get_Count(); j++)
 					{
 						CSG_String	Var; Var.Printf("$(%s)", Parameters(j)->Get_Identifier());
@@ -933,9 +1175,10 @@ bool CSG_Tool_Chain::Tool_Initialize(const CSG_MetaData &Tool, CSG_Tool *pTool)
 							Value.Replace(Var, Parameters(j)->asString());
 						}
 					}
-				}
 
-				pParameter->Set_Value(Value);
+					pParameter->Set_Value(Value);
+				}
+				break;
 			}
 		}
 	}
@@ -1134,6 +1377,11 @@ bool CSG_Tool_Chain::Save_History_to_Model(const CSG_MetaData &History, const CS
 	Chain.Add_Child   ("tools"      );
 
 	_Save_History_Add_Tool(Tool, *Chain("parameters"), *Chain("tools"), true);
+
+	for(int i=0; i<Chain["tools"].Get_Children_Count(); i++)
+	{
+		Chain["tools"](i)->Del_Property("id");
+	}
 
 	return( Chain.Save(File) );
 }

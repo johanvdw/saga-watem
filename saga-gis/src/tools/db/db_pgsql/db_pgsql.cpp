@@ -61,7 +61,9 @@
 //---------------------------------------------------------
 #include "db_pgsql.h"
 
+extern "C" {
 #include <libpq-fe.h>
+}
 
 
 ///////////////////////////////////////////////////////////
@@ -470,25 +472,64 @@ bool CSG_PG_Connection::Table_Exists(const CSG_String &Table_Name) const
 }
 
 //---------------------------------------------------------
-CSG_Table CSG_PG_Connection::Get_Field_Desc(const CSG_String &Table_Name) const
+CSG_Table CSG_PG_Connection::Get_Field_Desc(const CSG_String &Table_Name, bool bVerbose) const
 {
 	CSG_Table	Fields;
 
 	Fields.Set_Name(CSG_String::Format("%s [%s]", Table_Name.c_str(), _TL("Field Description")));
 
-	Fields.Add_Field(_TL("NAME"     ), SG_DATATYPE_String);
-	Fields.Add_Field(_TL("TYPE"     ), SG_DATATYPE_String);
-	Fields.Add_Field(_TL("SIZE"     ), SG_DATATYPE_Int);
-	Fields.Add_Field(_TL("PRECISION"), SG_DATATYPE_Int);
+	if( bVerbose )
+	{
+		Fields.Add_Field(_TL("Name"     ), SG_DATATYPE_String);
+		Fields.Add_Field(_TL("Type"     ), SG_DATATYPE_String);
+		Fields.Add_Field(_TL("Primary"  ), SG_DATATYPE_String);
+		Fields.Add_Field(_TL("NotNull"  ), SG_DATATYPE_String);
+		Fields.Add_Field(_TL("Default"  ), SG_DATATYPE_String);
+		Fields.Add_Field(_TL("Comment"  ), SG_DATATYPE_String);
+	}
+	else
+	{
+		Fields.Add_Field(_TL("Name"     ), SG_DATATYPE_String);
+		Fields.Add_Field(_TL("Type"     ), SG_DATATYPE_String);
+		Fields.Add_Field(_TL("Size"     ), SG_DATATYPE_Int   );
+		Fields.Add_Field(_TL("Precision"), SG_DATATYPE_Int   );
+	}
 
 	if( is_Connected() )
 	{
 		CSG_String	s;
 
-		s	+= "SELECT column_name, udt_name, character_maximum_length, numeric_precision ";
-		s	+= "FROM information_schema.columns WHERE table_schema='public' AND table_name='";
-		s	+= Table_Name;
-		s	+= "' ORDER BY ordinal_position";
+		if( bVerbose )
+		{
+			s	+= "SELECT DISTINCT ";
+			s	+= "  a.attnum, ";
+			s	+= "  a.attname, ";
+			s	+= "  format_type(a.atttypid, a.atttypmod), ";
+			s	+= "  coalesce(i.indisprimary,false), ";
+			s	+= "  a.attnotnull, ";
+			s	+= "  def.adsrc, ";
+			s	+= "  com.description ";
+			s	+= "FROM pg_attribute a ";
+			s	+= "  JOIN pg_class pgc ON pgc.oid=a.attrelid ";
+			s	+= "  LEFT JOIN pg_index i ON ";
+			s	+= "    (pgc.oid=i.indrelid AND i.indkey[0]=a.attnum) ";
+			s	+= "  LEFT JOIN pg_description com on ";
+			s	+= "    (pgc.oid=com.objoid AND a.attnum=com.objsubid) ";
+			s	+= "  LEFT JOIN pg_attrdef def ON ";
+			s	+= "    (a.attrelid=def.adrelid AND a.attnum=def.adnum) ";
+			s	+= "WHERE a.attnum>0 AND pgc.oid=a.attrelid ";
+			s	+= "  AND pg_table_is_visible(pgc.oid) ";
+			s	+= "  AND NOT a.attisdropped ";
+			s	+= "  AND pgc.relname='" + Table_Name + "' ";
+			s	+= "ORDER BY a.attnum ";
+		}
+		else
+		{
+			s	+= "SELECT column_name, udt_name, character_maximum_length, numeric_precision ";
+			s	+= "FROM information_schema.columns ";
+			s	+= "WHERE table_name='" + Table_Name + "' ";
+			s	+= "ORDER BY ordinal_position";
+		}
 
 		PGresult	*pResult	= PQexec(m_pgConnection, s);
 
@@ -504,7 +545,16 @@ CSG_Table CSG_PG_Connection::Get_Field_Desc(const CSG_String &Table_Name) const
 
 				for(int iField=0; iField<Fields.Get_Field_Count(); iField++)
 				{
-					pRecord->Set_Value(iField, PQgetvalue(pResult, iRecord, iField));
+					char	*Value	= PQgetvalue(pResult, iRecord, iField + (bVerbose ? 1 : 0));
+
+					if( bVerbose && (iField == 2 || iField == 3) )
+					{
+						pRecord->Set_Value(iField, *Value == 't' ? _TL("yes") : _TL("no"));
+					}
+					else
+					{
+						pRecord->Set_Value(iField, Value);
+					}
 				}
 			}
 		}
@@ -815,19 +865,21 @@ bool CSG_PG_Connection::Table_Insert(const CSG_String &Table_Name, const CSG_Tab
 
 		switch( Table.Get_Field_Type(iField) )
 		{
-		case SG_DATATYPE_String: default:
+		case SG_DATATYPE_String:
 			Values[iField]	= (char *)SG_Malloc((1 + Table.Get_Field_Length(iField)) * sizeof(char));
 			break;
 
-		case SG_DATATYPE_Date:
+		case SG_DATATYPE_Date  :
 			Values[iField]	= (char *)SG_Malloc(16);
 			break;
-
-		case SG_DATATYPE_Short:
-		case SG_DATATYPE_Int:
-		case SG_DATATYPE_Color:
-		case SG_DATATYPE_Long:
-		case SG_DATATYPE_Float:
+ 
+		default                :
+		case SG_DATATYPE_Byte  :
+		case SG_DATATYPE_Short :
+		case SG_DATATYPE_Int   :
+		case SG_DATATYPE_Color :
+		case SG_DATATYPE_Long  :
+		case SG_DATATYPE_Float :
 		case SG_DATATYPE_Double:
 			Values[iField]	= (char *)SG_Malloc(256);
 			break;
@@ -1059,9 +1111,20 @@ bool CSG_PG_Connection::Table_Load(CSG_Table &Table, const CSG_String &Table_Nam
 //---------------------------------------------------------
 bool CSG_PG_Connection::Table_Load(CSG_Table &Table, const CSG_String &Tables, const CSG_String &Fields, const CSG_String &Where, const CSG_String &Group, const CSG_String &Having, const CSG_String &Order, bool bDistinct)
 {
-	CSG_String	Select;
+	CSG_String	Select("SELECT");
 
-	Select.Printf("SELECT %s %s FROM %s", bDistinct ? SG_T("DISTINCT") : SG_T("ALL"), Fields.c_str(), Tables.c_str());
+	Select	+= bDistinct ? " DISTINCT" : " ALL";
+
+	if( Fields.is_Empty() )
+	{
+		Select	+= " *";
+	}
+	else
+	{
+		Select	+= " " + Fields;
+	}
+
+	Select	+= " FROM " + Tables;
 
 	if( Where.Length() )
 	{
@@ -1099,41 +1162,89 @@ bool CSG_PG_Connection::Table_Load(CSG_Table &Table, const CSG_String &Tables, c
 ///////////////////////////////////////////////////////////
 
 //---------------------------------------------------------
-bool CSG_PG_Connection::Shapes_Load(CSG_Shapes *pShapes, const CSG_String &Name)
+bool CSG_PG_Connection::Shapes_Geometry_Info(const CSG_String &geoTable, CSG_String *geoField, int *geoSRID)
 {
-	CSG_Table	Info;
+	CSG_Table	Table_Info;
 
-	if( !Table_Load(Info, "geometry_columns", "*", "f_table_name='" + Name + "'") || Info.Get_Count() != 1 )
+	if( Table_Load(Table_Info, "geometry_columns", "*", "f_table_name='" + geoTable + "'") && Table_Info.Get_Count() == 1 )
 	{
-		_Error_Message(_TL("table has no geometry field"));
+		if( geoField ) *geoField	= Table_Info[0].asString("f_geometry_column");
+		if( geoSRID  ) *geoSRID 	= Table_Info[0].asInt   ("srid"             );
 
-		return( false );
+		return( true );
 	}
 
-	int	SRID	= Info[0].asInt("srid");
+	return( false );
+}
 
-	CSG_String	Fields, Geometry	= Info[0].asString("f_geometry_column");
+//---------------------------------------------------------
+bool CSG_PG_Connection::Shapes_Load(CSG_Shapes *pShapes, const CSG_String &geoTable)
+{
+	CSG_Table	Field_Info	= Get_Field_Desc(geoTable);
 
-	Info	= Get_Field_Desc(Name);
-
-	if( Info.Get_Count() == 0 )
+	if( Field_Info.Get_Count() > 0 )
 	{
-		return( false );
-	}
+		CSG_String	Fields, geoField;
+		
+		Shapes_Geometry_Info(geoTable, &geoField, NULL);
 
-	for(int i=0; i<Info.Get_Count(); i++)
-	{
-		if( Geometry.Cmp(Info[i].asString(0)) )
+		for(int i=0; i<Field_Info.Get_Count(); i++)
 		{
-			Fields	+= CSG_String::Format("\"%s\",", Info[i].asString(0));
+			if( geoField.Cmp(Field_Info[i].asString(0)) )
+			{
+				if( !Fields.is_Empty() )
+				{
+					Fields	+= ",";
+				}
+
+				Fields	+= CSG_String::Format("\"%s\"", Field_Info[i].asString(0));
+			}
 		}
+
+		return( Shapes_Load(pShapes, geoTable, geoTable, "", Fields, "") );
+	}
+
+	return( false );
+}
+
+//---------------------------------------------------------
+#define GEOMETRY_FIELD	SG_T("__geometry__")
+
+//---------------------------------------------------------
+bool CSG_PG_Connection::Shapes_Load(CSG_Shapes *pShapes, const CSG_String &Name, const CSG_String &geoTable, const CSG_String &Tables, const CSG_String &Fields, const CSG_String &Where)
+{
+	int			geoSRID;
+	CSG_String	geoField;
+
+	if( !Shapes_Geometry_Info(geoTable, &geoField, &geoSRID) )
+	{
+		return( false );
 	}
 
 	bool	bBinary	= has_Version(9);	// previous versions did not support hex strings
 
-	Fields	+= (bBinary ? "ST_AsBinary(" : "ST_AsText(") + Geometry + ") AS __geometry__";
+	//-----------------------------------------------------
+	CSG_String	Select;
 
-	if( Shapes_Load(pShapes, Name, "SELECT " + Fields + " FROM \"" + Name + "\"", "__geometry__", bBinary, SRID) )
+	Select.Printf("SELECT %s, ST_As%s(%s) AS %s FROM %s ",
+		Fields.c_str(),
+		bBinary ? SG_T("Binary") : SG_T("Text"),
+		geoField.c_str(),
+		GEOMETRY_FIELD,
+		geoTable.c_str()
+	);
+
+	if( !Tables.is_Empty() )
+	{
+		Select	+= "," + Tables;
+	}
+
+	if( !Where.is_Empty() )
+	{
+		Select	+= " WHERE " + Where;
+	}
+
+	if( Shapes_Load(pShapes, Name, Select, GEOMETRY_FIELD, bBinary, geoSRID) )
 	{
 		Add_MetaData(*pShapes, Name);
 
@@ -1768,8 +1879,6 @@ CSG_PG_Tool::CSG_PG_Tool(void)
 //---------------------------------------------------------
 bool CSG_PG_Tool::On_Before_Execution(void)
 {
-	m_pConnection	= NULL;
-
 	if( !SG_UI_Get_Window_Main() )
 	{
 		m_pConnection	= SG_PG_Get_Connection_Manager().Add_Connection(
@@ -1796,16 +1905,23 @@ bool CSG_PG_Tool::On_Before_Execution(void)
 			return( false );
 		}
 
-		if( nConnections == 1 || !(m_pConnection = SG_PG_Get_Connection_Manager().Get_Connection(Parameters("CONNECTION")->asString())) )
+		CSG_PG_Connection	*pConnection	= NULL;
+
+		if( nConnections == 1 || !(pConnection = SG_PG_Get_Connection_Manager().Get_Connection(Parameters("CONNECTION")->asString())) )
 		{
-			m_pConnection	= SG_PG_Get_Connection_Manager().Get_Connection(0);
+			pConnection	= SG_PG_Get_Connection_Manager().Get_Connection(0);
+		}
+
+		if( m_pConnection != pConnection )
+		{
+			m_pConnection	= pConnection;
+
+			On_Connection_Changed(&Parameters);
 		}
 
 		Parameters("CONNECTION")->asChoice()->Set_Items(Connections);
 		Parameters("CONNECTION")->Set_Enabled(nConnections > 1);
 		Parameters("CONNECTION")->Set_Value(m_pConnection->Get_Connection());
-
-		On_Parameter_Changed(&Parameters, Parameters("CONNECTION"));
 	}
 
 	return( true );
@@ -1842,10 +1958,12 @@ int CSG_PG_Tool::On_Parameter_Changed(CSG_Parameters *pParameters, CSG_Parameter
 		//-------------------------------------------------
 		if( !SG_STR_CMP(pParameter->Get_Identifier(), "CONNECTION") )
 		{
-			m_pConnection	= SG_PG_Get_Connection_Manager().Get_Connection(pParameter->asString());
+			CSG_PG_Connection	*pConnection	= SG_PG_Get_Connection_Manager().Get_Connection(pParameter->asString());
 
-			if( m_pConnection )
+			if( m_pConnection != pConnection )
 			{
+				m_pConnection	= pConnection;
+
 				On_Connection_Changed(pParameters);
 			}
 		}

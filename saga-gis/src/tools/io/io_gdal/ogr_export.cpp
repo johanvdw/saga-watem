@@ -118,20 +118,20 @@ COGR_Export::COGR_Export(void)
 	Set_Description(Description);
 
 	//-----------------------------------------------------
-	Parameters.Add_Shapes(
-		NULL	, "SHAPES"	, _TL("Shapes"),
+	Parameters.Add_Shapes("",
+		"SHAPES"	, _TL("Shapes"),
 		_TL(""),
 		PARAMETER_INPUT
 	);
 
-	Parameters.Add_FilePath(
-		NULL	, "FILE"	, _TL("File"),
+	Parameters.Add_FilePath("",
+		"FILE"		, _TL("File"),
 		_TL(""),
 		Filter, NULL, true
 	);
 
-	Parameters.Add_Choice(
-		NULL	, "FORMAT"	, _TL("Format"),
+	Parameters.Add_Choice("",
+		"FORMAT"	, _TL("Format"),
 		_TL(""),
 		Formats
 	);
@@ -140,8 +140,6 @@ COGR_Export::COGR_Export(void)
 
 ///////////////////////////////////////////////////////////
 //														 //
-//														 //
-//														 //
 ///////////////////////////////////////////////////////////
 
 //---------------------------------------------------------
@@ -149,7 +147,18 @@ bool COGR_Export::On_Execute(void)
 {
 	CSG_OGR_DataSet	DataSource;
 
-	if( !DataSource.Create(Parameters("FILE")->asString(), Parameters("FORMAT")->asString()) )
+	CSG_String Driver;
+
+#ifdef USE_GDAL_V2
+	if( !Parameters("FORMAT")->asChoice()->Get_Data(Driver) )
+	{
+		return( false );
+	}
+#else
+	Driver = Parameters("FORMAT")->asString();
+#endif
+
+	if( !DataSource.Create(Parameters("FILE")->asString(), Driver) )
 	{
 		Error_Set(_TL("data set creation failed"));
 
