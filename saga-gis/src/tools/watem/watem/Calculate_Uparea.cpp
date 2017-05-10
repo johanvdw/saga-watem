@@ -73,6 +73,11 @@ CCalculate_Uparea::CCalculate_Uparea()
 		"", PARAMETER_TYPE_Double, 70, 0, 100
 	);
 
+	Parameters.Add_Value(
+		NULL, "WRONG", "Use old (wrong) calculation near roads",
+		"", PARAMETER_TYPE_Bool, false
+	);
+
 }
 
 bool CCalculate_Uparea::On_Execute(void)
@@ -90,6 +95,8 @@ bool CCalculate_Uparea::On_Execute(void)
 	TFCAtoCropLand = Parameters("PCTOCROP")->asDouble();
 	TFCAtoForestOrPasture = Parameters("PCTOFOREST")->asDouble();
 	TFCAtoRoad = Parameters("PCTOROAD")->asDouble();
+
+	wrong = Parameters("WRONG")->asBool();
 
 
 	//-----------------------------------------------------
@@ -161,7 +168,7 @@ void CCalculate_Uparea::CalculateUparea()
 
 {
 	int i, j, vlag, nvlag, rivvlag;
-	double OPPCOR, AREA, massbalance, Abis;
+	double OPPCOR, AREA, massbalance;
 	int Nextsegmentid;
 	std::vector<int> rivsegmentlatinputcheck;
 	std::vector<int> rivsegmentupcheck;
@@ -749,19 +756,32 @@ void CCalculate_Uparea::DistributeTilDirEvent(int i, int j, double *AREA, double
 				}
 				else {
 
+					if (!wrong)
+					{
+						if (PRC->asInt(i + ROWMIN2, j + COLMIN2) == 10000)
+							Abis = *AREA * (100 - TFCAtoForestOrPasture) / 100.0;
+						else if (PRC->asInt(i + ROWMIN2, j + COLMIN2) >0)
+						{
 
-					if (PRC->asInt(i + ROWMIN2, j + COLMIN2) == 10000)
-						Abis = *AREA * (100 - TFCAtoForestOrPasture) / 100.0;
-					else if (PRC->asInt(i + ROWMIN2, j + COLMIN2) >0)
-					{
-						
 							Abis = *AREA * (100 - TFCAtoCropLand) / 100.0;
+						}
+						else if (PRC->asInt(i + ROWMIN2, j + COLMIN2) == -2)
+						{
+							Abis = *AREA * (100 - TFCAtoRoad) / 100.0;
+						}
+						else Abis = 0;
 					}
-					else if (PRC->asInt(i + ROWMIN2, j + COLMIN2) == -2)
 					{
-						Abis = *AREA * (100 - TFCAtoRoad) / 100.0;
+						/* WRONG calculation - but the same as the original version of WATEM*/
+						if (PRC->asInt(i + ROWMIN2, j + COLMIN2) == 10000)
+							Abis = *AREA * (100 - TFCAtoForestOrPasture) / 100.0;
+						else if (PRC->asInt(i + ROWMIN2, j + COLMIN2) >0)
+						{
+
+							Abis = *AREA * (100 - TFCAtoCropLand) / 100.0;
+						}
 					}
-					else Abis = 0;
+
 						
 					Up_Area->Add_Value(i + ROWMIN2, j + COLMIN2, Abis);
 
@@ -801,52 +821,3 @@ void CCalculate_Uparea::DistributeTilDirEvent(int i, int j, double *AREA, double
 	FINISH->Set_Value(i, j, 1.0);
 
 }
-
-// nog niet gebruikt. Bedoeling is om dit tussen tillage erosion en watererosie te delen
-//
-//static void DistributeFlow(double &Direction, double &PART1, double &PART2, int &K1, int &K2, int &L1, int& L2, double &AREA)
-//{
-//	double CSN = fabs(cos(Direction)) / (fabs(sin(Direction)) + fabs(cos(Direction)));
-//	double SN = 1 - CSN;
-//	if (Direction <= M_PI / 2) {
-//		PART1 = AREA * SN;
-//		PART2 = AREA * CSN;
-//		K1 = 1;
-//		L1 = 0;
-//		K2 = 0;
-//		L2 = 1;
-//	}
-//	else {
-//		if (Direction > M_PI / 2 && Direction < M_PI) {
-//			PART1 = AREA * SN;
-//			PART2 = AREA * CSN;
-//			K1 = 1;
-//			L1 = 0;
-//			K2 = 0;
-//			L2 = -1;
-//		}
-//		else {
-//			if (Direction >= M_PI && Direction <= M_PI * 1.5) {
-//				PART1 = AREA * CSN;
-//				PART2 = AREA * SN;
-//				K1 = 0;
-//				L1 = -1;
-//				K2 = -1;
-//				L2 = 0;
-//			}
-//			else {
-//				if (Direction > M_PI * 1.5) {
-//					PART1 = AREA * SN;
-//					PART2 = AREA * CSN;
-//					K1 = -1;
-//					L1 = 0;
-//					K2 = 0;
-//					L2 = 1;
-//
-//
-//				}
-//
-//			}
-//		}
-//	}
-//}
