@@ -482,8 +482,8 @@ void CCalculate_Uparea::DistributeTilDirEvent(int i, int j, double *AREA, double
 			if (is_InGrid(i + K, j + L) && PRC->asInt(i + K, j + L) == -1) {
 				if (DEM->asDouble(i + K, j + L) < DEM->asDouble(i, j))
 					closeriver = true;
-				else //bug: the else clause should be removed because it is a bug - only the topright pixel is analysed
-					closeriver = false;
+				//else //bug: the else clause should be removed because it is a bug - only the topright pixel is analysed
+				//	closeriver = false;
 				
 			}
 		}
@@ -772,7 +772,8 @@ void CCalculate_Uparea::DistributeTilDirEvent(int i, int j, double *AREA, double
 						else Abis = 0;
 					}
 					{
-						/* WRONG calculation - but the same as the original version of WATEM*/
+						/* WRONG calculation - but the same as the original version of WATEM
+						   if grid cell is -1 or - 2 then there is no result. The previous value of abis is used. */
 						if (PRC->asInt(i + ROWMIN2, j + COLMIN2) == 10000)
 							Abis = *AREA * (100 - TFCAtoForestOrPasture) / 100.0;
 						else if (PRC->asInt(i + ROWMIN2, j + COLMIN2) >0)
