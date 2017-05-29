@@ -153,7 +153,7 @@ bool CGrid_Trend::On_Execute(void)
 	//allocate matrices
 	for (std::vector<int>::size_type i = 0; i != xyz_matrix.size(); i++)
 	{
-		xyz_matrix[i] = new CSG_Matrix(index_count[i], 3);
+		xyz_matrix[i] = new CSG_Matrix(3,index_count[i]);
 	}
 	
 	std::vector<int>index_position(pIndex->Get_ZMax() + 1);
@@ -199,11 +199,9 @@ bool CGrid_Trend::On_Execute(void)
 			pred[0] = x;
 			pred[1] = y;
 			
-			try {
-				if (i > 0) pOutput->Set_Value(x, y, xyzstat[i].Get_Value(pred));
-			}
-			catch (std::exception ex)
-			{}
+
+			if (i > 0) pOutput->Set_Value(x, y, xyzstat[i].Get_Value(pred));
+
 			;
 			//xystat[i]
 		}
