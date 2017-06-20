@@ -53,7 +53,6 @@ Water_Erosion::Water_Erosion()
 		"Correctiefactor omdat de berekeningen bepaald werden op een standaard plot van 22.1 meter. 1.4 voor grids van 5x5", PARAMETER_TYPE_Double, 1.4, 0, 20
 	);
 
-
 	Parameters.Add_Grid(
 		NULL, "WATER_EROSION", _TL("Water erosion"),
 		"Gemiddeld bodemverlies als gevolg van geul- en intergeulerosie (ton ha-1 jaar-1)",
