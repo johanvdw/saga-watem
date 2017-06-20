@@ -43,6 +43,9 @@ private:
 	double Abis; 
 	bool wrong = false;
 
+	bool pit_flow = true;
+	int pit_radius = 4;
+
 	CSG_Table *pPitDataTable;
 
 };
