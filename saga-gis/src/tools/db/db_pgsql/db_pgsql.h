@@ -24,7 +24,8 @@
 // Geoscientific Analyses'. SAGA is free software; you   //
 // can redistribute it and/or modify it under the terms  //
 // of the GNU General Public License as published by the //
-// Free Software Foundation; version 2 of the License.   //
+// Free Software Foundation, either version 2 of the     //
+// License, or (at your option) any later version.       //
 //                                                       //
 // SAGA is distributed in the hope that it will be       //
 // useful, but WITHOUT ANY WARRANTY; without even the    //
@@ -33,10 +34,8 @@
 // License for more details.                             //
 //                                                       //
 // You should have received a copy of the GNU General    //
-// Public License along with this program; if not,       //
-// write to the Free Software Foundation, Inc.,          //
-// 51 Franklin Street, 5th Floor, Boston, MA 02110-1301, //
-// USA.                                                  //
+// Public License along with this program; if not, see   //
+// <http://www.gnu.org/licenses/>.                       //
 //                                                       //
 //-------------------------------------------------------//
 //                                                       //
@@ -149,9 +148,10 @@ public:
 	bool						Shapes_Load				(CSG_Shapes *pShapes, const CSG_String &Name, const CSG_String &geoTable, const CSG_String &Tables, const CSG_String &Fields, const CSG_String &Where);
 	bool						Shapes_Load				(CSG_Shapes *pShapes, const CSG_String &Name, const CSG_String &Select, const CSG_String &Geometry_Field, bool bBinary, int SRID = -1);
 
-	bool						Raster_Load				(CSG_Parameter_Grid_List *pGrids    , const CSG_String &Table, const CSG_String &Where = "", const CSG_String &Order = "");
-	bool						Raster_Load				(CSG_Grid *pGrid                    , const CSG_String &Table, const CSG_String &Where = "");
-	bool						Raster_Save				(CSG_Grid *pGrid, int SRID, const CSG_String &Table, const CSG_String &Field);
+	bool						Raster_Load				(CSG_Data_Manager         &Grids, const CSG_String &Table, const CSG_String &Where = "", const CSG_String &Order = "");
+	bool						Raster_Load				(CSG_Parameter_Grid_List *pGrids, const CSG_String &Table, const CSG_String &Where = "", const CSG_String &Order = "", int OutputType = 0);
+	bool						Raster_Load				(CSG_Grid *pGrid                , const CSG_String &Table, const CSG_String &Where = "");
+	bool						Raster_Save				(CSG_Grid *pGrid, int SRID      , const CSG_String &Table, const CSG_String &Field);
 	
 
 private:

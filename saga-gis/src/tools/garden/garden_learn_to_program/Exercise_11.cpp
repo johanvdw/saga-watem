@@ -24,7 +24,8 @@
 // Geoscientific Analyses'. SAGA is free software; you   //
 // can redistribute it and/or modify it under the terms  //
 // of the GNU General Public License as published by the //
-// Free Software Foundation; version 2 of the License.   //
+// Free Software Foundation, either version 2 of the     //
+// License, or (at your option) any later version.       //
 //                                                       //
 // SAGA is distributed in the hope that it will be       //
 // useful, but WITHOUT ANY WARRANTY; without even the    //
@@ -33,10 +34,8 @@
 // License for more details.                             //
 //                                                       //
 // You should have received a copy of the GNU General    //
-// Public License along with this program; if not,       //
-// write to the Free Software Foundation, Inc.,          //
-// 51 Franklin Street, 5th Floor, Boston, MA 02110-1301, //
-// USA.                                                  //
+// Public License along with this program; if not, see   //
+// <http://www.gnu.org/licenses/>.                       //
 //                                                       //
 //-------------------------------------------------------//
 //                                                       //
@@ -152,18 +151,18 @@ bool CExercise_11::On_Execute(void)
 	CSG_Grid	*pDEM;
 
 	//-----------------------------------------------------
-	sTime	= Parameters("TIME_SPAN")	->asDouble();
-	dTime	= Parameters("TIME_STEP")	->asDouble();
+	sTime	= Parameters("TIME_SPAN")->asDouble();
+	dTime	= Parameters("TIME_STEP")->asDouble();
 	nSteps	= (int)(sTime / dTime);
 
-	bUpdate	= Parameters("UPDATE")		->asBool();
+	bUpdate	= Parameters("UPDATE"   )->asBool();
 
-	N_Init	= Parameters("NINIT")		->asDouble();
-	N_Rain	= Parameters("NRAIN")		->asDouble();
+	N_Init	= Parameters("NINIT"    )->asDouble();
+	N_Rain	= Parameters("NRAIN"    )->asDouble();
 
-	pDEM	= Parameters("DEM")			->asGrid();
+	pDEM	= Parameters("DEM"      )->asGrid();
 
-	m_pN	= Parameters("NSTORE")		->asGrid();
+	m_pN	= Parameters("NSTORE"   )->asGrid();
 	m_pN->Assign(N_Init);
 	DataObject_Set_Colors(m_pN, 100, SG_COLORS_YELLOW_GREEN);
 
@@ -172,11 +171,11 @@ bool CExercise_11::On_Execute(void)
 	//-----------------------------------------------------
 	for(iStep=0; iStep<=nSteps && Set_Progress(iStep, nSteps); iStep++)
 	{
-		Process_Set_Text(CSG_String::Format(SG_T("Time [a]: %f (%f)"), dTime * iStep, sTime));
+		Process_Set_Text(CSG_String::Format("Time [a]: %f (%f)", dTime * iStep, sTime));
 
 		if( bUpdate )
 		{
-			DataObject_Update(m_pN, m_pN->Get_ZMin(), m_pN->Get_ZMax(), true);
+			DataObject_Update(m_pN, m_pN->Get_Min(), m_pN->Get_Max(), true);
 		}
 
 		Next_Step(N_Rain, dTime);

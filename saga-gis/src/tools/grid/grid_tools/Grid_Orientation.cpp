@@ -24,7 +24,8 @@
 // Geoscientific Analyses'. SAGA is free software; you   //
 // can redistribute it and/or modify it under the terms  //
 // of the GNU General Public License as published by the //
-// Free Software Foundation; version 2 of the License.   //
+// Free Software Foundation, either version 2 of the     //
+// License, or (at your option) any later version.       //
 //                                                       //
 // SAGA is distributed in the hope that it will be       //
 // useful, but WITHOUT ANY WARRANTY; without even the    //
@@ -33,10 +34,8 @@
 // License for more details.                             //
 //                                                       //
 // You should have received a copy of the GNU General    //
-// Public License along with this program; if not,       //
-// write to the Free Software Foundation, Inc.,          //
-// 51 Franklin Street, 5th Floor, Boston, MA 02110-1301, //
-// USA.                                                  //
+// Public License along with this program; if not, see   //
+// <http://www.gnu.org/licenses/>.                       //
 //                                                       //
 //-------------------------------------------------------//
 //                                                       //
@@ -82,13 +81,13 @@ CGrid_Copy::CGrid_Copy(void)
 
 	//-----------------------------------------------------
 	Parameters.Add_Grid(
-		NULL	, "GRID"	, _TL("Grid"),
+		""	, "GRID"	, _TL("Grid"),
 		_TL(""),
 		PARAMETER_INPUT
 	);
 
 	Parameters.Add_Grid(
-		NULL	, "COPY"	, _TL("Copy"),
+		""	, "COPY"	, _TL("Copy"),
 		_TL(""),
 		PARAMETER_OUTPUT
 	);
@@ -164,8 +163,8 @@ bool CGrid_Invert::On_Execute(void)
 	}
 
 	//-----------------------------------------------------
-	double	zMin	= pGrid->Get_ZMin();
-	double	zMax	= pGrid->Get_ZMax();
+	double	zMin	= pGrid->Get_Min();
+	double	zMax	= pGrid->Get_Max();
 
 	for(int y=0; y<Get_NY() && SG_UI_Process_Set_Progress(y, Get_NY()); y++)
 	{

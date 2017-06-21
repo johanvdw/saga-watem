@@ -24,7 +24,8 @@
 // Geoscientific Analyses'. SAGA is free software; you   //
 // can redistribute it and/or modify it under the terms  //
 // of the GNU General Public License as published by the //
-// Free Software Foundation; version 2 of the License.   //
+// Free Software Foundation, either version 2 of the     //
+// License, or (at your option) any later version.       //
 //                                                       //
 // SAGA is distributed in the hope that it will be       //
 // useful, but WITHOUT ANY WARRANTY; without even the    //
@@ -33,10 +34,8 @@
 // License for more details.                             //
 //                                                       //
 // You should have received a copy of the GNU General    //
-// Public License along with this program; if not,       //
-// write to the Free Software Foundation, Inc.,          //
-// 51 Franklin Street, 5th Floor, Boston, MA 02110-1301, //
-// USA.                                                  //
+// Public License along with this program; if not, see   //
+// <http://www.gnu.org/licenses/>.                       //
 //                                                       //
 //-------------------------------------------------------//
 //                                                       //
@@ -954,7 +953,7 @@ bool CSG_GDAL_DataSet::Write(int i, CSG_Grid *pGrid, double noDataValue)
 
 	//-----------------------------------------------------
 	GDALSetRasterNoDataValue(pBand, noDataValue);
-	GDALSetRasterStatistics (pBand, pGrid->Get_ZMin(), pGrid->Get_ZMax(), pGrid->Get_Mean(), pGrid->Get_StdDev());
+	GDALSetRasterStatistics (pBand, pGrid->Get_Min(), pGrid->Get_Max(), pGrid->Get_Mean(), pGrid->Get_StdDev());
 
 	return( true );	
 }
@@ -1067,7 +1066,7 @@ bool CSG_GDAL_DataSet::Get_Transformation(CSG_Grid **ppGrid, TSG_Grid_Resampling
 }
 
 //---------------------------------------------------------
-bool CSG_GDAL_DataSet::Get_Transformation(CSG_Grid **ppGrid, TSG_Grid_Resampling	Interpolation, const CSG_Grid_System &System, bool bVerbose)	const
+bool CSG_GDAL_DataSet::Get_Transformation(CSG_Grid **ppGrid, TSG_Grid_Resampling Interpolation, const CSG_Grid_System &System, bool bVerbose)	const
 {
 	if( !System.is_Valid() )
 	{
@@ -1120,7 +1119,7 @@ bool CSG_GDAL_DataSet::Get_Transformation(CSG_Grid **ppGrid, TSG_Grid_Resampling
 
 			vImage	= BInv * (vWorld - A);
 
-			if( pImage->Get_Value(vImage[0], vImage[1], z, Interpolation, false, true) )
+			if( pImage->Get_Value(vImage[0], vImage[1], z, Interpolation) )
 			{
 				pWorld->Set_Value(x, y, z);
 			}
@@ -1150,11 +1149,11 @@ TSG_Data_Type	SG_Get_Grid_Type	(CSG_Parameter_Grid_List *pGrids)
 
 	if( pGrids )
 	{
-		for(int i=0; i<pGrids->Get_Count(); i++)
+		for(int i=0; i<pGrids->Get_Grid_Count(); i++)
 		{
-			if( SG_Data_Type_Get_Size(Type) <= SG_Data_Type_Get_Size(pGrids->asGrid(i)->Get_Type()) )
+			if( SG_Data_Type_Get_Size(Type) <= SG_Data_Type_Get_Size(pGrids->Get_Grid(i)->Get_Type()) )
 			{
-				Type	= pGrids->asGrid(i)->Get_Type();
+				Type	= pGrids->Get_Grid(i)->Get_Type();
 			}
 		}
 	}

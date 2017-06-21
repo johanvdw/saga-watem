@@ -121,7 +121,7 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "climate_tools", "tools\clim
 		{2FECD6E9-B83B-4BC3-BE78-9DA2698E456B} = {2FECD6E9-B83B-4BC3-BE78-9DA2698E456B}
 	EndProjectSection
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "contrib_perego", "tools\contrib\contrib_peregro\contrib_perego.vcxproj", "{0C537B2A-9B75-4CB9-9271-4CFDC471E865}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "contrib_perego", "tools\contrib\contrib_perego\contrib_perego.vcxproj", "{0C537B2A-9B75-4CB9-9271-4CFDC471E865}"
 	ProjectSection(ProjectDependencies) = postProject
 		{2FECD6E9-B83B-4BC3-BE78-9DA2698E456B} = {2FECD6E9-B83B-4BC3-BE78-9DA2698E456B}
 	EndProjectSection
@@ -387,6 +387,8 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "sim_geomorphology", "tools\
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "riegl_io_rdb2_import", "tools\riegl\riegl_io_rdb2_import\riegl_io_rdb2_import.vcxproj", "{A89FB596-3D86-4BF0-A57B-DAC3A7D2E740}"
 >>>>>>> master
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "grids_tools", "tools\grid\grids_tools\grids_tools.vcxproj", "{3300798D-E3ED-484C-BD9D-D54CC6C65817}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -1027,13 +1029,18 @@ Global
 		{BFA29823-586C-4639-8330-75FD41604B18}.Release|x64.ActiveCfg = Release|x64
 		{BFA29823-586C-4639-8330-75FD41604B18}.Release|x64.Build.0 = Release|x64
 		{A89FB596-3D86-4BF0-A57B-DAC3A7D2E740}.Debug|Win32.ActiveCfg = Debug|Win32
-		{A89FB596-3D86-4BF0-A57B-DAC3A7D2E740}.Debug|Win32.Build.0 = Debug|Win32
 		{A89FB596-3D86-4BF0-A57B-DAC3A7D2E740}.Debug|x64.ActiveCfg = Debug|x64
 		{A89FB596-3D86-4BF0-A57B-DAC3A7D2E740}.Debug|x64.Build.0 = Debug|x64
 		{A89FB596-3D86-4BF0-A57B-DAC3A7D2E740}.Release|Win32.ActiveCfg = Release|Win32
-		{A89FB596-3D86-4BF0-A57B-DAC3A7D2E740}.Release|Win32.Build.0 = Release|Win32
 		{A89FB596-3D86-4BF0-A57B-DAC3A7D2E740}.Release|x64.ActiveCfg = Release|x64
-		{A89FB596-3D86-4BF0-A57B-DAC3A7D2E740}.Release|x64.Build.0 = Release|x64
+		{3300798D-E3ED-484C-BD9D-D54CC6C65817}.Debug|Win32.ActiveCfg = Debug|Win32
+		{3300798D-E3ED-484C-BD9D-D54CC6C65817}.Debug|Win32.Build.0 = Debug|Win32
+		{3300798D-E3ED-484C-BD9D-D54CC6C65817}.Debug|x64.ActiveCfg = Debug|x64
+		{3300798D-E3ED-484C-BD9D-D54CC6C65817}.Debug|x64.Build.0 = Debug|x64
+		{3300798D-E3ED-484C-BD9D-D54CC6C65817}.Release|Win32.ActiveCfg = Release|Win32
+		{3300798D-E3ED-484C-BD9D-D54CC6C65817}.Release|Win32.Build.0 = Release|Win32
+		{3300798D-E3ED-484C-BD9D-D54CC6C65817}.Release|x64.ActiveCfg = Release|x64
+		{3300798D-E3ED-484C-BD9D-D54CC6C65817}.Release|x64.Build.0 = Release|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

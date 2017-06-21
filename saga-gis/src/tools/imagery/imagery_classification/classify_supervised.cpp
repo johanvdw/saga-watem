@@ -24,7 +24,8 @@
 // Geoscientific Analyses'. SAGA is free software; you   //
 // can redistribute it and/or modify it under the terms  //
 // of the GNU General Public License as published by the //
-// Free Software Foundation; version 2 of the License.   //
+// Free Software Foundation, either version 2 of the     //
+// License, or (at your option) any later version.       //
 //                                                       //
 // SAGA is distributed in the hope that it will be       //
 // useful, but WITHOUT ANY WARRANTY; without even the    //
@@ -33,10 +34,8 @@
 // License for more details.                             //
 //                                                       //
 // You should have received a copy of the GNU General    //
-// Public License along with this program; if not,       //
-// write to the Free Software Foundation, Inc.,          //
-// 51 Franklin Street, 5th Floor, Boston, MA 02110-1301, //
-// USA.                                                  //
+// Public License along with this program; if not, see   //
+// <http://www.gnu.org/licenses/>.                       //
 //                                                       //
 //-------------------------------------------------------//
 //                                                       //
@@ -75,7 +74,6 @@ CGrid_Classify_Supervised::CGrid_Classify_Supervised(void)
 {
 	int				i;
 	CSG_String		s;
-	CSG_Parameter	*pNode;
 
 	//-----------------------------------------------------
 	Set_Name		(_TL("Supervised Classification for Grids"));
@@ -87,50 +85,50 @@ CGrid_Classify_Supervised::CGrid_Classify_Supervised(void)
 	));
 
 	//-----------------------------------------------------
-	pNode	= Parameters.Add_Grid_List(
-		NULL	, "GRIDS"			, _TL("Features"),
+	Parameters.Add_Grid_List("",
+		"GRIDS"			, _TL("Features"),
 		_TL(""),
 		PARAMETER_INPUT
 	);
 
-	Parameters.Add_Value(
-		pNode	, "NORMALISE"		, _TL("Normalise"),
+	Parameters.Add_Bool("GRIDS",
+		"NORMALISE"		, _TL("Normalise"),
 		_TL(""),
-		PARAMETER_TYPE_Bool, false
+		false
 	);
 
-	Parameters.Add_Grid(
-		NULL	, "CLASSES"			, _TL("Classification"),
+	Parameters.Add_Grid("",
+		"CLASSES"		, _TL("Classification"),
 		_TL(""),
 		PARAMETER_OUTPUT, true, SG_DATATYPE_Byte
 	);
 
-	Parameters.Add_Grid(
-		NULL	, "QUALITY"			, _TL("Quality"),
+	Parameters.Add_Grid("",
+		"QUALITY"		, _TL("Quality"),
 		_TL("Dependent on chosen method, these are distances or probabilities."),
 		PARAMETER_OUTPUT_OPTIONAL
 	);
 
 	//-----------------------------------------------------
-	pNode	= Parameters.Add_Shapes(
-		NULL	, "TRAINING"		, _TL("Training Areas"),
+	Parameters.Add_Shapes("",
+		"TRAINING"		, _TL("Training Areas"),
 		_TL(""),
 		PARAMETER_INPUT_OPTIONAL, SHAPE_TYPE_Polygon
 	);
 
-	Parameters.Add_Table_Field(
-		pNode	, "TRAINING_CLASS"	, _TL("Class Identifier"),
+	Parameters.Add_Table_Field("TRAINING",
+		"TRAINING_CLASS", _TL("Class Identifier"),
 		_TL("")
 	);
 
-	Parameters.Add_FilePath(
-		pNode	, "FILE_LOAD"		, _TL("Load Statistics from File..."),
+	Parameters.Add_FilePath("TRAINING",
+		"FILE_LOAD"		, _TL("Load Statistics from File..."),
 		_TL(""),
 		NULL, NULL, false
 	);
 
-	Parameters.Add_FilePath(
-		NULL	, "FILE_SAVE"		, _TL("Save Statistics to File..."),
+	Parameters.Add_FilePath("",
+		"FILE_SAVE"		, _TL("Save Statistics to File..."),
 		_TL(""),
 		NULL, NULL, true
 	);
@@ -141,32 +139,32 @@ CGrid_Classify_Supervised::CGrid_Classify_Supervised(void)
 		s	+= CSG_Classifier_Supervised::Get_Name_of_Method(i) + "|";
 	}
 
-	Parameters.Add_Choice(
-		NULL	, "METHOD"			, _TL("Method"),
+	Parameters.Add_Choice("",
+		"METHOD"		, _TL("Method"),
 		_TL(""),
 		s, SG_CLASSIFY_SUPERVISED_MinimumDistance
 	);
 
-	Parameters.Add_Value(
-		NULL	, "THRESHOLD_DIST"	, _TL("Distance Threshold"),
+	Parameters.Add_Double("",
+		"THRESHOLD_DIST", _TL("Distance Threshold"),
 		_TL("Let pixel stay unclassified, if minimum euclidian or mahalanobis distance is greater than threshold."),
-		PARAMETER_TYPE_Double, 0.0, 0.0, true
+		0.0, 0.0, true
 	);
 
-	Parameters.Add_Value(
-		NULL	, "THRESHOLD_ANGLE"	, _TL("Spectral Angle Threshold (Degree)"),
+	Parameters.Add_Double("",
+		"THRESHOLD_ANGLE", _TL("Spectral Angle Threshold (Degree)"),
 		_TL("Let pixel stay unclassified, if spectral angle distance is greater than threshold."),
-		PARAMETER_TYPE_Double, 0.0, 0.0, true, 90.0, true
+		0.0, 0.0, true, 90.0, true
 	);
 
-	Parameters.Add_Value(
-		NULL	, "THRESHOLD_PROB"	, _TL("Probability Threshold"),
+	Parameters.Add_Double("",
+		"THRESHOLD_PROB", _TL("Probability Threshold"),
 		_TL("Let pixel stay unclassified, if maximum likelihood probability value is less than threshold."),
-		PARAMETER_TYPE_Double, 0.0, 0.0, true, 100.0, true
+		0.0, 0.0, true, 100.0, true
 	);
 
-	Parameters.Add_Choice(
-		NULL	, "RELATIVE_PROB"	, _TL("Probability Reference"),
+	Parameters.Add_Choice("",
+		"RELATIVE_PROB"	, _TL("Probability Reference"),
 		_TL(""),
 		CSG_String::Format("%s|%s|",
 			_TL("absolute"),
@@ -174,23 +172,20 @@ CGrid_Classify_Supervised::CGrid_Classify_Supervised(void)
 		), 1
 	);
 
-	pNode	= Parameters.Add_Node(
-		NULL	, "WTA"				, _TL("Winner Takes All"),
+	Parameters.Add_Node("",
+		"WTA"			, _TL("Winner Takes All"),
 		_TL("")
 	);
 
 	for(i=0; i<SG_CLASSIFY_SUPERVISED_WTA; i++)
 	{
-		Parameters.Add_Value(
-			pNode, CSG_String::Format("WTA_%d", i), CSG_Classifier_Supervised::Get_Name_of_Method(i), _TL(""),
-			PARAMETER_TYPE_Bool, false
-		);
+		Parameters.Add_Bool("WTA", CSG_String::Format("WTA_%d", i), CSG_Classifier_Supervised::Get_Name_of_Method(i), _TL(""), false);
 	}
 
-	Parameters.Add_Value(
-		NULL	, "RGB_COLORS"	, _TL("Update Colors from Features"),
+	Parameters.Add_Bool("",
+		"RGB_COLORS"	, _TL("Update Colors from Features"),
 		_TL("Use the first three features in list to obtain blue, green, red components for class colour in look-up table."),
-		PARAMETER_TYPE_Bool, true
+		true
 	)->Set_UseInCMD(false);
 }
 
@@ -220,7 +215,7 @@ int CGrid_Classify_Supervised::On_Parameters_Enable(CSG_Parameters *pParameters,
 
 	if( !SG_STR_CMP(pParameter->Get_Identifier(), "GRIDS") )
 	{
-		pParameters->Set_Enabled("RGB_COLORS", pParameter->asGridList()->Get_Count() >= 3);
+		pParameters->Set_Enabled("RGB_COLORS", pParameter->asGridList()->Get_Grid_Count() >= 3);
 	}
 
 	return( CSG_Tool_Grid::On_Parameters_Enable(pParameters, pParameter) );
@@ -269,7 +264,7 @@ bool CGrid_Classify_Supervised::On_Execute(void)
 		{
 			int			Class;
 			double		Quality;
-			CSG_Vector	Features(m_pFeatures->Get_Count());
+			CSG_Vector	Features(m_pFeatures->Get_Grid_Count());
 
 			if( Get_Features(x, y, Features) && Classifier.Get_Class(Features, Class, Quality, Method) )
 			{
@@ -299,25 +294,25 @@ bool CGrid_Classify_Supervised::Get_Features(void)
 	m_pFeatures		= Parameters("GRIDS"    )->asGridList();
 	m_bNormalise	= Parameters("NORMALISE")->asBool();
 
-	for(int i=m_pFeatures->Get_Count()-1; i>=0; i--)
+	for(int i=m_pFeatures->Get_Grid_Count()-1; i>=0; i--)
 	{
-		if( m_pFeatures->asGrid(i)->Get_ZRange() <= 0.0 )
+		if( m_pFeatures->Get_Grid(i)->Get_Range() <= 0.0 )
 		{
-			Message_Add(CSG_String::Format("%s: %s", _TL("feature has been dropped"), m_pFeatures->asGrid(i)->Get_Name()));
+			Message_Add(CSG_String::Format("%s: %s", _TL("feature has been dropped"), m_pFeatures->Get_Grid(i)->Get_Name()));
 
 			m_pFeatures->Del_Item(i);
 		}
 	}
 
-	return( m_pFeatures->Get_Count() > 0 );
+	return( m_pFeatures->Get_Grid_Count() > 0 );
 }
 
 //---------------------------------------------------------
 bool CGrid_Classify_Supervised::Get_Features(int x, int y, CSG_Vector &Features)
 {
-	for(int i=0; i<m_pFeatures->Get_Count(); i++)
+	for(int i=0; i<m_pFeatures->Get_Grid_Count(); i++)
 	{
-		CSG_Grid	*pGrid	= m_pFeatures->asGrid(i);
+		CSG_Grid	*pGrid	= m_pFeatures->Get_Grid(i);
 
 		if( pGrid->is_NoData(x, y) )
 		{
@@ -338,7 +333,7 @@ bool CGrid_Classify_Supervised::Get_Features(int x, int y, CSG_Vector &Features)
 //---------------------------------------------------------
 bool CGrid_Classify_Supervised::Set_Classifier(CSG_Classifier_Supervised &Classifier)
 {
-	Classifier.Create(m_pFeatures->Get_Count());
+	Classifier.Create(m_pFeatures->Get_Grid_Count());
 
 	Classifier.Set_Threshold_Distance   (Parameters("THRESHOLD_DIST" )->asDouble());
 	Classifier.Set_Threshold_Angle      (Parameters("THRESHOLD_ANGLE")->asDouble() * M_DEG_TO_RAD);
@@ -390,7 +385,7 @@ bool CGrid_Classify_Supervised::Set_Classifier(CSG_Classifier_Supervised &Classi
 
 		for(int x=0; x<Get_NX(); x++, p.x+=Get_Cellsize())
 		{
-			CSG_Vector	Features(m_pFeatures->Get_Count());
+			CSG_Vector	Features(m_pFeatures->Get_Grid_Count());
 
 			if( Get_Features(x, y, Features) )
 			{
@@ -436,7 +431,7 @@ bool CGrid_Classify_Supervised::Set_Classification(CSG_Classifier_Supervised &Cl
 	{
 		CSG_Parameter_Grid_List	*pGrids	= Parameters("GRIDS")->asGridList();
 
-		bool	bRGB	= pGrids->Get_Count() >= 3 && Parameters("RGB_COLORS")->asBool();
+		bool	bRGB	= pGrids->Get_Grid_Count() >= 3 && Parameters("RGB_COLORS")->asBool();
 
 		for(int iClass=0; iClass<Classifier.Get_Class_Count(); iClass++)
 		{
@@ -454,7 +449,7 @@ bool CGrid_Classify_Supervised::Set_Classification(CSG_Classifier_Supervised &Cl
 
 			if( bRGB )
 			{
-				#define SET_COLOR_COMPONENT(c, i)	c = (int)(127 + (Classifier.Get_Class_Mean(iClass, i) - pGrids->asGrid(i)->Get_Mean()) * 127 / pGrids->asGrid(i)->Get_StdDev()); if( c < 0 ) c = 0; else if( c > 255 ) c = 255;
+				#define SET_COLOR_COMPONENT(c, i)	c = (int)(127 + (Classifier.Get_Class_Mean(iClass, i) - pGrids->Get_Grid(i)->Get_Mean()) * 127 / pGrids->Get_Grid(i)->Get_StdDev()); if( c < 0 ) c = 0; else if( c > 255 ) c = 255;
 
 				int	r; SET_COLOR_COMPONENT(r, 2);
 				int	g; SET_COLOR_COMPONENT(g, 1);

@@ -24,7 +24,8 @@
 // Geoscientific Analyses'. SAGA is free software; you   //
 // can redistribute it and/or modify it under the terms  //
 // of the GNU General Public License as published by the //
-// Free Software Foundation; version 2 of the License.   //
+// Free Software Foundation, either version 2 of the     //
+// License, or (at your option) any later version.       //
 //                                                       //
 // SAGA is distributed in the hope that it will be       //
 // useful, but WITHOUT ANY WARRANTY; without even the    //
@@ -33,10 +34,8 @@
 // License for more details.                             //
 //                                                       //
 // You should have received a copy of the GNU General    //
-// Public License along with this program; if not,       //
-// write to the Free Software Foundation, Inc.,          //
-// 51 Franklin Street, 5th Floor, Boston, MA 02110-1301, //
-// USA.                                                  //
+// Public License along with this program; if not, see   //
+// <http://www.gnu.org/licenses/>.                       //
 //                                                       //
 //-------------------------------------------------------//
 //                                                       //
@@ -70,6 +69,7 @@
 #include "wksp_tin.h"
 #include "wksp_pointcloud.h"
 #include "wksp_grid.h"
+#include "wksp_grids.h"
 
 #include "wksp_layer_classify.h"
 #include "wksp_layer_legend.h"
@@ -192,21 +192,22 @@ void CWKSP_Layer_Legend::Draw(wxDC &dc, double Zoom, double Zoom_Map, wxPoint Po
 	//-----------------------------------------------------
 	switch( m_pLayer->Get_Type() )
 	{
-	default                    : break;
 	case WKSP_ITEM_Shapes      :
 		switch( ((CWKSP_Shapes *)m_pLayer)->Get_Shapes()->Get_Type() )
 		{
-		default                : break;
 		case SHAPE_TYPE_Point  :
 		case SHAPE_TYPE_Points : _Draw_Point     (dc, (CWKSP_Shapes_Point   *)m_pLayer); break;
 		case SHAPE_TYPE_Line   : _Draw_Line      (dc, (CWKSP_Shapes_Line    *)m_pLayer); break;
 		case SHAPE_TYPE_Polygon: _Draw_Polygon   (dc, (CWKSP_Shapes_Polygon *)m_pLayer); break;
+		default                : break;
 		}
 		break;
 
 	case WKSP_ITEM_TIN         : _Draw_TIN       (dc, (CWKSP_TIN            *)m_pLayer); break;
 	case WKSP_ITEM_PointCloud  : _Draw_PointCloud(dc, (CWKSP_PointCloud     *)m_pLayer); break;
 	case WKSP_ITEM_Grid        : _Draw_Grid      (dc, (CWKSP_Grid           *)m_pLayer); break;
+	case WKSP_ITEM_Grids       : _Draw_Grids     (dc, (CWKSP_Grids          *)m_pLayer); break;
+	default                    : break;
 	}
 
 	//-----------------------------------------------------
@@ -308,25 +309,25 @@ inline void CWKSP_Layer_Legend::_Draw_Label(wxDC &dc, int y, wxString Text, int 
 }
 
 //---------------------------------------------------------
-inline void CWKSP_Layer_Legend::_Draw_Box(wxDC &dc, int y, int dy, int Style, int iClass)
+inline void CWKSP_Layer_Legend::_Draw_Box(wxDC &dc, int y, int dy, int Style, int LineColor, int FillColor, wxString Text)
 {
-	if( iClass >= 0 )
+	if( (Style & BOX_STYLE_OUTL) == 0 )
 	{
-		if( (Style & BOX_STYLE_OUTL) == 0 )
-		{
-			wxPen	Pen		= dc.GetPen();
-			Pen		.SetColour(Get_Color_asWX(m_pClassify->Get_Class_Color(iClass)));
-			dc		.SetPen   (Pen);
-		}
+		wxPen	Pen		= dc.GetPen();
+		Pen		.SetColour(Get_Color_asWX(LineColor));
+		dc		.SetPen   (Pen);
+	}
 
-		if( (Style & BOX_STYLE_FILL) != 0 )
-		{
-			wxBrush	Brush	= dc.GetBrush();
-			Brush	.SetColour(Get_Color_asWX(m_pClassify->Get_Class_Color(iClass)));
-			dc		.SetBrush (Brush);
-		}
+	if( (Style & BOX_STYLE_FILL) != 0 )
+	{
+		wxBrush	Brush	= dc.GetBrush();
+		Brush	.SetColour(Get_Color_asWX(FillColor));
+		dc		.SetBrush (Brush);
+	}
 
-		_Draw_Label(dc, y, m_pClassify->Get_Class_Name(iClass), TEXTALIGN_TOP);
+	if( !Text.IsEmpty() )
+	{
+		_Draw_Label(dc, y, Text, TEXTALIGN_TOP);
 	}
 
 	_Set_Size(0, dy);
@@ -350,6 +351,32 @@ inline void CWKSP_Layer_Legend::_Draw_Box(wxDC &dc, int y, int dy, int Style, in
 	{
 		((CWKSP_Shapes_Point *)m_pLayer)->Draw_Symbol(dc, m_xBox + m_dxBox / 2, y + dy / 2, dy / 2);
 	}
+}
+
+//---------------------------------------------------------
+inline void CWKSP_Layer_Legend::_Draw_Box(wxDC &dc, int y, int dy, int Style, int iClass)
+{
+	int	LineColor	= Get_Color_asInt(dc.GetPen  ().IsOk() ? dc.GetPen  ().GetColour() : *wxBLACK);
+	int	FillColor	= Get_Color_asInt(dc.GetBrush().IsOk() ? dc.GetBrush().GetColour() : *wxWHITE);
+
+	wxString	Text;
+
+	if( iClass >= 0 )
+	{
+		if( (Style & BOX_STYLE_OUTL) == 0 )
+		{
+			LineColor	= m_pClassify->Get_Class_Color(iClass);
+		}
+
+		if( (Style & BOX_STYLE_FILL) != 0 )
+		{
+			FillColor	= m_pClassify->Get_Class_Color(iClass);
+		}
+
+		Text	= m_pClassify->Get_Class_Name(iClass);
+	}
+
+	_Draw_Box(dc, y, dy, Style, LineColor, FillColor, Text);
 }
 
 //---------------------------------------------------------
@@ -491,9 +518,9 @@ void CWKSP_Layer_Legend::_Draw_Grid(wxDC &dc, CWKSP_Grid *pLayer)
 	case CLASSIFY_GRADUATED:
 	case CLASSIFY_METRIC:
 	case CLASSIFY_SHADE:
-		if( pLayer->Get_Grid()->Get_Unit() && *pLayer->Get_Grid()->Get_Unit() )
+		if( !pLayer->Get_Grid()->Get_Unit().is_Empty() )
 		{
-			_Draw_Title(dc, FONT_SUBTITLE, wxString::Format(wxT("[%s]"), pLayer->Get_Grid()->Get_Unit()));
+			_Draw_Title(dc, FONT_SUBTITLE, wxString::Format("[%s]", pLayer->Get_Grid()->Get_Unit().c_str()));
 		}
 
 	default:
@@ -502,44 +529,55 @@ void CWKSP_Layer_Legend::_Draw_Grid(wxDC &dc, CWKSP_Grid *pLayer)
 
 	case CLASSIFY_RGB:
 	case CLASSIFY_OVERLAY:
-		_Draw_Grid_Image(dc, m_Position.y, pLayer->Get_Grid());
+		_Draw_Layer_Image(dc, m_Position.y, pLayer);
 		break;
 	}
 }
 
 //---------------------------------------------------------
-void CWKSP_Layer_Legend::_Draw_Grid_Image(wxDC &dc, int ay, CSG_Grid *pGrid)
+void CWKSP_Layer_Legend::_Draw_Grids(wxDC &dc, CWKSP_Grids *pLayer)
 {
-	int		x, y, nx, ny, Color;
-	double	d, dx, dy;
-	wxImage	img;
+	switch( m_pClassify->Get_Mode() )
+	{
+	case CLASSIFY_GRADUATED:
+	case CLASSIFY_METRIC:
+	case CLASSIFY_SHADE:
+		if( *pLayer->Get_Grids()->Get_Unit() )
+		{
+			_Draw_Title(dc, FONT_SUBTITLE, wxString::Format("[%s]", pLayer->Get_Grids()->Get_Unit()));
+		}
 
-	//-----------------------------------------------------
-	if( pGrid->Get_NX() > pGrid->Get_NY() )
+	default:
+		_Draw_Boxes(dc, m_Position.y, BOX_STYLE_RECT|BOX_STYLE_FILL|BOX_STYLE_OUTL);
+		break;
+
+	case CLASSIFY_RGB:
+	case CLASSIFY_OVERLAY:
+	//	_Draw_Layer_Image(dc, m_Position.y, pLayer);
+		_Draw_Box(dc, m_Position.y, BOX_HEIGHT, BOX_STYLE_RECT|BOX_STYLE_FILL|BOX_STYLE_OUTL, 0, SG_GET_RGB(255,   0,   0), pLayer->Get_Grid(0)->Get_Name());
+		_Draw_Box(dc, m_Position.y, BOX_HEIGHT, BOX_STYLE_RECT|BOX_STYLE_FILL|BOX_STYLE_OUTL, 0, SG_GET_RGB(  0, 255,   0), pLayer->Get_Grid(1)->Get_Name());
+		_Draw_Box(dc, m_Position.y, BOX_HEIGHT, BOX_STYLE_RECT|BOX_STYLE_FILL|BOX_STYLE_OUTL, 0, SG_GET_RGB(  0,   0, 255), pLayer->Get_Grid(2)->Get_Name());
+		break;
+	}
+}
+
+//---------------------------------------------------------
+void CWKSP_Layer_Legend::_Draw_Layer_Image(wxDC &dc, int ay, CWKSP_Layer *pLayer)
+{
+	int		nx, ny;
+
+	if( pLayer->Get_Extent().Get_XRange() > pLayer->Get_Extent().Get_YRange() )
 	{
 		nx	= m_dxBox;
-		d	= (int)(pGrid->Get_NX() / nx);
-		ny	= (int)(pGrid->Get_NY() / d);
+		ny	= (int)(pLayer->Get_Extent().Get_YRange() / (pLayer->Get_Extent().Get_XRange() / nx));
 	}
 	else
 	{
 		ny	= m_dxBox;
-		d	= (int)(pGrid->Get_NY() / ny);
-		nx	= (int)(pGrid->Get_NX() / d);
+		nx	= (int)(pLayer->Get_Extent().Get_XRange() / (pLayer->Get_Extent().Get_YRange() / ny));
 	}
 
-	img.Create(nx, ny);
-
-	for(y=0, dy=0.0; y<ny; y++, dy+=d)
-	{
-		for(x=0, dx=0.0; x<nx; x++, dx+=d)
-		{
-			Color	= m_pClassify->Get_Class_Color_byValue(pGrid->asDouble((int)dx, (int)dy));
-			img.SetRGB(x, ny - 1 - y, SG_GET_R(Color), SG_GET_G(Color), SG_GET_B(Color));
-		}
-	}
-
-	dc.DrawBitmap(wxBitmap(img), m_xBox, ay, false);
+	dc.DrawBitmap(pLayer->Get_Thumbnail(nx, ny), m_xBox, ay, false);
 
 	Draw_Edge(dc, EDGE_STYLE_SIMPLE, m_xBox, ay, m_xBox + nx, ay + ny);
 

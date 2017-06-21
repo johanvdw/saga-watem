@@ -24,7 +24,8 @@
 // Geoscientific Analyses'. SAGA is free software; you   //
 // can redistribute it and/or modify it under the terms  //
 // of the GNU General Public License as published by the //
-// Free Software Foundation; version 2 of the License.   //
+// Free Software Foundation, either version 2 of the     //
+// License, or (at your option) any later version.       //
 //                                                       //
 // SAGA is distributed in the hope that it will be       //
 // useful, but WITHOUT ANY WARRANTY; without even the    //
@@ -33,10 +34,8 @@
 // License for more details.                             //
 //                                                       //
 // You should have received a copy of the GNU General    //
-// Public License along with this program; if not,       //
-// write to the Free Software Foundation, Inc.,          //
-// 51 Franklin Street, 5th Floor, Boston, MA 02110-1301, //
-// USA.                                                  //
+// Public License along with this program; if not, see   //
+// <http://www.gnu.org/licenses/>.                       //
 //                                                       //
 //-------------------------------------------------------//
 //                                                       //
@@ -82,7 +81,6 @@ class CGStat_Export : public CSG_Tool
 {
 public:
 	CGStat_Export(void);
-	virtual ~CGStat_Export(void);
 
 	virtual CSG_String		Get_MenuPath(void)		{	return( _TL("Export") );	}
 
@@ -96,8 +94,6 @@ protected:
 
 ///////////////////////////////////////////////////////////
 //														 //
-//														 //
-//														 //
 ///////////////////////////////////////////////////////////
 
 //---------------------------------------------------------
@@ -105,7 +101,6 @@ class CGStat_Import : public CSG_Tool
 {
 public:
 	CGStat_Import(void);
-	virtual ~CGStat_Import(void);
 
 	virtual CSG_String		Get_MenuPath(void)		{	return( _TL("Import") );	}
 
@@ -117,9 +112,17 @@ protected:
 
 private:
 
-	bool					Stream_Find_NextWhiteChar	(FILE *Stream);
-	bool					Stream_Get_StringInQuota	(FILE *Stream, CSG_String &String);
+	bool					Stream_Find_NextWhiteChar	(CSG_File &Stream);
+	bool					Stream_Get_StringInQuota	(CSG_File &Stream, CSG_String &String);
 
 };
 
+
+///////////////////////////////////////////////////////////
+//														 //
+//														 //
+//														 //
+///////////////////////////////////////////////////////////
+
+//---------------------------------------------------------
 #endif // #ifndef HEADER_INCLUDED__GSTAT_H

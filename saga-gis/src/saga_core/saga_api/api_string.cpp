@@ -26,7 +26,8 @@
 // This library is free software; you can redistribute   //
 // it and/or modify it under the terms of the GNU Lesser //
 // General Public License as published by the Free       //
-// Software Foundation, version 2.1 of the License.      //
+// Software Foundation, either version 2.1 of the        //
+// License, or (at your option) any later version.       //
 //                                                       //
 // This library is distributed in the hope that it will  //
 // be useful, but WITHOUT ANY WARRANTY; without even the //
@@ -36,9 +37,7 @@
 //                                                       //
 // You should have received a copy of the GNU Lesser     //
 // General Public License along with this program; if    //
-// not, write to the Free Software Foundation, Inc.,     //
-// 51 Franklin Street, 5th Floor, Boston, MA 02110-1301, //
-// USA.                                                  //
+// not, see <http://www.gnu.org/licenses/>.              //
 //                                                       //
 //-------------------------------------------------------//
 //                                                       //
@@ -128,8 +127,6 @@ CSG_String::~CSG_String(void)
 
 ///////////////////////////////////////////////////////////
 //														 //
-//														 //
-//														 //
 ///////////////////////////////////////////////////////////
 
 //---------------------------------------------------------
@@ -171,8 +168,6 @@ CSG_String & CSG_String::operator = (wchar_t Character)
 
 ///////////////////////////////////////////////////////////
 //														 //
-//														 //
-//														 //
 ///////////////////////////////////////////////////////////
 
 //---------------------------------------------------------
@@ -189,8 +184,6 @@ bool CSG_String::is_Empty(void)	const
 
 
 ///////////////////////////////////////////////////////////
-//														 //
-//														 //
 //														 //
 ///////////////////////////////////////////////////////////
 
@@ -239,8 +232,6 @@ void CSG_String::Set_Char(size_t i, wchar_t Character)
 
 ///////////////////////////////////////////////////////////
 //														 //
-//														 //
-//														 //
 ///////////////////////////////////////////////////////////
 
 //---------------------------------------------------------
@@ -264,8 +255,6 @@ const wchar_t * CSG_String::w_str(void) const
 
 ///////////////////////////////////////////////////////////
 //														 //
-//														 //
-//														 //
 ///////////////////////////////////////////////////////////
 
 //---------------------------------------------------------
@@ -279,16 +268,12 @@ CSG_String CSG_String::Format(const char *Format, ...)
 {
 	CSG_String	s;
 
-	va_list	argptr;
-	
 #ifdef _SAGA_LINUX
-	// workaround as we only use wide characters
-	// since wx 2.9.4 so interpret strings as multibyte
-	wxString	_Format(Format);	_Format.Replace("%s", "%ls");
-	va_start(argptr, _Format);
+	wxString _Format(Format); _Format.Replace("%s", "%ls");	// workaround as we only use wide characters since wx 2.9.4 so interpret strings as multibyte
+	va_list	argptr; va_start(argptr, _Format);
 	s.m_pString->PrintfV(_Format, argptr);
 #else
-	va_start(argptr, Format);
+	va_list	argptr; va_start(argptr, Format);
 	s.m_pString->PrintfV(Format, argptr);
 #endif
 
@@ -302,16 +287,12 @@ CSG_String CSG_String::Format(const wchar_t *Format, ...)
 {
 	CSG_String	s;
 
-	va_list	argptr;
-	
 #ifdef _SAGA_LINUX
-	// workaround as we only use wide characters
-	// since wx 2.9.4 so interpret strings as multibyte
-	wxString	_Format(Format);	_Format.Replace("%s", "%ls");
-	va_start(argptr, _Format);
+	wxString _Format(Format); _Format.Replace("%s", "%ls");	// workaround as we only use wide characters since wx 2.9.4 so interpret strings as multibyte
+	va_list	argptr; va_start(argptr, _Format);
 	s.m_pString->PrintfV(_Format, argptr);
 #else
-	va_start(argptr, Format);
+	va_list	argptr; va_start(argptr, Format);
 	s.m_pString->PrintfV(Format, argptr);
 #endif
 
@@ -323,49 +304,39 @@ CSG_String CSG_String::Format(const wchar_t *Format, ...)
 //---------------------------------------------------------
 int CSG_String::Printf(const char *Format, ...)
 {
-	va_list	argptr;
-
 #ifdef _SAGA_LINUX
-	// workaround as we only use wide characters
-	// since wx 2.9.4 so interpret strings as multibyte
-	wxString	_Format(Format);	_Format.Replace("%s", "%ls");
-	va_start(argptr, _Format);
-	m_pString->PrintfV(_Format, argptr);
+	wxString _Format(Format); _Format.Replace("%s", "%ls");	// workaround as we only use wide characters since wx 2.9.4 so interpret strings as multibyte
+	va_list	argptr; va_start(argptr, _Format);
+	int Result	= m_pString->PrintfV(_Format, argptr);
 #else
-	va_start(argptr, Format);
-	m_pString->PrintfV(Format, argptr);
+	va_list	argptr; va_start(argptr, Format);
+	int Result	= m_pString->PrintfV(Format, argptr);
 #endif
 
 	va_end(argptr);
 
-	return( (int)Length() );
+	return( Result );
 }
 
 //---------------------------------------------------------
 int CSG_String::Printf(const wchar_t *Format, ...)
 {
-	va_list	argptr;
-
 #ifdef _SAGA_LINUX
-	// workaround as we only use wide characters
-	// since wx 2.9.4 so interpret strings as multibyte
-	wxString	_Format(Format);	_Format.Replace("%s", "%ls");
-	va_start(argptr, _Format);
-	m_pString->PrintfV(_Format, argptr);
+	wxString _Format(Format); _Format.Replace("%s", "%ls");	// workaround as we only use wide characters since wx 2.9.4 so interpret strings as multibyte
+	va_list	argptr; va_start(argptr, _Format);
+	int Result	= m_pString->PrintfV(_Format, argptr);
 #else
-	va_start(argptr, Format);
-	m_pString->PrintfV(Format, argptr);
+	va_list	argptr; va_start(argptr, Format);
+	int Result	= m_pString->PrintfV(Format, argptr);
 #endif
 
 	va_end(argptr);
 
-	return( (int)Length() );
+	return( Result );
 }
 
 
 ///////////////////////////////////////////////////////////
-//														 //
-//														 //
 //														 //
 ///////////////////////////////////////////////////////////
 
@@ -445,8 +416,6 @@ void CSG_String::operator += (wchar_t Character)
 
 
 ///////////////////////////////////////////////////////////
-//														 //
-//														 //
 //														 //
 ///////////////////////////////////////////////////////////
 
@@ -537,8 +506,6 @@ CSG_String		operator + (wchar_t A, const CSG_String &B)
 
 ///////////////////////////////////////////////////////////
 //														 //
-//														 //
-//														 //
 ///////////////////////////////////////////////////////////
 
 //---------------------------------------------------------
@@ -587,8 +554,6 @@ CSG_String & CSG_String::Make_Upper(void)
 
 ///////////////////////////////////////////////////////////
 //														 //
-//														 //
-//														 //
 ///////////////////////////////////////////////////////////
 
 //---------------------------------------------------------
@@ -616,8 +581,6 @@ CSG_String & CSG_String::Remove(size_t pos, size_t len)
 
 ///////////////////////////////////////////////////////////
 //														 //
-//														 //
-//														 //
 ///////////////////////////////////////////////////////////
 
 //---------------------------------------------------------
@@ -632,8 +595,6 @@ int CSG_String::Trim(bool fromRight)
 
 
 ///////////////////////////////////////////////////////////
-//														 //
-//														 //
 //														 //
 ///////////////////////////////////////////////////////////
 
@@ -662,8 +623,6 @@ bool CSG_String::Contains(const CSG_String &String) const
 
 
 ///////////////////////////////////////////////////////////
-//														 //
-//														 //
 //														 //
 ///////////////////////////////////////////////////////////
 
@@ -714,8 +673,6 @@ CSG_String CSG_String::BeforeLast(wchar_t Character) const
 
 ///////////////////////////////////////////////////////////
 //														 //
-//														 //
-//														 //
 ///////////////////////////////////////////////////////////
 
 //---------------------------------------------------------
@@ -738,8 +695,6 @@ CSG_String CSG_String::Left(size_t count) const
 
 
 ///////////////////////////////////////////////////////////
-//														 //
-//														 //
 //														 //
 ///////////////////////////////////////////////////////////
 
@@ -791,8 +746,6 @@ bool CSG_String::asDouble(double &Value) const
 
 
 ///////////////////////////////////////////////////////////
-//														 //
-//														 //
 //														 //
 ///////////////////////////////////////////////////////////
 
@@ -955,6 +908,40 @@ bool CSG_Strings::Set_Count(int nStrings)
 	}
 
 	return( true );
+}
+
+
+///////////////////////////////////////////////////////////
+//														 //
+//														 //
+//														 //
+///////////////////////////////////////////////////////////
+
+//---------------------------------------------------------
+bool SG_is_Character_Numeric(int Character)
+{
+	switch( Character )
+	{
+	case '0':
+	case '1':
+	case '2':
+	case '3':
+	case '4':
+	case '5':
+	case '6':
+	case '7':
+	case '8':
+	case '9':
+	case '-':
+	case '+':
+	case '.':
+	case ',':
+	case 'e':
+	case 'E':
+		return( true );
+	}
+
+	return( false );
 }
 
 

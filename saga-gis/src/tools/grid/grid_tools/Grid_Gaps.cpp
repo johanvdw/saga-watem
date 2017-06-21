@@ -24,7 +24,8 @@
 // Geoscientific Analyses'. SAGA is free software; you   //
 // can redistribute it and/or modify it under the terms  //
 // of the GNU General Public License as published by the //
-// Free Software Foundation; version 2 of the License.   //
+// Free Software Foundation, either version 2 of the     //
+// License, or (at your option) any later version.       //
 //                                                       //
 // SAGA is distributed in the hope that it will be       //
 // useful, but WITHOUT ANY WARRANTY; without even the    //
@@ -33,10 +34,8 @@
 // License for more details.                             //
 //                                                       //
 // You should have received a copy of the GNU General    //
-// Public License along with this program; if not,       //
-// write to the Free Software Foundation, Inc.,          //
-// 51 Franklin Street, 5th Floor, Boston, MA 02110-1301, //
-// USA.                                                  //
+// Public License along with this program; if not, see   //
+// <http://www.gnu.org/licenses/>.                       //
 //                                                       //
 //-------------------------------------------------------//
 //                                                       //
@@ -90,31 +89,32 @@ CGrid_Gaps::CGrid_Gaps(void)
 
 	Set_Description	(_TW(
 		"Close gaps of a grid data set (i.e. eliminate no data values). "
-		"If the target is not set, the changes will be stored to the original grid. ")
-	);
+		"If the target is not set, the changes will be stored to the original grid. "
+	));
 
 	//-----------------------------------------------------
-	Parameters.Add_Grid(
-		NULL	, "INPUT"		, _TL("Grid"),
+	Parameters.Add_Grid("",
+		"INPUT"		, _TL("Grid"),
 		_TL(""),
 		PARAMETER_INPUT
 	);
 
-	Parameters.Add_Grid(
-		NULL	, "MASK"		, _TL("Mask"),
+	Parameters.Add_Grid("",
+		"MASK"		, _TL("Mask"),
 		_TL(""),
 		PARAMETER_INPUT_OPTIONAL
 	);
 
-	Parameters.Add_Grid(
-		NULL	, "RESULT"		, _TL("Changed Grid"),
+	Parameters.Add_Grid("",
+		"RESULT"	, _TL("Changed Grid"),
 		_TL(""),
 		PARAMETER_OUTPUT_OPTIONAL
 	);
 
-	Parameters.Add_Value(
-		NULL	, "THRESHOLD"	, _TL("Tension Threshold"),
-		_TL(""), PARAMETER_TYPE_Double, 0.1
+	Parameters.Add_Double("",
+		"THRESHOLD"	, _TL("Tension Threshold"),
+		_TL(""),
+		0.1
 	);
 }
 
@@ -190,11 +190,11 @@ void CGrid_Gaps::Tension_Main(void)
 		{
 			max		= Tension_Step(iStep);
 
-			Process_Set_Text(CSG_String::Format(SG_T("[%d] %s: %f"), iStep, _TL("max. change"), max));
+			Process_Set_Text(CSG_String::Format("[%d] %s: %f", iStep, _TL("max. change"), max));
 		}
 		while( max > Threshold && Process_Get_Okay(true) );
 
-		DataObject_Update(pResult, pInput->Get_ZMin(), pInput->Get_ZMax(), true);
+		DataObject_Update(pResult, pInput->Get_Min(), pInput->Get_Max(), true);
 	}
 
 	delete(pTension_Keep);
@@ -351,7 +351,6 @@ double CGrid_Gaps::Tension_Step(int iStep)
 	return( dMax );
 }
 
-
 //---------------------------------------------------------
 double CGrid_Gaps::Tension_Change(int x, int y, int iStep)
 {
@@ -381,3 +380,12 @@ double CGrid_Gaps::Tension_Change(int x, int y, int iStep)
 
 	return( pResult->asDouble(x, y) );
 }
+
+
+///////////////////////////////////////////////////////////
+//														 //
+//														 //
+//														 //
+///////////////////////////////////////////////////////////
+
+//---------------------------------------------------------

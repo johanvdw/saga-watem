@@ -24,7 +24,8 @@
 // Geoscientific Analyses'. SAGA is free software; you   //
 // can redistribute it and/or modify it under the terms  //
 // of the GNU General Public License as published by the //
-// Free Software Foundation; version 2 of the License.   //
+// Free Software Foundation, either version 2 of the     //
+// License, or (at your option) any later version.       //
 //                                                       //
 // SAGA is distributed in the hope that it will be       //
 // useful, but WITHOUT ANY WARRANTY; without even the    //
@@ -33,10 +34,8 @@
 // License for more details.                             //
 //                                                       //
 // You should have received a copy of the GNU General    //
-// Public License along with this program; if not,       //
-// write to the Free Software Foundation, Inc.,          //
-// 51 Franklin Street, 5th Floor, Boston, MA 02110-1301, //
-// USA.                                                  //
+// Public License along with this program; if not, see   //
+// <http://www.gnu.org/licenses/>.                       //
 //                                                       //
 //-------------------------------------------------------//
 //                                                       //
@@ -66,6 +65,7 @@
 #include "wksp_layer.h"
 #include "wksp_layer_classify.h"
 #include "wksp_grid.h"
+#include "wksp_grids.h"
 #include "wksp_shapes.h"
 #include "wksp_pointcloud.h"
 
@@ -291,6 +291,19 @@ void CWKSP_Layer_Classify::Set_Unique_Color(int Color)
 //						Metric							 //
 //														 //
 ///////////////////////////////////////////////////////////
+
+//---------------------------------------------------------
+bool CWKSP_Layer_Classify::Set_Class_Count(int Count)
+{
+	if( Count > 0 && Count != m_Count )
+	{
+		m_Count	= Count;
+
+		return( Histogram_Update() );
+	}
+
+	return( false );
+}
 
 //---------------------------------------------------------
 void CWKSP_Layer_Classify::Set_Metric(int Mode, double LogFactor, double zMin, double zMax)
@@ -525,7 +538,18 @@ bool CWKSP_Layer_Classify::Histogram_Update(void)
 		switch( m_pLayer->Get_Type() )
 		{
 		case WKSP_ITEM_Grid:
-			_Histogram_Update(((CWKSP_Grid *)m_pLayer)->Get_Grid());
+			_Histogram_Update(((CWKSP_Grid  *)m_pLayer)->Get_Grid ());
+			break;
+
+		case WKSP_ITEM_Grids:
+			if( m_Mode == CLASSIFY_OVERLAY )
+			{
+				_Histogram_Update(((CWKSP_Grids *)m_pLayer)->Get_Grids());
+			}
+			else
+			{
+				_Histogram_Update(((CWKSP_Grids *)m_pLayer)->Get_Grid ());
+			}
 			break;
 
 		case WKSP_ITEM_Shapes:
@@ -578,6 +602,33 @@ bool CWKSP_Layer_Classify::_Histogram_Update(CSG_Grid *pGrid)
 				if( Class >= 0 && Class < Get_Class_Count() )
 				{
 					m_HST_Count[Class]++;
+				}
+			}
+		}
+	}
+
+	return( true );
+}
+
+//---------------------------------------------------------
+bool CWKSP_Layer_Classify::_Histogram_Update(CSG_Grids *pGrids)
+{
+	sLong	i	= 0;
+
+	for(int z=0; z<pGrids->Get_NZ() && PROCESS_Get_Okay(false); z++)
+	{
+		for(int y=0; y<pGrids->Get_NY() && PROGRESSBAR_Set_Position(i, pGrids->Get_NCells()); y++)
+		{
+			for(int x=0; x<pGrids->Get_NX(); x++, i++)
+			{
+				if( !pGrids->is_NoData(x, y, z) )
+				{
+					int		Class	= Get_Class(pGrids->asDouble(x, y, z));
+				
+					if( Class >= 0 && Class < Get_Class_Count() )
+					{
+						m_HST_Count[Class]++;
+					}
 				}
 			}
 		}

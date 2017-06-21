@@ -26,7 +26,8 @@
 // This library is free software; you can redistribute   //
 // it and/or modify it under the terms of the GNU Lesser //
 // General Public License as published by the Free       //
-// Software Foundation, version 2.1 of the License.      //
+// Software Foundation, either version 2.1 of the        //
+// License, or (at your option) any later version.       //
 //                                                       //
 // This library is distributed in the hope that it will  //
 // be useful, but WITHOUT ANY WARRANTY; without even the //
@@ -36,17 +37,13 @@
 //                                                       //
 // You should have received a copy of the GNU Lesser     //
 // General Public License along with this program; if    //
-// not, write to the Free Software Foundation, Inc.,     //
-// 51 Franklin Street, 5th Floor, Boston, MA 02110-1301, //
-// USA.                                                  //
+// not, see <http://www.gnu.org/licenses/>.              //
 //                                                       //
 //-------------------------------------------------------//
 //                                                       //
 //    contact:    Olaf Conrad                            //
 //                Institute of Geography                 //
-//                University of Goettingen               //
-//                Goldschmidtstr. 5                      //
-//                37077 Goettingen                       //
+//                University of Hamburg                  //
 //                Germany                                //
 //                                                       //
 //    e-mail:     oconrad@saga-gis.org                   //
@@ -65,7 +62,6 @@
 //---------------------------------------------------------
 #include "grid.h"
 #include "data_manager.h"
-#include "tool_library.h"
 
 
 ///////////////////////////////////////////////////////////
@@ -97,9 +93,9 @@ CSG_Grid * SG_Create_Grid(const CSG_Grid &Grid)
 }
 
 //---------------------------------------------------------
-CSG_Grid * SG_Create_Grid(const CSG_String &File_Name, TSG_Data_Type Type, TSG_Grid_Memory_Type Memory_Type, bool bLoadData)
+CSG_Grid * SG_Create_Grid(const CSG_String &FileName, TSG_Data_Type Type, TSG_Grid_Memory_Type Memory_Type, bool bLoadData)
 {
-	CSG_Grid	*pGrid	= new CSG_Grid(File_Name, Type, Memory_Type, bLoadData);
+	CSG_Grid	*pGrid	= new CSG_Grid(FileName, Type, Memory_Type, bLoadData);
 
 	if( pGrid->is_Valid() )
 	{
@@ -120,31 +116,13 @@ CSG_Grid * SG_Create_Grid(CSG_Grid *pGrid, TSG_Data_Type Type, TSG_Grid_Memory_T
 //---------------------------------------------------------
 CSG_Grid * SG_Create_Grid(const CSG_Grid_System &System, TSG_Data_Type Type, TSG_Grid_Memory_Type Memory_Type)
 {
-	CSG_Grid	*pGrid	= new CSG_Grid(System, Type, Memory_Type);
-
-	if( pGrid && !pGrid->is_Valid() )
-	{
-		delete(pGrid);
-
-		pGrid	= NULL;
-	}
-
-	return( pGrid );
+	return( new CSG_Grid(System, Type, Memory_Type) );
 }
 
 //---------------------------------------------------------
 CSG_Grid * SG_Create_Grid(TSG_Data_Type Type, int NX, int NY, double Cellsize, double xMin, double yMin, TSG_Grid_Memory_Type Memory_Type)
 {
-	CSG_Grid	*pGrid	= new CSG_Grid(Type, NX, NY, Cellsize, xMin, yMin, Memory_Type);
-
-	if( pGrid && !pGrid->is_Valid() )
-	{
-		delete(pGrid);
-
-		pGrid	= NULL;
-	}
-
-	return( pGrid );
+	return( new CSG_Grid(Type, NX, NY, Cellsize, xMin, yMin, Memory_Type) );
 }
 
 
@@ -160,7 +138,6 @@ CSG_Grid * SG_Create_Grid(TSG_Data_Type Type, int NX, int NY, double Cellsize, d
 */
 //---------------------------------------------------------
 CSG_Grid::CSG_Grid(void)
-	: CSG_Data_Object()
 {
 	_On_Construction();
 }
@@ -171,7 +148,6 @@ CSG_Grid::CSG_Grid(void)
 */
 //---------------------------------------------------------
 CSG_Grid::CSG_Grid(const CSG_Grid &Grid)
-	: CSG_Data_Object()
 {
 	_On_Construction();
 
@@ -183,12 +159,11 @@ CSG_Grid::CSG_Grid(const CSG_Grid &Grid)
   * Create a grid from file.
 */
 //---------------------------------------------------------
-CSG_Grid::CSG_Grid(const CSG_String &File_Name, TSG_Data_Type Type, TSG_Grid_Memory_Type Memory_Type, bool bLoadData)
-	: CSG_Data_Object()
+CSG_Grid::CSG_Grid(const CSG_String &FileName, TSG_Data_Type Type, TSG_Grid_Memory_Type Memory_Type, bool bLoadData)
 {
 	_On_Construction();
 
-	Create(File_Name, Type, Memory_Type, bLoadData);
+	Create(FileName, Type, Memory_Type, bLoadData);
 }
 
 //---------------------------------------------------------
@@ -197,7 +172,6 @@ CSG_Grid::CSG_Grid(const CSG_String &File_Name, TSG_Data_Type Type, TSG_Grid_Mem
 */
 //---------------------------------------------------------
 CSG_Grid::CSG_Grid(CSG_Grid *pGrid, TSG_Data_Type Type, TSG_Grid_Memory_Type Memory_Type)
-	: CSG_Data_Object()
 {
 	_On_Construction();
 
@@ -210,7 +184,6 @@ CSG_Grid::CSG_Grid(CSG_Grid *pGrid, TSG_Data_Type Type, TSG_Grid_Memory_Type Mem
 */
 //---------------------------------------------------------
 CSG_Grid::CSG_Grid(const CSG_Grid_System &System, TSG_Data_Type Type, TSG_Grid_Memory_Type Memory_Type)
-	: CSG_Data_Object()
 {
 	_On_Construction();
 
@@ -226,7 +199,6 @@ CSG_Grid::CSG_Grid(const CSG_Grid_System &System, TSG_Data_Type Type, TSG_Grid_M
 */
 //---------------------------------------------------------
 CSG_Grid::CSG_Grid(TSG_Data_Type Type, int NX, int NY, double Cellsize, double xMin, double yMin, TSG_Grid_Memory_Type Memory_Type)
-	: CSG_Data_Object()
 {
 	_On_Construction();
 
@@ -235,8 +207,6 @@ CSG_Grid::CSG_Grid(TSG_Data_Type Type, int NX, int NY, double Cellsize, double x
 
 
 ///////////////////////////////////////////////////////////
-//														 //
-//														 //
 //														 //
 ///////////////////////////////////////////////////////////
 
@@ -258,15 +228,14 @@ void CSG_Grid::_On_Construction(void)
 	m_zOffset			= 0.0;
 
 	m_Index				= NULL;
-	m_bIndex			= false;
+
+	m_pOwner			= NULL;
 
 	Set_Update_Flag();
 }
 
 
 ///////////////////////////////////////////////////////////
-//														 //
-//														 //
 //														 //
 ///////////////////////////////////////////////////////////
 
@@ -326,92 +295,34 @@ bool CSG_Grid::Create(const CSG_Grid_System &System, TSG_Data_Type Type, TSG_Gri
 }
 
 //---------------------------------------------------------
-bool CSG_Grid::Create(const CSG_String &File_Name, TSG_Data_Type Type, TSG_Grid_Memory_Type Memory_Type, bool bLoadData)
+bool CSG_Grid::Create(const CSG_String &FileName, TSG_Data_Type Type, TSG_Grid_Memory_Type Memory_Type, bool bLoadData)
 {
 	Destroy();
 
-	SG_UI_Msg_Add(CSG_String::Format("%s: %s...", _TL("Load grid"), File_Name.c_str()), true);
+	SG_UI_Msg_Add(CSG_String::Format("%s: %s...", _TL("Loading grid"), FileName.c_str()), true);
 
-	//-----------------------------------------------------
-	bool	bResult	= File_Name.BeforeFirst(':').Cmp("PGSQL") && SG_File_Exists(File_Name) && _Load(File_Name, Type, Memory_Type, bLoadData);
+	m_Type	= Type;
 
-	if( bResult )
-	{
-		// nop
-	}
-
-	//-----------------------------------------------------
-	else if( File_Name.BeforeFirst(':').Cmp("PGSQL") == 0 )	// database source
-	{
-		CSG_String	s(File_Name);
-
-		s	= s.AfterFirst(':');	CSG_String	Host  (s.BeforeFirst(':'));
-		s	= s.AfterFirst(':');	CSG_String	Port  (s.BeforeFirst(':'));
-		s	= s.AfterFirst(':');	CSG_String	DBName(s.BeforeFirst(':'));
-		s	= s.AfterFirst(':');	CSG_String	Table (s.BeforeFirst(':'));
-		s	= s.AfterFirst(':');	CSG_String	rid   (s.BeforeFirst(':').AfterFirst('='));
-
-		CSG_Tool	*pTool	= SG_Get_Tool_Library_Manager().Get_Tool("db_pgsql", 0);	// CGet_Connections
-
-		if(	pTool != NULL )
-		{
-			SG_UI_ProgressAndMsg_Lock(true);
-
-			//---------------------------------------------
-			CSG_Table	Connections;
-			CSG_String	Connection	= DBName + " [" + Host + ":" + Port + "]";
-
-			pTool->On_Before_Execution();
-			pTool->Settings_Push();
-
-			if( SG_TOOL_PARAMETER_SET("CONNECTIONS", &Connections) && pTool->Execute() )	// CGet_Connections
-			{
-				for(int i=0; !bResult && i<Connections.Get_Count(); i++)
-				{
-					if( !Connection.Cmp(Connections[i].asString(0)) )
-					{
-						bResult	= true;
-					}
-				}
-			}
-
-			pTool->Settings_Pop();
-
-			//---------------------------------------------
-			if( bResult && (bResult = (pTool = SG_Get_Tool_Library_Manager().Get_Tool("db_pgsql", 33)) != NULL) == true )	// CPGIS_Raster_Load_Band
-			{
-				pTool->On_Before_Execution();
-				pTool->Settings_Push();
-
-				bResult	=  SG_TOOL_PARAMETER_SET("CONNECTION", Connection)
-						&& SG_TOOL_PARAMETER_SET("TABLES"    , Table)
-						&& SG_TOOL_PARAMETER_SET("RID"       , rid)
-						&& SG_TOOL_PARAMETER_SET("GRID"      , this)
-						&& pTool->Execute();
-
-				pTool->Settings_Pop();
-			}
-
-			SG_UI_ProgressAndMsg_Lock(false);
-		}
-	}
-
-	//-----------------------------------------------------
-	if( bResult )
+	if( _Load_PGSQL     (FileName, Memory_Type, bLoadData)
+	||  _Load_Native    (FileName, Memory_Type, bLoadData)
+	||  _Load_Compressed(FileName, Memory_Type, bLoadData)
+	||  _Load_Surfer    (FileName, Memory_Type, bLoadData)
+	||  _Load_External  (FileName, Memory_Type, bLoadData) )
 	{
 		m_bCreated	= true;
 
 		Set_Modified(false);
 		Set_Update_Flag();
 
+		SG_UI_Process_Set_Ready();
 		SG_UI_Msg_Add(_TL("okay"), false, SG_UI_MSG_STYLE_SUCCESS);
 
 		return( true );
 	}
 
-	//-----------------------------------------------------
 	Destroy();
 
+	SG_UI_Process_Set_Ready();
 	SG_UI_Msg_Add(_TL("failed"), false, SG_UI_MSG_STYLE_FAILURE);
 
 	return( false );
@@ -503,19 +414,14 @@ void CSG_Grid::_Set_Properties(TSG_Data_Type Type, int NX, int NY, double Cellsi
 
 	m_System.Assign(Cellsize > 0.0 ? Cellsize : 1.0, xMin, yMin, NX, NY);
 
-	m_zStats.Invalidate();
+	m_Statistics.Invalidate();
 
 }
 
 //---------------------------------------------------------
-void CSG_Grid::Set_Unit(const SG_Char *String)
+void CSG_Grid::Set_Unit(const CSG_String &Unit)
 {
-	m_Unit	= String ? String : SG_T("");
-}
-
-const SG_Char * CSG_Grid::Get_Unit(void) const
-{
-	return( m_Unit.c_str() );
+	m_Unit	= Unit;
 }
 
 //---------------------------------------------------------
@@ -611,55 +517,51 @@ bool CSG_Grid::is_Compatible(int NX, int NY, double Cellsize, double xMin, doubl
 ///////////////////////////////////////////////////////////
 
 //---------------------------------------------------------
-double CSG_Grid::Get_Value(TSG_Point Position, TSG_Grid_Resampling Resampling, bool bByteWise, bool bOnlyValidCells) const
+double CSG_Grid::Get_Value(const TSG_Point &p, TSG_Grid_Resampling Resampling, bool bByteWise) const
 {
 	double	Value;
 
-	return( Get_Value(Position.x, Position.y, Value, Resampling, bByteWise, bOnlyValidCells) ? Value : Get_NoData_Value() );
+	return( Get_Value(p.x, p.y, Value, Resampling, false, bByteWise) ? Value : Get_NoData_Value() );
 }
 
-double CSG_Grid::Get_Value(double xPosition, double yPosition, TSG_Grid_Resampling Resampling, bool bByteWise, bool bOnlyValidCells) const
+double CSG_Grid::Get_Value(double x, double y, TSG_Grid_Resampling Resampling, bool bByteWise) const
 {
 	double	Value;
 
-	return( Get_Value(xPosition, yPosition, Value, Resampling, bByteWise, bOnlyValidCells) ? Value : Get_NoData_Value() );
+	return( Get_Value(x, y, Value, Resampling, false, bByteWise) ? Value : Get_NoData_Value() );
 }
 
-bool CSG_Grid::Get_Value(TSG_Point Position, double &Value, TSG_Grid_Resampling Resampling, bool bByteWise, bool bOnlyValidCells) const
+bool CSG_Grid::Get_Value(const TSG_Point &p, double &Value, TSG_Grid_Resampling Resampling, bool bNoData, bool bByteWise) const
 {
-	return( Get_Value(Position.x, Position.y, Value, Resampling, bByteWise, bOnlyValidCells) );
+	return( Get_Value(p.x, p.y, Value, Resampling, bNoData, bByteWise) );
 }
 
 //---------------------------------------------------------
-bool CSG_Grid::Get_Value(double xPosition, double yPosition, double &Value, TSG_Grid_Resampling Resampling, bool bByteWise, bool bOnlyValidCells) const
+bool CSG_Grid::Get_Value(double x, double y, double &Value, TSG_Grid_Resampling Resampling, bool bNoData, bool bByteWise) const
 {
-	if(	m_System.Get_Extent(true).Contains(xPosition, yPosition) )
+	if(	m_System.Get_Extent(true).Contains(x, y) )
 	{
-		int		x	= (int)floor(xPosition	= (xPosition - Get_XMin()) / Get_Cellsize());
-		int		y	= (int)floor(yPosition	= (yPosition - Get_YMin()) / Get_Cellsize());
+		int	ix = (int)floor(x = (x - Get_XMin()) / Get_Cellsize()); double dx = x - ix;
+		int	iy = (int)floor(y = (y - Get_YMin()) / Get_Cellsize()); double dy = y - iy;
 
-		double	dx	= xPosition - x;
-		double	dy	= yPosition - y;
-
-		if( !bOnlyValidCells || is_InGrid(x + (int)(0.5 + dx), y + (int)(0.5 + dy)) )
+		if( bNoData || is_InGrid(ix + (int)(0.5 + dx), iy + (int)(0.5 + dy)) )
 		{
 			switch( Resampling )
 			{
 			case GRID_RESAMPLING_NearestNeighbour:
-				Value	= _Get_ValAtPos_NearestNeighbour(x, y, dx, dy);
+				Value	= _Get_ValAtPos_NearestNeighbour(ix, iy, dx, dy);
 				break;
 
 			case GRID_RESAMPLING_Bilinear:
-				Value	= _Get_ValAtPos_BiLinear		(x, y, dx, dy, bByteWise);
+				Value	= _Get_ValAtPos_BiLinear        (ix, iy, dx, dy, bByteWise);
 				break;
 
 			case GRID_RESAMPLING_BicubicSpline:
-				Value	= _Get_ValAtPos_BiCubicSpline	(x, y, dx, dy, bByteWise);
+				Value	= _Get_ValAtPos_BiCubicSpline   (ix, iy, dx, dy, bByteWise);
 				break;
 
-			default:
-			case GRID_RESAMPLING_BSpline:
-				Value	= _Get_ValAtPos_BSpline			(x, y, dx, dy, bByteWise);
+			case GRID_RESAMPLING_BSpline: default:
+				Value	= _Get_ValAtPos_BSpline         (ix, iy, dx, dy, bByteWise);
 				break;
 			}
 
@@ -737,67 +639,42 @@ inline double CSG_Grid::_Get_ValAtPos_BiLinear(int x, int y, double dx, double d
 }
 
 //---------------------------------------------------------
-inline double CSG_Grid::_Get_ValAtPos_BiCubicSpline(double dx, double dy, double z_xy[4][4]) const
+inline double CSG_Grid::_Get_ValAtPos_BiCubicSpline(double dx, double dy, double v_xy[4][4]) const
 {
-	#define BiCubicSpline(d, z) (z[1] + 0.5 * d * (z[2] - z[0] + d * (2 * z[0] - 5 * z[1] + 4 * z[2] - z[3] + d * (3 * (z[1] - z[2]) + z[3] - z[0]))))
+	#define BiCubicSpline(d, v) (v[1] + 0.5 * d * (v[2] - v[0] + d * (2 * v[0] - 5 * v[1] + 4 * v[2] - v[3] + d * (3 * (v[1] - v[2]) + v[3] - v[0]))))
 
-	double	z_x[4];
+	double	v_x[4];
 
-	z_x[0]	= BiCubicSpline(dy, z_xy[0]);
-	z_x[1]	= BiCubicSpline(dy, z_xy[1]);
-	z_x[2]	= BiCubicSpline(dy, z_xy[2]);
-	z_x[3]	= BiCubicSpline(dy, z_xy[3]);
+	for(int ix=0; ix<4; ix++)
+	{
+		v_x[ix]	= BiCubicSpline(dy, v_xy[ix]);
+	}
 
-	return( BiCubicSpline(dx, z_x) );
-
-	//double	a0, a2, a3, b1, b2, b3, c[4];
-
-	//for(int i=0; i<4; i++)
-	//{
-	//	a0		= z_xy[0][i] - z_xy[1][i];
-	//	a2		= z_xy[2][i] - z_xy[1][i];
-	//	a3		= z_xy[3][i] - z_xy[1][i];
-
-	//	b1		= -a0 / 3.0 + a2       - a3 / 6.0;
-	//	b2		=  a0 / 2.0 + a2 / 2.0;
-	//	b3		= -a0 / 6.0 - a2 / 2.0 + a3 / 6.0;
-
-	//	c[i]	= z_xy[1][i] + b1 * dx + b2 * dx*dx + b3 * dx*dx*dx;
-	//}
-
-	//a0		= c[0] - c[1];
-	//a2		= c[2] - c[1];
-	//a3		= c[3] - c[1];
-
-	//b1		= -a0 / 3.0 + a2       - a3 / 6.0;
-	//b2		=  a0 / 2.0 + a2 / 2.0;
-	//b3		= -a0 / 6.0 - a2 / 2.0 + a3 / 6.0;
-
-	//return( c[1] + b1 * dy + b2 * dy*dy + b3 * dy*dy*dy );
+	return( BiCubicSpline(dx, v_x) );
 }
 
 inline double CSG_Grid::_Get_ValAtPos_BiCubicSpline(int x, int y, double dx, double dy, bool bByteWise) const
 {
 	if( !bByteWise )
 	{
-		double	z_xy[4][4];
+		double	v_xy[4][4];
 
-		if( _Get_ValAtPos_Fill4x4Submatrix(x, y, z_xy) )
+		if( _Get_ValAtPos_Fill4x4Submatrix(x, y, v_xy) )
 		{
-			return( _Get_ValAtPos_BiCubicSpline(dx, dy, z_xy) );
+			return( _Get_ValAtPos_BiCubicSpline(dx, dy, v_xy) );
 		}
 	}
 	else
 	{
-		double	z_xy[4][4][4];
+		double	v_xy[4][4][4];
 
-		if( _Get_ValAtPos_Fill4x4Submatrix(x, y, z_xy) )
+		if( _Get_ValAtPos_Fill4x4Submatrix(x, y, v_xy) )
 		{
 			return( SG_GET_LONG(
-				_Get_ValAtPos_BiCubicSpline(dx, dy, z_xy[0]),
-				_Get_ValAtPos_BiCubicSpline(dx, dy, z_xy[1]),
-				_Get_ValAtPos_BiCubicSpline(dx, dy, z_xy[2]),
-				_Get_ValAtPos_BiCubicSpline(dx, dy, z_xy[3])
+				_Get_ValAtPos_BiCubicSpline(dx, dy, v_xy[0]),
+				_Get_ValAtPos_BiCubicSpline(dx, dy, v_xy[1]),
+				_Get_ValAtPos_BiCubicSpline(dx, dy, v_xy[2]),
+				_Get_ValAtPos_BiCubicSpline(dx, dy, v_xy[3])
 			));
 		}
 	}
@@ -806,7 +683,7 @@ inline double CSG_Grid::_Get_ValAtPos_BiCubicSpline(int x, int y, double dx, dou
 }
 
 //---------------------------------------------------------
-inline double CSG_Grid::_Get_ValAtPos_BSpline(double dx, double dy, double z_xy[4][4]) const
+inline double CSG_Grid::_Get_ValAtPos_BSpline(double dx, double dy, double v_xy[4][4]) const
 {
 	double	Rx[4], Ry[4];
 
@@ -837,7 +714,7 @@ inline double CSG_Grid::_Get_ValAtPos_BSpline(double dx, double dy, double z_xy[
 	{
 		for(int ix=0; ix<4; ix++)
 		{
-			z	+= z_xy[ix][iy] * Rx[ix] * Ry[iy];
+			z	+= v_xy[ix][iy] * Rx[ix] * Ry[iy];
 		}
 	}
 
@@ -848,24 +725,24 @@ inline double CSG_Grid::_Get_ValAtPos_BSpline(int x, int y, double dx, double dy
 {
 	if( !bByteWise )
 	{
-		double	z_xy[4][4];
+		double	v_xy[4][4];
 
-		if( _Get_ValAtPos_Fill4x4Submatrix(x, y, z_xy) )
+		if( _Get_ValAtPos_Fill4x4Submatrix(x, y, v_xy) )
 		{
-			return( _Get_ValAtPos_BSpline(dx, dy, z_xy) );
+			return( _Get_ValAtPos_BSpline(dx, dy, v_xy) );
 		}
 	}
 	else
 	{
-		double	z_xy[4][4][4];
+		double	v_xy[4][4][4];
 
-		if( _Get_ValAtPos_Fill4x4Submatrix(x, y, z_xy) )
+		if( _Get_ValAtPos_Fill4x4Submatrix(x, y, v_xy) )
 		{
 			return( SG_GET_LONG(
-				_Get_ValAtPos_BSpline(dx, dy, z_xy[0]),
-				_Get_ValAtPos_BSpline(dx, dy, z_xy[1]),
-				_Get_ValAtPos_BSpline(dx, dy, z_xy[2]),
-				_Get_ValAtPos_BSpline(dx, dy, z_xy[3])
+				_Get_ValAtPos_BSpline(dx, dy, v_xy[0]),
+				_Get_ValAtPos_BSpline(dx, dy, v_xy[1]),
+				_Get_ValAtPos_BSpline(dx, dy, v_xy[2]),
+				_Get_ValAtPos_BSpline(dx, dy, v_xy[3])
 			));
 		}
 	}
@@ -874,7 +751,7 @@ inline double CSG_Grid::_Get_ValAtPos_BSpline(int x, int y, double dx, double dy
 }
 
 //---------------------------------------------------------
-inline bool CSG_Grid::_Get_ValAtPos_Fill4x4Submatrix(int x, int y, double z_xy[4][4]) const
+inline bool CSG_Grid::_Get_ValAtPos_Fill4x4Submatrix(int x, int y, double v_xy[4][4]) const
 {
 	int		ix, iy, jx, jy, nNoData	= 0;
 
@@ -885,11 +762,11 @@ inline bool CSG_Grid::_Get_ValAtPos_Fill4x4Submatrix(int x, int y, double z_xy[4
 		{
 			if( is_InGrid(jx, jy) )
 			{
-				z_xy[ix][iy]	= asDouble(jx, jy);
+				v_xy[ix][iy]	= asDouble(jx, jy);
 			}
 			else
 			{
-				z_xy[ix][iy]	= Get_NoData_Value();
+				v_xy[ix][iy]	= Get_NoData_Value();
 
 				nNoData++;
 			}
@@ -903,7 +780,7 @@ inline bool CSG_Grid::_Get_ValAtPos_Fill4x4Submatrix(int x, int y, double z_xy[4
 
 		for(iy=0; iy<4; iy++)	for(ix=0; ix<4; ix++)
 		{
-			t_xy[ix][iy]	= z_xy[ix][iy];
+			t_xy[ix][iy]	= v_xy[ix][iy];
 		}
 
 		for(iy=0; iy<4; iy++)	for(ix=0; ix<4; ix++)
@@ -929,7 +806,7 @@ inline bool CSG_Grid::_Get_ValAtPos_Fill4x4Submatrix(int x, int y, double z_xy[4
 
 				if( n > 0 )
 				{
-					z_xy[ix][iy]	= s / n;
+					v_xy[ix][iy]	= s / n;
 
 					nNoData--;
 				}
@@ -942,7 +819,7 @@ inline bool CSG_Grid::_Get_ValAtPos_Fill4x4Submatrix(int x, int y, double z_xy[4
 }
 
 //---------------------------------------------------------
-inline bool CSG_Grid::_Get_ValAtPos_Fill4x4Submatrix(int x, int y, double z_xy[4][4][4]) const
+inline bool CSG_Grid::_Get_ValAtPos_Fill4x4Submatrix(int x, int y, double v_xy[4][4][4]) const
 {
 	int		ix, iy, jx, jy, nNoData	= 0;
 
@@ -955,14 +832,14 @@ inline bool CSG_Grid::_Get_ValAtPos_Fill4x4Submatrix(int x, int y, double z_xy[4
 			{
 				int	z	= asInt(jx, jy);
 
-				z_xy[0][ix][iy]	= SG_GET_BYTE_0(z);
-				z_xy[1][ix][iy]	= SG_GET_BYTE_1(z);
-				z_xy[2][ix][iy]	= SG_GET_BYTE_2(z);
-				z_xy[3][ix][iy]	= SG_GET_BYTE_3(z);
+				v_xy[0][ix][iy]	= SG_GET_BYTE_0(z);
+				v_xy[1][ix][iy]	= SG_GET_BYTE_1(z);
+				v_xy[2][ix][iy]	= SG_GET_BYTE_2(z);
+				v_xy[3][ix][iy]	= SG_GET_BYTE_3(z);
 			}
 			else
 			{
-				z_xy[0][ix][iy]	= -1;
+				v_xy[0][ix][iy]	= -1;
 
 				nNoData++;
 			}
@@ -976,10 +853,10 @@ inline bool CSG_Grid::_Get_ValAtPos_Fill4x4Submatrix(int x, int y, double z_xy[4
 
 		for(iy=0; iy<4; iy++)	for(ix=0; ix<4; ix++)
 		{
-			t_xy[0][ix][iy]	= z_xy[0][ix][iy];
-			t_xy[1][ix][iy]	= z_xy[1][ix][iy];
-			t_xy[2][ix][iy]	= z_xy[2][ix][iy];
-			t_xy[3][ix][iy]	= z_xy[3][ix][iy];
+			t_xy[0][ix][iy]	= v_xy[0][ix][iy];
+			t_xy[1][ix][iy]	= v_xy[1][ix][iy];
+			t_xy[2][ix][iy]	= v_xy[2][ix][iy];
+			t_xy[3][ix][iy]	= v_xy[3][ix][iy];
 		}
 
 		for(iy=0; iy<4; iy++)	for(ix=0; ix<4; ix++)
@@ -1013,10 +890,10 @@ inline bool CSG_Grid::_Get_ValAtPos_Fill4x4Submatrix(int x, int y, double z_xy[4
 
 				if( n > 0 )
 				{
-					z_xy[0][ix][iy]	= s[0] / n;
-					z_xy[1][ix][iy]	= s[1] / n;
-					z_xy[2][ix][iy]	= s[2] / n;
-					z_xy[3][ix][iy]	= s[3] / n;
+					v_xy[0][ix][iy]	= s[0] / n;
+					v_xy[1][ix][iy]	= s[1] / n;
+					v_xy[2][ix][iy]	= s[2] / n;
+					v_xy[3][ix][iy]	= s[3] / n;
 
 					nNoData--;
 				}
@@ -1040,7 +917,7 @@ bool CSG_Grid::On_Update(void)
 {
 	if( is_Valid() )
 	{
-		m_zStats.Invalidate();
+		m_Statistics.Invalidate();
 
 		for(int y=0; y<Get_NY(); y++)
 		{
@@ -1048,12 +925,11 @@ bool CSG_Grid::On_Update(void)
 			{
 				if( !is_NoData(x, y) )
 				{
-					m_zStats.Add_Value(asDouble(x, y));
+					m_Statistics.Add_Value(asDouble(x, y));
 				}
 			}
 		}
 
-		m_bIndex	= false;
 		SG_FREE_SAFE(m_Index);
 	}
 
@@ -1061,53 +937,53 @@ bool CSG_Grid::On_Update(void)
 }
 
 //---------------------------------------------------------
-double CSG_Grid::Get_ZMin(void)
-{
-	Update();	return( m_zStats.Get_Minimum() );
-}
-
-double CSG_Grid::Get_ZMax(void)
-{
-	Update();	return( m_zStats.Get_Maximum() );
-}
-
-double CSG_Grid::Get_ZRange(void)
-{
-	Update();	return( m_zStats.Get_Range() );
-}
-
 double CSG_Grid::Get_Mean(void)
 {
-	Update();	return( m_zStats.Get_Mean() );
+	Update();	return( m_Statistics.Get_Mean() );
+}
+
+double CSG_Grid::Get_Min(void)
+{
+	Update();	return( m_Statistics.Get_Minimum() );
+}
+
+double CSG_Grid::Get_Max(void)
+{
+	Update();	return( m_Statistics.Get_Maximum() );
+}
+
+double CSG_Grid::Get_Range(void)
+{
+	Update();	return( m_Statistics.Get_Range() );
 }
 
 double CSG_Grid::Get_StdDev(void)
 {
-	Update();	return( m_zStats.Get_StdDev() );
+	Update();	return( m_Statistics.Get_StdDev() );
 }
 
 double CSG_Grid::Get_Variance(void)
 {
-	Update();	return( m_zStats.Get_Variance() );
+	Update();	return( m_Statistics.Get_Variance() );
 }
 
 //---------------------------------------------------------
 sLong CSG_Grid::Get_Data_Count(void)
 {
-	Update();	return( m_zStats.Get_Count() );
+	Update();	return( m_Statistics.Get_Count() );
 }
 
 sLong CSG_Grid::Get_NoData_Count(void)
 {
-	Update();	return( Get_NCells() - m_zStats.Get_Count() );
+	Update();	return( Get_NCells() - m_Statistics.Get_Count() );
 }
 
 //---------------------------------------------------------
-double CSG_Grid::Get_Percentile(double Percent)
+double CSG_Grid::Get_Quantile(double Quantile)
 {
-	Percent	= Percent <= 0.0 ? 0.0 : Percent >= 100.0 ? 1.0 : Percent / 100.0;
+	Quantile	= Quantile <= 0.0 ? 0.0 : Quantile >= 100.0 ? 1.0 : Quantile / 100.0;
 
-	sLong	n	= (sLong)(Percent * (Get_Data_Count() - 1));
+	sLong	n	= (sLong)(Quantile * (Get_Data_Count() - 1));
 
 	if( Get_Sorted(n, n, false) )
 	{
@@ -1115,6 +991,58 @@ double CSG_Grid::Get_Percentile(double Percent)
 	}
 
 	return( Get_NoData_Value() );
+}
+
+
+///////////////////////////////////////////////////////////
+//														 //
+///////////////////////////////////////////////////////////
+
+//---------------------------------------------------------
+/**
+  * Returns the statistics for the whole data set. It is
+  * automatically updated if necessary. Statistics give no
+  * access to parameters like quantiles that need values
+  * to be kept internally. Use Get_Quantile() function instead.
+*/
+const CSG_Simple_Statistics & CSG_Grid::Get_Statistics(void)
+{
+	Update();	return( m_Statistics );
+}
+
+//---------------------------------------------------------
+/**
+  * Calulate statistics for the region specified with rWorld.
+  * Returns false, if there is no overlapping. Set bHoldValues
+  * to true, if you need to obtain quantiles.
+*/
+//---------------------------------------------------------
+bool CSG_Grid::Get_Statistics(const CSG_Rect &rWorld, CSG_Simple_Statistics &Statistics, bool bHoldValues) const
+{
+	int	xMin	= Get_System().Get_xWorld_to_Grid(rWorld.Get_XMin()); if( xMin <  0        ) xMin = 0;
+	int	yMin	= Get_System().Get_yWorld_to_Grid(rWorld.Get_YMin()); if( yMin <  0        ) yMin = 0;
+	int	xMax	= Get_System().Get_xWorld_to_Grid(rWorld.Get_XMax()); if( xMax >= Get_NX() ) xMax = Get_NX() - 1;
+	int	yMax	= Get_System().Get_yWorld_to_Grid(rWorld.Get_YMax()); if( yMax >= Get_NY() ) yMax = Get_NY() - 1;
+
+	if( xMin > xMax || yMin > yMax )
+	{
+		return( false );	// no overlap
+	}
+
+	Statistics.Create(bHoldValues);
+
+	for(int y=yMin; y<=yMax; y++)
+	{
+		for(int x=xMin; x<=xMax; x++)
+		{
+			if( !is_NoData(x, y) )
+			{
+				Statistics	+= asDouble(x, y);
+			}
+		}
+	}
+
+	return( Statistics.Get_Count() > 0 );
 }
 
 
@@ -1149,7 +1077,7 @@ bool CSG_Grid::_Set_Index(void)
 	double	a;
 
 	//-----------------------------------------------------
-	SG_UI_Process_Set_Text(CSG_String::Format(SG_T("%s: %s"), _TL("Create index"), Get_Name()));
+	SG_UI_Process_Set_Text(CSG_String::Format("%s: %s", _TL("Create index"), Get_Name()));
 
 	for(i=0, j=0, k=Get_Data_Count(); i<Get_NCells(); i++)
 	{
@@ -1277,8 +1205,6 @@ bool CSG_Grid::_Set_Index(void)
 	SG_Free(istack);
 
 	SG_UI_Process_Set_Ready();
-
-	m_bIndex	= true;
 
 	return( true );
 }

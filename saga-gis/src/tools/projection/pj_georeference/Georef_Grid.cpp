@@ -24,7 +24,8 @@
 // Geoscientific Analyses'. SAGA is free software; you   //
 // can redistribute it and/or modify it under the terms  //
 // of the GNU General Public License as published by the //
-// Free Software Foundation; version 2 of the License.   //
+// Free Software Foundation, either version 2 of the     //
+// License, or (at your option) any later version.       //
 //                                                       //
 // SAGA is distributed in the hope that it will be       //
 // useful, but WITHOUT ANY WARRANTY; without even the    //
@@ -33,10 +34,8 @@
 // License for more details.                             //
 //                                                       //
 // You should have received a copy of the GNU General    //
-// Public License along with this program; if not,       //
-// write to the Free Software Foundation, Inc.,          //
-// 51 Franklin Street, 5th Floor, Boston, MA 02110-1301, //
-// USA.                                                  //
+// Public License along with this program; if not, see   //
+// <http://www.gnu.org/licenses/>.                       //
 //                                                       //
 //-------------------------------------------------------//
 //                                                       //
@@ -420,7 +419,7 @@ bool CGeoref_Grid::Set_Grid(CSG_Grid *pGrid, CSG_Grid *pReferenced, TSG_Grid_Res
 			double		z;
 			TSG_Point	p	= pReferenced->Get_System().Get_Grid_to_World(x, y);
 
-			if( m_Engine.Get_Converted(p, true) && pGrid->Get_Value(p, z, Resampling, bBytewise) )
+			if( m_Engine.Get_Converted(p, true) && pGrid->Get_Value(p, z, Resampling, false, bBytewise) )
 			{
 				pReferenced->Set_Value(x, y, z);
 			}

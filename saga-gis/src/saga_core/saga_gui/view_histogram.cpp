@@ -24,7 +24,8 @@
 // Geoscientific Analyses'. SAGA is free software; you   //
 // can redistribute it and/or modify it under the terms  //
 // of the GNU General Public License as published by the //
-// Free Software Foundation; version 2 of the License.   //
+// Free Software Foundation, either version 2 of the     //
+// License, or (at your option) any later version.       //
 //                                                       //
 // SAGA is distributed in the hope that it will be       //
 // useful, but WITHOUT ANY WARRANTY; without even the    //
@@ -33,10 +34,8 @@
 // License for more details.                             //
 //                                                       //
 // You should have received a copy of the GNU General    //
-// Public License along with this program; if not,       //
-// write to the Free Software Foundation, Inc.,          //
-// 51 Franklin Street, 5th Floor, Boston, MA 02110-1301, //
-// USA.                                                  //
+// Public License along with this program; if not, see   //
+// <http://www.gnu.org/licenses/>.                       //
 //                                                       //
 //-------------------------------------------------------//
 //                                                       //
@@ -71,6 +70,9 @@
 
 #include "helper.h"
 #include "dc_helper.h"
+#include "res_dialogs.h"
+
+#include "active.h"
 
 #include "wksp_data_manager.h"
 #include "wksp_layer_classify.h"
@@ -79,6 +81,9 @@
 #include "wksp_pointcloud.h"
 
 #include "view_histogram.h"
+
+//---------------------------------------------------------
+#define IS_BAND_WISE_FIT(pLayer)	(m_pLayer->Get_Type() == WKSP_ITEM_Grids && m_pLayer->Get_Classifier()->Get_Mode() == CLASSIFY_OVERLAY && m_pLayer->Get_Parameter("OVERLAY_STATISTICS")->asInt() != 0)
 
 
 ///////////////////////////////////////////////////////////
@@ -101,6 +106,7 @@ BEGIN_EVENT_TABLE(CVIEW_Histogram, CVIEW_Base)
 	EVT_RIGHT_DOWN	(CVIEW_Histogram::On_Mouse_RDown)
 
 	EVT_MENU		(ID_CMD_HISTOGRAM_CUMULATIVE  , CVIEW_Histogram::On_Cumulative)
+	EVT_MENU		(ID_CMD_HISTOGRAM_CLASS_COUNT , CVIEW_Histogram::On_ClassCount)
 	EVT_MENU		(ID_CMD_HISTOGRAM_AS_TABLE    , CVIEW_Histogram::On_AsTable)
 	EVT_MENU		(ID_CMD_HISTOGRAM_TO_CLIPBOARD, CVIEW_Histogram::On_ToClipboard)
 END_EVENT_TABLE()
@@ -135,6 +141,7 @@ wxMenu * CVIEW_Histogram::_Create_Menu(void)
 	wxMenu	*pMenu	= new wxMenu;
 
 	CMD_Menu_Add_Item(pMenu, true , ID_CMD_HISTOGRAM_CUMULATIVE);
+	CMD_Menu_Add_Item(pMenu, false, ID_CMD_HISTOGRAM_CLASS_COUNT);
 	pMenu->AppendSeparator();
 	CMD_Menu_Add_Item(pMenu, false, ID_CMD_HISTOGRAM_AS_TABLE);
 	CMD_Menu_Add_Item(pMenu, false, ID_CMD_HISTOGRAM_TO_CLIPBOARD);
@@ -164,6 +171,11 @@ wxToolBarBase * CVIEW_Histogram::_Create_ToolBar(void)
 //---------------------------------------------------------
 void CVIEW_Histogram::Do_Update(void)
 {
+	if( IS_BAND_WISE_FIT(pLayer) )
+	{
+		m_pLayer->Get_Classifier()->Set_Metric(0, 1, m_pLayer->Get_Value_Minimum(), m_pLayer->Get_Value_Maximum());
+	}
+
 	if( m_pLayer->Get_Classifier()->Histogram_Update() )
 	{
 		Refresh();
@@ -198,6 +210,8 @@ void CVIEW_Histogram::Draw_Histogram(wxDC &dc, wxRect r)
 		int		ax, ay, bx, by;
 		double	dx, Value;
 
+		wxColor	Color	= SYS_Get_Color(wxSYS_COLOUR_ACTIVECAPTION); // wxSYS_COLOUR_BTNSHADOW);
+
 		dx	= (double)r.GetWidth() / (double)nClasses;
 		ay	= r.GetBottom();
 		bx	= r.GetLeft();
@@ -212,7 +226,12 @@ void CVIEW_Histogram::Draw_Histogram(wxDC &dc, wxRect r)
 			bx	= r.GetLeft() + (int)(dx * (iClass + 1.0));
 			by	= ay - (int)(r.GetHeight() * Value);
 
-			Draw_FillRect(dc, m_pLayer->Get_Classifier()->Get_Class_Color(iClass), ax, ay, bx, by);
+			if( m_pLayer->Get_Classifier()->Get_Mode() != CLASSIFY_OVERLAY )
+			{
+				Color	= m_pLayer->Get_Classifier()->Get_Class_Color(iClass);
+			}
+
+			Draw_FillRect(dc, Color, ax, ay, bx, by);
 		}
 	}
 	else
@@ -346,19 +365,23 @@ void CVIEW_Histogram::On_Mouse_Motion(wxMouseEvent &event)
 //---------------------------------------------------------
 void CVIEW_Histogram::On_Mouse_LDown(wxMouseEvent &event)
 {
+	if( IS_BAND_WISE_FIT(pLayer) )
+	{
+		return;
+	}
+
 	switch( m_pLayer->Get_Classifier()->Get_Mode() )
 	{
-	default:
-		break;
-
 	case CLASSIFY_GRADUATED:
-	case CLASSIFY_METRIC:
-	case CLASSIFY_SHADE:
-	case CLASSIFY_OVERLAY:
+	case CLASSIFY_METRIC   :
+	case CLASSIFY_SHADE    :
+	case CLASSIFY_OVERLAY  :
 		m_bMouse_Down	= true;
 		m_Mouse_Move	= m_Mouse_Down	= event.GetPosition();
 
 		CaptureMouse();
+
+	default: break;
 	}
 }
 
@@ -374,18 +397,28 @@ void CVIEW_Histogram::On_Mouse_LUp(wxMouseEvent &event)
 
 		wxRect	r(Draw_Get_rDiagram(wxRect(wxPoint(0, 0), GetClientSize())));
 
-		m_pLayer->Set_Color_Range(
-			m_pLayer->Get_Classifier()->Get_RelativeToMetric(
-				(double)(m_Mouse_Down.x - r.GetLeft()) / (double)r.GetWidth()),
-			m_pLayer->Get_Classifier()->Get_RelativeToMetric(
-				(double)(m_Mouse_Move.x - r.GetLeft()) / (double)r.GetWidth())
-		);
+		CWKSP_Layer_Classify	*pClassify	= m_pLayer->Get_Classifier();
+
+		double	Minimum	= pClassify->Get_RelativeToMetric((double)(m_Mouse_Down.x - r.GetLeft()) / (double)r.GetWidth());
+		double	Maximum	= pClassify->Get_RelativeToMetric((double)(m_Mouse_Move.x - r.GetLeft()) / (double)r.GetWidth());
+
+		m_pLayer->Get_Parameter("METRIC_ZRANGE")->asRange()->Set_Range(Minimum, Maximum);
+		pClassify->Set_Metric(pClassify->Get_Metric_Mode(), pClassify->Get_Metric_Mode(), Minimum, Maximum);
+		g_pACTIVE->Update(m_pLayer, false);
+		m_pLayer->Update_Views();
+
+	//	m_pLayer->Set_Color_Range(Minimum, Maximum);
 	}
 }
 
 //---------------------------------------------------------
 void CVIEW_Histogram::On_Mouse_RDown(wxMouseEvent &event)
 {
+	if( IS_BAND_WISE_FIT(pLayer) )
+	{
+		return;
+	}
+
 	switch( m_pLayer->Get_Classifier()->Get_Mode() )
 	{
 	case CLASSIFY_GRADUATED:
@@ -397,8 +430,7 @@ void CVIEW_Histogram::On_Mouse_RDown(wxMouseEvent &event)
 			m_pLayer->Get_Value_Maximum()
 		);
 
-	default:
-		break;
+	default: break;
 	}
 }
 
@@ -412,12 +444,19 @@ void CVIEW_Histogram::On_Command_UI(wxUpdateUIEvent &event)
 {
 	switch( event.GetId() )
 	{
-	default:
-		break;
-
 	case ID_CMD_HISTOGRAM_CUMULATIVE:
 		event.Check(m_bCumulative);
 		break;
+
+	case ID_CMD_HISTOGRAM_CLASS_COUNT:
+		event.Enable(
+			m_pLayer->Get_Classifier()->Get_Mode() == CLASSIFY_GRADUATED
+		||	m_pLayer->Get_Classifier()->Get_Mode() == CLASSIFY_SHADE
+		||	m_pLayer->Get_Classifier()->Get_Mode() == CLASSIFY_OVERLAY
+		);
+		break;
+
+	default: break;
 	}
 }
 
@@ -427,6 +466,19 @@ void CVIEW_Histogram::On_Cumulative(wxCommandEvent &event)
 	m_bCumulative	= !m_bCumulative;
 
 	Refresh();
+}
+
+//---------------------------------------------------------
+void CVIEW_Histogram::On_ClassCount(wxCommandEvent &event)
+{
+	int	nClasses	= m_pLayer->Get_Classifier()->Get_Class_Count();
+
+	if( DLG_Get_Number(nClasses, _TL("Histogram"), _TL("Number of Classes")) && nClasses > 1 )
+	{
+		m_pLayer->Get_Classifier()->Set_Class_Count(nClasses);
+
+		Refresh();
+	}
 }
 
 //---------------------------------------------------------

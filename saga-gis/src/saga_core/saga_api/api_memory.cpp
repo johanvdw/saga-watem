@@ -26,7 +26,8 @@
 // This library is free software; you can redistribute   //
 // it and/or modify it under the terms of the GNU Lesser //
 // General Public License as published by the Free       //
-// Software Foundation, version 2.1 of the License.      //
+// Software Foundation, either version 2.1 of the        //
+// License, or (at your option) any later version.       //
 //                                                       //
 // This library is distributed in the hope that it will  //
 // be useful, but WITHOUT ANY WARRANTY; without even the //
@@ -36,9 +37,7 @@
 //                                                       //
 // You should have received a copy of the GNU Lesser     //
 // General Public License along with this program; if    //
-// not, write to the Free Software Foundation, Inc.,     //
-// 51 Franklin Street, 5th Floor, Boston, MA 02110-1301, //
-// USA.                                                  //
+// not, see <http://www.gnu.org/licenses/>.              //
 //                                                       //
 //-------------------------------------------------------//
 //                                                       //
@@ -433,6 +432,94 @@ bool CSG_Array::Dec_Array		(bool bShrink)
 bool CSG_Array::Dec_Array		(void **pArray, bool bShrink)
 {
 	return( m_nValues > 0 ? Set_Array(m_nValues - 1, pArray, bShrink) : false );
+}
+
+
+///////////////////////////////////////////////////////////
+//														 //
+//														 //
+//														 //
+///////////////////////////////////////////////////////////
+
+//---------------------------------------------------------
+void ** CSG_Array_Pointer::Create(const CSG_Array_Pointer &Array)
+{
+	m_Array.Create(Array.m_Array);
+
+	return( (void **)m_Array.Get_Array() );
+}
+
+//---------------------------------------------------------
+void ** CSG_Array_Pointer::Create(size_t nValues, TSG_Array_Growth Growth)
+{
+	m_Array.Create(sizeof(void *), nValues, Growth);
+
+	return( (void **)m_Array.Get_Array() );
+}
+
+//---------------------------------------------------------
+bool CSG_Array_Pointer::Add(void *Value)
+{
+	if( Inc_Array() )
+	{
+		Get_Array()[Get_Size() - 1]	= Value;
+
+		return( true );
+	}
+
+	return( false );
+}
+
+//---------------------------------------------------------
+bool CSG_Array_Pointer::Add(const CSG_Array_Pointer &Array)
+{
+	for(size_t i=0; i<Array.Get_Size(); i++)
+	{
+		if( Add(Array[i]) == false )
+		{
+			return( false );
+		}
+	}
+
+	return( true );
+}
+
+//---------------------------------------------------------
+bool CSG_Array_Pointer::Del(int Index)
+{
+	return( Del((size_t)Index) );
+}
+
+//---------------------------------------------------------
+bool CSG_Array_Pointer::Del(size_t Index)
+{
+	if( Index < Get_Size() )
+	{
+		for(size_t i=Index+1; i<Get_Size(); i++, Index++)
+		{
+			(*this)[Index]	= (*this)[i];
+		}
+
+		return( Dec_Array() );
+	}
+
+	return( false );
+}
+
+//---------------------------------------------------------
+size_t CSG_Array_Pointer::Del(void *Value)
+{
+	size_t	n	= 0;
+
+	for(size_t i=Get_Size(); i>0; i--)
+	{
+		if( Value == (*this)[i] && Del(i) )
+		{
+			n++;
+		}
+	}
+
+	return( n );
 }
 
 

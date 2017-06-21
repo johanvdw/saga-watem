@@ -24,7 +24,8 @@
 // Geoscientific Analyses'. SAGA is free software; you   //
 // can redistribute it and/or modify it under the terms  //
 // of the GNU General Public License as published by the //
-// Free Software Foundation; version 2 of the License.   //
+// Free Software Foundation, either version 2 of the     //
+// License, or (at your option) any later version.       //
 //                                                       //
 // SAGA is distributed in the hope that it will be       //
 // useful, but WITHOUT ANY WARRANTY; without even the    //
@@ -33,10 +34,8 @@
 // License for more details.                             //
 //                                                       //
 // You should have received a copy of the GNU General    //
-// Public License along with this program; if not,       //
-// write to the Free Software Foundation, Inc.,          //
-// 51 Franklin Street, 5th Floor, Boston, MA 02110-1301, //
-// USA.                                                  //
+// Public License along with this program; if not, see   //
+// <http://www.gnu.org/licenses/>.                       //
 //                                                       //
 //-------------------------------------------------------//
 //                                                       //
@@ -107,7 +106,6 @@ void CVisibility_BASE::Initialize(CSG_Grid *pVisibility, int iMethod)
 	return;
 }
 
-
 //---------------------------------------------------------
 void CVisibility_BASE::Set_Visibility(CSG_Grid *pDTM, CSG_Grid *pVisibility, int x_Pos, int y_Pos, double z_Pos, double dHeight, int iMethod)
 {
@@ -116,7 +114,6 @@ void CVisibility_BASE::Set_Visibility(CSG_Grid *pDTM, CSG_Grid *pVisibility, int
 	double		aziDTM, decDTM,
 				aziSrc, decSrc,
 				d, dx, dy, dz;
-
 
 	for(int y=0; y<pDTM->Get_NY() && SG_UI_Process_Set_Progress(y, pDTM->Get_NY()); y++)
 	{
@@ -223,7 +220,7 @@ bool CVisibility_BASE::Trace_Point(CSG_Grid *pDTM, int x, int y, double dx, doub
 			{
 				return( false );
 			}
-			else if( iz > pDTM->Get_ZMax() )
+			else if( iz > pDTM->Get_Max() )
 			{
 				return( true );
 			}
@@ -242,12 +239,12 @@ void CVisibility_BASE::Finalize(CSG_Grid *pVisibility, int iMethod)
 	switch( iMethod )
 	{
 	case 0:		// Visibility
-		Parameters.Add_Range(NULL, SG_T("METRIC_ZRANGE"), SG_T(""), SG_T(""), 0.0, 1.0);
+		Parameters.Add_Range("", "METRIC_ZRANGE", SG_T(""), SG_T(""), 0.0, 1.0);
 		SG_UI_DataObject_Update(pVisibility, true, &Parameters);
 		break;
 
 	case 1:		// Shade
-		Parameters.Add_Range(NULL, SG_T("METRIC_ZRANGE"), SG_T(""), SG_T(""), 0.0, M_PI_090);
+		Parameters.Add_Range("", "METRIC_ZRANGE", SG_T(""), SG_T(""), 0.0, M_PI_090);
 		SG_UI_DataObject_Update(pVisibility, true, &Parameters);
 		break;
 

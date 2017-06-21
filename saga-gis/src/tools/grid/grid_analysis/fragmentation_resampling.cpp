@@ -24,7 +24,8 @@
 // Geoscientific Analyses'. SAGA is free software; you   //
 // can redistribute it and/or modify it under the terms  //
 // of the GNU General Public License as published by the //
-// Free Software Foundation; version 2 of the License.   //
+// Free Software Foundation, either version 2 of the     //
+// License, or (at your option) any later version.       //
 //                                                       //
 // SAGA is distributed in the hope that it will be       //
 // useful, but WITHOUT ANY WARRANTY; without even the    //
@@ -33,10 +34,8 @@
 // License for more details.                             //
 //                                                       //
 // You should have received a copy of the GNU General    //
-// Public License along with this program; if not,       //
-// write to the Free Software Foundation, Inc.,          //
-// 51 Franklin Street, 5th Floor, Boston, MA 02110-1301, //
-// USA.                                                  //
+// Public License along with this program; if not, see   //
+// <http://www.gnu.org/licenses/>.                       //
 //                                                       //
 //-------------------------------------------------------//
 //                                                       //
@@ -210,8 +209,8 @@ bool CFragmentation_Resampling::Get_Fragmentation(int x, int y, double &Density,
 
 	//	for(int iGrid=m_Radius_iMin+1; iGrid<m_Density.Get_Count(); iGrid++)
 
-		Density			= 0.0;	m_Density		.Get_Grid(0)->Get_Value(p, Density);
-		Connectivity	= 0.0;	m_Connectivity	.Get_Grid(0)->Get_Value(p, Connectivity);
+		Density			= 0.0;	m_Density     .Get_Grid(0)->Get_Value(p, Density);
+		Connectivity	= 0.0;	m_Connectivity.Get_Grid(0)->Get_Value(p, Connectivity);
 
 		for(int iGrid=1; iGrid<m_Density.Get_Count(); iGrid++)
 		{
@@ -221,12 +220,12 @@ bool CFragmentation_Resampling::Get_Fragmentation(int x, int y, double &Density,
 			{
 				switch( m_Aggregation )
 				{
-				case 0:	default:
+				default:
 					Density			= 0.5 * (d + Density);
 					Connectivity	= 0.5 * (c + Connectivity);
 					break;
 
-				case 1:
+				case  1:
 					Density			*= d;
 					Connectivity	*= c;
 					break;

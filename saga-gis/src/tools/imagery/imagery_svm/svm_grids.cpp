@@ -24,7 +24,8 @@
 // Geoscientific Analyses'. SAGA is free software; you   //
 // can redistribute it and/or modify it under the terms  //
 // of the GNU General Public License as published by the //
-// Free Software Foundation; version 2 of the License.   //
+// Free Software Foundation, either version 2 of the     //
+// License, or (at your option) any later version.       //
 //                                                       //
 // SAGA is distributed in the hope that it will be       //
 // useful, but WITHOUT ANY WARRANTY; without even the    //
@@ -33,10 +34,8 @@
 // License for more details.                             //
 //                                                       //
 // You should have received a copy of the GNU General    //
-// Public License along with this program; if not,       //
-// write to the Free Software Foundation, Inc.,          //
-// 51 Franklin Street, 5th Floor, Boston, MA 02110-1301, //
-// USA.                                                  //
+// Public License along with this program; if not, see   //
+// <http://www.gnu.org/licenses/>.                       //
 //                                                       //
 //-------------------------------------------------------//
 //                                                       //
@@ -98,77 +97,77 @@ CSVM_Grids::CSVM_Grids(void)
 	));
 
 	//-----------------------------------------------------
-	Parameters.Add_Grid_List(
-		NULL	, "GRIDS"		, _TL("Grids"),
+	Parameters.Add_Grid_List("",
+		"GRIDS"			, _TL("Grids"),
 		_TL(""),
 		PARAMETER_INPUT
 	);
 
-	Parameters.Add_Grid(
-		NULL	, "CLASSES"		, _TL("Classification"),
+	Parameters.Add_Grid("",
+		"CLASSES"		, _TL("Classification"),
 		_TL(""),
 		PARAMETER_OUTPUT, true, SG_DATATYPE_Short
 	);
 
-	Parameters.Add_Choice(
-		NULL	, "SCALING"		, _TL("Scaling"),
+	Parameters.Add_Choice("",
+		"SCALING"		, _TL("Scaling"),
 		_TL(""),
-		CSG_String::Format(SG_T("%s|%s|%s|"),
+		CSG_String::Format("%s|%s|%s|",
 			_TL("none"),
 			_TL("normalize (0-1)"),
 			_TL("standardize")
 		), 2
 	);
 
-	Parameters.Add_Value(
-		NULL	, "MESSAGE"		, _TL("Verbose Messages"),
+	Parameters.Add_Bool("",
+		"MESSAGE"		, _TL("Verbose Messages"),
 		_TL(""),
-		PARAMETER_TYPE_Bool, false
+		false
 	);
 
-	Parameters.Add_Choice(
-		NULL	, "MODEL_SRC"	, _TL("Model Source"),
+	Parameters.Add_Choice("",
+		"MODEL_SRC"		, _TL("Model Source"),
 		_TL(""),
-		CSG_String::Format(SG_T("%s|%s|"),
+		CSG_String::Format("%s|%s|",
 			_TL("create from training areas"),
 			_TL("restore from file")
 		), 0
 	);
 
 	//-----------------------------------------------------
-	Parameters.Add_FilePath(
-		NULL	, "MODEL_LOAD"	, _TL("Restore Model from File"),
+	Parameters.Add_FilePath("",
+		"MODEL_LOAD"	, _TL("Restore Model from File"),
 		_TL(""),
 		NULL, NULL, false
 	);
 
 	//-----------------------------------------------------
-	CSG_Parameter	*pNode	= Parameters.Add_Node(
-		NULL	, "MODEL_TRAIN"	, _TL("Training Options"),
+	Parameters.Add_Node("",
+		"MODEL_TRAIN"	, _TL("Training Options"),
 		_TL("")
 	);
 
-	CSG_Parameter	*pShape	= Parameters.Add_Shapes(
-		pNode	, "ROI"			, _TL("Training Areas"),
+	Parameters.Add_Shapes("MODEL_TRAIN",
+		"ROI"			, _TL("Training Areas"),
 		_TL(""),
 		PARAMETER_INPUT, SHAPE_TYPE_Polygon
 	);
 
-	Parameters.Add_Table_Field(
-		pShape	, "ROI_ID"		, _TL("Class Identifier"),
+	Parameters.Add_Table_Field("ROI",
+		"ROI_ID"		, _TL("Class Identifier"),
 		_TL("")
 	);
 
-	Parameters.Add_FilePath(
-		pNode	, "MODEL_SAVE"	, _TL("Store Model to File"),
+	Parameters.Add_FilePath("MODEL_TRAIN",
+		"MODEL_SAVE", _TL("Store Model to File"),
 		_TL(""),
 		NULL, NULL, true
 	);
 
-	Parameters.Add_Choice(
-		pNode	, "SVM_TYPE"	, _TL("SVM Type"),
+	Parameters.Add_Choice("MODEL_TRAIN",
+		"SVM_TYPE"	, _TL("SVM Type"),
 		_TL(""),
-		CSG_String::Format(SG_T("%s|%s|%s|%s|%s|"),
+		CSG_String::Format("%s|%s|%s|%s|%s|",
 			_TL("C-SVC"),
 			_TL("nu-SVC"),
 			_TL("one-class SVM"),
@@ -177,10 +176,10 @@ CSVM_Grids::CSVM_Grids(void)
 		), 0
 	);
 
-	Parameters.Add_Choice(
-		pNode	, "KERNEL_TYPE"	, _TL("Kernel Type"),
+	Parameters.Add_Choice("MODEL_TRAIN",
+		"KERNEL_TYPE", _TL("Kernel Type"),
 		_TL("linear: u'*v\npolynomial: (gamma*u'*v + coef0)^degree\nradial basis function: exp(-gamma*|u-v|^2)\nsigmoid: tanh(gamma*u'*v + coef0)"),
-		CSG_String::Format(SG_T("%s|%s|%s|%s|"),
+		CSG_String::Format("%s|%s|%s|%s|",
 			_TL("linear"),
 			_TL("polynomial"),
 			_TL("radial basis function"),
@@ -188,74 +187,74 @@ CSVM_Grids::CSVM_Grids(void)
 		), 2
 	);
 
-	Parameters.Add_Value(
-		pNode	, "DEGREE"		, _TL("Degree"),
+	Parameters.Add_Int("MODEL_TRAIN",
+		"DEGREE"	, _TL("Degree"),
 		_TL("degree in kernel function"),
-		PARAMETER_TYPE_Int, 3
+		3
 	);
 
-	Parameters.Add_Value(
-		pNode	, "GAMMA"		, _TL("Gamma"),
+	Parameters.Add_Double("MODEL_TRAIN",
+		"GAMMA"		, _TL("Gamma"),
 		_TL("gamma in kernel function"),
-		PARAMETER_TYPE_Double	, 0
+		0
 	);
 
-	Parameters.Add_Value(
-		pNode	, "COEF0"		, _TL("coef0"),
+	Parameters.Add_Double("MODEL_TRAIN",
+		"COEF0"		, _TL("coef0"),
 		_TL("coef0 in kernel function"),
-		PARAMETER_TYPE_Double	, 0
+		0
 	);
 
-	Parameters.Add_Value(
-		pNode	, "COST"		, _TL("C"),
+	Parameters.Add_Double("MODEL_TRAIN",
+		"COST"		, _TL("C"),
 		_TL("parameter C (cost) of C-SVC, epsilon-SVR, and nu-SVR"),
-		PARAMETER_TYPE_Double	, 1
+		1
 	);
 
-	Parameters.Add_Value(
-		pNode	, "NU"			, _TL("nu-SVR"),
+	Parameters.Add_Double("MODEL_TRAIN",
+		"NU"		, _TL("nu-SVR"),
 		_TL("parameter nu of nu-SVC, one-class SVM, and nu-SVR"),
-		PARAMETER_TYPE_Double	, 0.5
+		0.5
 		);
 
-	Parameters.Add_Value(
-		pNode	, "EPS_SVR"		, _TL("SVR Epsilon"),
+	Parameters.Add_Double("MODEL_TRAIN",
+		"EPS_SVR"	, _TL("SVR Epsilon"),
 		_TL("epsilon in loss function of epsilon-SVR"),
-		PARAMETER_TYPE_Double	, 0.1
+		0.1
 	);
 
-	Parameters.Add_Value(
-		pNode	, "CACHE_SIZE"	, _TL("Cache Size"),
+	Parameters.Add_Double("MODEL_TRAIN",
+		"CACHE_SIZE", _TL("Cache Size"),
 		_TL("cache memory size in MB"),
-		PARAMETER_TYPE_Double	, 100
+		100
 	);
 
-	Parameters.Add_Value(
-		pNode	, "EPS"			, _TL("Epsilon"),
+	Parameters.Add_Double("MODEL_TRAIN",
+		"EPS"		, _TL("Epsilon"),
 		_TL("tolerance of termination criterion"),
-		PARAMETER_TYPE_Double	, 1e-3
+		1e-3
 	);
 
-	Parameters.Add_Value(
-		pNode	, "SHRINKING"	, _TL("Shrinking"),
+	Parameters.Add_Bool("MODEL_TRAIN",
+		"SHRINKING"	, _TL("Shrinking"),
 		_TL("whether to use the shrinking heuristics"),
-		PARAMETER_TYPE_Bool		, false
+		false
 	);
 
-	Parameters.Add_Value(
-		pNode	, "PROBABILITY"	, _TL("Probability Estimates"),
+	Parameters.Add_Bool("MODEL_TRAIN",
+		"PROBABILITY", _TL("Probability Estimates"),
 		_TL("whether to train a SVC or SVR model for probability estimates"),
-		PARAMETER_TYPE_Bool		, false
+		false
 	);
 
-//	Parameters.Add_Value(pNode	, "nr_weight"		, _TL("Type"), _TL(""), PARAMETER_TYPE_Int	, 0);
-//	Parameters.Add_Value(pNode	, "weight_label"	, _TL("Type"), _TL(""), PARAMETER_TYPE_Int	, NULL);
-//	Parameters.Add_Value(pNode	, "weight"			, _TL("Type"), _TL(""), PARAMETER_TYPE_Int	, NULL);
+//	Parameters.Add_Int("MODEL_TRAIN", "nr_weight"   , _TL("Type"), _TL(""), 0);
+//	Parameters.Add_Int("MODEL_TRAIN", "weight_label", _TL("Type"), _TL(""), 0);
+//	Parameters.Add_Int("MODEL_TRAIN", "weight"      , _TL("Type"), _TL(""), 0);
 
-	Parameters.Add_Value(
-		pNode	, "CROSSVAL"	, _TL("Cross Validation"),
+	Parameters.Add_Int("MODEL_TRAIN",
+		"CROSSVAL"	, _TL("Cross Validation"),
 		_TL("n-fold cross validation: n must > 1"),
-		PARAMETER_TYPE_Int		, 1, 1, true
+		1, 1, true
 	);
 }
 
@@ -288,12 +287,12 @@ int CSVM_Grids::On_Parameters_Enable(CSG_Parameters *pParameters, CSG_Parameter 
 //---------------------------------------------------------
 inline double CSVM_Grids::Get_Value(int x, int y, int iGrid)
 {
-	CSG_Grid	*pGrid	= m_pGrids->asGrid(iGrid);
+	CSG_Grid	*pGrid	= m_pGrids->Get_Grid(iGrid);
 
 	switch( m_Scaling )
 	{
 	default:	return( (pGrid->asDouble(x, y)) );
-	case  1:	return( (pGrid->asDouble(x, y) - pGrid->Get_ZMin()) / pGrid->Get_ZRange() );
+	case  1:	return( (pGrid->asDouble(x, y) - pGrid->Get_Min()) / pGrid->Get_Range() );
 	case  2:	return( (pGrid->asDouble(x, y) - pGrid->Get_Mean()) / pGrid->Get_StdDev() );
 	}
 }
@@ -319,17 +318,17 @@ bool CSVM_Grids::On_Execute(void)
 
 	m_pGrids	= Parameters("GRIDS"  )->asGridList();
 
-	for(int i=m_pGrids->Get_Count()-1; i>=0; i--)
+	for(int i=m_pGrids->Get_Grid_Count()-1; i>=0; i--)
 	{
-		if( m_pGrids->asGrid(i)->Get_ZRange() <= 0.0 )
+		if( m_pGrids->Get_Grid(i)->Get_Range() <= 0.0 )
 		{
-			Message_Add(CSG_String::Format(SG_T("%s: %s"), _TL("grid has been dropped"), m_pGrids->asGrid(i)->Get_Name()));
+			Message_Add(CSG_String::Format("%s: %s", _TL("grid has been dropped"), m_pGrids->Get_Grid(i)->Get_Name()));
 
 			m_pGrids->Del_Item(i);
 		}
 	}
 
-	if( m_pGrids->Get_Count() <= 0 )
+	if( m_pGrids->Get_Grid_Count() <= 0 )
 	{
 		Error_Set(_TL("no valid grid in list."));
 
@@ -388,9 +387,9 @@ bool CSVM_Grids::Predict(void)
 {
 	Process_Set_Text(_TL("prediction"));
 
-	struct svm_node	*Features	= (struct svm_node *)SG_Malloc((m_pGrids->Get_Count() + 1) * sizeof(struct svm_node));
+	struct svm_node	*Features	= (struct svm_node *)SG_Malloc((m_pGrids->Get_Grid_Count() + 1) * sizeof(struct svm_node));
 
-	Features[m_pGrids->Get_Count()].index	= -1;
+	Features[m_pGrids->Get_Grid_Count()].index	= -1;
 
 	//-----------------------------------------------------
 	for(int y=0; y<Get_NY() && Set_Progress(y); y++)
@@ -399,7 +398,7 @@ bool CSVM_Grids::Predict(void)
 		{
 			if( !m_pClasses->is_NoData(x, y) )
 			{
-				for(int iGrid=0; iGrid<m_pGrids->Get_Count(); iGrid++)
+				for(int iGrid=0; iGrid<m_pGrids->Get_Grid_Count(); iGrid++)
 				{
 					Features[iGrid].index	= iGrid + 1;
 					Features[iGrid].value	= Get_Value(x, y, iGrid);
@@ -445,9 +444,9 @@ bool CSVM_Grids::Load(void)
 		{
 			bool	bNoData	= false;
 
-			for(int iGrid=0; iGrid<m_pGrids->Get_Count() && !bNoData; iGrid++)
+			for(int iGrid=0; iGrid<m_pGrids->Get_Grid_Count() && !bNoData; iGrid++)
 			{
-				if( m_pGrids->asGrid(iGrid)->is_NoData(x, y) )
+				if( m_pGrids->Get_Grid(iGrid)->is_NoData(x, y) )
 				{
 					bNoData	= true;
 
@@ -492,7 +491,7 @@ bool CSVM_Grids::Training(void)
 	m_Problem.l	= Elements.Get_Count();
 	m_Problem.y	= (double           *)SG_Malloc(m_Problem.l * sizeof(double));
 	m_Problem.x	= (struct svm_node **)SG_Malloc(m_Problem.l * sizeof(struct svm_node *));
-	m_Nodes		= (struct svm_node  *)SG_Malloc(m_Problem.l * sizeof(struct svm_node  ) * (1 + m_pGrids->Get_Count()));
+	m_Nodes		= (struct svm_node  *)SG_Malloc(m_Problem.l * sizeof(struct svm_node  ) * (1 + m_pGrids->Get_Grid_Count()));
 
 	//-----------------------------------------------------
 	CSG_String	ID_ROI;
@@ -517,7 +516,7 @@ bool CSVM_Grids::Training(void)
 		m_Problem.x[i]	= &m_Nodes[j];
 		m_Problem.y[i]	= ID_Class;
 
-		for(int iGrid=0; iGrid<m_pGrids->Get_Count(); iGrid++, j++)
+		for(int iGrid=0; iGrid<m_pGrids->Get_Grid_Count(); iGrid++, j++)
 		{
 			m_Nodes[j].index	= 1 + iGrid;
 			m_Nodes[j].value	= pElement->asDouble(1 + iGrid);
@@ -652,9 +651,9 @@ bool CSVM_Grids::Training_Get_Parameters(struct svm_parameter &param)
 	param.weight_label	= NULL;
 	param.weight		= NULL;
 
-	if( param.gamma == 0 && m_pGrids->Get_Count() > 0 )
+	if( param.gamma == 0 && m_pGrids->Get_Grid_Count() > 0 )
 	{
-		param.gamma	= 1.0 / m_pGrids->Get_Count();
+		param.gamma	= 1.0 / m_pGrids->Get_Grid_Count();
 	}
 
 	return( true );
@@ -673,7 +672,7 @@ bool CSVM_Grids::Training_Get_Elements(CSG_Table &Elements)
 	Elements.Destroy();
 	Elements.Add_Field(SG_T("ID"), SG_DATATYPE_String);
 
-	for(iGrid=0; iGrid<m_pGrids->Get_Count(); iGrid++)
+	for(iGrid=0; iGrid<m_pGrids->Get_Grid_Count(); iGrid++)
 	{
 		Elements.Add_Field(SG_Get_String(iGrid), SG_DATATYPE_Double);
 	}
@@ -688,9 +687,9 @@ bool CSVM_Grids::Training_Get_Elements(CSG_Table &Elements)
 		{
 			bool	bNoData	= false;
 
-			for(iGrid=0; iGrid<m_pGrids->Get_Count() && !bNoData; iGrid++)
+			for(iGrid=0; iGrid<m_pGrids->Get_Grid_Count() && !bNoData; iGrid++)
 			{
-				if( m_pGrids->asGrid(iGrid)->is_NoData(x, y) )
+				if( m_pGrids->Get_Grid(iGrid)->is_NoData(x, y) )
 				{
 					bNoData	= true;
 				}
@@ -714,7 +713,7 @@ bool CSVM_Grids::Training_Get_Elements(CSG_Table &Elements)
 
 						pElement->Set_Value(0, pROI->asString(iROI_ID));
 
-						for(iGrid=0; iGrid<m_pGrids->Get_Count(); iGrid++)
+						for(iGrid=0; iGrid<m_pGrids->Get_Grid_Count(); iGrid++)
 						{
 							pElement->Set_Value(1 + iGrid, Get_Value(x, y, iGrid));
 						}

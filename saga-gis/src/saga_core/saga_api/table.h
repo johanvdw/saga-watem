@@ -26,7 +26,8 @@
 // This library is free software; you can redistribute   //
 // it and/or modify it under the terms of the GNU Lesser //
 // General Public License as published by the Free       //
-// Software Foundation, version 2.1 of the License.      //
+// Software Foundation, either version 2.1 of the        //
+// License, or (at your option) any later version.       //
 //                                                       //
 // This library is distributed in the hope that it will  //
 // be useful, but WITHOUT ANY WARRANTY; without even the //
@@ -36,9 +37,7 @@
 //                                                       //
 // You should have received a copy of the GNU Lesser     //
 // General Public License along with this program; if    //
-// not, write to the Free Software Foundation, Inc.,     //
-// 51 Franklin Street, 5th Floor, Boston, MA 02110-1301, //
-// USA.                                                  //
+// not, see <http://www.gnu.org/licenses/>.              //
 //                                                       //
 //-------------------------------------------------------//
 //                                                       //
@@ -221,28 +220,28 @@ public:
 									CSG_Table			(const CSG_Table &Table);
 	bool							Create				(const CSG_Table &Table);
 
-									CSG_Table			(const CSG_String &File_Name, TSG_Table_File_Type Format = TABLE_FILETYPE_Undefined);
-	bool							Create				(const CSG_String &File_Name, TSG_Table_File_Type Format = TABLE_FILETYPE_Undefined);
+									CSG_Table			(const CSG_String &FileName, TSG_Table_File_Type Format = TABLE_FILETYPE_Undefined);
+	bool							Create				(const CSG_String &FileName, TSG_Table_File_Type Format = TABLE_FILETYPE_Undefined);
 
-									CSG_Table			(const CSG_String &File_Name, TSG_Table_File_Type Format, const SG_Char Separator);
-	bool							Create				(const CSG_String &File_Name, TSG_Table_File_Type Format, const SG_Char Separator);
+									CSG_Table			(const CSG_String &FileName, TSG_Table_File_Type Format, const SG_Char Separator);
+	bool							Create				(const CSG_String &FileName, TSG_Table_File_Type Format, const SG_Char Separator);
 
-									CSG_Table			(CSG_Table *pTemplate);
-	bool							Create				(CSG_Table *pTemplate);
+									CSG_Table			(const CSG_Table *pTemplate);
+	bool							Create				(const CSG_Table *pTemplate);
 
 	virtual ~CSG_Table(void);
 
 	virtual bool					Destroy				(void);
 
-	virtual TSG_Data_Object_Type	Get_ObjectType		(void)	const			{	return( DATAOBJECT_TYPE_Table );	}
+	virtual TSG_Data_Object_Type	Get_ObjectType		(void)	const			{	return( SG_DATAOBJECT_TYPE_Table );	}
 
 	CSG_Table &						operator =			(const CSG_Table &Table);
 	virtual bool					Assign				(CSG_Data_Object *pSource);
 	bool							Assign_Values		(CSG_Table *pTable);
 
-	bool							Load				(const CSG_String &File_Name, int Format, SG_Char Separator);
-	virtual bool					Save				(const CSG_String &File_Name, int Format = 0);
-	virtual bool					Save				(const CSG_String &File_Name, int Format, SG_Char Separator);
+	bool							Load				(const CSG_String &FileName, int Format, SG_Char Separator);
+	virtual bool					Save				(const CSG_String &FileName, int Format = 0);
+	virtual bool					Save				(const CSG_String &FileName, int Format, SG_Char Separator);
 	bool							Serialize			(CSG_File &Stream, bool bSave);
 
 	//-----------------------------------------------------
@@ -262,19 +261,20 @@ public:
 	bool							Set_Field_Name		(int iField, const SG_Char *Name);
 	bool							Set_Field_Type		(int iField, TSG_Data_Type  Type);
 
-	sLong							Get_N				(int iField)	const	{	return( _Stats_Update(iField) ? m_Field_Stats[iField]->Get_Count()    : 0   );	}
-	double							Get_Minimum			(int iField)	const	{	return( _Stats_Update(iField) ? m_Field_Stats[iField]->Get_Minimum()  : 0.0 );	}
-	double							Get_Maximum			(int iField)	const	{	return( _Stats_Update(iField) ? m_Field_Stats[iField]->Get_Maximum()  : 0.0 );	}
-	double							Get_Range			(int iField)	const	{	return( _Stats_Update(iField) ? m_Field_Stats[iField]->Get_Range()    : 0.0 );	}
-	double							Get_Sum				(int iField)	const	{	return( _Stats_Update(iField) ? m_Field_Stats[iField]->Get_Sum()      : 0.0 );	}
-	double							Get_Mean			(int iField)	const	{	return( _Stats_Update(iField) ? m_Field_Stats[iField]->Get_Mean()     : 0.0 );	}
-	double							Get_StdDev			(int iField)	const	{	return( _Stats_Update(iField) ? m_Field_Stats[iField]->Get_StdDev()   : 0.0 );	}
+	sLong							Get_N				(int iField)	const	{	return( _Stats_Update(iField) ? m_Field_Stats[iField]->Get_Count   () : 0   );	}
+	double							Get_Minimum			(int iField)	const	{	return( _Stats_Update(iField) ? m_Field_Stats[iField]->Get_Minimum () : 0.0 );	}
+	double							Get_Maximum			(int iField)	const	{	return( _Stats_Update(iField) ? m_Field_Stats[iField]->Get_Maximum () : 0.0 );	}
+	double							Get_Range			(int iField)	const	{	return( _Stats_Update(iField) ? m_Field_Stats[iField]->Get_Range   () : 0.0 );	}
+	double							Get_Sum				(int iField)	const	{	return( _Stats_Update(iField) ? m_Field_Stats[iField]->Get_Sum     () : 0.0 );	}
+	double							Get_Mean			(int iField)	const	{	return( _Stats_Update(iField) ? m_Field_Stats[iField]->Get_Mean    () : 0.0 );	}
+	double							Get_StdDev			(int iField)	const	{	return( _Stats_Update(iField) ? m_Field_Stats[iField]->Get_StdDev  () : 0.0 );	}
 	double							Get_Variance		(int iField)	const	{	return( _Stats_Update(iField) ? m_Field_Stats[iField]->Get_Variance() : 0.0 );	}
 	const CSG_Simple_Statistics &	Get_Statistics		(int iField)	const	{	_Stats_Update(iField); return( *m_Field_Stats[iField] );	}
 
 	//-----------------------------------------------------
 	virtual CSG_Table_Record *		Add_Record			(             CSG_Table_Record *pCopy = NULL);
 	virtual CSG_Table_Record *		Ins_Record			(int iRecord, CSG_Table_Record *pCopy = NULL);
+	virtual bool					Set_Record			(int iRecord, CSG_Table_Record *pCopy);
 	virtual bool					Del_Record			(int iRecord);
 	virtual bool					Del_Records			(void);
 	virtual bool					Set_Record_Count	(int nRecords);
@@ -300,6 +300,10 @@ public:
 
 		return( NULL );
 	}
+
+	//-----------------------------------------------------
+	virtual bool					Find_Record			(int &iRecord, int iField, const CSG_String &Value, bool bCreateIndex = false);
+	virtual bool					Find_Record			(int &iRecord, int iField, double            Value, bool bCreateIndex = false);
 
 	//-----------------------------------------------------
 	virtual bool					Set_Value			(int iRecord, int iField, const SG_Char  *Value);
@@ -380,11 +384,11 @@ private:
 	size_t							_Load_Text_Trim		(      CSG_String &Text, const SG_Char Separator);
 	size_t							_Load_Text_EndQuote	(const CSG_String &Text, const SG_Char Separator);
 
-	bool							_Load_Text			(const CSG_String &File_Name, bool bHeadline, const SG_Char Separator);
-	bool							_Save_Text			(const CSG_String &File_Name, bool bHeadline, const SG_Char Separator);
+	bool							_Load_Text			(const CSG_String &FileName, bool bHeadline, const SG_Char Separator);
+	bool							_Save_Text			(const CSG_String &FileName, bool bHeadline, const SG_Char Separator);
 
-	bool							_Load_DBase			(const CSG_String &File_Name);
-	bool							_Save_DBase			(const CSG_String &File_Name);
+	bool							_Load_DBase			(const CSG_String &FileName);
+	bool							_Save_DBase			(const CSG_String &FileName);
 
 	void							_Index_Create		(void);
 	void							_Index_Destroy		(void);
@@ -408,7 +412,7 @@ SAGA_API_DLL_EXPORT CSG_Table *	SG_Create_Table	(void);
 SAGA_API_DLL_EXPORT CSG_Table *	SG_Create_Table	(const CSG_Table &Table);
 
 /** Safe table construction */
-SAGA_API_DLL_EXPORT CSG_Table *	SG_Create_Table	(const CSG_String &File_Name);
+SAGA_API_DLL_EXPORT CSG_Table *	SG_Create_Table	(const CSG_String &FileName);
 
 /** Safe table construction */
 SAGA_API_DLL_EXPORT CSG_Table *	SG_Create_Table	(CSG_Table *pTemplate);

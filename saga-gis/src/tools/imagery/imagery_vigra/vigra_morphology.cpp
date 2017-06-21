@@ -24,7 +24,8 @@
 // Geoscientific Analyses'. SAGA is free software; you   //
 // can redistribute it and/or modify it under the terms  //
 // of the GNU General Public License as published by the //
-// Free Software Foundation; version 2 of the License.   //
+// Free Software Foundation, either version 2 of the     //
+// License, or (at your option) any later version.       //
 //                                                       //
 // SAGA is distributed in the hope that it will be       //
 // useful, but WITHOUT ANY WARRANTY; without even the    //
@@ -33,10 +34,8 @@
 // License for more details.                             //
 //                                                       //
 // You should have received a copy of the GNU General    //
-// Public License along with this program; if not,       //
-// write to the Free Software Foundation, Inc.,          //
-// 51 Franklin Street, 5th Floor, Boston, MA 02110-1301, //
-// USA.                                                  //
+// Public License along with this program; if not, see   //
+// <http://www.gnu.org/licenses/>.                       //
 //                                                       //
 //-------------------------------------------------------//
 //                                                       //
@@ -76,7 +75,7 @@ CViGrA_Morphology::CViGrA_Morphology(void)
 {
 	Set_Name		(_TL("Morphological Filter (ViGrA)"));
 
-	Set_Author		(SG_T("O.Conrad (c) 2009"));
+	Set_Author		("O.Conrad (c) 2009");
 
 	Set_Description	(_TW(
 		"References:\n"
@@ -84,22 +83,22 @@ CViGrA_Morphology::CViGrA_Morphology(void)
 		"<a target=\"_blank\" href=\"http://hci.iwr.uni-heidelberg.de/vigra\">http://hci.iwr.uni-heidelberg.de</a>"
 	));
 
-	Parameters.Add_Grid(
-		NULL	, "INPUT"		, _TL("Input"),
+	Parameters.Add_Grid("",
+		"INPUT"		, _TL("Input"),
 		_TL(""),
 		PARAMETER_INPUT
 	);
 
-	Parameters.Add_Grid(
-		NULL	, "OUTPUT"		, _TL("Output"),
+	Parameters.Add_Grid("",
+		"OUTPUT"	, _TL("Output"),
 		_TL(""),
 		PARAMETER_OUTPUT, SG_DATATYPE_Byte
 	);
 
-	Parameters.Add_Choice(
-		NULL	, "TYPE"		, _TL("Operation"),
+	Parameters.Add_Choice("",
+		"TYPE"		, _TL("Operation"),
 		_TL(""),
-		CSG_String::Format(SG_T("%s|%s|%s|%s|"),
+		CSG_String::Format("%s|%s|%s|%s|",
 			_TL("Dilation"),
 			_TL("Erosion"),
 			_TL("Median"),
@@ -107,29 +106,27 @@ CViGrA_Morphology::CViGrA_Morphology(void)
 		)
 	);
 
-	Parameters.Add_Value(
-		NULL	, "RADIUS"		, _TL("Radius (cells)"),
+	Parameters.Add_Int("",
+		"RADIUS"	, _TL("Radius (cells)"),
 		_TL(""),
-		PARAMETER_TYPE_Int, 1.0, 0.0, true
+		1, 0, true
 	);
 
-	Parameters.Add_Value(
-		NULL	, "RANK"		, _TL("User defined rank"),
+	Parameters.Add_Double("",
+		"RANK"		, _TL("User defined rank"),
 		_TL(""),
-		PARAMETER_TYPE_Double, 0.5, 0.0, true, 1.0, true
+		0.5, 0.0, true, 1.0, true
 	);
 
-	Parameters.Add_Value(
-		NULL	, "RESCALE"		, _TL("Rescale Values (0-255)"),
+	Parameters.Add_Bool("",
+		"RESCALE"	, _TL("Rescale Values (0-255)"),
 		_TL(""),
-		PARAMETER_TYPE_Bool, true
+		true
 	);
 }
 
 
 ///////////////////////////////////////////////////////////
-//														 //
-//														 //
 //														 //
 ///////////////////////////////////////////////////////////
 
@@ -141,12 +138,12 @@ bool CViGrA_Morphology::On_Execute(void)
 	double		Rank;
 	CSG_Grid	*pInput, *pOutput, Rescaled;
 
-	pInput		= Parameters("INPUT")	->asGrid();
-	pOutput		= Parameters("OUTPUT")	->asGrid();
-	Type		= Parameters("TYPE")	->asInt();
-	Radius		= Parameters("RADIUS")	->asInt();
-	Rank		= Parameters("RANK")	->asDouble();
-	bRescale	= Parameters("RESCALE")	->asBool();
+	pInput		= Parameters("INPUT"  )->asGrid();
+	pOutput		= Parameters("OUTPUT" )->asGrid();
+	Type		= Parameters("TYPE"   )->asInt();
+	Radius		= Parameters("RADIUS" )->asInt();
+	Rank		= Parameters("RANK"   )->asDouble();
+	bRescale	= Parameters("RESCALE")->asBool();
 
 	//-----------------------------------------------------
 	if( bRescale )
@@ -155,7 +152,7 @@ bool CViGrA_Morphology::On_Execute(void)
 
 		for(sLong i=0; i<Get_NCells() && Set_Progress_NCells(i); i++)
 		{
-			Rescaled.Set_Value(i, 0.5 + (pInput->asDouble(i) - pInput->Get_ZMin()) * 255.0 / pInput->Get_ZRange());
+			Rescaled.Set_Value(i, 0.5 + (pInput->asDouble(i) - pInput->Get_Min()) * 255.0 / pInput->Get_Range());
 		}
 
 		pInput	= &Rescaled;
@@ -188,7 +185,7 @@ bool CViGrA_Morphology::On_Execute(void)
 	//-----------------------------------------------------
 	Copy_Grid_VIGRA_to_SAGA(*pOutput, Output, false);
 
-	pOutput->Set_Name(CSG_String::Format(SG_T("%s [%s]"), pInput->Get_Name(), Get_Name().c_str()));
+	pOutput->Set_Name(CSG_String::Format("%s [%s]", pInput->Get_Name(), Get_Name().c_str()));
 
 	return( true );
 }

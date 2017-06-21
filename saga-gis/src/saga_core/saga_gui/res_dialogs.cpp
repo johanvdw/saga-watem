@@ -24,7 +24,8 @@
 // Geoscientific Analyses'. SAGA is free software; you   //
 // can redistribute it and/or modify it under the terms  //
 // of the GNU General Public License as published by the //
-// Free Software Foundation; version 2 of the License.   //
+// Free Software Foundation, either version 2 of the     //
+// License, or (at your option) any later version.       //
 //                                                       //
 // SAGA is distributed in the hope that it will be       //
 // useful, but WITHOUT ANY WARRANTY; without even the    //
@@ -33,10 +34,8 @@
 // License for more details.                             //
 //                                                       //
 // You should have received a copy of the GNU General    //
-// Public License along with this program; if not,       //
-// write to the Free Software Foundation, Inc.,          //
-// 51 Franklin Street, 5th Floor, Boston, MA 02110-1301, //
-// USA.                                                  //
+// Public License along with this program; if not, see   //
+// <http://www.gnu.org/licenses/>.                       //
 //                                                       //
 //-------------------------------------------------------//
 //                                                       //
@@ -81,11 +80,8 @@
 #include "dlg_parameters.h"
 #include "dlg_text.h"
 #include "dlg_table.h"
-#include "dlg_list_grid.h"
-#include "dlg_list_table.h"
-#include "dlg_list_shapes.h"
-#include "dlg_list_tin.h"
-#include "dlg_list_pointcloud.h"
+#include "dlg_choices.h"
+#include "dlg_list.h"
 #include "dlg_colors.h"
 
 #include "wksp_map_manager.h"
@@ -146,21 +142,24 @@ wxString DLG_Get_FILE_Caption(int ID_DLG)
 {
 	switch( ID_DLG )
 	{
-	case ID_DLG_FILES_OPEN     :	return( _TL("Load") );
+	case ID_DLG_FILE_OPEN      :	return( _TL("Load") );
 
-	case ID_DLG_TOOLS_OPEN     :	return( _TL("Load Tool Library") );
+	case ID_DLG_TOOL_OPEN      :	return( _TL("Load Tool Library") );
 
 	case ID_DLG_PROJECT_OPEN   :	return( _TL("Load Project") );
 	case ID_DLG_PROJECT_SAVE   :	return( _TL("Save Project") );
 
-	case ID_DLG_GRIDS_OPEN     :	return( _TL("Load Grid") );
-	case ID_DLG_GRIDS_SAVE     :	return( _TL("Save Grid") );
+	case ID_DLG_GRID_OPEN      :	return( _TL("Load Grid") );
+	case ID_DLG_GRID_SAVE      :	return( _TL("Save Grid") );
+
+	case ID_DLG_GRIDS_OPEN     :	return( _TL("Load Grid Collection") );
+	case ID_DLG_GRIDS_SAVE     :	return( _TL("Save Grid Collection") );
 
 	case ID_DLG_SHAPES_OPEN    :	return( _TL("Load Shapes") );
 	case ID_DLG_SHAPES_SAVE    :	return( _TL("Save Shapes") );
 
-	case ID_DLG_TABLES_OPEN    :	return( _TL("Load Table") );
-	case ID_DLG_TABLES_SAVE    :	return( _TL("Save Table") );
+	case ID_DLG_TABLE_OPEN     :	return( _TL("Load Table") );
+	case ID_DLG_TABLE_SAVE     :	return( _TL("Save Table") );
 
 	case ID_DLG_TIN_OPEN       :	return( _TL("Load TIN") );
 	case ID_DLG_TIN_SAVE       :	return( _TL("Save TIN") );
@@ -209,13 +208,17 @@ bool DLG_Get_FILE_Filter_GDAL_Read(int Type, wxString &Filter)
 
 		if( Type == 2 || Type == 0 )	// raster
 		{
-			ADD_FILTER("sgrd");
-			ADD_FILTER( "dgm");
-			ADD_FILTER( "grd");
-			ADD_FILTER( "bmp");
-			ADD_FILTER( "jpg");
-			ADD_FILTER( "png");
-			ADD_FILTER( "pcx");
+			ADD_FILTER("sg-grd-z");
+			ADD_FILTER("sg-grd"  );
+			ADD_FILTER("sg-gds-z");
+			ADD_FILTER("sg-gds"  );
+			ADD_FILTER("sgrd"    );
+			ADD_FILTER("dgm"     );
+			ADD_FILTER("grd"     );
+			ADD_FILTER("bmp"     );
+			ADD_FILTER("jpg"     );
+			ADD_FILTER("png"     );
+			ADD_FILTER("pcx"     );
 		}
 
 		if( Type == 2 || Type == 1 )	// vector
@@ -225,12 +228,14 @@ bool DLG_Get_FILE_Filter_GDAL_Read(int Type, wxString &Filter)
 
 		if( Type == 2 )	// all recognized
 		{
-			ADD_FILTER("sprj");
-			ADD_FILTER( "spc");
-			ADD_FILTER( "las");
-			ADD_FILTER( "txt");
-			ADD_FILTER( "csv");
-			ADD_FILTER( "dbf");
+			ADD_FILTER("sprj"    );
+			ADD_FILTER("sg-pts-z");
+			ADD_FILTER("sg-pts"  );
+			ADD_FILTER("spc"     );
+			ADD_FILTER("las"     );
+			ADD_FILTER("txt"     );
+			ADD_FILTER("csv"     );
+			ADD_FILTER("dbf"     );
 		}
 	}
 
@@ -245,22 +250,24 @@ wxString DLG_Get_FILE_Filter(int ID_DLG)
 	switch( ID_DLG )
 	{
 	//-----------------------------------------------------
-	case ID_DLG_FILES_OPEN:
-		DLG_Get_FILE_Filter_GDAL_Read(2, Recognized = "*.sprj;*.spc;*.las;*.txt;*.csv;*.dbf;");
+	case ID_DLG_FILE_OPEN:
+		DLG_Get_FILE_Filter_GDAL_Read(2, Recognized = "*.sprj;*.sg-gds;*.sg-gds-z;*.spc;*.sg-pts;*.sg-pts-z;*.las;*.txt;*.csv;*.dbf;");
 
 		return( wxString::Format(
 			"%s|%s|"
 			"%s (*.dll, *.so, *.xml)|*.dll;*.so;*.xml;*.dylib|"
 			"%s (*.sprj)|*.sprj|"
-			"%s (*.sgrd)|*.sgrd;*.dgm;*.grd|"
+			"%s (*.sgrd, *.sg-grd-z)|*.sgrd;*.sg-grd;*.sg-grd-z;*.dgm;*.grd|"
+			"%s (*.sg-gds)|*.sg-gds-z|"
 			"%s (*.shp)|*.shp|"
-			"%s (*.spc)|*.spc|"
+			"%s (*.spc, *.sg-pts, *.sg-pts-z)|*.spc;*.sg-pts;*.sg-pts-z|"
 			"%s (*.txt, *.csv, *.dbf)|*.txt;*.csv;*.dbf|"
 			"%s|*.*",
 			_TL("Recognized Files"), Recognized.c_str(),
 			_TL("SAGA Tool Libraries"),
 			_TL("SAGA Projects"),
 			_TL("SAGA Grids"),
+			_TL("SAGA Grid Collections"),
 			_TL("ESRI Shape Files"),
 			_TL("SAGA Point Clouds"),
 			_TL("Tables"),
@@ -268,7 +275,7 @@ wxString DLG_Get_FILE_Filter(int ID_DLG)
 		));
 
 	//-----------------------------------------------------
-	case ID_DLG_TOOLS_OPEN:
+	case ID_DLG_TOOL_OPEN:
 		return( wxString::Format(
 			"%s|*.dll;*.so;*.xml;*.dylib|"
 			"%s (*.dll, *.so)|*.dll;*.so;*.xml;*.dylib|"
@@ -291,23 +298,48 @@ wxString DLG_Get_FILE_Filter(int ID_DLG)
 		));
 
 	//-----------------------------------------------------
-	case ID_DLG_GRIDS_OPEN:
+	case ID_DLG_GRID_OPEN:
 		DLG_Get_FILE_Filter_GDAL_Read(0, Recognized);
 
 		return( wxString::Format(
 			"%s|%s|"
-			"%s (*.sgrd)|*.sgrd;*.dgm;*.grd|"
+			"%s (*.sgrd, *.sg-grd-z))|*.sg-grd;*.sg-grd-z;*.sgrd;*.dgm;*.grd|"
 			"%s|*.*",
 			_TL("Recognized Files"), Recognized.c_str(),
-			_TL("SAGA Grids"),
+			_TL("SAGA Grid Files"),
+			_TL("All Files")
+		));
+
+	case ID_DLG_GRID_SAVE:
+		return( wxString::Format(
+			"%s (*.sgrd)|*.sgrd|"
+			"%s (*.sg-grd-z)|*.sg-grd-z|"
+			"%s|*.*",
+			_TL("SAGA Grid Files"),
+			_TL("SAGA Compressed Grid Files"),
+			_TL("All Files")
+		));
+
+	//-----------------------------------------------------
+	case ID_DLG_GRIDS_OPEN:
+		return( wxString::Format(
+			"%s|*.sg-gds;*.sg-gds-z|"
+			"%s (*.sg-gds-z)|*.sg-gds-z|"
+			"%s (*.sg-gds)|*.sg-gds|"
+			"%s|*.*",
+			_TL("Recognized Files"),
+			_TL("SAGA Compressed Grid Collections"),
+			_TL("SAGA Uncompressed Grid Collections"),
 			_TL("All Files")
 		));
 
 	case ID_DLG_GRIDS_SAVE:
 		return( wxString::Format(
-			"%s (*.sgrd)|*.sgrd|"
+			"%s (*.sg-gds-z)|*.sg-gds-z|"
+			"%s (*.sg-gds)|*.sg-gds|"
 			"%s|*.*",
-			_TL("SAGA Grids"),
+			_TL("SAGA Compressed Grid Collections"),
+			_TL("SAGA Uncompressed Grid Collections"),
 			_TL("All Files")
 		));
 
@@ -333,7 +365,7 @@ wxString DLG_Get_FILE_Filter(int ID_DLG)
 		));
 
 	//-----------------------------------------------------
-	case ID_DLG_TABLES_OPEN:
+	case ID_DLG_TABLE_OPEN:
 		return( wxString::Format(
 			"%s (*.txt, *.csv, *.dbf)|*.txt;*.csv;*.dbf|"
 			"%s|*.*",
@@ -341,7 +373,7 @@ wxString DLG_Get_FILE_Filter(int ID_DLG)
 			_TL("All Files")
 		));
 
-	case ID_DLG_TABLES_SAVE:
+	case ID_DLG_TABLE_SAVE:
 		return( wxString::Format(
 			"%s (*.txt)|*.txt|"
 			"%s (*.csv)|*.csv|"
@@ -365,11 +397,20 @@ wxString DLG_Get_FILE_Filter(int ID_DLG)
 
 	//-----------------------------------------------------
 	case ID_DLG_POINTCLOUD_OPEN:
-	case ID_DLG_POINTCLOUD_SAVE:
 		return( wxString::Format(
-			"%s (*.spc)|*.spc|"
+			"%s (*.spc, *.sg-pts, *.sg-pts-z)|*.spc;*.sg-pts;*.sg-pts-z|"
 			"%s|*.*",
 			_TL("SAGA Point Clouds"),
+			_TL("All Files")
+		));
+
+	case ID_DLG_POINTCLOUD_SAVE:
+		return( wxString::Format(
+			"%s (*.sg-pts-z)|*.sg-pts-z|"
+			"%s (*.sg-pts, *.spc)|*.sg-pts;*.spc|"
+			"%s|*.*",
+			_TL("SAGA Compressed Point Clouds"),
+			_TL("SAGA Uncompressed Point Clouds"),
 			_TL("All Files")
 		));
 
@@ -413,21 +454,24 @@ wxString DLG_Get_FILE_Config(int ID_DLG)
 {
 	switch( ID_DLG )
 	{
-	case ID_DLG_FILES_OPEN      :	return( "ALL_LOAD" );
+	case ID_DLG_FILE_OPEN      :	return( "ALL_LOAD" );
 
-	case ID_DLG_TOOLS_OPEN     :	return( "TLB_LOAD" );
+	case ID_DLG_TOOL_OPEN      :	return( "TLB_LOAD" );
 
 	case ID_DLG_PROJECT_OPEN   :	return( "PRJ_LOAD" );
 	case ID_DLG_PROJECT_SAVE   :	return( "PRJ_SAVE" );
 
-	case ID_DLG_GRIDS_OPEN     :	return( "GRD_LOAD" );
-	case ID_DLG_GRIDS_SAVE     :	return( "GRD_SAVE" );
+	case ID_DLG_GRID_OPEN      :	return( "GRD_LOAD" );
+	case ID_DLG_GRID_SAVE      :	return( "GRD_SAVE" );
+
+	case ID_DLG_GRIDS_OPEN     :	return( "GDS_LOAD" );
+	case ID_DLG_GRIDS_SAVE     :	return( "GDS_SAVE" );
 
 	case ID_DLG_SHAPES_OPEN    :	return( "SHP_LOAD" );
 	case ID_DLG_SHAPES_SAVE    :	return( "SHP_SAVE" );
 
-	case ID_DLG_TABLES_OPEN    :	return( "TAB_LOAD" );
-	case ID_DLG_TABLES_SAVE    :	return( "TAB_SAVE" );
+	case ID_DLG_TABLE_OPEN     :	return( "TAB_LOAD" );
+	case ID_DLG_TABLE_SAVE     :	return( "TAB_SAVE" );
 
 	case ID_DLG_TIN_OPEN       :	return( "TIN_LOAD" );
 	case ID_DLG_TIN_SAVE       :	return( "TIN_SAVE" );
@@ -596,18 +640,27 @@ bool		DLG_Table_Fields(const wxString &Caption, CSG_Parameter_Table_Fields *pFie
 }
 
 //---------------------------------------------------------
+bool		DLG_Choices(const wxString &Caption, CSG_Parameter_Choices *pChoices)
+{
+	CDLG_Choices	dlg(pChoices, Caption);
+
+	return( dlg.ShowModal() == wxID_OK );
+}
+
+//---------------------------------------------------------
 bool		DLG_List(const wxString &Caption, CSG_Parameter_List *pList)
 {
 	CDLG_List_Base	*pDialog;
 
 	switch( pList->Get_Type() )
 	{
-	default                            : pDialog = NULL;	break;
 	case PARAMETER_TYPE_Grid_List      : pDialog = new CDLG_List_Grid      ((CSG_Parameter_Grid_List       *)pList, Caption); break;
+	case PARAMETER_TYPE_Grids_List     : pDialog = new CDLG_List_Grids     ((CSG_Parameter_Grids_List      *)pList, Caption); break;
 	case PARAMETER_TYPE_Table_List     : pDialog = new CDLG_List_Table     ((CSG_Parameter_Table_List      *)pList, Caption); break;
 	case PARAMETER_TYPE_Shapes_List    : pDialog = new CDLG_List_Shapes    ((CSG_Parameter_Shapes_List     *)pList, Caption); break;
 	case PARAMETER_TYPE_TIN_List       : pDialog = new CDLG_List_TIN       ((CSG_Parameter_TIN_List        *)pList, Caption); break;
 	case PARAMETER_TYPE_PointCloud_List: pDialog = new CDLG_List_PointCloud((CSG_Parameter_PointCloud_List *)pList, Caption); break;
+	default                            : pDialog = NULL;	break;
 	}
 
 	if( pDialog )
@@ -795,7 +848,7 @@ bool		DLG_Directory(wxString &Directory, const wxString &Caption, const wxString
 
 bool		DLG_Directory(wxString &Directory, const wxString &Caption)
 {
-	return( DLG_Directory(Directory, Caption, SG_File_Get_Path(Directory).w_str()) );
+	return( DLG_Directory(Directory, Caption, SG_File_Get_Path(&Directory).w_str()) );
 }
 
 //---------------------------------------------------------
@@ -816,7 +869,7 @@ bool		DLG_Save(wxString &File_Path, const wxString &Caption, const wxString &def
 
 		if( !wxDirExists(def_Dir) )
 		{
-			CONFIG_Write(CONFIG_GROUP_FILE_DLG, DLG_Get_FILE_Config(-1), SG_File_Get_Path(File_Path).w_str());
+			CONFIG_Write(CONFIG_GROUP_FILE_DLG, DLG_Get_FILE_Config(-1), SG_File_Get_Path(&File_Path).w_str());
 		}
 
 		return( true );
@@ -829,8 +882,8 @@ bool		DLG_Save(wxString &File_Path, int ID_DLG)
 {
 	wxString	def_Dir, def_Name;
 
-	def_Name	= SG_File_Get_Name(File_Path, true).w_str();
-	def_Dir		= SG_File_Get_Path(File_Path).w_str();
+	def_Name	= SG_File_Get_Name(&File_Path, true).w_str();
+	def_Dir		= SG_File_Get_Path(&File_Path).w_str();
 
 	if( !wxDirExists(def_Dir) )
 	{
@@ -839,7 +892,7 @@ bool		DLG_Save(wxString &File_Path, int ID_DLG)
 
 	if( DLG_Save(File_Path, DLG_Get_FILE_Caption(ID_DLG), def_Dir, def_Name, DLG_Get_FILE_Filter(ID_DLG)) )
 	{
-		CONFIG_Write(CONFIG_GROUP_FILE_DLG, DLG_Get_FILE_Config(ID_DLG), SG_File_Get_Path(File_Path).w_str());
+		CONFIG_Write(CONFIG_GROUP_FILE_DLG, DLG_Get_FILE_Config(ID_DLG), SG_File_Get_Path(&File_Path).w_str());
 
 		return( true );
 	}
@@ -849,7 +902,7 @@ bool		DLG_Save(wxString &File_Path, int ID_DLG)
 
 bool		DLG_Save(wxString &File_Path, const wxString &Caption, const wxString &Filter)
 {
-	return( DLG_Save(File_Path, Caption, SG_File_Get_Path(File_Path).w_str(), SG_File_Get_Name(File_Path, true).w_str(), Filter) );
+	return( DLG_Save(File_Path, Caption, SG_File_Get_Path(&File_Path).w_str(), SG_File_Get_Name(&File_Path, true).w_str(), Filter) );
 }
 
 //---------------------------------------------------------
@@ -870,7 +923,7 @@ bool		DLG_Open(wxString &File_Path, const wxString &Caption, const wxString &def
 
 		if( !wxDirExists(def_Dir) )
 		{
-			CONFIG_Write(CONFIG_GROUP_FILE_DLG, DLG_Get_FILE_Config(-1), SG_File_Get_Path(File_Path).w_str());
+			CONFIG_Write(CONFIG_GROUP_FILE_DLG, DLG_Get_FILE_Config(-1), SG_File_Get_Path(&File_Path).w_str());
 		}
 
 		return( true );
@@ -887,7 +940,7 @@ bool		DLG_Open(wxString &File_Path, int ID_DLG)
 
 	if( DLG_Open(File_Path, DLG_Get_FILE_Caption(ID_DLG), def_Dir, wxT(""), DLG_Get_FILE_Filter(ID_DLG)) )
 	{
-		CONFIG_Write(CONFIG_GROUP_FILE_DLG, DLG_Get_FILE_Config(ID_DLG), SG_File_Get_Path(File_Path).w_str());
+		CONFIG_Write(CONFIG_GROUP_FILE_DLG, DLG_Get_FILE_Config(ID_DLG), SG_File_Get_Path(&File_Path).w_str());
 
 		return( true );
 	}
@@ -897,7 +950,7 @@ bool		DLG_Open(wxString &File_Path, int ID_DLG)
 
 bool		DLG_Open(wxString &File_Path, const wxString &Caption, const wxString &Filter)
 {
-	return( DLG_Open(File_Path, Caption, SG_File_Get_Path(File_Path).w_str(), SG_File_Get_Name(File_Path, true).w_str(), Filter) );
+	return( DLG_Open(File_Path, Caption, SG_File_Get_Path(&File_Path).w_str(), SG_File_Get_Name(&File_Path, true).w_str(), Filter) );
 }
 
 //---------------------------------------------------------
@@ -920,7 +973,7 @@ bool		DLG_Open(wxArrayString &File_Paths, const wxString &Caption, const wxStrin
 		{
 			if( !wxDirExists(def_Dir) )
 			{
-				CONFIG_Write(CONFIG_GROUP_FILE_DLG, DLG_Get_FILE_Config(-1), SG_File_Get_Path(File_Paths[0]).w_str());
+				CONFIG_Write(CONFIG_GROUP_FILE_DLG, DLG_Get_FILE_Config(-1), SG_File_Get_Path(&File_Paths[0]).w_str());
 			}
 
 			return( true );
@@ -938,7 +991,7 @@ bool		DLG_Open(wxArrayString &File_Paths, int ID_DLG)
 
 	if( DLG_Open(File_Paths, DLG_Get_FILE_Caption(ID_DLG), def_Dir, DLG_Get_FILE_Filter(ID_DLG)) )
 	{
-		CONFIG_Write(CONFIG_GROUP_FILE_DLG, DLG_Get_FILE_Config(ID_DLG), SG_File_Get_Path(File_Paths[0]).w_str());
+		CONFIG_Write(CONFIG_GROUP_FILE_DLG, DLG_Get_FILE_Config(ID_DLG), SG_File_Get_Path(&File_Paths[0]).w_str());
 
 		return( true );
 	}
@@ -1007,7 +1060,7 @@ bool		DLG_Image_Save(wxString &File_Path, int &Type, const wxString &def_Dir, co
 
 		if( !wxDirExists(def_Dir) )
 		{
-			CONFIG_Write(CONFIG_GROUP_FILE_DLG, DLG_Get_FILE_Config(-1), SG_File_Get_Path(File_Path).w_str());
+			CONFIG_Write(CONFIG_GROUP_FILE_DLG, DLG_Get_FILE_Config(-1), SG_File_Get_Path(&File_Path).w_str());
 		}
 
 		return( true );

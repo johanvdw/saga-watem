@@ -26,7 +26,8 @@
 // This library is free software; you can redistribute   //
 // it and/or modify it under the terms of the GNU Lesser //
 // General Public License as published by the Free       //
-// Software Foundation, version 2.1 of the License.      //
+// Software Foundation, either version 2.1 of the        //
+// License, or (at your option) any later version.       //
 //                                                       //
 // This library is distributed in the hope that it will  //
 // be useful, but WITHOUT ANY WARRANTY; without even the //
@@ -36,9 +37,7 @@
 //                                                       //
 // You should have received a copy of the GNU Lesser     //
 // General Public License along with this program; if    //
-// not, write to the Free Software Foundation, Inc.,     //
-// 51 Franklin Street, 5th Floor, Boston, MA 02110-1301, //
-// USA.                                                  //
+// not, see <http://www.gnu.org/licenses/>.              //
 //                                                       //
 //-------------------------------------------------------//
 //                                                       //
@@ -721,8 +720,11 @@ public:
 
 	bool							Set_GCS_WGS84			(void);
 
-	bool							Load					(const CSG_String &File_Name, TSG_Projection_Format Format = SG_PROJ_FMT_WKT);
-	bool							Save					(const CSG_String &File_Name, TSG_Projection_Format Format = SG_PROJ_FMT_WKT)	const;
+	bool							Load					(const CSG_String &FileName, TSG_Projection_Format Format = SG_PROJ_FMT_WKT);
+	bool							Save					(const CSG_String &FileName, TSG_Projection_Format Format = SG_PROJ_FMT_WKT)	const;
+
+	bool							Load					(CSG_File &Stream, TSG_Projection_Format Format = SG_PROJ_FMT_WKT);
+	bool							Save					(CSG_File &Stream, TSG_Projection_Format Format = SG_PROJ_FMT_WKT)	const;
 
 	bool							Load					(const CSG_MetaData &Projection);
 	bool							Save					(      CSG_MetaData &Projection)	const;
@@ -783,11 +785,11 @@ public:
 	void							Destroy					(void);
 
 	bool							Reset_Dictionary		(void);
-	bool							Load_Dictionary			(const CSG_String &File_Name);
-	bool							Save_Dictionary			(const CSG_String &File_Name);
+	bool							Load_Dictionary			(const CSG_String &FileName);
+	bool							Save_Dictionary			(const CSG_String &FileName);
 
-	bool							Load_DB					(const CSG_String &File_Name, bool bAppend = false);
-	bool							Save_DB					(const CSG_String &File_Name);
+	bool							Load_DB					(const CSG_String &FileName, bool bAppend = false);
+	bool							Save_DB					(const CSG_String &FileName);
 
 	int								Get_Count				(void)	const;
 
@@ -861,6 +863,7 @@ SAGA_API_DLL_EXPORT double		SG_Get_Angle_Of_Direction		(double dx, double dy);
 SAGA_API_DLL_EXPORT double		SG_Get_Angle_Of_Direction		(double ax, double ay, double bx, double by);
 SAGA_API_DLL_EXPORT double		SG_Get_Angle_Of_Direction		(const TSG_Point &A);
 SAGA_API_DLL_EXPORT double		SG_Get_Angle_Of_Direction		(const TSG_Point &A, const TSG_Point &B);
+SAGA_API_DLL_EXPORT double		SG_Get_Angle_Difference			(double a, double b);
 
 SAGA_API_DLL_EXPORT bool		SG_Get_Crossing					(TSG_Point &Crossing, const TSG_Point &a1, const TSG_Point &a2, const TSG_Point &b1, const TSG_Point &b2, bool bExactMatch = true);
 SAGA_API_DLL_EXPORT bool		SG_Get_Crossing_InRegion		(TSG_Point &Crossing, const TSG_Point &a , const TSG_Point & b, const TSG_Rect &Region);

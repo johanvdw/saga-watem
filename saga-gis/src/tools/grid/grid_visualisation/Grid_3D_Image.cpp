@@ -24,7 +24,8 @@
 // Geoscientific Analyses'. SAGA is free software; you   //
 // can redistribute it and/or modify it under the terms  //
 // of the GNU General Public License as published by the //
-// Free Software Foundation; version 2 of the License.   //
+// Free Software Foundation, either version 2 of the     //
+// License, or (at your option) any later version.       //
 //                                                       //
 // SAGA is distributed in the hope that it will be       //
 // useful, but WITHOUT ANY WARRANTY; without even the    //
@@ -33,10 +34,8 @@
 // License for more details.                             //
 //                                                       //
 // You should have received a copy of the GNU General    //
-// Public License along with this program; if not,       //
-// write to the Free Software Foundation, Inc.,          //
-// 51 Franklin Street, 5th Floor, Boston, MA 02110-1301, //
-// USA.                                                  //
+// Public License along with this program; if not, see   //
+// <http://www.gnu.org/licenses/>.                       //
 //                                                       //
 //-------------------------------------------------------//
 //                                                       //
@@ -211,7 +210,7 @@ bool CGrid_3D_Image::On_Execute(void)
 
 	m_ZExagg		= Parameters("ZEXAGG")			->asDouble();
 	m_ZExagg_Min	= Parameters("ZEXAGG_MIN")		->asDouble() / 100.0;
-	m_ZMean			= Parameters("X_ROTATE_LEVEL")	->asInt() == 0 ? 0.0 : m_pDEM->Get_ZMin() + m_pDEM->Get_ZRange() / 2.0;
+	m_ZMean			= Parameters("X_ROTATE_LEVEL")	->asInt() == 0 ? 0.0 : m_pDEM->Get_Min() + m_pDEM->Get_Range() / 2.0;
 	m_XRotate		= Parameters("X_ROTATE")		->asDouble() * M_DEG_TO_RAD;
 	m_ZRotate		= Parameters("Z_ROTATE")		->asDouble() * M_DEG_TO_RAD;
 
@@ -252,9 +251,9 @@ bool CGrid_3D_Image::On_Execute(void)
 
 	CSG_Parameter_Shapes_List	*pShapes	= Parameters("SHAPES")->asShapesList();
 
-	for(int i=0; i<pShapes->Get_Count(); i++)
+	for(int i=0; i<pShapes->Get_Item_Count(); i++)
 	{
-		_Set_Shapes(pShapes->asShapes(i));
+		_Set_Shapes(pShapes->Get_Shapes(i));
 	}
 
 	//-----------------------------------------------------

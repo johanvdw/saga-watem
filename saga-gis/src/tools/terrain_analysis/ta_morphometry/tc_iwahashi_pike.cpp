@@ -24,7 +24,8 @@
 // Geoscientific Analyses'. SAGA is free software; you   //
 // can redistribute it and/or modify it under the terms  //
 // of the GNU General Public License as published by the //
-// Free Software Foundation; version 2 of the License.   //
+// Free Software Foundation, either version 2 of the     //
+// License, or (at your option) any later version.       //
 //                                                       //
 // SAGA is distributed in the hope that it will be       //
 // useful, but WITHOUT ANY WARRANTY; without even the    //
@@ -33,10 +34,8 @@
 // License for more details.                             //
 //                                                       //
 // You should have received a copy of the GNU General    //
-// Public License along with this program; if not,       //
-// write to the Free Software Foundation, Inc.,          //
-// 51 Franklin Street, 5th Floor, Boston, MA 02110-1301, //
-// USA.                                                  //
+// Public License along with this program; if not, see   //
+// <http://www.gnu.org/licenses/>.                       //
 //                                                       //
 //-------------------------------------------------------//
 //                                                       //
@@ -189,7 +188,7 @@ bool CTC_Parameter_Base::Get_Parameter(CSG_Grid *pValues, CSG_Grid *pParameter)
 			{
 				double	z, px	= Get_XMin() + x * Get_Cellsize();
 
-				if( pValues->is_NoData(x, y) || !Values.Get_Value(px, py, z, GRID_RESAMPLING_BSpline) )
+				if( pValues->is_NoData(x, y) || !Values.Get_Value(px, py, z) )
 				{
 					pParameter->Set_NoData(x, y);
 				}

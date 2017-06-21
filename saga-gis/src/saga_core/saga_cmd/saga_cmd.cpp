@@ -24,7 +24,8 @@
 // Geoscientific Analyses'. SAGA is free software; you   //
 // can redistribute it and/or modify it under the terms  //
 // of the GNU General Public License as published by the //
-// Free Software Foundation; version 2 of the License.   //
+// Free Software Foundation, either version 2 of the     //
+// License, or (at your option) any later version.       //
 //                                                       //
 // SAGA is distributed in the hope that it will be       //
 // useful, but WITHOUT ANY WARRANTY; without even the    //
@@ -32,11 +33,9 @@
 // PARTICULAR PURPOSE. See the GNU General Public        //
 // License for more details.                             //
 //                                                       //
-// You should have received a copy of the GNU General    //
-// Public License along with this program; if not,       //
-// write to the Free Software Foundation, Inc.,          //
-// 51 Franklin Street, 5th Floor, Boston, MA 02110-1301, //
-// USA.                                                  //
+// You should have received a copy of the GNU Lesser     //
+// General Public License along with this program; if    //
+// not, see <http://www.gnu.org/licenses/>.              //
 //                                                       //
 //-------------------------------------------------------//
 //                                                       //
@@ -401,7 +400,7 @@ bool		Load_Libraries(void)
 		Load_Libraries(MODULE_LIBRARY_PATH);
 		Load_Libraries(SG_File_Make_Path(CSG_String(SHARE_PATH), SG_T("toolchains")));	// look for tool chains
 	#else
-		wxString	DLL_Path	= SG_File_Make_Path(CMD_Path, SG_T("dll")).c_str();
+		wxString	DLL_Path	= SG_File_Make_Path(&CMD_Path, "dll").c_str();
 
 		if( wxGetEnv("PATH", &Path) && Path.Length() > 0 )
 		{
@@ -415,7 +414,7 @@ bool		Load_Libraries(void)
 		wxSetEnv("GDAL_DRIVER_PATH", DLL_Path);
 		wxSetEnv("GDAL_DATA"       , DLL_Path + "\\gdal-data");
 
-		Load_Libraries(SG_File_Make_Path(CMD_Path, SG_T("tools")));
+		Load_Libraries(SG_File_Make_Path(&CMD_Path, "tools"));
     #endif
 
 	if( wxGetEnv("SAGA_MLB", &Path) )

@@ -26,7 +26,8 @@
 // This library is free software; you can redistribute   //
 // it and/or modify it under the terms of the GNU Lesser //
 // General Public License as published by the Free       //
-// Software Foundation, version 2.1 of the License.      //
+// Software Foundation, either version 2.1 of the        //
+// License, or (at your option) any later version.       //
 //                                                       //
 // This library is distributed in the hope that it will  //
 // be useful, but WITHOUT ANY WARRANTY; without even the //
@@ -36,9 +37,7 @@
 //                                                       //
 // You should have received a copy of the GNU Lesser     //
 // General Public License along with this program; if    //
-// not, write to the Free Software Foundation, Inc.,     //
-// 51 Franklin Street, 5th Floor, Boston, MA 02110-1301, //
-// USA.                                                  //
+// not, see <http://www.gnu.org/licenses/>.              //
 //                                                       //
 //-------------------------------------------------------//
 //                                                       //
@@ -667,7 +666,7 @@ CSG_String CSG_MetaData::asText(int Flags) const
 }
 
 //---------------------------------------------------------
-CSG_Table CSG_MetaData::asTable(int Flags) const
+CSG_Table CSG_MetaData::Get_Table(int Flags) const
 {
 	CSG_Table	t;
 
@@ -735,7 +734,7 @@ bool CSG_MetaData::Load(const CSG_String &File, const SG_Char *Extension)
 	//-----------------------------------------------------
 	wxXmlDocument	XML;
 
-	if( SG_File_Exists(SG_File_Make_Path(NULL, File, Extension)) && XML.Load(SG_File_Make_Path(NULL, File, Extension).c_str()) )
+	if( SG_File_Exists(SG_File_Make_Path("", File, Extension)) && XML.Load(SG_File_Make_Path("", File, Extension).c_str()) )
 	{
 		_Load(XML.GetRoot());
 
@@ -753,9 +752,7 @@ bool CSG_MetaData::Load(CSG_File &File)
 
 	wxXmlDocument	XML;
 
-	wxFFileInputStream	Stream(File.Get_Stream());
-
-	if( Stream.IsOk() && XML.Load(Stream) )
+	if( File.is_Reading() && XML.Load(*((wxInputStream *)File.Get_Stream())) )
 	{
 		_Load(XML.GetRoot());
 
@@ -811,7 +808,7 @@ bool CSG_MetaData::Save(const CSG_String &File, const SG_Char *Extension) const
 
 	_Save(pRoot);
 
-	if( XML.Save(SG_File_Make_Path(NULL, File, Extension).c_str()) )
+	if( XML.Save(SG_File_Make_Path("", File, Extension).c_str()) )
 	{
 		return( true );
 	}
@@ -830,9 +827,7 @@ bool CSG_MetaData::Save(CSG_File &File) const
 
 	_Save(pRoot);
 
-	wxFFileOutputStream	Stream(File.Get_Stream());
-
-	if( Stream.IsOk() && XML.Save(Stream) )
+	if( File.is_Writing() && XML.Save(*((wxOutputStream *)File.Get_Stream())) )
 	{
 		return( true );
 	}

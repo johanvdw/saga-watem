@@ -24,7 +24,8 @@
 // Geoscientific Analyses'. SAGA is free software; you   //
 // can redistribute it and/or modify it under the terms  //
 // of the GNU General Public License as published by the //
-// Free Software Foundation; version 2 of the License.   //
+// Free Software Foundation, either version 2 of the     //
+// License, or (at your option) any later version.       //
 //                                                       //
 // SAGA is distributed in the hope that it will be       //
 // useful, but WITHOUT ANY WARRANTY; without even the    //
@@ -33,10 +34,8 @@
 // License for more details.                             //
 //                                                       //
 // You should have received a copy of the GNU General    //
-// Public License along with this program; if not,       //
-// write to the Free Software Foundation, Inc.,          //
-// 51 Franklin Street, 5th Floor, Boston, MA 02110-1301, //
-// USA.                                                  //
+// Public License along with this program; if not, see   //
+// <http://www.gnu.org/licenses/>.                       //
 //                                                       //
 //-------------------------------------------------------//
 //                                                       //
@@ -91,6 +90,7 @@ enum
 	IMG_TOOL,
 	IMG_ENTRY,
 	IMG_GRID,
+	IMG_GRIDS,
 	IMG_TABLE,
 	IMG_SHAPES,
 	IMG_POINTCLOUD,
@@ -130,16 +130,17 @@ CACTIVE_History::CACTIVE_History(wxWindow *pParent)
 	: wxTreeCtrl(pParent, ID_WND_ACTIVE_HISTORY , wxDefaultPosition, wxDefaultSize, wxTR_HAS_BUTTONS)
 {
 	AssignImageList(new wxImageList(IMG_SIZE_TREECTRL, IMG_SIZE_TREECTRL, true, 0));
-	IMG_ADD_TO_TREECTRL(ID_IMG_NB_ACTIVE_HISTORY);		// ROOT
-	IMG_ADD_TO_TREECTRL(ID_IMG_TB_MAP_ZOOM_NEXT);		// NODE
-	IMG_ADD_TO_TREECTRL(ID_IMG_WKSP_TOOL);			// TOOL
-	IMG_ADD_TO_TREECTRL(ID_IMG_TB_INFO);				// ENTRY
-	IMG_ADD_TO_TREECTRL(ID_IMG_WKSP_GRID);				// GRID
-	IMG_ADD_TO_TREECTRL(ID_IMG_WKSP_TABLE);				// TABLE
-	IMG_ADD_TO_TREECTRL(ID_IMG_WKSP_SHAPES_POLYGON);	// SHAPES
-	IMG_ADD_TO_TREECTRL(ID_IMG_WKSP_POINTCLOUD);		// POINTCLOUD
-	IMG_ADD_TO_TREECTRL(ID_IMG_WKSP_TIN);				// TIN
-	IMG_ADD_TO_TREECTRL(ID_IMG_TB_OPEN);				// FILE
+	IMG_ADD_TO_TREECTRL(ID_IMG_NB_ACTIVE_HISTORY  ); // IMG_ROOT
+	IMG_ADD_TO_TREECTRL(ID_IMG_TB_MAP_ZOOM_NEXT   ); // IMG_NODE
+	IMG_ADD_TO_TREECTRL(ID_IMG_WKSP_TOOL          ); // IMG_TOOL
+	IMG_ADD_TO_TREECTRL(ID_IMG_TB_INFO            ); // IMG_ENTRY
+	IMG_ADD_TO_TREECTRL(ID_IMG_WKSP_GRID          ); // IMG_GRID
+	IMG_ADD_TO_TREECTRL(ID_IMG_WKSP_GRIDS         ); // IMG_GRIDS
+	IMG_ADD_TO_TREECTRL(ID_IMG_WKSP_TABLE         ); // IMG_TABLE
+	IMG_ADD_TO_TREECTRL(ID_IMG_WKSP_SHAPES_POLYGON); // IMG_SHAPES
+	IMG_ADD_TO_TREECTRL(ID_IMG_WKSP_POINTCLOUD    ); // IMG_POINTCLOUD
+	IMG_ADD_TO_TREECTRL(ID_IMG_WKSP_TIN           ); // IMG_TIN
+	IMG_ADD_TO_TREECTRL(ID_IMG_TB_OPEN            ); // IMG_FILE
 
 	m_pItem		= NULL;
 }
@@ -302,7 +303,8 @@ CSG_Data_Object * CACTIVE_History::_Get_Object(void)
 		||  m_pItem->Get_Type() == WKSP_ITEM_TIN
 		||  m_pItem->Get_Type() == WKSP_ITEM_PointCloud
 		||  m_pItem->Get_Type() == WKSP_ITEM_Shapes
-		||  m_pItem->Get_Type() == WKSP_ITEM_Grid )
+		||  m_pItem->Get_Type() == WKSP_ITEM_Grid
+		||  m_pItem->Get_Type() == WKSP_ITEM_Grids )
 		{
 			return( ((CWKSP_Data_Item *)m_pItem)->Get_Object() );
 		}
@@ -321,19 +323,19 @@ int CACTIVE_History::_Get_Image(TSG_Parameter_Type Type)
 {
 	switch( Type )
 	{
-	case PARAMETER_TYPE_Grid:				return( IMG_GRID		);
-	case PARAMETER_TYPE_Table:				return( IMG_TABLE		);
-	case PARAMETER_TYPE_Shapes:				return( IMG_SHAPES		);
-	case PARAMETER_TYPE_PointCloud:			return( IMG_POINTCLOUD	);
-	case PARAMETER_TYPE_TIN:				return( IMG_TIN			);
-
-	case PARAMETER_TYPE_Grid_List:			return( IMG_GRID		);
-	case PARAMETER_TYPE_Table_List:			return( IMG_TABLE		);
-	case PARAMETER_TYPE_Shapes_List:		return( IMG_SHAPES		);
-	case PARAMETER_TYPE_PointCloud_List:	return( IMG_POINTCLOUD	);
-	case PARAMETER_TYPE_TIN_List:			return( IMG_TIN			);
-
-	default:								return( IMG_NODE );
+	case PARAMETER_TYPE_Grid           : return( IMG_GRID       );
+	case PARAMETER_TYPE_Grids          : return( IMG_GRIDS      );
+	case PARAMETER_TYPE_Table          : return( IMG_TABLE      );
+	case PARAMETER_TYPE_Shapes         : return( IMG_SHAPES     );
+	case PARAMETER_TYPE_PointCloud     : return( IMG_POINTCLOUD );
+	case PARAMETER_TYPE_TIN            : return( IMG_TIN        );
+	case PARAMETER_TYPE_Grid_List      : return( IMG_GRID       );
+	case PARAMETER_TYPE_Grids_List     : return( IMG_GRIDS      );
+	case PARAMETER_TYPE_Table_List     : return( IMG_TABLE      );
+	case PARAMETER_TYPE_Shapes_List    : return( IMG_SHAPES     );
+	case PARAMETER_TYPE_PointCloud_List: return( IMG_POINTCLOUD	);
+	case PARAMETER_TYPE_TIN_List       : return( IMG_TIN        );
+	default                            : return( IMG_NODE       );
 	}
 }
 
@@ -402,6 +404,7 @@ bool CACTIVE_History::_Add_History(wxTreeItemId Parent, CSG_MetaData &Data)
 				case PARAMETER_TYPE_Degree:
 				case PARAMETER_TYPE_Date:
 				case PARAMETER_TYPE_Choice:
+				case PARAMETER_TYPE_Choices:
 				case PARAMETER_TYPE_Range:
 				case PARAMETER_TYPE_Table_Field:
 				case PARAMETER_TYPE_Table_Fields:
@@ -547,6 +550,7 @@ bool CACTIVE_History::_Add_History_OLD(wxTreeItemId Parent, CSG_MetaData &Data)
 				case PARAMETER_TYPE_Degree:
 				case PARAMETER_TYPE_Date:
 				case PARAMETER_TYPE_Choice:
+				case PARAMETER_TYPE_Choices:
 				case PARAMETER_TYPE_Range:
 				case PARAMETER_TYPE_Table_Field:
 				case PARAMETER_TYPE_Table_Fields:

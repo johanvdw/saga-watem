@@ -24,7 +24,8 @@
 // Geoscientific Analyses'. SAGA is free software; you   //
 // can redistribute it and/or modify it under the terms  //
 // of the GNU General Public License as published by the //
-// Free Software Foundation; version 2 of the License.   //
+// Free Software Foundation, either version 2 of the     //
+// License, or (at your option) any later version.       //
 //                                                       //
 // SAGA is distributed in the hope that it will be       //
 // useful, but WITHOUT ANY WARRANTY; without even the    //
@@ -33,10 +34,8 @@
 // License for more details.                             //
 //                                                       //
 // You should have received a copy of the GNU General    //
-// Public License along with this program; if not,       //
-// write to the Free Software Foundation, Inc.,          //
-// 51 Franklin Street, 5th Floor, Boston, MA 02110-1301, //
-// USA.                                                  //
+// Public License along with this program; if not, see   //
+// <http://www.gnu.org/licenses/>.                       //
 //                                                       //
 //-------------------------------------------------------//
 //                                                       //
@@ -191,15 +190,15 @@ wxMenu * CWKSP_Tool::Get_Menu(void)
 
 	pMenu->AppendSeparator();
 
-	CMD_Menu_Add_Item(pMenu, false, ID_CMD_TOOLS_SAVE_SCRIPT);
-	CMD_Menu_Add_Item(pMenu, false, ID_CMD_TOOLS_SAVE_TO_CLIPBOARD);
+	CMD_Menu_Add_Item(pMenu, false, ID_CMD_TOOL_SAVE_SCRIPT);
+	CMD_Menu_Add_Item(pMenu, false, ID_CMD_TOOL_SAVE_TO_CLIPBOARD);
 
 	if( m_pTool->Get_Type() == TOOL_TYPE_Chain )
 	{
 		pMenu->AppendSeparator();
 
-		CMD_Menu_Add_Item(pMenu, false, ID_CMD_TOOLS_CHAIN_RELOAD);
-		CMD_Menu_Add_Item(pMenu, false, ID_CMD_TOOLS_CHAIN_EDIT);
+		CMD_Menu_Add_Item(pMenu, false, ID_CMD_TOOL_CHAIN_RELOAD);
+		CMD_Menu_Add_Item(pMenu, false, ID_CMD_TOOL_CHAIN_EDIT);
 	}
 
 	return( pMenu );
@@ -230,15 +229,15 @@ bool CWKSP_Tool::On_Command(int Cmd_ID)
 		Execute(true);
 		break;
 
-	case ID_CMD_TOOLS_SAVE_SCRIPT:
+	case ID_CMD_TOOL_SAVE_SCRIPT:
 		_Save_to_Script();
 		break;
 
-	case ID_CMD_TOOLS_SAVE_TO_CLIPBOARD:
+	case ID_CMD_TOOL_SAVE_TO_CLIPBOARD:
 		_Save_to_Clipboard();
 		break;
 
-	case ID_CMD_TOOLS_CHAIN_RELOAD:
+	case ID_CMD_TOOL_CHAIN_RELOAD:
 		if( m_pTool->Get_Type() == TOOL_TYPE_Chain
 		&&  g_pTools->Open(m_pTool->Get_File_Name().c_str())
 		&&  g_pACTIVE->Get_Active() == this )
@@ -248,7 +247,7 @@ bool CWKSP_Tool::On_Command(int Cmd_ID)
 		}
 		break;
 
-	case ID_CMD_TOOLS_CHAIN_EDIT:
+	case ID_CMD_TOOL_CHAIN_EDIT:
 		if( m_pTool->Get_Type() == TOOL_TYPE_Chain )
 		{
 			Open_Application(m_pTool->Get_File_Name().c_str(), "txt");
@@ -456,26 +455,26 @@ void CWKSP_Tool::_Save_to_Script(void)
 {
 	wxString	FileName;
 
-	if( DLG_Save(FileName, _TL("Create Script Command File"), SG_T("DOS Batch Script (*.bat)|*.bat|Bash Script (*.sh)|*.sh|Python Script (*.py)|*.py|SAGA Tool Chain (*.xml)|*.xml")) )
+	if( DLG_Save(FileName, _TL("Create Script Command File"), "DOS Batch Script (*.bat)|*.bat|Bash Script (*.sh)|*.sh|Python Script (*.py)|*.py|SAGA Tool Chain (*.xml)|*.xml") )
 	{
 		CSG_String	Script;
 
-		if( SG_File_Cmp_Extension(FileName, SG_T("xml")) )
+		if( SG_File_Cmp_Extension(&FileName, "xml") )
 		{
 			Script	= _Get_XML(true);
 		}
 
-		if( SG_File_Cmp_Extension(FileName, SG_T("bat")) )
+		if( SG_File_Cmp_Extension(&FileName, "bat") )
 		{
 			Script	= _Get_CMD(true, 0);
 		}
 
-		if( SG_File_Cmp_Extension(FileName, SG_T("sh")) )
+		if( SG_File_Cmp_Extension(&FileName, "sh") )
 		{
 			Script	= _Get_CMD(true, 1);
 		}
 
-		if( SG_File_Cmp_Extension(FileName, SG_T("py")) )
+		if( SG_File_Cmp_Extension(&FileName, "py") )
 		{
 			Script	= _Get_Python(true);
 		}
@@ -758,6 +757,7 @@ void CWKSP_Tool::_Get_XML(CSG_MetaData &Tool, CSG_Parameters *pParameters)
 		case PARAMETER_TYPE_String      :
 		case PARAMETER_TYPE_Text        :
 		case PARAMETER_TYPE_FilePath    :
+		case PARAMETER_TYPE_Choices     :
 		case PARAMETER_TYPE_Table_Field :
 		case PARAMETER_TYPE_Table_Fields:
 			pChild	= Tool.Add_Child("option", p->asString());
@@ -837,6 +837,7 @@ void CWKSP_Tool::_Get_CMD(CSG_String &Command, CSG_Parameters *pParameters)
 			Command	+= CSG_String::Format(" -%s=%d", GET_ID1(p), p->asInt());
 			break;
 
+		case PARAMETER_TYPE_Choices     :
 		case PARAMETER_TYPE_Table_Fields:
 			if( p->asString() && *p->asString() )
 				Command	+= CSG_String::Format(" -%s=%s", GET_ID1(p), p->asString());
@@ -891,20 +892,20 @@ void CWKSP_Tool::_Get_CMD(CSG_String &Command, CSG_Parameters *pParameters)
 			{
 				Command	+= CSG_String::Format(" -%s=", GET_ID1(p));
 
-				if( p->asList()->Get_Count() == 0 )
+				if( p->asList()->Get_Item_Count() == 0 )
 				{
 					Command	+= "NULL";
 				}
 				else
 				{
-					Command	+= SG_File_Exists(p->asList()->asDataObject(0)->Get_File_Name())
-							 ? p->asList()->asDataObject(0)->Get_File_Name() : _TL("memory");
+					Command	+= SG_File_Exists(p->asList()->Get_Item(0)->Get_File_Name())
+							 ? p->asList()->Get_Item(0)->Get_File_Name() : _TL("memory");
 
-					for(int iObject=1; iObject<p->asList()->Get_Count(); iObject++)
+					for(int iObject=1; iObject<p->asList()->Get_Item_Count(); iObject++)
 					{
 						Command	+= ";";
-						Command	+= SG_File_Exists(p->asList()->asDataObject(iObject)->Get_File_Name())
-								 ? p->asList()->asDataObject(iObject)->Get_File_Name() : _TL("memory");
+						Command	+= SG_File_Exists(p->asList()->Get_Item(iObject)->Get_File_Name())
+								 ? p->asList()->Get_Item(iObject)->Get_File_Name() : _TL("memory");
 					}
 				}
 			}
@@ -940,6 +941,7 @@ void CWKSP_Tool::_Get_Python(CSG_String &Command, CSG_Parameters *pParameters)
 			Command	+= CSG_String::Format("    Parms.Get(unicode('%s')).Set_Value(%d)\n", p->Get_Identifier(), p->asInt());
 			break;
 
+		case PARAMETER_TYPE_Choices     :
 		case PARAMETER_TYPE_Table_Fields:
 			Command	+= CSG_String::Format("    Parms.Get(unicode('%s')).Set_Value(%s)\n", p->Get_Identifier(), p->asString());
 			break;

@@ -24,7 +24,8 @@
 // Geoscientific Analyses'. SAGA is free software; you   //
 // can redistribute it and/or modify it under the terms  //
 // of the GNU General Public License as published by the //
-// Free Software Foundation; version 2 of the License.   //
+// Free Software Foundation, either version 2 of the     //
+// License, or (at your option) any later version.       //
 //                                                       //
 // SAGA is distributed in the hope that it will be       //
 // useful, but WITHOUT ANY WARRANTY; without even the    //
@@ -33,10 +34,8 @@
 // License for more details.                             //
 //                                                       //
 // You should have received a copy of the GNU General    //
-// Public License along with this program; if not,       //
-// write to the Free Software Foundation, Inc.,          //
-// 51 Franklin Street, 5th Floor, Boston, MA 02110-1301, //
-// USA.                                                  //
+// Public License along with this program; if not, see   //
+// <http://www.gnu.org/licenses/>.                       //
 //                                                       //
 //-------------------------------------------------------//
 //                                                       //
@@ -708,7 +707,7 @@ private:
 
 			double	dx	= m_Count.Get_XRange() / (double)m_Image.GetWidth ();
 			double	dy	= m_Count.Get_YRange() / (double)m_Image.GetHeight();
-			double	dz	= (Colors.Get_Count() - 2.0) / (bCount ? log(1.0 + m_Count.Get_ZMax()) : 4.0 * m_Value.Get_StdDev());
+			double	dz	= (Colors.Get_Count() - 2.0) / (bCount ? log(1.0 + m_Count.Get_Max()) : 4.0 * m_Value.Get_StdDev());
 
 			#pragma omp parallel for
 			for(int y=0; y<m_Image.GetHeight(); y++)

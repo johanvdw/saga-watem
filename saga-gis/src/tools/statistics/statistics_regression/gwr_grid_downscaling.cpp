@@ -24,7 +24,8 @@
 // Geoscientific Analyses'. SAGA is free software; you   //
 // can redistribute it and/or modify it under the terms  //
 // of the GNU General Public License as published by the //
-// Free Software Foundation; version 2 of the License.   //
+// Free Software Foundation, either version 2 of the     //
+// License, or (at your option) any later version.       //
 //                                                       //
 // SAGA is distributed in the hope that it will be       //
 // useful, but WITHOUT ANY WARRANTY; without even the    //
@@ -33,10 +34,8 @@
 // License for more details.                             //
 //                                                       //
 // You should have received a copy of the GNU General    //
-// Public License along with this program; if not,       //
-// write to the Free Software Foundation, Inc.,          //
-// 51 Franklin Street, 5th Floor, Boston, MA 02110-1301, //
-// USA.                                                  //
+// Public License along with this program; if not, see   //
+// <http://www.gnu.org/licenses/>.                       //
 //                                                       //
 //-------------------------------------------------------//
 //                                                       //
@@ -71,96 +70,104 @@
 //---------------------------------------------------------
 CGWR_Grid_Downscaling::CGWR_Grid_Downscaling(void)
 {
-	CSG_Parameter	*pNode;
-
 	//-----------------------------------------------------
 	Set_Name		(_TL("GWR for Grid Downscaling"));
 
 	Set_Author		("O.Conrad (c) 2013");
 
 	Set_Description	(_TW(
-		"References:\n"
-		"- Fotheringham, S.A., Brunsdon, C., Charlton, M. (2002):"
-		" Geographically Weighted Regression: the analysis of spatially varying relationships. John Wiley & Sons."
-		" <a target=\"_blank\" href=\"http://onlinelibrary.wiley.com/doi/10.1111/j.1538-4632.2003.tb01114.x/abstract\">online</a>.\n"
-		"\n"
-		"- Fotheringham, S.A., Charlton, M., Brunsdon, C. (1998):"
-		" Geographically weighted regression: a natural evolution of the expansion method for spatial data analysis."
-		" Environment and Planning A 30(11), 1905–1927."
-		" <a target=\"_blank\" href=\"http://www.envplan.com/abstract.cgi?id=a301905\">online</a>.\n"
-		"\n"
-		"- Lloyd, C. (2010): Spatial Data Analysis - An Introduction for GIS Users. Oxford, 206p.\n"
+		""
 	));
 
+	Add_Reference(
+		"Fotheringham, S.A., Brunsdon, C., Charlton, M", "2002",
+		"Geographically weighted regression: the analysis of spatially varying relationships",
+		"John Wiley & Sons.",
+		SG_T("http://onlinelibrary.wiley.com/doi/10.1111/j.1538-4632.2003.tb01114.x/abstract")
+	);
+
+	Add_Reference(
+		"Fotheringham, S.A., Charlton, M., Brunsdon, C.", "1998",
+		"Geographically weighted regression: a natural evolution of the expansion method for spatial data analysis.",
+		"Environment and Planning A 30(11), 1905–1927.",
+		SG_T("http://www.envplan.com/abstract.cgi?id=a301905")
+	);
+
+	Add_Reference(
+		"Lloyd, C.", "2010",
+		"Spatial data analysis - an introduction for GIS users",
+		"Oxford, 206p."
+	);
+
 	//-----------------------------------------------------
-	Parameters.Add_Grid_List(
-		NULL	, "PREDICTORS"	, _TL("Predictors"),
+	Parameters.Add_Grid_List("",
+		"PREDICTORS"	, _TL("Predictors"),
 		_TL(""),
 		PARAMETER_INPUT
 	);
 
-	Parameters.Add_Grid(
-		NULL	, "REGRESSION"	, _TL("Regression"),
+	Parameters.Add_Grid("",
+		"REGRESSION"	, _TL("Regression"),
 		_TL(""),
 		PARAMETER_OUTPUT
 	);
 
-	Parameters.Add_Grid(
-		NULL	, "REG_RESCORR"	, _TL("Regression with Residual Correction"),
+	Parameters.Add_Grid("",
+		"REG_RESCORR"	, _TL("Regression with Residual Correction"),
 		_TL(""),
 		PARAMETER_OUTPUT_OPTIONAL
 	);
 
 	//-----------------------------------------------------
-	pNode	= Parameters.Add_Grid_System(
-		NULL	, "GRID_SYSTEM"	, _TL("Grid System"),
+	Parameters.Add_Grid_System("",
+		"GRID_SYSTEM"	, _TL("Grid System"),
 		_TL("")
 	);
 
-	Parameters.Add_Grid(
-		pNode	, "DEPENDENT"	, _TL("Dependent Variable"),
+	Parameters.Add_Grid("GRID_SYSTEM",
+		"DEPENDENT"		, _TL("Dependent Variable"),
 		_TL(""),
 		PARAMETER_INPUT, false
 	);
 
-	Parameters.Add_Grid(
-		pNode	, "QUALITY"		, _TL("Coefficient of Determination"),
+	Parameters.Add_Grid("GRID_SYSTEM",
+		"QUALITY"		, _TL("Coefficient of Determination"),
 		_TL(""),
 		PARAMETER_OUTPUT, false
 	);
 
-	Parameters.Add_Grid(
-		pNode	, "RESIDUALS"	, _TL("Residuals"),
+	Parameters.Add_Grid("GRID_SYSTEM",
+		"RESIDUALS"		, _TL("Residuals"),
 		_TL(""),
 		PARAMETER_OUTPUT, false
 	);
 
-	Parameters.Add_Grid_List(
-		pNode	, "MODEL"		, _TL("Regression Parameters"),
+	Parameters.Add_Grid_List("GRID_SYSTEM",
+		"MODEL"			, _TL("Regression Parameters"),
 		_TL(""),
 		PARAMETER_OUTPUT_OPTIONAL, false
 	);
 
-	Parameters.Add_Value(
-		NULL	, "MODEL_OUT"	, _TL("Output of Model Parameters"),
+	Parameters.Add_Bool("",
+		"MODEL_OUT"		, _TL("Output of Model Parameters"),
 		_TL(""),
-		PARAMETER_TYPE_Bool, false
+		false
 	);
 
 	//-----------------------------------------------------
-	pNode	= Parameters.Add_Choice(
-		NULL	, "SEARCH_RANGE"		, _TL("Search Range"),
+	Parameters.Add_Choice("",
+		"SEARCH_RANGE"	, _TL("Search Range"),
 		_TL(""),
-		CSG_String::Format(SG_T("%s|%s|"),
+		CSG_String::Format("%s|%s|",
 			_TL("local"),
 			_TL("global")
 		)
 	);
 
-	Parameters.Add_Value(
-		pNode	, "SEARCH_RADIUS"		, _TL("Search Distance [Cells]"),
+	Parameters.Add_Int("SEARCH_RANGE",
+		"SEARCH_RADIUS"	, _TL("Search Distance [Cells]"),
 		_TL(""),
-		PARAMETER_TYPE_Int, 10, 1, true
+		10, 1, true
 	);
 
 	m_Search.Get_Weighting().Set_Weighting(SG_DISTWGHT_GAUSS);
@@ -171,27 +178,23 @@ CGWR_Grid_Downscaling::CGWR_Grid_Downscaling(void)
 
 ///////////////////////////////////////////////////////////
 //														 //
-//														 //
-//														 //
 ///////////////////////////////////////////////////////////
 
 //---------------------------------------------------------
 int CGWR_Grid_Downscaling::On_Parameters_Enable(CSG_Parameters *pParameters, CSG_Parameter *pParameter)
 {
-	if(	!SG_STR_CMP(pParameter->Get_Identifier(), SG_T("SEARCH_RANGE")) )
+	if(	!SG_STR_CMP(pParameter->Get_Identifier(), "SEARCH_RANGE") )
 	{
-		pParameters->Get_Parameter("SEARCH_RADIUS")->Set_Enabled(pParameter->asInt() == 0);	// local
+		pParameters->Set_Enabled("SEARCH_RADIUS", pParameter->asInt() == 0);	// local
 	}
 
 	m_Search.Get_Weighting().Enable_Parameters(pParameters);
 
-	return( 1 );
+	return( CSG_Tool_Grid::On_Parameters_Enable(pParameters, pParameter) );
 }
 
 
 ///////////////////////////////////////////////////////////
-//														 //
-//														 //
 //														 //
 ///////////////////////////////////////////////////////////
 
@@ -201,7 +204,7 @@ bool CGWR_Grid_Downscaling::On_Execute(void)
 	//-----------------------------------------------------
 	CSG_Parameter_Grid_List	*pPredictors	= Parameters("PREDICTORS")->asGridList();
 
-	if( (m_nPredictors = pPredictors->Get_Count()) <= 0 )
+	if( (m_nPredictors = pPredictors->Get_Grid_Count()) <= 0 )
 	{
 		return( false );
 	}
@@ -224,10 +227,10 @@ bool CGWR_Grid_Downscaling::On_Execute(void)
 	for(i=0; i<m_nPredictors; i++)
 	{
 		m_pPredictors[i]	= SG_Create_Grid(m_pDependent->Get_System());
-		m_pPredictors[i]	->Assign(pPredictors->asGrid(i), GRID_RESAMPLING_NearestNeighbour);	// GRID_RESAMPLING_Mean_Cells
+		m_pPredictors[i]	->Assign(pPredictors->Get_Grid(i), GRID_RESAMPLING_NearestNeighbour);	// GRID_RESAMPLING_Mean_Cells
 
 		m_pModel     [i]	= SG_Create_Grid(m_pDependent->Get_System());
-		m_pModel     [i]	->Set_Name(CSG_String::Format(SG_T("%s [%s]"), pPredictors->asGrid(i)->Get_Name(), _TL("Factor")));
+		m_pModel     [i]	->Set_Name(CSG_String::Format("%s [%s]", pPredictors->Get_Grid(i)->Get_Name(), _TL("Factor")));
 	}
 
 	m_pModel[m_nPredictors]	= SG_Create_Grid(m_pDependent->Get_System());
@@ -243,7 +246,7 @@ bool CGWR_Grid_Downscaling::On_Execute(void)
 	{
 		delete(m_pPredictors[i]);
 
-		m_pPredictors[i]	= pPredictors->asGrid(i);
+		m_pPredictors[i]	= pPredictors->Get_Grid(i);
 	}
 
 	//-----------------------------------------------------
@@ -284,8 +287,6 @@ bool CGWR_Grid_Downscaling::On_Execute(void)
 
 ///////////////////////////////////////////////////////////
 //														 //
-//														 //
-//														 //
 ///////////////////////////////////////////////////////////
 
 //---------------------------------------------------------
@@ -300,8 +301,8 @@ bool CGWR_Grid_Downscaling::Set_Model(double x, double y, double &Value, double 
 
 	for(int i=0; i<m_nPredictors; i++)
 	{
-		if( !m_pModel     [i]->Get_Value(x, y, Model    , GRID_RESAMPLING_BSpline, false, true)
-		||  !m_pPredictors[i]->Get_Value(x, y, Predictor, GRID_RESAMPLING_BSpline, false, true) )
+		if( !m_pModel     [i]->Get_Value(x, y, Model    , GRID_RESAMPLING_BSpline)
+		||  !m_pPredictors[i]->Get_Value(x, y, Predictor, GRID_RESAMPLING_BSpline) )
 		{
 			return( false );
 		}
@@ -323,11 +324,11 @@ bool CGWR_Grid_Downscaling::Set_Model(void)
 	CSG_Grid	*pRegression	= Parameters("REGRESSION" )->asGrid();
 	CSG_Grid	*pReg_ResCorr	= Parameters("REG_RESCORR")->asGrid();
 
-	pRegression->Set_Name(CSG_String::Format(SG_T("%s [%s]"), m_pDependent->Get_Name(), _TL("GWR")));
+	pRegression->Set_Name(CSG_String::Format("%s [%s]", m_pDependent->Get_Name(), _TL("GWR")));
 
 	if( pReg_ResCorr )
 	{
-		pReg_ResCorr->Set_Name(CSG_String::Format(SG_T("%s [%s, %s]"), m_pDependent->Get_Name(), _TL("GWR"), _TL("Residual Correction")));
+		pReg_ResCorr->Set_Name(CSG_String::Format("%s [%s, %s]", m_pDependent->Get_Name(), _TL("GWR"), _TL("Residual Correction")));
 	}
 
 	for(int y=0; y<Get_NY() && Set_Progress(y); y++)
@@ -366,8 +367,6 @@ bool CGWR_Grid_Downscaling::Set_Model(void)
 
 ///////////////////////////////////////////////////////////
 //														 //
-//														 //
-//														 //
 ///////////////////////////////////////////////////////////
 
 //---------------------------------------------------------
@@ -375,10 +374,10 @@ bool CGWR_Grid_Downscaling::Get_Model(void)
 {
 	//-----------------------------------------------------
 	m_pQuality		= Parameters("QUALITY"  )->asGrid();
-	m_pQuality		->Set_Name(CSG_String::Format(SG_T("%s [%s, %s]"), m_pDependent->Get_Name(), _TL("GWR"), _TL("Quality")));
+	m_pQuality		->Set_Name(CSG_String::Format("%s [%s, %s]", m_pDependent->Get_Name(), _TL("GWR"), _TL("Quality")));
 
 	m_pResiduals	= Parameters("RESIDUALS")->asGrid();
-	m_pResiduals	->Set_Name(CSG_String::Format(SG_T("%s [%s, %s]"), m_pDependent->Get_Name(), _TL("GWR"), _TL("Residuals")));
+	m_pResiduals	->Set_Name(CSG_String::Format("%s [%s, %s]", m_pDependent->Get_Name(), _TL("GWR"), _TL("Residuals")));
 
 	//-----------------------------------------------------
 	m_Search.Get_Weighting().Set_Parameters(&Parameters);
@@ -430,8 +429,6 @@ bool CGWR_Grid_Downscaling::Get_Model(void)
 
 
 ///////////////////////////////////////////////////////////
-//														 //
-//														 //
 //														 //
 ///////////////////////////////////////////////////////////
 

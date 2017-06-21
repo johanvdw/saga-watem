@@ -24,7 +24,8 @@
 // Geoscientific Analyses'. SAGA is free software; you   //
 // can redistribute it and/or modify it under the terms  //
 // of the GNU General Public License as published by the //
-// Free Software Foundation; version 2 of the License.   //
+// Free Software Foundation, either version 2 of the     //
+// License, or (at your option) any later version.       //
 //                                                       //
 // SAGA is distributed in the hope that it will be       //
 // useful, but WITHOUT ANY WARRANTY; without even the    //
@@ -33,10 +34,8 @@
 // License for more details.                             //
 //                                                       //
 // You should have received a copy of the GNU General    //
-// Public License along with this program; if not,       //
-// write to the Free Software Foundation, Inc.,          //
-// 51 Franklin Street, 5th Floor, Boston, MA 02110-1301, //
-// USA.                                                  //
+// Public License along with this program; if not, see   //
+// <http://www.gnu.org/licenses/>.                       //
 //                                                       //
 //-------------------------------------------------------//
 //                                                       //
@@ -52,6 +51,7 @@
 
 //---------------------------------------------------------
 #include "LakeFlood.h"
+
 
 ///////////////////////////////////////////////////////////
 //														 //
@@ -130,7 +130,6 @@ bool CLakeFloodInteractive::On_Execute_Finish(void)
 {
 	return( true );
 }
-
 
 //---------------------------------------------------------
 bool CLakeFloodInteractive::On_Execute_Position(CSG_Point ptWorld, TSG_Tool_Interactive_Mode Mode)
@@ -212,8 +211,8 @@ bool CLakeFloodInteractive::On_Execute_Position(CSG_Point ptWorld, TSG_Tool_Inte
 			}
 
 			SG_UI_Msg_Add(_TL("ready ..."), true);
-			DataObject_Update(pOdepth, pOdepth->Get_ZMin(), pOdepth->Get_ZMax());
-			DataObject_Update(pOlevel, pOlevel->Get_ZMin(), pOlevel->Get_ZMax());
+			DataObject_Update(pOdepth, pOdepth->Get_Min(), pOdepth->Get_Max());
+			DataObject_Update(pOlevel, pOlevel->Get_Min(), pOlevel->Get_Max());
 			return( true );
 		}
 	}

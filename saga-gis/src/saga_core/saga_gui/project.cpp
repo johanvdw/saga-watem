@@ -24,7 +24,8 @@
 // Geoscientific Analyses'. SAGA is free software; you   //
 // can redistribute it and/or modify it under the terms  //
 // of the GNU General Public License as published by the //
-// Free Software Foundation; version 2 of the License.   //
+// Free Software Foundation, either version 2 of the     //
+// License, or (at your option) any later version.       //
 //                                                       //
 // SAGA is distributed in the hope that it will be       //
 // useful, but WITHOUT ANY WARRANTY; without even the    //
@@ -33,10 +34,8 @@
 // License for more details.                             //
 //                                                       //
 // You should have received a copy of the GNU General    //
-// Public License along with this program; if not,       //
-// write to the Free Software Foundation, Inc.,          //
-// 51 Franklin Street, 5th Floor, Boston, MA 02110-1301, //
-// USA.                                                  //
+// Public License along with this program; if not, see   //
+// <http://www.gnu.org/licenses/>.                       //
 //                                                       //
 //-------------------------------------------------------//
 //                                                       //
@@ -256,12 +255,12 @@ bool CWKSP_Project::Copy(void)
 
 	for(i=0; i<SG_Get_Data_Manager().Get_Table()->Count(); i++)
 	{
-		_Copy_To_File(g_pData->Get(SG_Get_Data_Manager().Get_Shapes()->Get(i)), Directory.GetFullPath());
+		_Copy_To_File(g_pData->Get(SG_Get_Data_Manager().Get_Table()->Get(i)), Directory.GetFullPath());
 	}
 
-	for(i=0; i<SG_Get_Data_Manager().Get_TIN()->Count(); i++)
+	for(i=0; i<SG_Get_Data_Manager().asTIN()->Count(); i++)
 	{
-		_Copy_To_File(g_pData->Get(SG_Get_Data_Manager().Get_TIN()->Get(i)), Directory.GetFullPath());
+		_Copy_To_File(g_pData->Get(SG_Get_Data_Manager().asTIN()->Get(i)), Directory.GetFullPath());
 	}
 
 	return( _Save(Directory.GetFullPath(), false, true) );
@@ -272,13 +271,14 @@ bool CWKSP_Project::_Copy_To_File(CWKSP_Data_Item *pItem, const wxString &Direct
 {
 	wxFileName	Path(Directory);
 
-	switch( pItem->Get_Type() )
+	switch( pItem->Get_Type() )	// default extensions
 	{
-	case WKSP_ITEM_Table     :	Path.SetExt("txt" );	break;
-	case WKSP_ITEM_Shapes    :	Path.SetExt("shp" );	break;
-	case WKSP_ITEM_TIN       :	Path.SetExt("shp" );	break;
-	case WKSP_ITEM_PointCloud:	Path.SetExt("spc" );	break;
-	case WKSP_ITEM_Grid      :	Path.SetExt("sgrd");	break;
+	case WKSP_ITEM_Table     : Path.SetExt("txt"     ); break;
+	case WKSP_ITEM_Shapes    : Path.SetExt("shp"     ); break;
+	case WKSP_ITEM_TIN       : Path.SetExt("shp"     ); break;
+	case WKSP_ITEM_PointCloud: Path.SetExt("sg-pts-z"); break;
+	case WKSP_ITEM_Grid      : Path.SetExt("sgrd"    ); break;
+	case WKSP_ITEM_Grids     : Path.SetExt("sg-gds-z"); break;
 	default:	return( false );
 	}
 
@@ -387,12 +387,12 @@ bool CWKSP_Project::_Load(const wxString &FileName, bool bAdd, bool bUpdateMenu)
 
 		for(i=0; i<pNode->Get_Children_Count(); i++)
 		{
-			_Load_Data(*pNode->Get_Child(i), SG_File_Get_Path(FileName).w_str(), true , Version);
+			_Load_Data(*pNode->Get_Child(i), SG_File_Get_Path(&FileName).w_str(), true , Version);
 		}
 
 		for(i=0; i<pNode->Get_Children_Count(); i++)
 		{
-			_Load_Data(*pNode->Get_Child(i), SG_File_Get_Path(FileName).w_str(), false, Version);
+			_Load_Data(*pNode->Get_Child(i), SG_File_Get_Path(&FileName).w_str(), false, Version);
 		}
 
 		g_pData->Get_Menu_Files()->Set_Update(true);
@@ -404,7 +404,7 @@ bool CWKSP_Project::_Load(const wxString &FileName, bool bAdd, bool bUpdateMenu)
 		{
 			for(int j=0; j<pNode->Get_Children_Count(); j++)
 			{
-				_Load_Map(*pNode->Get_Child(j), SG_File_Get_Path(FileName).w_str());
+				_Load_Map(*pNode->Get_Child(j), SG_File_Get_Path(&FileName).w_str());
 			}
 		}
 
@@ -422,7 +422,7 @@ bool CWKSP_Project::_Load(const wxString &FileName, bool bAdd, bool bUpdateMenu)
 	{
 		if( bUpdateMenu )
 		{
-			g_pData->Get_Menu_Files()->Recent_Add(DATAOBJECT_TYPE_Undefined, FileName);
+			g_pData->Get_Menu_Files()->Recent_Add(SG_DATAOBJECT_TYPE_Undefined, FileName);
 		}
 
 		MSG_General_Add(_TL("Project has been successfully loaded."), true, true, SG_UI_MSG_STYLE_SUCCESS);
@@ -436,7 +436,7 @@ bool CWKSP_Project::_Load(const wxString &FileName, bool bAdd, bool bUpdateMenu)
 
 	if( bUpdateMenu )
 	{
-		g_pData->Get_Menu_Files()->Recent_Del(DATAOBJECT_TYPE_Undefined, FileName);
+		g_pData->Get_Menu_Files()->Recent_Del(SG_DATAOBJECT_TYPE_Undefined, FileName);
 	}
 
 	MSG_General_Add(_TL("Could not load project."), true, true, SG_UI_MSG_STYLE_FAILURE);
@@ -467,7 +467,7 @@ bool CWKSP_Project::_Save(const wxString &FileName, bool bSaveModified, bool bUp
 	}
 
 	//-----------------------------------------------------
-	ProjectDir	= SG_File_Get_Path(FileName).w_str();
+	ProjectDir	= SG_File_Get_Path(&FileName).w_str();
 
 	Project.Set_Name    ("SAGA_PROJECT");
 	Project.Add_Property("VERSION", SAGA_VERSION);
@@ -529,8 +529,8 @@ bool CWKSP_Project::_Save(const wxString &FileName, bool bSaveModified, bool bUp
 			for(i=0; i<pGrids->Get_System(j)->Get_Count(); i++)
 			{
 				_Save_Data(*pNode, ProjectDir,
-					pGrids->Get_System(j)->Get_Data(i)->Get_Object(),
-					pGrids->Get_System(j)->Get_Data(i)->Get_Parameters()
+					((CWKSP_Data_Item *)pGrids->Get_System(j)->Get_Item(i))->Get_Object(),
+					((CWKSP_Data_Item *)pGrids->Get_System(j)->Get_Item(i))->Get_Parameters()
 				);
 			}
 		}
@@ -553,7 +553,7 @@ bool CWKSP_Project::_Save(const wxString &FileName, bool bSaveModified, bool bUp
 		m_File_Name	= FileName;
 
 		if( bUpdateMenu )
-			g_pData->Get_Menu_Files()->Recent_Add(DATAOBJECT_TYPE_Undefined, FileName);
+			g_pData->Get_Menu_Files()->Recent_Add(SG_DATAOBJECT_TYPE_Undefined, FileName);
 
 		MSG_General_Add(_TL("Project has been saved."), true, true, SG_UI_MSG_STYLE_SUCCESS);
 
@@ -567,7 +567,7 @@ bool CWKSP_Project::_Save(const wxString &FileName, bool bSaveModified, bool bUp
 	m_File_Name.Clear();
 
 	if( bUpdateMenu )
-		g_pData->Get_Menu_Files()->Recent_Del(DATAOBJECT_TYPE_Undefined, FileName);
+		g_pData->Get_Menu_Files()->Recent_Del(SG_DATAOBJECT_TYPE_Undefined, FileName);
 
 	MSG_General_Add(_TL("Could not save project."), true, true, SG_UI_MSG_STYLE_FAILURE);
 
@@ -649,14 +649,15 @@ bool CWKSP_Project::_Load_Data(CSG_MetaData &Entry, const wxString &ProjectDir, 
 	}
 
 	TSG_Data_Object_Type	Type	=
-		Entry.Cmp_Property("type", "GRID"  ) ? DATAOBJECT_TYPE_Grid
-	:	Entry.Cmp_Property("type", "TABLE" ) ? DATAOBJECT_TYPE_Table
-	:	Entry.Cmp_Property("type", "SHAPES") ? DATAOBJECT_TYPE_Shapes
-	:	Entry.Cmp_Property("type", "TIN"   ) ? DATAOBJECT_TYPE_TIN
-	:	Entry.Cmp_Property("type", "POINTS") ? DATAOBJECT_TYPE_PointCloud
-	:	DATAOBJECT_TYPE_Undefined;
+		Entry.Cmp_Property("type", "GRID"  ) ? SG_DATAOBJECT_TYPE_Grid
+	:	Entry.Cmp_Property("type", "GRIDS" ) ? SG_DATAOBJECT_TYPE_Grids
+	:	Entry.Cmp_Property("type", "TABLE" ) ? SG_DATAOBJECT_TYPE_Table
+	:	Entry.Cmp_Property("type", "SHAPES") ? SG_DATAOBJECT_TYPE_Shapes
+	:	Entry.Cmp_Property("type", "TIN"   ) ? SG_DATAOBJECT_TYPE_TIN
+	:	Entry.Cmp_Property("type", "POINTS") ? SG_DATAOBJECT_TYPE_PointCloud
+	:	SG_DATAOBJECT_TYPE_Undefined;
 
-	if( Type == DATAOBJECT_TYPE_Undefined )
+	if( Type == SG_DATAOBJECT_TYPE_Undefined )
 	{
 		return( false );
 	}
@@ -674,7 +675,7 @@ bool CWKSP_Project::_Load_Data(CSG_MetaData &Entry, const wxString &ProjectDir, 
 
 	if( bLoad )
 	{
-		if( Type == DATAOBJECT_TYPE_Grid && Entry("PARAMETERS"))
+		if( Type == SG_DATAOBJECT_TYPE_Grid && Entry("PARAMETERS"))
 		{
 			for(int i=0, Memory; i<Entry["PARAMETERS"].Get_Children_Count() && !pItem; i++)
 			{
@@ -753,16 +754,17 @@ bool CWKSP_Project::_Save_Data(CSG_MetaData &Entry, const wxString &ProjectDir, 
 	switch( pDataObject->Get_ObjectType() )
 	{
 	default:	return( false );
-	case DATAOBJECT_TYPE_Grid      :	pEntry->Add_Property("type", "GRID"  );	break;
-	case DATAOBJECT_TYPE_Table     :	pEntry->Add_Property("type", "TABLE" );	break;
-	case DATAOBJECT_TYPE_Shapes    :	pEntry->Add_Property("type", "SHAPES");	break;
-	case DATAOBJECT_TYPE_TIN       :	pEntry->Add_Property("type", "TIN"   );	break;
-	case DATAOBJECT_TYPE_PointCloud:	pEntry->Add_Property("type", "POINTS");	break;
+	case SG_DATAOBJECT_TYPE_Grid      :	pEntry->Add_Property("type", "GRID"  );	break;
+	case SG_DATAOBJECT_TYPE_Grids     :	pEntry->Add_Property("type", "GRIDS" );	break;
+	case SG_DATAOBJECT_TYPE_Table     :	pEntry->Add_Property("type", "TABLE" );	break;
+	case SG_DATAOBJECT_TYPE_Shapes    :	pEntry->Add_Property("type", "SHAPES");	break;
+	case SG_DATAOBJECT_TYPE_TIN       :	pEntry->Add_Property("type", "TIN"   );	break;
+	case SG_DATAOBJECT_TYPE_PointCloud:	pEntry->Add_Property("type", "POINTS");	break;
 	}
 
 	if( wxFileExists(pDataObject->Get_File_Name(false)) )
 	{
-		pEntry->Add_Child("FILE", SG_File_Get_Path_Relative(ProjectDir, pDataObject->Get_File_Name(false)));
+		pEntry->Add_Child("FILE", SG_File_Get_Path_Relative(&ProjectDir, pDataObject->Get_File_Name(false)));
 	}
 	else if( pDataObject->Get_MetaData_DB().Get_Children_Count() > 0 )
 	{
@@ -790,7 +792,7 @@ bool CWKSP_Project::_Save_Data(CSG_MetaData &Entry, const wxString &ProjectDir, 
 
 				if( File.BeforeFirst(':').Cmp("PGSQL") && SG_File_Exists(File) )
 				{
-					pEntry->Get_Child(i)->Set_Content(SG_File_Get_Path_Relative(ProjectDir, File.w_str()));
+					pEntry->Get_Child(i)->Set_Content(SG_File_Get_Path_Relative(&ProjectDir, File.w_str()));
 				}
 			}
 		}
@@ -846,6 +848,7 @@ bool CWKSP_Project::_Load_Map(CSG_MetaData &Entry, const wxString &ProjectDir)
 
 			if(	pItem &&
 			(   pItem->Get_Type() == WKSP_ITEM_Grid
+			||  pItem->Get_Type() == WKSP_ITEM_Grids
 			||  pItem->Get_Type() == WKSP_ITEM_TIN
 			||  pItem->Get_Type() == WKSP_ITEM_PointCloud
 			||  pItem->Get_Type() == WKSP_ITEM_Shapes) )
@@ -878,6 +881,7 @@ bool CWKSP_Project::_Load_Map(CSG_MetaData &Entry, const wxString &ProjectDir)
 
 			if(	pItem &&
 			(   pItem->Get_Type() == WKSP_ITEM_Grid
+			||  pItem->Get_Type() == WKSP_ITEM_Grids
 			||  pItem->Get_Type() == WKSP_ITEM_TIN
 			||  pItem->Get_Type() == WKSP_ITEM_PointCloud
 			||  pItem->Get_Type() == WKSP_ITEM_Shapes) )
@@ -947,7 +951,7 @@ bool CWKSP_Project::_Save_Map(CSG_MetaData &Entry, const wxString &ProjectDir, C
 				}
 				else if( wxFileExists(FileName) )
 				{
-					pEntry->Add_Child("FILE", SG_File_Get_Path_Relative(ProjectDir, FileName));
+					pEntry->Add_Child("FILE", SG_File_Get_Path_Relative(&ProjectDir, &FileName));
 				}
 			}
 		}
@@ -1004,7 +1008,7 @@ bool CWKSP_Project::_Compatibility_Data(TSG_Data_Type Type, CSG_Parameters *pPar
 	{
 		CSG_Parameter	*pParameter;
 
-		if( Type == DATAOBJECT_TYPE_Grid )
+		if( Type == SG_DATAOBJECT_TYPE_Grid )
 		{
 			if( (pParameter = pParameters->Get_Parameter("COLORS_TYPE")) != NULL )
 			{
@@ -1061,7 +1065,7 @@ bool CWKSP_Project::_Compatibility_Load_Data(const wxString &FileName)
 	g_pSAGA_Frame->Freeze();
 
 	g_pData->Get_Menu_Files()->Set_Update(false);
-	while( _Compatibility_Load_Data(Stream, SG_File_Get_Path(FileName).w_str()) );
+	while( _Compatibility_Load_Data(Stream, SG_File_Get_Path(&FileName).w_str()) );
 	g_pData->Get_Menu_Files()->Set_Update(true);
 
 	//-------------------------------------------------
@@ -1069,7 +1073,7 @@ bool CWKSP_Project::_Compatibility_Load_Data(const wxString &FileName)
 
 	if( !sLine.Cmp(MAP_ENTRIES_BEGIN) )
 	{
-		while( _Compatibility_Load_Map(Stream, SG_File_Get_Path(FileName).w_str()) );
+		while( _Compatibility_Load_Map(Stream, SG_File_Get_Path(&FileName).w_str()) );
 	}
 
 	switch( g_pData->Get_Parameter("PROJECT_MAP_ARRANGE")->asInt() )
@@ -1144,6 +1148,7 @@ bool CWKSP_Project::_Compatibility_Load_Map(CSG_File &Stream, const wxString &Pr
 
 					if(	(pItem = _Get_byFileName(sLine.c_str())) != NULL
 					&&	(	pItem->Get_Type()	== WKSP_ITEM_Grid
+						||	pItem->Get_Type()	== WKSP_ITEM_Grids
 						||	pItem->Get_Type()	== WKSP_ITEM_TIN
 						||	pItem->Get_Type()	== WKSP_ITEM_PointCloud
 						||	pItem->Get_Type()	== WKSP_ITEM_Shapes) )

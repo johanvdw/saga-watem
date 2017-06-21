@@ -14,9 +14,9 @@
 //                                                       //
 //-------------------------------------------------------//
 //                                                       //
-//                  DLG_List_Table.cpp                   //
+//                    dlg_choices.h                      //
 //                                                       //
-//          Copyright (C) 2005 by Olaf Conrad            //
+//          Copyright (C) 2017 by Olaf Conrad            //
 //                                                       //
 //-------------------------------------------------------//
 //                                                       //
@@ -24,7 +24,8 @@
 // Geoscientific Analyses'. SAGA is free software; you   //
 // can redistribute it and/or modify it under the terms  //
 // of the GNU General Public License as published by the //
-// Free Software Foundation; version 2 of the License.   //
+// Free Software Foundation, either version 2 of the     //
+// License, or (at your option) any later version.       //
 //                                                       //
 // SAGA is distributed in the hope that it will be       //
 // useful, but WITHOUT ANY WARRANTY; without even the    //
@@ -33,18 +34,14 @@
 // License for more details.                             //
 //                                                       //
 // You should have received a copy of the GNU General    //
-// Public License along with this program; if not,       //
-// write to the Free Software Foundation, Inc.,          //
-// 51 Franklin Street, 5th Floor, Boston, MA 02110-1301, //
-// USA.                                                  //
+// Public License along with this program; if not, see   //
+// <http://www.gnu.org/licenses/>.                       //
 //                                                       //
 //-------------------------------------------------------//
 //                                                       //
 //    contact:    Olaf Conrad                            //
 //                Institute of Geography                 //
-//                University of Goettingen               //
-//                Goldschmidtstr. 5                      //
-//                37077 Goettingen                       //
+//                University of Hamburg                  //
 //                Germany                                //
 //                                                       //
 //    e-mail:     oconrad@saga-gis.org                   //
@@ -61,12 +58,8 @@
 ///////////////////////////////////////////////////////////
 
 //---------------------------------------------------------
-#include <saga_api/saga_api.h>
-
-#include "wksp_data_manager.h"
-#include "wksp_table_manager.h"
-
-#include "dlg_list_table.h"
+#ifndef _HEADER_INCLUDED__SAGA_GUI__dlg_choices_H
+#define _HEADER_INCLUDED__SAGA_GUI__dlg_choices_H
 
 
 ///////////////////////////////////////////////////////////
@@ -76,11 +69,10 @@
 ///////////////////////////////////////////////////////////
 
 //---------------------------------------------------------
-IMPLEMENT_CLASS(CDLG_List_Table, CDLG_List_Base)
+#include <wx/button.h>
+#include <wx/listbox.h>
 
-//---------------------------------------------------------
-BEGIN_EVENT_TABLE(CDLG_List_Table, CDLG_List_Base)
-END_EVENT_TABLE()
+#include "dlg_base.h"
 
 
 ///////////////////////////////////////////////////////////
@@ -90,11 +82,52 @@ END_EVENT_TABLE()
 ///////////////////////////////////////////////////////////
 
 //---------------------------------------------------------
-CDLG_List_Table::CDLG_List_Table(CSG_Parameter_Table_List *pList, wxString Caption)
-	: CDLG_List_Base(pList, Caption)
+class CDLG_Choices : public CDLG_Base
 {
-	Set_Data(g_pData->Get_Tables());
-}
+	DECLARE_CLASS(CDLG_Choices)
+	DECLARE_EVENT_TABLE()
+
+public:
+	CDLG_Choices(class CSG_Parameter_Choices *Parameter, wxString Caption);
+
+	void						On_DClick_Add	(wxCommandEvent &event);
+	void						On_Add			(wxCommandEvent &event);
+	void						On_Add_All		(wxCommandEvent &event);
+	void						On_DClick_Del	(wxCommandEvent &event);
+	void						On_Del			(wxCommandEvent &event);
+	void						On_Del_All		(wxCommandEvent &event);
+	void						On_Up			(wxCommandEvent &event);
+	void						On_Down			(wxCommandEvent &event);
+
+
+protected:
+
+	wxListBox					*m_pChoices, *m_pSelection;
+
+	CSG_Parameter_Choices		*m_pParameter;
+
+
+	virtual void				Set_Position	(wxRect r);
+
+	virtual void				Save_Changes	(void);
+
+
+private:
+
+	int							m_Btn_Height;
+
+	CSG_Array_Int				m_Index;
+
+	wxButton					*m_pBtn_Add, *m_pBtn_Add_All, *m_pBtn_Del, *m_pBtn_Del_All, *m_pBtn_Up, *m_pBtn_Down;
+
+
+	static int					_Compare_Up		(int *first, int *second);
+	static int					_Compare_Down	(int *first, int *second);
+
+	void						_Add			(void);
+	void						_Del			(void);
+
+};
 
 
 ///////////////////////////////////////////////////////////
@@ -104,3 +137,4 @@ CDLG_List_Table::CDLG_List_Table(CSG_Parameter_Table_List *pList, wxString Capti
 ///////////////////////////////////////////////////////////
 
 //---------------------------------------------------------
+#endif // #ifndef _HEADER_INCLUDED__SAGA_GUI__dlg_choices_H

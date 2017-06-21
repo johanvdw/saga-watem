@@ -24,7 +24,8 @@
 // Geoscientific Analyses'. SAGA is free software; you   //
 // can redistribute it and/or modify it under the terms  //
 // of the GNU General Public License as published by the //
-// Free Software Foundation; version 2 of the License.   //
+// Free Software Foundation, either version 2 of the     //
+// License, or (at your option) any later version.       //
 //                                                       //
 // SAGA is distributed in the hope that it will be       //
 // useful, but WITHOUT ANY WARRANTY; without even the    //
@@ -33,10 +34,8 @@
 // License for more details.                             //
 //                                                       //
 // You should have received a copy of the GNU General    //
-// Public License along with this program; if not,       //
-// write to the Free Software Foundation, Inc.,          //
-// 51 Franklin Street, 5th Floor, Boston, MA 02110-1301, //
-// USA.                                                  //
+// Public License along with this program; if not, see   //
+// <http://www.gnu.org/licenses/>.                       //
 //                                                       //
 //-------------------------------------------------------//
 //                                                       //
@@ -377,8 +376,8 @@ bool CSurfer_Export::On_Execute(void)
 			dValue	=        pGrid->Get_XMax(); fwrite(&dValue, 1, sizeof(double), Stream);
 			dValue	=        pGrid->Get_YMin(); fwrite(&dValue, 1, sizeof(double), Stream);
 			dValue	=        pGrid->Get_YMax(); fwrite(&dValue, 1, sizeof(double), Stream);
-			dValue	=        pGrid->Get_ZMin(); fwrite(&dValue, 1, sizeof(double), Stream);
-			dValue	=        pGrid->Get_ZMax(); fwrite(&dValue, 1, sizeof(double), Stream);
+			dValue	=        pGrid->Get_Min (); fwrite(&dValue, 1, sizeof(double), Stream);
+			dValue	=        pGrid->Get_Max (); fwrite(&dValue, 1, sizeof(double), Stream);
 
 			//---------------------------------------------
 			float	*fLine	= (float *)SG_Malloc(pGrid->Get_NX() * sizeof(float));
@@ -410,7 +409,7 @@ bool CSurfer_Export::On_Execute(void)
 			fprintf(Stream, "%d %d\n", pGrid->Get_NX  (), pGrid->Get_NY  ());
 			fprintf(Stream, "%f %f\n", pGrid->Get_XMin(), pGrid->Get_XMax());
 			fprintf(Stream, "%f %f\n", pGrid->Get_YMin(), pGrid->Get_YMax());
-			fprintf(Stream, "%f %f\n", pGrid->Get_ZMin(), pGrid->Get_ZMax());
+			fprintf(Stream, "%f %f\n", pGrid->Get_Min (), pGrid->Get_Max ());
 
 			//---------------------------------------------
 			for(int y=0; y<pGrid->Get_NY() && Set_Progress(y, pGrid->Get_NY()); y++)

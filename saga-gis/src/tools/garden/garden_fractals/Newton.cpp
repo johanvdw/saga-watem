@@ -24,7 +24,8 @@
 // Geoscientific Analyses'. SAGA is free software; you   //
 // can redistribute it and/or modify it under the terms  //
 // of the GNU General Public License as published by the //
-// Free Software Foundation; version 2 of the License.   //
+// Free Software Foundation, either version 2 of the     //
+// License, or (at your option) any later version.       //
 //                                                       //
 // SAGA is distributed in the hope that it will be       //
 // useful, but WITHOUT ANY WARRANTY; without even the    //
@@ -33,10 +34,8 @@
 // License for more details.                             //
 //                                                       //
 // You should have received a copy of the GNU General    //
-// Public License along with this program; if not,       //
-// write to the Free Software Foundation, Inc.,          //
-// 51 Franklin Street, 5th Floor, Boston, MA 02110-1301, //
-// USA.                                                  //
+// Public License along with this program; if not, see   //
+// <http://www.gnu.org/licenses/>.                       //
 //                                                       //
 //-------------------------------------------------------//
 //                                                       //
@@ -86,30 +85,25 @@ CNewton::CNewton(void)
 
 	//-----------------------------------------------------
 	Parameters.Add_Grid_Output(
-		NULL	, "RESULT"	, _TL("Result"),
+		""	, "RESULT"	, _TL("Result"),
 		_TL("")
 	);
 
 	Parameters.Add_Grid_Output(
-		NULL	, "SHADE"	, _TL("Shade"),
+		""	, "SHADE"	, _TL("Shade"),
 		_TL("")
 	);
 
-	Parameters.Add_Value(	NULL	, "NX"		, _TL("Width (Cells)")		, _TL(""), PARAMETER_TYPE_Int, 400, 1, true);
-	Parameters.Add_Value(	NULL	, "NY"		, _TL("Height (Cells)")		, _TL(""), PARAMETER_TYPE_Int, 400, 1, true);
+	Parameters.Add_Int   ("", "NX"    , _TL("Width (Cells)" ), _TL(""), 400, 1, true);
+	Parameters.Add_Int   ("", "NY"    , _TL("Height (Cells)"), _TL(""), 400, 1, true);
 
-	Parameters.Add_Range(	NULL	, "XRANGE"	, _TL("X-Range"	)			, _TL(""), -2.0, 2.0);
-	Parameters.Add_Range(	NULL	, "YRANGE"	, _TL("Y-Range"	)			, _TL(""), -2.0, 2.0);
+	Parameters.Add_Range ("", "XRANGE", _TL("X-Range"       ), _TL(""), -2.0, 2.0);
+	Parameters.Add_Range ("", "YRANGE", _TL("Y-Range"       ), _TL(""), -2.0, 2.0);
 
-	Parameters.Add_Choice(	NULL	, "METHOD"	, _TL("Equation")		, _TL(""), 
-						_TW("z^3-1|"
-							"z^4-1|"
-							"z^5-1|"
-							"z^6-1|"
-							"z^10 + 0.2 i * z^5 - 1|"), 0);
+	Parameters.Add_Choice("", "METHOD", _TL("Equation"      ), _TL(""), "z^3-1|z^4-1|z^5-1|z^6-1|z^10 + 0.2 i * z^5 - 1|", 0);
 
 	//-----------------------------------------------------
-	Parameters.Add_Value(	NULL, "MAXITER"	, _TL("Max Iterations")	, _TL("Maximum Iterations")		, PARAMETER_TYPE_Double	, 50);
+	Parameters.Add_Double("", "MAXITER", _TL("Max Iterations"), _TL("Maximum Iterations"), 50);
 }
 
 //---------------------------------------------------------
@@ -303,8 +297,8 @@ bool CNewton::On_Execute_Position(CSG_Point ptWorld, TSG_Tool_Interactive_Mode M
 
 	doNewton();
 
-	DataObject_Update(pResult,pResult->Get_ZMin(), pResult->Get_ZMax());
-	DataObject_Update(pShade ,pShade ->Get_ZMin(), pShade ->Get_ZMax());
+	DataObject_Update(pResult,pResult->Get_Min(), pResult->Get_Max());
+	DataObject_Update(pShade ,pShade ->Get_Min(), pShade ->Get_Max());
 
 	return true;
 }

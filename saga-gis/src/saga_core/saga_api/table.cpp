@@ -26,7 +26,8 @@
 // This library is free software; you can redistribute   //
 // it and/or modify it under the terms of the GNU Lesser //
 // General Public License as published by the Free       //
-// Software Foundation, version 2.1 of the License.      //
+// Software Foundation, either version 2.1 of the        //
+// License, or (at your option) any later version.       //
 //                                                       //
 // This library is distributed in the hope that it will  //
 // be useful, but WITHOUT ANY WARRANTY; without even the //
@@ -36,9 +37,7 @@
 //                                                       //
 // You should have received a copy of the GNU Lesser     //
 // General Public License along with this program; if    //
-// not, write to the Free Software Foundation, Inc.,     //
-// 51 Franklin Street, 5th Floor, Boston, MA 02110-1301, //
-// USA.                                                  //
+// not, see <http://www.gnu.org/licenses/>.              //
 //                                                       //
 //-------------------------------------------------------//
 //                                                       //
@@ -85,11 +84,11 @@ CSG_Table * SG_Create_Table(const CSG_Table &Table)
 {
 	switch( Table.Get_ObjectType() )
 	{
-	case DATAOBJECT_TYPE_Table:
+	case SG_DATAOBJECT_TYPE_Table:
 		return( new CSG_Table(Table) );
 
-	case DATAOBJECT_TYPE_Shapes:
-	case DATAOBJECT_TYPE_PointCloud:
+	case SG_DATAOBJECT_TYPE_Shapes:
+	case SG_DATAOBJECT_TYPE_PointCloud:
 		return( SG_Create_Shapes(*((CSG_Shapes *)&Table)) );
 
 	default:
@@ -110,11 +109,11 @@ CSG_Table * SG_Create_Table(CSG_Table *pTemplate)
 	{
 		switch( pTemplate->Get_ObjectType() )
 		{
-		case DATAOBJECT_TYPE_Table:
+		case SG_DATAOBJECT_TYPE_Table:
 			return( new CSG_Table(pTemplate) );
 
-		case DATAOBJECT_TYPE_Shapes:
-		case DATAOBJECT_TYPE_PointCloud:
+		case SG_DATAOBJECT_TYPE_Shapes:
+		case SG_DATAOBJECT_TYPE_PointCloud:
 			return( SG_Create_Shapes((CSG_Shapes *)pTemplate) );
 
 		default:
@@ -269,7 +268,7 @@ bool CSG_Table::Create(const CSG_String &File_Name, TSG_Table_File_Type Format, 
 }
 
 //---------------------------------------------------------
-CSG_Table::CSG_Table(CSG_Table *pTemplate)
+CSG_Table::CSG_Table(const CSG_Table *pTemplate)
 	: CSG_Data_Object()
 {
 	_On_Construction();
@@ -277,7 +276,7 @@ CSG_Table::CSG_Table(CSG_Table *pTemplate)
 	Create(pTemplate);
 }
 
-bool CSG_Table::Create(CSG_Table *pTemplate)
+bool CSG_Table::Create(const CSG_Table *pTemplate)
 {
 	Destroy();
 
@@ -383,9 +382,9 @@ CSG_Table & CSG_Table::operator = (const CSG_Table &Table)
 bool CSG_Table::Assign(CSG_Data_Object *pObject)
 {
 	if( !pObject || !pObject->is_Valid()
-	||	(	pObject->Get_ObjectType() != DATAOBJECT_TYPE_Table
-		&&	pObject->Get_ObjectType() != DATAOBJECT_TYPE_Shapes
-		&&	pObject->Get_ObjectType() != DATAOBJECT_TYPE_PointCloud	) )
+	||	(	pObject->Get_ObjectType() != SG_DATAOBJECT_TYPE_Table
+		&&	pObject->Get_ObjectType() != SG_DATAOBJECT_TYPE_Shapes
+		&&	pObject->Get_ObjectType() != SG_DATAOBJECT_TYPE_PointCloud	) )
 	{
 		return( false );
 	}
@@ -744,7 +743,7 @@ CSG_Table_Record * CSG_Table::Add_Record(CSG_Table_Record *pCopy)
 	{
 		if( pCopy )
 		{
-			if( Get_ObjectType() == DATAOBJECT_TYPE_Shapes && pCopy->Get_Table()->Get_ObjectType() == DATAOBJECT_TYPE_Shapes )
+			if( Get_ObjectType() == SG_DATAOBJECT_TYPE_Shapes && pCopy->Get_Table()->Get_ObjectType() == SG_DATAOBJECT_TYPE_Shapes )
 			{
 				((CSG_Shape *)pRecord)->Assign((CSG_Shape *)pCopy, true);
 			}
@@ -829,6 +828,17 @@ CSG_Table_Record * CSG_Table::Ins_Record(int iRecord, CSG_Table_Record *pCopy)
 }
 
 //---------------------------------------------------------
+bool CSG_Table::Set_Record(int iRecord, CSG_Table_Record *pCopy)
+{
+	if( iRecord >= 0 && iRecord < m_nRecords && pCopy )
+	{
+		return( m_Records[iRecord]->Assign(pCopy) );
+	}
+
+	return( false );
+}
+
+//---------------------------------------------------------
 bool CSG_Table::Del_Record(int iRecord)
 {
 	if( iRecord >= 0 && iRecord < m_nRecords )
@@ -884,24 +894,19 @@ bool CSG_Table::Del_Record(int iRecord)
 //---------------------------------------------------------
 bool CSG_Table::Del_Records(void)
 {
-	if( m_nRecords > 0 )
+	_Index_Destroy();
+
+	for(int iRecord=0; iRecord<m_nRecords; iRecord++)
 	{
-		_Index_Destroy();
-
-		for(int iRecord=0; iRecord<m_nRecords; iRecord++)
-		{
-			delete(m_Records[iRecord]);
-		}
-
-		SG_Free(m_Records);
-		m_Records	= NULL;
-		m_nRecords	= 0;
-		m_nBuffer	= 0;
-
-		return( true );
+		delete(m_Records[iRecord]);
 	}
 
-	return( false );
+	SG_FREE_SAFE(m_Records);
+
+	m_nRecords	= 0;
+	m_nBuffer	= 0;
+
+	return( true );
 }
 
 //---------------------------------------------------------
@@ -917,6 +922,127 @@ bool CSG_Table::Set_Record_Count(int nRecords)
 	}
 
 	return( m_nRecords == nRecords );
+}
+
+
+///////////////////////////////////////////////////////////
+//														 //
+//														 //
+//														 //
+///////////////////////////////////////////////////////////
+
+//---------------------------------------------------------
+bool CSG_Table::Find_Record(int &iRecord, int iField, const CSG_String &Value, bool bCreateIndex)
+{
+	if( iField >= 0 && iField < m_nFields )
+	{
+		if( bCreateIndex && iField != Get_Index_Field(0) )
+		{
+			Set_Index(iField, TABLE_INDEX_Ascending);
+		}
+
+		if( iField == Get_Index_Field(0) )
+		{
+			bool	bAscending	= Get_Index_Order(0) == TABLE_INDEX_Ascending;
+
+			for(iRecord=0; iRecord<m_nRecords; iRecord++)
+			{
+				CSG_Table_Record	*pRecord	= Get_Record_byIndex(bAscending ? iRecord : m_nRecords - 1 - iRecord);
+
+				if( !pRecord->is_NoData(iField) )
+				{
+					int	Dif	= Value.Cmp(pRecord->asString(iField));
+
+					if( Dif == 0 )
+					{
+						return( true );
+					}
+
+					if( Dif > 0 )
+					{
+						iRecord--;
+
+						return( false );
+					}
+				}
+			}
+
+			return( false );
+		}
+		else
+		{
+			for(int i=0; i<m_nRecords; i++)
+			{
+				if( !Value.Cmp(m_Records[i]->asString(iField)) )
+				{
+					iRecord	= i;
+
+					return( true );
+				}
+			}
+		}
+	}
+
+	iRecord	= -2;
+
+	return( false );
+}
+
+//---------------------------------------------------------
+bool CSG_Table::Find_Record(int &iRecord, int iField, double Value, bool bCreateIndex)
+{
+	if( iField >= 0 && iField < m_nFields )
+	{
+		if( bCreateIndex && iField != Get_Index_Field(0) )
+		{
+			Set_Index(iField, TABLE_INDEX_Ascending);
+		}
+
+		if( iField == Get_Index_Field(0) )
+		{
+			bool	bAscending	= Get_Index_Order(0) == TABLE_INDEX_Ascending;
+
+			for(iRecord=0; iRecord<m_nRecords; iRecord++)
+			{
+				CSG_Table_Record	*pRecord	= Get_Record_byIndex(bAscending ? iRecord : m_nRecords - 1 - iRecord);
+
+				if( !pRecord->is_NoData(iField) )
+				{
+					double	Dif	= Value - pRecord->asDouble(iField);
+
+					if( Dif == 0.0 )
+					{
+						return( true );
+					}
+
+					if( Dif > 0.0 )
+					{
+						iRecord--;
+
+						return( false );
+					}
+				}
+			}
+
+			return( false );
+		}
+		else
+		{
+			for(int i=0; i<m_nRecords; i++)
+			{
+				if( Value == m_Records[i]->asDouble(iField) )
+				{
+					iRecord	= i;
+
+					return( true );
+				}
+			}
+		}
+	}
+
+	iRecord	= -2;
+
+	return( false );
 }
 
 

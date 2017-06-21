@@ -24,7 +24,8 @@
 // Geoscientific Analyses'. SAGA is free software; you   //
 // can redistribute it and/or modify it under the terms  //
 // of the GNU General Public License as published by the //
-// Free Software Foundation; version 2 of the License.   //
+// Free Software Foundation, either version 2 of the     //
+// License, or (at your option) any later version.       //
 //                                                       //
 // SAGA is distributed in the hope that it will be       //
 // useful, but WITHOUT ANY WARRANTY; without even the    //
@@ -33,10 +34,8 @@
 // License for more details.                             //
 //                                                       //
 // You should have received a copy of the GNU General    //
-// Public License along with this program; if not,       //
-// write to the Free Software Foundation, Inc.,          //
-// 51 Franklin Street, 5th Floor, Boston, MA 02110-1301, //
-// USA.                                                  //
+// Public License along with this program; if not, see   //
+// <http://www.gnu.org/licenses/>.                       //
 //                                                       //
 //-------------------------------------------------------//
 //                                                       //
@@ -130,7 +129,7 @@ void CVIEW_Map_3DPanel::Update_Statistics(void)
 		{
 			double	z, wx	= m_DEM.Get_XMin() + x * m_DEM.Get_Cellsize();
 
-			if( m_pDEM->Get_Value(wx, wy, z, GRID_RESAMPLING_BSpline, false, true) )
+			if( m_pDEM->Get_Value(wx, wy, z) )
 			{
 				m_DEM.Set_Value(x, y, z);
 			}
@@ -143,7 +142,7 @@ void CVIEW_Map_3DPanel::Update_Statistics(void)
 
 	m_Data_Min.x	= m_DEM.Get_XMin();	m_Data_Max.x	= m_DEM.Get_XMax();
 	m_Data_Min.y	= m_DEM.Get_YMin();	m_Data_Max.y	= m_DEM.Get_YMax();
-	m_Data_Min.z	= m_DEM.Get_ZMin();	m_Data_Max.z	= m_DEM.Get_ZMax();
+	m_Data_Min.z	= m_DEM.Get_Min ();	m_Data_Max.z	= m_DEM.Get_Max ();
 
 	m_pMap->SaveAs_Image_To_Grid(m_Map, m_Map_Res);
 

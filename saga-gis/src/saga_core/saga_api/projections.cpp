@@ -26,7 +26,8 @@
 // This library is free software; you can redistribute   //
 // it and/or modify it under the terms of the GNU Lesser //
 // General Public License as published by the Free       //
-// Software Foundation, version 2.1 of the License.      //
+// Software Foundation, either version 2.1 of the        //
+// License, or (at your option) any later version.       //
 //                                                       //
 // This library is distributed in the hope that it will  //
 // be useful, but WITHOUT ANY WARRANTY; without even the //
@@ -36,9 +37,7 @@
 //                                                       //
 // You should have received a copy of the GNU Lesser     //
 // General Public License along with this program; if    //
-// not, write to the Free Software Foundation, Inc.,     //
-// 51 Franklin Street, 5th Floor, Boston, MA 02110-1301, //
-// USA.                                                  //
+// not, see <http://www.gnu.org/licenses/>.              //
 //                                                       //
 //-------------------------------------------------------//
 //                                                       //
@@ -423,15 +422,29 @@ void CSG_Projection::Destroy(void)
 ///////////////////////////////////////////////////////////
 
 //---------------------------------------------------------
-bool CSG_Projection::Load(const CSG_String &File_Name, TSG_Projection_Format Format)
+bool CSG_Projection::Load(const CSG_String &FileName, TSG_Projection_Format Format)
 {
-	CSG_File	Stream;
+	CSG_File	Stream(FileName, SG_FILE_R, false);
 
-	if( Stream.Open(File_Name, SG_FILE_R, false) )
+	return( Load(Stream, Format) );
+}
+
+//---------------------------------------------------------
+bool CSG_Projection::Save(const CSG_String &FileName, TSG_Projection_Format Format) const
+{
+	CSG_File	Stream(FileName, SG_FILE_W, false);
+
+	return( is_Okay() && Save(Stream, Format) );
+}
+
+//---------------------------------------------------------
+bool CSG_Projection::Load(CSG_File &Stream, TSG_Projection_Format Format)
+{
+	if( Stream.is_Reading() )
 	{
 		CSG_String	s;
 
-		Stream.Read(s, Stream.Length());
+		Stream.Read(s, (size_t)Stream.Length());
 
 		return( Assign(s, Format) );
 	}
@@ -440,38 +453,17 @@ bool CSG_Projection::Load(const CSG_String &File_Name, TSG_Projection_Format For
 }
 
 //---------------------------------------------------------
-bool CSG_Projection::Save(const CSG_String &File_Name, TSG_Projection_Format Format) const
+bool CSG_Projection::Save(CSG_File &Stream, TSG_Projection_Format Format)	const
 {
-	if( is_Okay() )
+	if( is_Okay() && Stream.is_Writing() )
 	{
-		CSG_File	Stream;
-
 		switch( Format )
 		{
-		default:
-			break;
-
-		case SG_PROJ_FMT_WKT:
-			if( Stream.Open(File_Name, SG_FILE_W, false) )
-			{
-				CSG_String	s(m_WKT);
-
-				Stream.Write((void *)s.b_str(), s.Length());
-
-				return( true );
-			}
-			break;
+		case SG_PROJ_FMT_WKT: default:
+			return( Stream.Write(m_WKT  ) == m_WKT  .Length() );
 
 		case SG_PROJ_FMT_Proj4:
-			if( Stream.Open(File_Name, SG_FILE_W, false) )
-			{
-				CSG_String	s(m_Proj4);
-
-				Stream.Write((void *)s.b_str(), s.Length());
-
-				return( true );
-			}
-			break;
+			return( Stream.Write(m_Proj4) == m_Proj4.Length() );
 		}
 	}
 
@@ -662,11 +654,11 @@ bool CSG_Projections::Reset_Dictionary(void)
 }
 
 //---------------------------------------------------------
-bool CSG_Projections::Load_Dictionary(const CSG_String &File_Name)
+bool CSG_Projections::Load_Dictionary(const CSG_String &FileName)
 {
 	CSG_Table	Table;
 
-	if( SG_File_Exists(File_Name) && Table.Create(File_Name) && Table.Get_Field_Count() >= 3 )
+	if( SG_File_Exists(FileName) && Table.Create(FileName) && Table.Get_Field_Count() >= 3 )
 	{
 		CSG_Table	Proj4_to_WKT(&Table), WKT_to_Proj4(&Table);
 
@@ -698,11 +690,11 @@ bool CSG_Projections::Load_Dictionary(const CSG_String &File_Name)
 }
 
 //---------------------------------------------------------
-bool CSG_Projections::Save_Dictionary(const CSG_String &File_Name)
+bool CSG_Projections::Save_Dictionary(const CSG_String &FileName)
 {
 	CSG_Table	Table;
 
-	return( _Set_Dictionary(Table, 0) && Table.Save(File_Name) );
+	return( _Set_Dictionary(Table, 0) && Table.Save(FileName) );
 }
 
 
@@ -711,11 +703,11 @@ bool CSG_Projections::Save_Dictionary(const CSG_String &File_Name)
 ///////////////////////////////////////////////////////////
 
 //---------------------------------------------------------
-bool CSG_Projections::Load_DB(const CSG_String &File_Name, bool bAppend)
+bool CSG_Projections::Load_DB(const CSG_String &FileName, bool bAppend)
 {
 	CSG_Table	Table;
 
-	if( SG_File_Exists(File_Name) && Table.Create(File_Name) )
+	if( SG_File_Exists(FileName) && Table.Create(FileName) )
 	{
 		if( !bAppend )
 		{
@@ -736,9 +728,9 @@ bool CSG_Projections::Load_DB(const CSG_String &File_Name, bool bAppend)
 }
 
 //---------------------------------------------------------
-bool CSG_Projections::Save_DB(const CSG_String &File_Name)
+bool CSG_Projections::Save_DB(const CSG_String &FileName)
 {
-	return( m_pProjections->Save(File_Name) );
+	return( m_pProjections->Save(FileName) );
 }
 
 

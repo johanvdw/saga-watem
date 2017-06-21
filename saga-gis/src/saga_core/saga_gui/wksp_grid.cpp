@@ -24,7 +24,8 @@
 // Geoscientific Analyses'. SAGA is free software; you   //
 // can redistribute it and/or modify it under the terms  //
 // of the GNU General Public License as published by the //
-// Free Software Foundation; version 2 of the License.   //
+// Free Software Foundation, either version 2 of the     //
+// License, or (at your option) any later version.       //
 //                                                       //
 // SAGA is distributed in the hope that it will be       //
 // useful, but WITHOUT ANY WARRANTY; without even the    //
@@ -33,10 +34,8 @@
 // License for more details.                             //
 //                                                       //
 // You should have received a copy of the GNU General    //
-// Public License along with this program; if not,       //
-// write to the Free Software Foundation, Inc.,          //
-// 51 Franklin Street, 5th Floor, Boston, MA 02110-1301, //
-// USA.                                                  //
+// Public License along with this program; if not, see   //
+// <http://www.gnu.org/licenses/>.                       //
 //                                                       //
 //-------------------------------------------------------//
 //                                                       //
@@ -107,8 +106,6 @@ CWKSP_Grid::CWKSP_Grid(CSG_Grid *pGrid)
 
 ///////////////////////////////////////////////////////////
 //														 //
-//														 //
-//														 //
 ///////////////////////////////////////////////////////////
 
 //---------------------------------------------------------
@@ -162,9 +159,9 @@ wxString CWKSP_Grid::Get_Description(void)
 	DESC_ADD_LONG(_TL("Number of Cells"   ), Get_Grid()->Get_NCells      ());
 	DESC_ADD_LONG(_TL("No Data Cells"     ), Get_Grid()->Get_NoData_Count());
 	DESC_ADD_STR (_TL("Value Type"        ), SG_Data_Type_Get_Name(Get_Grid()->Get_Type()).c_str());
-	DESC_ADD_FLT (_TL("Value Minimum"     ), Get_Grid()->Get_ZMin        ());
-	DESC_ADD_FLT (_TL("Value Maximum"     ), Get_Grid()->Get_ZMax        ());
-	DESC_ADD_FLT (_TL("Value Range"       ), Get_Grid()->Get_ZRange      ());
+	DESC_ADD_FLT (_TL("Value Minimum"     ), Get_Grid()->Get_Min         ());
+	DESC_ADD_FLT (_TL("Value Maximum"     ), Get_Grid()->Get_Max         ());
+	DESC_ADD_FLT (_TL("Value Range"       ), Get_Grid()->Get_Range       ());
 	DESC_ADD_STR (_TL("No Data Value"     ), Get_Grid()->Get_NoData_Value() < Get_Grid()->Get_NoData_hiValue() ? CSG_String::Format(SG_T("%f - %f"), Get_Grid()->Get_NoData_Value(), Get_Grid()->Get_NoData_hiValue()).c_str() : SG_Get_String(Get_Grid()->Get_NoData_Value(), -2).c_str());
 	DESC_ADD_FLT (_TL("Arithmetic Mean"   ), Get_Grid()->Get_Mean        ());
 	DESC_ADD_FLT (_TL("Standard Deviation"), Get_Grid()->Get_StdDev      ());
@@ -196,7 +193,7 @@ wxMenu * CWKSP_Grid::Get_Menu(void)
 	wxMenu	*pMenu	= new wxMenu(m_pObject->Get_Name());
 
 	CMD_Menu_Add_Item(pMenu, false, ID_CMD_WKSP_ITEM_CLOSE);
-	CMD_Menu_Add_Item(pMenu, false, ID_CMD_GRIDS_SHOW);
+	CMD_Menu_Add_Item(pMenu, false, ID_CMD_GRID_SHOW);
 
 	pMenu->AppendSeparator();
 	CMD_Menu_Add_Item(pMenu, false, ID_CMD_DATA_SAVE);
@@ -205,7 +202,7 @@ wxMenu * CWKSP_Grid::Get_Menu(void)
 	if( PGSQL_has_Connections() )
 		CMD_Menu_Add_Item(pMenu, false, ID_CMD_DATA_SAVETODB);
 
-	CMD_Menu_Add_Item(pMenu, false, ID_CMD_GRIDS_SAVEAS_IMAGE);
+	CMD_Menu_Add_Item(pMenu, false, ID_CMD_GRID_SAVEAS_IMAGE);
 
 	if( m_pObject->is_File_Native() && m_pObject->is_Modified() )
 		CMD_Menu_Add_Item(pMenu, false, ID_CMD_DATA_RELOAD);
@@ -217,29 +214,18 @@ wxMenu * CWKSP_Grid::Get_Menu(void)
 	CMD_Menu_Add_Item(pMenu, false, ID_CMD_DATA_PROJECTION);
 
 	pMenu->AppendSeparator();
-	CMD_Menu_Add_Item(pMenu, true , ID_CMD_GRIDS_HISTOGRAM);
-	CMD_Menu_Add_Item(pMenu, false, ID_CMD_GRIDS_SCATTERPLOT);
+	CMD_Menu_Add_Item(pMenu, true , ID_CMD_GRID_HISTOGRAM);
+	CMD_Menu_Add_Item(pMenu, false, ID_CMD_GRID_SCATTERPLOT);
 
 	pMenu->AppendSeparator();
 	CMD_Menu_Add_Item(pMenu, false, ID_CMD_WKSP_ITEM_SETTINGS_COPY);
-	CMD_Menu_Add_Item(pMenu, false, ID_CMD_GRIDS_SET_LUT);
-
-	//-----------------------------------------------------
-	wxMenu	*pSubMenu	= new wxMenu(_TL("Histogram Stretch"));
-
-	CMD_Menu_Add_Item(pSubMenu, false, ID_CMD_GRIDS_FIT_MINMAX);
-	CMD_Menu_Add_Item(pSubMenu, false, ID_CMD_GRIDS_FIT_STDDEV);
-	CMD_Menu_Add_Item(pSubMenu, false, ID_CMD_GRIDS_FIT_PCTL);
-
-	pMenu->Append(ID_CMD_WKSP_FIRST, _TL("Histogram Stretch"), pSubMenu);
+	CMD_Menu_Add_Item(pMenu, false, ID_CMD_GRID_SET_LUT);
 
 	return( pMenu );
 }
 
 
 ///////////////////////////////////////////////////////////
-//														 //
-//														 //
 //														 //
 ///////////////////////////////////////////////////////////
 
@@ -251,62 +237,27 @@ bool CWKSP_Grid::On_Command(int Cmd_ID)
 	default:
 		return( CWKSP_Layer::On_Command(Cmd_ID) );
 
-	case ID_CMD_GRIDS_SAVEAS_IMAGE:
+	case ID_CMD_GRID_SAVEAS_IMAGE:
 		_Save_Image();
 		break;
 
-	case ID_CMD_GRIDS_HISTOGRAM:
+	case ID_CMD_GRID_HISTOGRAM:
 		Histogram_Toggle();
 		break;
 
-	case ID_CMD_GRIDS_SCATTERPLOT:
+	case ID_CMD_GRID_SCATTERPLOT:
 		Add_ScatterPlot();
 		break;
 
-	case ID_CMD_GRIDS_FIT_MINMAX:
-		Set_Color_Range(
-			Get_Grid()->Get_ZMin(),
-			Get_Grid()->Get_ZMax()
-		);
-		break;
-
-	case ID_CMD_GRIDS_FIT_STDDEV:
-		{
-			double	d	= g_pData->Get_Parameter("GRID_COLORS_FIT_STDDEV")->asDouble();
-
-			double	min	= Get_Grid()->Get_Mean() - d * Get_Grid()->Get_StdDev();
-			double	max	= Get_Grid()->Get_Mean() + d * Get_Grid()->Get_StdDev();
-
-			Set_Color_Range(
-				min < Get_Grid()->Get_ZMin() ? Get_Grid()->Get_ZMin() : min,
-				max > Get_Grid()->Get_ZMax() ? Get_Grid()->Get_ZMax() : max
-			);
-		}
-		break;
-
-	case ID_CMD_GRIDS_FIT_PCTL:
-		{
-			double	d	= g_pData->Get_Parameter("GRID_COLORS_FIT_PCTL")->asDouble();
-
-			Set_Color_Range(
-				Get_Grid()->Get_Percentile(        d),
-				Get_Grid()->Get_Percentile(100.0 - d)
-			);
-		}
-		break;
-
-	case ID_CMD_GRIDS_FIT_DIALOG:
-		break;
-
-	case ID_CMD_GRIDS_SET_LUT:
+	case ID_CMD_GRID_SET_LUT:
 		_LUT_Create();
 		break;
 
-	case ID_CMD_GRIDS_SEL_CLEAR:
+	case ID_CMD_GRID_SEL_CLEAR:
 		_Edit_Clr_Selection();
 		break;
 
-	case ID_CMD_GRIDS_SEL_DELETE:
+	case ID_CMD_GRID_SEL_DELETE:
 		_Edit_Del_Selection();
 		break;
 	}
@@ -322,15 +273,15 @@ bool CWKSP_Grid::On_Command_UI(wxUpdateUIEvent &event)
 	default:
 		return( CWKSP_Layer::On_Command_UI(event) );
 
-	case ID_CMD_GRIDS_SEL_CLEAR:
+	case ID_CMD_GRID_SEL_CLEAR:
 		event.Enable(m_Edit_Attributes.Get_Count() > 0);
 		break;
 
-	case ID_CMD_GRIDS_SEL_DELETE:
+	case ID_CMD_GRID_SEL_DELETE:
 		event.Enable(m_Edit_Attributes.Get_Count() > 0);
 		break;
 
-	case ID_CMD_GRIDS_HISTOGRAM:
+	case ID_CMD_GRID_HISTOGRAM:
 		event.Check(m_pHistogram != NULL);
 		break;
 	}
@@ -340,8 +291,6 @@ bool CWKSP_Grid::On_Command_UI(wxUpdateUIEvent &event)
 
 
 ///////////////////////////////////////////////////////////
-//														 //
-//														 //
 //														 //
 ///////////////////////////////////////////////////////////
 
@@ -353,29 +302,25 @@ void CWKSP_Grid::On_Create_Parameters(void)
 	//-----------------------------------------------------
 	// General...
 
-	m_Parameters.Add_String(
-		m_Parameters("NODE_GENERAL")	, "GENERAL_Z_UNIT"		, _TL("Unit"),
+	m_Parameters.Add_String("NODE_GENERAL", "GENERAL_Z_UNIT"	, _TL("Unit"),
 		_TL(""),
 		Get_Grid()->Get_Unit()
 	);
 
-	m_Parameters.Add_Double(
-		m_Parameters("NODE_GENERAL")	, "GENERAL_Z_FACTOR"	, _TL("Z-Scale"),
+	m_Parameters.Add_Double("NODE_GENERAL", "GENERAL_Z_FACTOR"	, _TL("Z-Scale"),
 		_TL(""),
-		1.0
+		Get_Grid()->Get_Scaling()
 	);
 
-	m_Parameters.Add_Double(
-		m_Parameters("NODE_GENERAL")	, "GENERAL_Z_OFFSET"	, _TL("Z-Offset"),
+	m_Parameters.Add_Double("NODE_GENERAL", "GENERAL_Z_OFFSET"	, _TL("Z-Offset"),
 		_TL(""),
-		0.0
+		Get_Grid()->Get_Offset()
 	);
 
 	//-----------------------------------------------------
 	// Display...
 
-	m_Parameters.Add_Choice(
-		m_Parameters("NODE_DISPLAY")	, "DISPLAY_RESAMPLING"	, _TL("Resampling"),
+	m_Parameters.Add_Choice("NODE_DISPLAY", "DISPLAY_RESAMPLING", _TL("Resampling"),
 		_TL(""),
 		CSG_String::Format("%s|%s|%s|%s|",
 			_TL("Nearest Neighbour"),
@@ -385,42 +330,34 @@ void CWKSP_Grid::On_Create_Parameters(void)
 		), 0
 	);
 
-	m_Parameters.Add_Choice(
-		m_Parameters("NODE_DISPLAY")	, "DISPLAY_SHADING"		, _TL("Shading"),
+	m_Parameters.Add_Choice("NODE_DISPLAY", "DISPLAY_SHADING"	, _TL("Shading"),
 		_TL(""),
 		CSG_String::Format("%s|%s|%s|",
-			_TL("none"),
-			_TL("normal"),
-			_TL("inverse")
+			_TL("none"), _TL("normal"), _TL("inverse")
 		), 0
 	);
 
-	m_Parameters.Add_Double(
-		m_Parameters("DISPLAY_SHADING")	, "SHADING_AZIMUTH"		, _TL("Azimuth"),
+	m_Parameters.Add_Double("DISPLAY_SHADING", "SHADING_AZIMUTH", _TL("Azimuth"),
 		_TL("Direction of the light source, measured in degree clockwise from the North direction."),
 		315.0, 0.0, true, 360.0, true
 	);
 
-	m_Parameters.Add_Double(
-		m_Parameters("DISPLAY_SHADING")	, "SHADING_HEIGHT"		, _TL("Height"),
+	m_Parameters.Add_Double("DISPLAY_SHADING", "SHADING_HEIGHT"	, _TL("Height"),
 		_TL("Height of the light source, measured in degree above the horizon."),
 		45.0, 0.0, true, 90.0, true
 	);
 
-	m_Parameters.Add_Double(
-		m_Parameters("DISPLAY_SHADING")	, "SHADING_EXAGG"		, _TL("Exaggeration"),
+	m_Parameters.Add_Double("DISPLAY_SHADING", "SHADING_EXAGG"	, _TL("Exaggeration"),
 		_TL(""),
 		1.0
 	);
 
-	m_Parameters.Add_Double(
-		m_Parameters("DISPLAY_SHADING")	, "SHADING_MIN"			, _TL("Minimum"),
+	m_Parameters.Add_Double("DISPLAY_SHADING", "SHADING_MIN"	, _TL("Minimum"),
 		_TL(""),
 		0.0
 	);
 
-	m_Parameters.Add_Double(
-		m_Parameters("DISPLAY_SHADING")	, "SHADING_MAX"			, _TL("Maximum"),
+	m_Parameters.Add_Double("DISPLAY_SHADING", "SHADING_MAX"	, _TL("Maximum"),
 		_TL(""),
 		1.5
 	);
@@ -443,13 +380,46 @@ void CWKSP_Grid::On_Create_Parameters(void)
 	m_Parameters("COLORS_TYPE")->Set_Value(CLASSIFY_GRADUATED);
 
 	//-----------------------------------------------------
-	m_Parameters.Add_Node(
-		m_Parameters("NODE_COLORS")		, "NODE_SHADE"		, _TL("Shade"),
+	m_Parameters.Add_Choice("NODE_COLORS",
+		"STRETCH_DEFAULT"	, _TL("Histogram Stretch"),
+		_TL("Histogram stretch used when fitting to zoomed extent in a map window."),
+		CSG_String::Format("%s|%s|%s|",
+			_TL("Linear"),
+			_TL("Standard Deviation"),
+			_TL("Percentile")
+		), g_pData->Get_Parameter("GRID_STRETCH_DEFAULT")->asInt()
+	);
+
+	m_Parameters.Add_Double("STRETCH_DEFAULT",
+		"STRETCH_LINEAR"	, _TL("Linear Percent Stretch"),
+		_TL("Linear percent stretch allows you to trim extreme values from both ends of the histogram using the percentage specified here."),
+		5.0, 0.0, true, 50.0, true
+	);
+
+	m_Parameters.Add_Double("STRETCH_DEFAULT",
+		"STRETCH_STDDEV"	, _TL("Standard Deviation"),
+		_TL(""),
+		2.0, 0.0, true
+	);
+
+	m_Parameters.Add_Bool("STRETCH_STDDEV",
+		"STRETCH_INRANGE"	, _TL("Keep in Range"),
+		_TL("Prevents that minimum or maximum stretch value fall outside the data value range."),
+		true
+	);
+
+	m_Parameters.Add_Double("STRETCH_DEFAULT",
+		"STRETCH_PCTL"		, _TL("Percentile"),
+		_TL(""),
+		2.0, 0.0, true, 50.0, true
+	);
+
+	//-----------------------------------------------------
+	m_Parameters.Add_Node("NODE_COLORS", "NODE_SHADE"	, _TL("Shade"),
 		_TL("")
 	);
 
-	m_Parameters.Add_Choice(
-		m_Parameters("NODE_SHADE")		, "SHADE_MODE"		, _TL("Coloring"),
+	m_Parameters.Add_Choice("NODE_SHADE", "SHADE_MODE"	, _TL("Coloring"),
 		_TL(""),
 		CSG_String::Format("%s|%s|%s|%s|%s|%s|%s|%s|",
 			_TL("bright - dark"  ),
@@ -464,35 +434,28 @@ void CWKSP_Grid::On_Create_Parameters(void)
 	);
 
 	//-----------------------------------------------------
-	m_Parameters.Add_Node(
-		m_Parameters("NODE_COLORS")		, "NODE_OVERLAY"	, _TL("RGB Composite"),
+	m_Parameters.Add_Node("NODE_COLORS"	, "NODE_OVERLAY"	, _TL("RGB Composite"),
 		_TL("")
 	);
 
-	m_Parameters.Add_Choice(
-		m_Parameters("NODE_OVERLAY")	, "OVERLAY_MODE"	, _TL("This Color"),
+	m_Parameters.Add_Choice("NODE_OVERLAY", "OVERLAY_MODE"	, _TL("This Color"),
 		_TL(""),
-		CSG_String::Format(SG_T("%s|%s|%s|"),
-			_TL("Red"),
-			_TL("Green"),
-			_TL("Blue")
+		CSG_String::Format("%s|%s|%s|",
+			_TL("Red"), _TL("Green"), _TL("Blue")
 		), 0
 	);
 
-	m_Parameters.Add_Grid(
-		m_Parameters("NODE_OVERLAY")	, "OVERLAY_R"		, _TL("Red"),
+	m_Parameters.Add_Grid("NODE_OVERLAY", "OVERLAY_R"		, _TL("Red"),
 		_TL(""),
 		PARAMETER_INPUT_OPTIONAL, false
 	)->Get_Parent()->Set_Value((void *)&Get_Grid()->Get_System());
 
-	m_Parameters.Add_Grid(
-		m_Parameters("NODE_OVERLAY")	, "OVERLAY_G"		, _TL("Green"),
+	m_Parameters.Add_Grid("NODE_OVERLAY", "OVERLAY_G"		, _TL("Green"),
 		_TL(""),
 		PARAMETER_INPUT_OPTIONAL, false
 	)->Get_Parent()->Set_Value((void *)&Get_Grid()->Get_System());
 
-	m_Parameters.Add_Grid(
-		m_Parameters("NODE_OVERLAY")	, "OVERLAY_B"		, _TL("Blue"),
+	m_Parameters.Add_Grid("NODE_OVERLAY", "OVERLAY_B"		, _TL("Blue"),
 		_TL(""),
 		PARAMETER_INPUT_OPTIONAL, false
 	)->Get_Parent()->Set_Value((void *)&Get_Grid()->Get_System());
@@ -500,48 +463,42 @@ void CWKSP_Grid::On_Create_Parameters(void)
 	//-----------------------------------------------------
 	// Cell Values...
 
-	m_Parameters.Add_Bool(
-		m_Parameters("NODE_GENERAL")	, "VALUES_SHOW"		, _TL("Show Cell Values"),
+	m_Parameters.Add_Bool("NODE_GENERAL", "VALUES_SHOW"		, _TL("Show Cell Values"),
 		_TL("shows cell values when zoomed"),
 		false
 	);
 
-	m_Parameters.Add_Font(
-		m_Parameters("VALUES_SHOW")		, "VALUES_FONT"		, _TL("Font"),
+	m_Parameters.Add_Font("VALUES_SHOW", "VALUES_FONT"		, _TL("Font"),
 		_TL("")
 	);
 
-	m_Parameters.Add_Double(
-		m_Parameters("VALUES_SHOW")		, "VALUES_SIZE"		, _TL("Size"),
+	m_Parameters.Add_Double("VALUES_SHOW", "VALUES_SIZE"	, _TL("Size"),
 		_TL(""),
 		15, 0, true , 100.0, true
 	);
 
-	m_Parameters.Add_Int(
-		m_Parameters("VALUES_SHOW")		, "VALUES_DECIMALS"	, _TL("Decimals"),
+	m_Parameters.Add_Int("VALUES_SHOW", "VALUES_DECIMALS"	, _TL("Decimals"),
 		_TL(""),
 		2
 	);
 
-	m_Parameters.Add_Choice(
-		m_Parameters("VALUES_SHOW")		, "VALUES_EFFECT"	, _TL("Boundary Effect"),
+	m_Parameters.Add_Choice("VALUES_SHOW", "VALUES_EFFECT"	, _TL("Boundary Effect"),
 		_TL(""),
-		CSG_String::Format(SG_T("%s|%s|%s|%s|%s|%s|%s|%s|%s|%s|"),
-			_TL("none"),
-			_TL("full frame"),
-			_TL("top"),
-			_TL("top left"),
-			_TL("left"),
-			_TL("bottom left"),
-			_TL("bottom"),
+		CSG_String::Format("%s|%s|%s|%s|%s|%s|%s|%s|%s|%s|",
+			_TL("none"        ),
+			_TL("full frame"  ),
+			_TL("top"         ),
+			_TL("top left"    ),
+			_TL("left"        ),
+			_TL("bottom left" ),
+			_TL("bottom"      ),
 			_TL("bottom right"),
-			_TL("right"),
-			_TL("top right")
+			_TL("right"       ),
+			_TL("top right"   )
 		), 1
 	);
 
-	m_Parameters.Add_Color(
-		m_Parameters("VALUES_EFFECT")	, "VALUES_EFFECT_COLOR"	, _TL("Color"),
+	m_Parameters.Add_Color("VALUES_EFFECT", "VALUES_EFFECT_COLOR", _TL("Color"),
 		_TL(""),
 		SG_GET_RGB(255, 255, 255)
 	);
@@ -549,26 +506,22 @@ void CWKSP_Grid::On_Create_Parameters(void)
 	//-----------------------------------------------------
 	// Memory...
 
-	m_Parameters.Add_Choice(
-		m_Parameters("NODE_GENERAL")	, "MEMORY_MODE"				, _TL("Memory Handling"),
+	m_Parameters.Add_Choice("NODE_GENERAL", "MEMORY_MODE"		, _TL("Memory Handling"),
 		_TL(""),
-		CSG_String::Format(SG_T("%s|%s|%s|"),
+		CSG_String::Format("%s|%s|%s|",
 			_TL("Normal"),
 			_TL("RTL Compression"),
 			_TL("File Cache")
 		), 0
 	);
 
-	m_Parameters.Add_Double(
-		m_Parameters("MEMORY_MODE")		, "MEMORY_BUFFER_SIZE"		, _TL("Buffer Size MB"),
+	m_Parameters.Add_Double("MEMORY_MODE", "MEMORY_BUFFER_SIZE"	, _TL("Buffer Size MB"),
 		_TL("")
 	);
 }
 
 
 ///////////////////////////////////////////////////////////
-//														 //
-//														 //
 //														 //
 ///////////////////////////////////////////////////////////
 
@@ -679,16 +632,30 @@ int CWKSP_Grid::On_Parameter_Changed(CSG_Parameters *pParameters, CSG_Parameter 
 		if(	!SG_STR_CMP(pParameter->Get_Identifier(), "GENERAL_Z_FACTOR")
 		||	!SG_STR_CMP(pParameter->Get_Identifier(), "GENERAL_Z_OFFSET") )
 		{
-			double	newFactor	= pParameters->Get_Parameter("GENERAL_Z_FACTOR")->asDouble(), oldFactor	= m_Parameters("GENERAL_Z_FACTOR")->asDouble();
-			double	newOffset	= pParameters->Get_Parameter("GENERAL_Z_OFFSET")->asDouble(), oldOffset	= m_Parameters("GENERAL_Z_OFFSET")->asDouble();
+			double	newFactor	= pParameters->Get("GENERAL_Z_FACTOR")->asDouble(), oldFactor	= m_Parameters("GENERAL_Z_FACTOR")->asDouble();
+			double	newOffset	= pParameters->Get("GENERAL_Z_OFFSET")->asDouble(), oldOffset	= m_Parameters("GENERAL_Z_OFFSET")->asDouble();
 
 			if( newFactor != 0.0 && oldFactor != 0.0 )
 			{
-				CSG_Parameter_Range	*newRange	= pParameters->Get_Parameter("METRIC_ZRANGE")->asRange();
-				CSG_Parameter_Range	*oldRange	= m_Parameters.Get_Parameter("METRIC_ZRANGE")->asRange();
+				CSG_Parameter_Range	*newRange	= pParameters->Get("METRIC_ZRANGE")->asRange();
+				CSG_Parameter_Range	*oldRange	= m_Parameters.Get("METRIC_ZRANGE")->asRange();
 
 				newRange->Set_LoVal(((oldRange->Get_LoVal() - oldOffset) / oldFactor) * newFactor + newOffset);
 				newRange->Set_HiVal(((oldRange->Get_HiVal() - oldOffset) / oldFactor) * newFactor + newOffset);
+			}
+		}
+
+		if( !SG_STR_CMP(pParameter->Get_Identifier(), "STRETCH_DEFAULT")
+		||  !SG_STR_CMP(pParameter->Get_Identifier(), "STRETCH_LINEAR" )
+		||  !SG_STR_CMP(pParameter->Get_Identifier(), "STRETCH_STDDEV" )
+		||  !SG_STR_CMP(pParameter->Get_Identifier(), "STRETCH_INRANGE")
+		||  !SG_STR_CMP(pParameter->Get_Identifier(), "STRETCH_PCTL"   ) )
+		{
+			double	Minimum, Maximum;
+
+			if( _Fit_Colors(*pParameters, Minimum, Maximum) )
+			{
+				pParameters->Get("METRIC_ZRANGE")->asRange()->Set_Range(Minimum, Maximum);
 			}
 		}
 	}
@@ -721,33 +688,34 @@ int CWKSP_Grid::On_Parameter_Changed(CSG_Parameters *pParameters, CSG_Parameter 
 
 		if( !SG_STR_CMP(pParameter->Get_Identifier(), "OVERLAY_MODE") )
 		{
-			pParameters->Get_Parameter("OVERLAY_R")->Get_Parent()->Set_Enabled(pParameter->asInt() != 0);
-			pParameters->Get_Parameter("OVERLAY_G")->Get_Parent()->Set_Enabled(pParameter->asInt() != 1);
-			pParameters->Get_Parameter("OVERLAY_B")->Get_Parent()->Set_Enabled(pParameter->asInt() != 2);
+			pParameters->Get("OVERLAY_R")->Get_Parent()->Set_Enabled(pParameter->asInt() != 0);
+			pParameters->Get("OVERLAY_G")->Get_Parent()->Set_Enabled(pParameter->asInt() != 1);
+			pParameters->Get("OVERLAY_B")->Get_Parent()->Set_Enabled(pParameter->asInt() != 2);
 		}
 
 		if(	!SG_STR_CMP(pParameter->Get_Identifier(), "VALUES_SHOW") )
 		{
-			bool	Value	= pParameter->asBool();
-
-			pParameters->Set_Enabled("VALUES_FONT"    , Value);
-			pParameters->Set_Enabled("VALUES_SIZE"    , Value);
-			pParameters->Set_Enabled("VALUES_DECIMALS", Value);
-			pParameters->Set_Enabled("VALUES_EFFECT"  , Value);
+			pParameters->Set_Enabled("VALUES_FONT"    , pParameter->asBool());
+			pParameters->Set_Enabled("VALUES_SIZE"    , pParameter->asBool());
+			pParameters->Set_Enabled("VALUES_DECIMALS", pParameter->asBool());
+			pParameters->Set_Enabled("VALUES_EFFECT"  , pParameter->asBool());
 		}
 
 		if(	!SG_STR_CMP(pParameter->Get_Identifier(), "VALUES_EFFECT") )
 		{
-			bool	Value	= pParameter->asInt() > 0;
-
-			pParameters->Set_Enabled("VALUES_EFFECT_COLOR", Value);
+			pParameters->Set_Enabled("VALUES_EFFECT_COLOR", pParameter->asInt() > 0);
 		}
 
 		if(	!SG_STR_CMP(pParameter->Get_Identifier(), "MEMORY_MODE") )
 		{
-			int		Value	= pParameter->asInt();
+			pParameters->Set_Enabled("MEMORY_BUFFER_SIZE", pParameter->asInt() != 0);
+		}
 
-			pParameters->Set_Enabled("MEMORY_BUFFER_SIZE", Value != 0);
+		if(	!SG_STR_CMP(pParameter->Get_Identifier(), "STRETCH_DEFAULT") )
+		{
+			pParameters->Set_Enabled("STRETCH_LINEAR", pParameter->asInt() == 0);
+			pParameters->Set_Enabled("STRETCH_STDDEV", pParameter->asInt() == 1);
+			pParameters->Set_Enabled("STRETCH_PCTL"  , pParameter->asInt() == 2);
 		}
 	}
 
@@ -756,8 +724,6 @@ int CWKSP_Grid::On_Parameter_Changed(CSG_Parameters *pParameters, CSG_Parameter 
 
 
 ///////////////////////////////////////////////////////////
-//														 //
-//														 //
 //														 //
 ///////////////////////////////////////////////////////////
 
@@ -775,15 +741,15 @@ void CWKSP_Grid::_LUT_Create(void)
 	{
 		Parameters.Create(NULL, _TL("Create Lookup Table"), _TL(""));
 
-		Parameters.Add_Colors(
-			NULL, "COLOR"	, _TL("Colors"),
+		Parameters.Add_Colors("",
+			"COLOR"	, _TL("Colors"),
 			_TL("")
 		)->asColors()->Set_Count(10);
 
-		Parameters.Add_Choice(
-			NULL, "TYPE"	, _TL("Classification Type"),
+		Parameters.Add_Choice("",
+			"TYPE"	, _TL("Classification Type"),
 			_TL(""),
-			CSG_String::Format(SG_T("%s|%s|%s|"),
+			CSG_String::Format("%s|%s|%s|",
 				_TL("unique values"),
 				_TL("equal intervals"),
 				_TL("quantiles")
@@ -837,18 +803,18 @@ void CWKSP_Grid::_LUT_Create(void)
 
 	//-----------------------------------------------------
 	case 1:	// equal intervals
-		if( Get_Grid()->Get_ZRange() && pColors->Get_Count() > 0 )
+		if( Get_Grid()->Get_Range() && pColors->Get_Count() > 0 )
 		{
 			double	Minimum, Maximum, Interval;
 
-			Interval	= Get_Grid()->Get_ZRange() / (double)pColors->Get_Count();
-			Minimum		= Get_Grid()->Get_ZMin  ();
+			Interval	= Get_Grid()->Get_Range() / (double)pColors->Get_Count();
+			Minimum		= Get_Grid()->Get_Min  ();
 
 			for(int iClass=0; iClass<pColors->Get_Count(); iClass++, Minimum+=Interval)
 			{
-				Maximum	= iClass < pColors->Get_Count() - 1 ? Minimum + Interval : Get_Grid()->Get_ZMax() + 1.0;
+				Maximum	= iClass < pColors->Get_Count() - 1 ? Minimum + Interval : Get_Grid()->Get_Max() + 1.0;
 
-				CSG_String	sValue;	sValue.Printf(SG_T("%s - %s"),
+				CSG_String	sValue;	sValue.Printf("%s - %s",
 					SG_Get_String(Minimum, -2).c_str(),
 					SG_Get_String(Maximum, -2).c_str()
 				);
@@ -875,7 +841,7 @@ void CWKSP_Grid::_LUT_Create(void)
 			sLong	jCell, nCells;
 			double	Minimum, Maximum, iCell, Count;
 
-			Maximum	= Get_Grid()->Get_ZMin();
+			Maximum	= Get_Grid()->Get_Min();
 			nCells	= Get_Grid()->Get_NCells() - Get_Grid()->Get_NoData_Count();
 			iCell	= Count	= nCells / (double)pColors->Get_Count();
 
@@ -894,9 +860,9 @@ void CWKSP_Grid::_LUT_Create(void)
 				Get_Grid()->Get_Sorted(iCell, jCell, false);
 
 				Minimum	= Maximum;
-				Maximum	= iCell < Get_Grid()->Get_NCells() ? Get_Grid()->asDouble(jCell) : Get_Grid()->Get_ZMax() + 1.0;
+				Maximum	= iCell < Get_Grid()->Get_NCells() ? Get_Grid()->asDouble(jCell) : Get_Grid()->Get_Max() + 1.0;
 
-				CSG_String	sValue;	sValue.Printf(SG_T("%s - %s"),
+				CSG_String	sValue;	sValue.Printf("%s - %s",
 					SG_Get_String(Minimum, -2).c_str(),
 					SG_Get_String(Maximum, -2).c_str()
 				);
@@ -931,8 +897,6 @@ void CWKSP_Grid::_LUT_Create(void)
 
 ///////////////////////////////////////////////////////////
 //														 //
-//														 //
-//														 //
 ///////////////////////////////////////////////////////////
 
 //---------------------------------------------------------
@@ -956,9 +920,9 @@ wxString CWKSP_Grid::Get_Value(CSG_Point ptWorld, double Epsilon)
 				s.Printf("%.0f", Value);
 			}
 
-			if( Get_Grid()->Get_Unit() && *Get_Grid()->Get_Unit() )
+			if( !Get_Grid()->Get_Unit().is_Empty() )
 			{
-				s += " "; s += Get_Grid()->Get_Unit();
+				s += " "; s += Get_Grid()->Get_Unit().c_str();
 			}
 			break;
 
@@ -981,16 +945,14 @@ wxString CWKSP_Grid::Get_Value(CSG_Point ptWorld, double Epsilon)
 ///////////////////////////////////////////////////////////
 
 //---------------------------------------------------------
-double CWKSP_Grid::Get_Value_Minimum(void)	{	return( ((CSG_Grid *)m_pObject)->Get_ZMin  () );	}
-double CWKSP_Grid::Get_Value_Maximum(void)	{	return( ((CSG_Grid *)m_pObject)->Get_ZMax  () );	}
-double CWKSP_Grid::Get_Value_Range  (void)	{	return( ((CSG_Grid *)m_pObject)->Get_ZRange() );	}
+double CWKSP_Grid::Get_Value_Minimum(void)	{	return( ((CSG_Grid *)m_pObject)->Get_Min   () );	}
+double CWKSP_Grid::Get_Value_Maximum(void)	{	return( ((CSG_Grid *)m_pObject)->Get_Max   () );	}
+double CWKSP_Grid::Get_Value_Range  (void)	{	return( ((CSG_Grid *)m_pObject)->Get_Range () );	}
 double CWKSP_Grid::Get_Value_Mean   (void)	{	return( ((CSG_Grid *)m_pObject)->Get_Mean  () );	}
 double CWKSP_Grid::Get_Value_StdDev (void)	{	return( ((CSG_Grid *)m_pObject)->Get_StdDev() );	}
 
 
 ///////////////////////////////////////////////////////////
-//														 //
-//														 //
 //														 //
 ///////////////////////////////////////////////////////////
 
@@ -1004,8 +966,8 @@ wxMenu * CWKSP_Grid::Edit_Get_Menu(void)
 
 	wxMenu	*pMenu	= new wxMenu;
 
-	CMD_Menu_Add_Item(pMenu, true , ID_CMD_GRIDS_SEL_CLEAR);
-	CMD_Menu_Add_Item(pMenu, true , ID_CMD_GRIDS_SEL_DELETE);
+	CMD_Menu_Add_Item(pMenu, true , ID_CMD_GRID_SEL_CLEAR);
+	CMD_Menu_Add_Item(pMenu, true , ID_CMD_GRID_SEL_DELETE);
 
 	return( pMenu );
 }
@@ -1143,8 +1105,6 @@ bool CWKSP_Grid::Edit_Set_Attributes(void)
 
 ///////////////////////////////////////////////////////////
 //														 //
-//														 //
-//														 //
 ///////////////////////////////////////////////////////////
 
 //---------------------------------------------------------
@@ -1192,119 +1152,75 @@ bool CWKSP_Grid::_Edit_Del_Selection(void)
 
 ///////////////////////////////////////////////////////////
 //														 //
-//														 //
-//														 //
 ///////////////////////////////////////////////////////////
 
 //---------------------------------------------------------
 bool CWKSP_Grid::Fit_Colors(void)
 {
-	switch( g_pData->Get_Parameter("GRID_COLORS_FIT")->asInt() )
-	{
-	default:
-		{
-			return( Set_Color_Range(
-				Get_Grid()->Get_ZMin(),
-				Get_Grid()->Get_ZMax())
-			);
-		}
+	double	Minimum, Maximum;
 
-	case  1:
-		{
-			double	d	= g_pData->Get_Parameter("GRID_COLORS_FIT_STDDEV")->asDouble();
-
-			double	min	= Get_Grid()->Get_Mean() - Get_Grid()->Get_StdDev() * d;
-			double	max	= Get_Grid()->Get_Mean() + Get_Grid()->Get_StdDev() * d;
-
-			return( Set_Color_Range(
-				min < Get_Grid()->Get_ZMin() ? Get_Grid()->Get_ZMin() : min,
-				max > Get_Grid()->Get_ZMax() ? Get_Grid()->Get_ZMax() : max)
-			);
-		}
-
-	case  2:
-		{
-			double	d	= g_pData->Get_Parameter("GRID_COLORS_FIT_PCTL")->asDouble();
-
-			return( Set_Color_Range(
-				Get_Grid()->Get_Percentile(        d),
-				Get_Grid()->Get_Percentile(100.0 - d))
-			);
-		}
-	}
+	return( _Fit_Colors(m_Parameters, Minimum, Maximum) && Set_Color_Range(Minimum, Maximum) );
 }
 
 //---------------------------------------------------------
-bool CWKSP_Grid::Fit_Color_Range(CSG_Rect rWorld)
+bool CWKSP_Grid::_Fit_Colors(CSG_Parameters &Parameters, double &Minimum, double &Maximum)
 {
-	if( !rWorld.Intersect(Get_Extent()) )
+	switch( Parameters("STRETCH_DEFAULT")->asInt() )
+	{
+	default: {	double	d	= Parameters("STRETCH_LINEAR")->asDouble() * 0.01 * Get_Grid()->Get_Range();
+		Minimum	= Get_Grid()->Get_Min() + d;
+		Maximum	= Get_Grid()->Get_Max() - d;
+		break;	}
+
+	case  1: {	double	d	= Parameters("STRETCH_STDDEV")->asDouble() * Get_Grid()->Get_StdDev();
+		Minimum	= Get_Grid()->Get_Mean() - d; if( Parameters("STRETCH_INRANGE")->asBool() && Minimum < Get_Grid()->Get_Min() ) Minimum = Get_Grid()->Get_Min();
+		Maximum	= Get_Grid()->Get_Mean() + d; if( Parameters("STRETCH_INRANGE")->asBool() && Maximum > Get_Grid()->Get_Max() ) Maximum = Get_Grid()->Get_Max();
+		break;	}
+
+	case  2: {	double	d	= Parameters("STRETCH_PCTL")->asDouble();
+		Minimum	= Get_Grid()->Get_Quantile(      d);
+		Maximum	= Get_Grid()->Get_Quantile(100 - d);
+		break;	}
+	}
+
+	return( true );
+}
+
+//---------------------------------------------------------
+bool CWKSP_Grid::Fit_Colors(const CSG_Rect &rWorld)
+{
+	CSG_Simple_Statistics	s;
+
+	if( !Get_Grid()->Get_Statistics(rWorld, s, m_Parameters("STRETCH_DEFAULT")->asInt() == 2) )
 	{
 		return( false );
 	}
 
-	int	xMin	= Get_Grid()->Get_System().Get_xWorld_to_Grid(rWorld.Get_XMin());
-	int	yMin	= Get_Grid()->Get_System().Get_yWorld_to_Grid(rWorld.Get_YMin());
-	int	xMax	= Get_Grid()->Get_System().Get_xWorld_to_Grid(rWorld.Get_XMax());
-	int	yMax	= Get_Grid()->Get_System().Get_yWorld_to_Grid(rWorld.Get_YMax());
+	double	Minimum, Maximum;
 
-	int	Method	= g_pData->Get_Parameter("GRID_COLORS_FIT")->asInt();
-
-	CSG_Simple_Statistics	s(Method == 2);
-
-	for(int y=yMin; y<=yMax; y++)
+	switch( m_Parameters("STRETCH_DEFAULT")->asInt() )
 	{
-		for(int x=xMin; x<=xMax; x++)
-		{
-			if( Get_Grid()->is_InGrid(x, y) )
-			{
-				s	+= Get_Grid()->asDouble(x, y);
-			}
-		}
+	default: {	double	d	= m_Parameters("STRETCH_LINEAR")->asDouble() * 0.01 * s.Get_Range();
+		Minimum	= s.Get_Minimum() + d;
+		Maximum	= s.Get_Maximum() - d;
+		break;	}
+
+	case  1: {	double	d	= m_Parameters("STRETCH_STDDEV")->asDouble() * s.Get_StdDev();
+		Minimum	= s.Get_Mean() - d; if( m_Parameters("STRETCH_INRANGE")->asBool() && Minimum < Get_Grid()->Get_Min() ) Minimum = Get_Grid()->Get_Min();
+		Maximum	= s.Get_Mean() + d; if( m_Parameters("STRETCH_INRANGE")->asBool() && Maximum > Get_Grid()->Get_Max() ) Maximum = Get_Grid()->Get_Max();
+		break;	}
+
+	case  2: {	double	d	= m_Parameters("STRETCH_PCTL")->asDouble();
+		Minimum	= s.Get_Quantile(      d);
+		Maximum	= s.Get_Quantile(100 - d);
+		break;	}
 	}
 
-	if( s.Get_Count() > 0 )
-	{
-		switch( Method )
-		{
-		default:
-			{
-				return( Set_Color_Range(
-					s.Get_Minimum(),
-					s.Get_Maximum())
-				);
-			}
-
-		case  1:
-			{
-				double	d	= g_pData->Get_Parameter("GRID_COLORS_FIT_STDDEV")->asDouble();
-
-				return( Set_Color_Range(
-					s.Get_Mean() - s.Get_StdDev() * d,
-					s.Get_Mean() + s.Get_StdDev() * d)
-				);
-			}
-
-		case  2:
-			{
-				CSG_Index	Index(s.Get_Count(), s.Get_Values());
-
-				double	d	= g_pData->Get_Parameter("GRID_COLORS_FIT_PCTL")->asDouble() / 100.0;
-
-				return( Set_Color_Range(
-					s.Get_Value(Index[(int)((    d) * s.Get_Count())]),
-					s.Get_Value(Index[(int)((1 - d) * s.Get_Count())]))
-				);
-			}
-		}
-	}
-
-	return( false );
+	return( Set_Color_Range(Minimum, Maximum) );
 }
 
 
 ///////////////////////////////////////////////////////////
-//														 //
-//														 //
 //														 //
 ///////////////////////////////////////////////////////////
 
@@ -1346,9 +1262,9 @@ void CWKSP_Grid::_Save_Image(void)
 	//-----------------------------------------------------
 	Parms.Set_Name(_TL("Save Grid as Image..."));
 
-	Parms.Add_Bool  (NULL, "WORLD", _TL("Save Georeference"), _TL(""), true);
-	Parms.Add_Bool  (NULL, "LG"   , _TL("Legend: Save"     ), _TL(""), true);
-	Parms.Add_Double(NULL, "LZ"   , _TL("Legend: Zoom"     ), _TL(""), 1.0, 0.0, true);
+	Parms.Add_Bool  ("", "WORLD", _TL("Save Georeference"), _TL(""), true);
+	Parms.Add_Bool  ("", "LG"   , _TL("Legend: Save"     ), _TL(""), true);
+	Parms.Add_Double("", "LZ"   , _TL("Legend: Zoom"     ), _TL(""), 1.0, 0.0, true);
 
 	//-----------------------------------------------------
 	if( DLG_Image_Save(file, type) && DLG_Parameters(&Parms) )
@@ -1361,7 +1277,7 @@ void CWKSP_Grid::_Save_Image(void)
 		if( Parms("LG")->asBool() && Get_Image_Legend(BMP, Parms("LZ")->asDouble()) )
 		{
 			wxFileName	fn(file);
-			fn.SetName(wxString::Format(wxT("%s_legend"), fn.GetName().c_str()));
+			fn.SetName(wxString::Format("%s_legend", fn.GetName().c_str()));
 
 			BMP.SaveFile(fn.GetFullPath(), (wxBitmapType)type);
 		}
@@ -1372,18 +1288,18 @@ void CWKSP_Grid::_Save_Image(void)
 
 			switch( type )
 			{
-			default:					fn.SetExt(wxT("world"));	break;
-			case wxBITMAP_TYPE_BMP:		fn.SetExt(wxT("bpw"));		break;
-			case wxBITMAP_TYPE_GIF:		fn.SetExt(wxT("gfw"));		break;
-			case wxBITMAP_TYPE_JPEG:	fn.SetExt(wxT("jgw"));		break;
-			case wxBITMAP_TYPE_PNG:		fn.SetExt(wxT("pgw"));		break;
-			case wxBITMAP_TYPE_PCX:		fn.SetExt(wxT("pxw"));		break;
-			case wxBITMAP_TYPE_TIF:		fn.SetExt(wxT("tfw"));		break; 
+			default                : fn.SetExt("world");	break;
+			case wxBITMAP_TYPE_BMP : fn.SetExt("bpw"  );	break;
+			case wxBITMAP_TYPE_GIF : fn.SetExt("gfw"  );	break;
+			case wxBITMAP_TYPE_JPEG: fn.SetExt("jgw"  );	break;
+			case wxBITMAP_TYPE_PNG : fn.SetExt("pgw"  );	break;
+			case wxBITMAP_TYPE_PCX : fn.SetExt("pxw"  );	break;
+			case wxBITMAP_TYPE_TIF : fn.SetExt("tfw"  );	break; 
 			}
 
 			if( Stream.Open(fn.GetFullPath().wx_str(), SG_FILE_W, false) )
 			{
-				Stream.Printf(SG_T("%.10f\n%.10f\n%.10f\n%.10f\n%.10f\n%.10f\n"),
+				Stream.Printf("%.10f\n%.10f\n%.10f\n%.10f\n%.10f\n%.10f\n",
 					 Get_Grid()->Get_Cellsize(),
 					 0.0, 0.0,
 					-Get_Grid()->Get_Cellsize(),
@@ -1456,8 +1372,6 @@ bool CWKSP_Grid::Get_Image_Legend(wxBitmap &BMP, double Zoom)
 
 ///////////////////////////////////////////////////////////
 //														 //
-//														 //
-//														 //
 ///////////////////////////////////////////////////////////
 
 //---------------------------------------------------------
@@ -1493,16 +1407,16 @@ void CWKSP_Grid::On_Draw(CWKSP_Map_DC &dc_Map, int Flags)
 	else switch( m_Parameters("DISPLAY_RESAMPLING")->asInt() )
 	{
 	default:	Resampling	= GRID_RESAMPLING_NearestNeighbour;	break;
-	case  1:	Resampling	= GRID_RESAMPLING_Bilinear;			break;
-	case  2:	Resampling	= GRID_RESAMPLING_BicubicSpline;	break;
-	case  3:	Resampling	= GRID_RESAMPLING_BSpline;			break;
+	case  1:	Resampling	= GRID_RESAMPLING_Bilinear        ;	break;
+	case  2:	Resampling	= GRID_RESAMPLING_BicubicSpline   ;	break;
+	case  3:	Resampling	= GRID_RESAMPLING_BSpline         ;	break;
 	}
 
 	//-----------------------------------------------------
 	m_Shade_Mode	= m_Parameters("COLORS_TYPE"    )->asInt() != CLASSIFY_SHADE
 					? m_Parameters("DISPLAY_SHADING")->asInt() : 0;
 
-	if( m_Shade_Mode && Get_Grid()->Get_ZRange() > 0.0 )
+	if( m_Shade_Mode && Get_Grid()->Get_Range() > 0.0 )
 	{
 	//	m_Shade_Parms[0]	= m_Parameters("SHADING_EXAGG")->asDouble() * Get_Grid()->Get_Cellsize() / Get_Grid()->Get_StdDev();
 		m_Shade_Parms[0]	= m_Parameters("SHADING_EXAGG")->asDouble() * Get_Grid()->Get_Cellsize() / 25.0;
@@ -1657,7 +1571,7 @@ void CWKSP_Grid::_Draw_Grid_Line(CWKSP_Map_DC &dc_Map, TSG_Grid_Resampling Resam
 	{
 		double	Value;
 
-		if( Get_Grid()->Get_Value(xMap, yMap, Value, Resampling, Mode == -2, true) )
+		if( Get_Grid()->Get_Value(xMap, yMap, Value, Resampling, false, Mode == -2) )
 		{
 			if( Mode < 0 )
 			{
@@ -1674,10 +1588,10 @@ void CWKSP_Grid::_Draw_Grid_Line(CWKSP_Map_DC &dc_Map, TSG_Grid_Resampling Resam
 
 				c[0]	= (int)(255.0 * m_pClassify->Get_MetricToRelative(Value));
 
-				c[1]	= pOverlay[0] && pOverlay[0]->Get_Grid()->Get_Value(xMap, yMap, Value, Resampling, false, true)
+				c[1]	= pOverlay[0] && pOverlay[0]->Get_Grid()->Get_Value(xMap, yMap, Value, Resampling)
 						? (int)(255.0 * pOverlay[0]->m_pClassify->Get_MetricToRelative(Value)) : 255;
 
-				c[2]	= pOverlay[1] && pOverlay[1]->Get_Grid()->Get_Value(xMap, yMap, Value, Resampling, false, true)
+				c[2]	= pOverlay[1] && pOverlay[1]->Get_Grid()->Get_Value(xMap, yMap, Value, Resampling)
 						? (int)(255.0 * pOverlay[1]->m_pClassify->Get_MetricToRelative(Value)) : 255;
 
 				if( c[0] < 0 ) c[0] = 0; else if( c[0] > 255 ) c[0] = 255;
@@ -1751,16 +1665,16 @@ void CWKSP_Grid::_Draw_Values(CWKSP_Map_DC &dc_Map)
 
 	switch( m_Parameters("VALUES_EFFECT")->asInt() )
 	{
-	default:	Effect	= TEXTEFFECT_NONE;			break;
-	case 1:		Effect	= TEXTEFFECT_FRAME;			break;
-	case 2:		Effect	= TEXTEFFECT_TOP;			break;
-	case 3:		Effect	= TEXTEFFECT_TOPLEFT;		break;
-	case 4:		Effect	= TEXTEFFECT_LEFT;			break;
-	case 5:		Effect	= TEXTEFFECT_BOTTOMLEFT;	break;
-	case 6:		Effect	= TEXTEFFECT_BOTTOM;		break;
-	case 7:		Effect	= TEXTEFFECT_BOTTOMRIGHT;	break;
-	case 8:		Effect	= TEXTEFFECT_RIGHT;			break;
-	case 9:		Effect	= TEXTEFFECT_TOPRIGHT;		break;
+	default: Effect	= TEXTEFFECT_NONE       ;	break;
+	case  1: Effect	= TEXTEFFECT_FRAME      ;	break;
+	case  2: Effect	= TEXTEFFECT_TOP        ;	break;
+	case  3: Effect	= TEXTEFFECT_TOPLEFT    ;	break;
+	case  4: Effect	= TEXTEFFECT_LEFT       ;	break;
+	case  5: Effect	= TEXTEFFECT_BOTTOMLEFT ;	break;
+	case  6: Effect	= TEXTEFFECT_BOTTOM     ;	break;
+	case  7: Effect	= TEXTEFFECT_BOTTOMRIGHT;	break;
+	case  8: Effect	= TEXTEFFECT_RIGHT      ;	break;
+	case  9: Effect	= TEXTEFFECT_TOPRIGHT   ;	break;
 	}
 
 	Effect_Color	= m_Parameters("VALUES_EFFECT_COLOR")->asColor();
@@ -1795,13 +1709,13 @@ void CWKSP_Grid::_Draw_Values(CWKSP_Map_DC &dc_Map)
 				{
 				case CLASSIFY_RGB:
 					Draw_Text(dc_Map.dc, TEXTALIGN_CENTER, (int)xDC, (int)yDC, wxString::Format(
-						wxT("R%03d G%03d B%03d"), SG_GET_R((int)Value), SG_GET_G((int)Value), SG_GET_B((int)Value)
+						"R%03d G%03d B%03d", SG_GET_R((int)Value), SG_GET_G((int)Value), SG_GET_B((int)Value)
 					), Effect, Effect_Color);
 					break;
 
 				default:
 					Draw_Text(dc_Map.dc, TEXTALIGN_CENTER, (int)xDC, (int)yDC, wxString::Format(
-						wxT("%.*f"), Decimals, Value
+						"%.*f", Decimals, Value
 					), Effect, Effect_Color);
 					break;
 				}

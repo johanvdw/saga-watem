@@ -24,7 +24,8 @@
 // Geoscientific Analyses'. SAGA is free software; you   //
 // can redistribute it and/or modify it under the terms  //
 // of the GNU General Public License as published by the //
-// Free Software Foundation; version 2 of the License.   //
+// Free Software Foundation, either version 2 of the     //
+// License, or (at your option) any later version.       //
 //                                                       //
 // SAGA is distributed in the hope that it will be       //
 // useful, but WITHOUT ANY WARRANTY; without even the    //
@@ -33,10 +34,8 @@
 // License for more details.                             //
 //                                                       //
 // You should have received a copy of the GNU General    //
-// Public License along with this program; if not,       //
-// write to the Free Software Foundation, Inc.,          //
-// 51 Franklin Street, 5th Floor, Boston, MA 02110-1301, //
-// USA.                                                  //
+// Public License along with this program; if not, see   //
+// <http://www.gnu.org/licenses/>.                       //
 //                                                       //
 //-------------------------------------------------------//
 //                                                       //
@@ -79,22 +78,32 @@ CRaster_Load::CRaster_Load(void)
 		"Imports grids from a PostGIS database."
 	));
 
-	Parameters.Add_Grid_List(NULL,
+	Parameters.Add_Grid_List("",
 		"GRIDS"		, _TL("Grids"),
 		_TL(""),
 		PARAMETER_OUTPUT
 	);
 
-	Parameters.Add_Choice(NULL,
+	Parameters.Add_Choice("",
 		"TABLES"	, _TL("Tables"),
 		_TL(""),
 		""
 	);
 
-	Parameters.Add_String(NULL,
+	Parameters.Add_String("",
 		"WHERE"		, _TL("Where"),
 		_TL(""),
 		""
+	);
+
+	Parameters.Add_Choice("",
+		"MULTIPLE"	, _TL("Multiple Bands Output"),
+		_TL(""),
+		CSG_String::Format("%s|%s|%s|",
+			_TL("single grids"),
+			_TL("grid collection"),
+			_TL("automatic")
+		), 2
 	);
 }
 
@@ -118,18 +127,14 @@ void CRaster_Load::On_Connection_Changed(CSG_Parameters *pParameters)
 //---------------------------------------------------------
 bool CRaster_Load::On_Execute(void)
 {
-	CSG_String	Table	= Parameters("TABLES")->asString();
+	Parameters("GRIDS")->asGridList()->Del_Items();
 
-	CSG_Parameter_Grid_List	*pGrids	= Parameters("GRIDS")->asGridList();
-
-	pGrids->Del_Items();
-
-	if( !Get_Connection()->Raster_Load(pGrids, Table, Parameters("WHERE")->asString()) )
-	{
-		return( false );
-	}
-
-	return( pGrids->Get_Count() > 0 );
+	return( Get_Connection()->Raster_Load(
+		Parameters("GRIDS"   )->asGridList(),
+		Parameters("TABLES"  )->asString  (),
+		Parameters("WHERE"   )->asString  (), "",
+		Parameters("MULTIPLE")->asInt     ()
+	));
 }
 
 
@@ -150,24 +155,24 @@ CRaster_Load_Band::CRaster_Load_Band(void)
 		"Imports grids from a PostGIS database."
 	));
 
-	Parameters.Add_Grid_Output(NULL,
+	Parameters.Add_Grid_Output("",
 		"GRID"		, _TL("Grid"),
 		_TL("")
 	);
 
-	Parameters.Add_Choice(NULL,
+	Parameters.Add_Choice("",
 		"TABLES"	, _TL("Tables"),
 		_TL(""),
 		""
 	);
 
-	Parameters.Add_Choice(NULL,
+	Parameters.Add_Choice("",
 		"BANDS"		, _TL("Bands"),
 		_TL(""),
 		""
 	)->Set_UseInCMD(false);
 
-	Parameters.Add_String(NULL,
+	Parameters.Add_String("",
 		"RID"		, _TL("Raster Band Identifier"),
 		_TL(""),
 		""
@@ -281,30 +286,30 @@ CRaster_Save::CRaster_Save(void)
 	));
 
 	//-----------------------------------------------------
-	Parameters.Add_Grid_System(NULL,
+	Parameters.Add_Grid_System("",
 		"GRID_SYSTEM"	, _TL("Grid System"),
 		_TL("")
 	);
 
-	Parameters.Add_Grid_List(Parameters("GRID_SYSTEM"),
+	Parameters.Add_Grid_List("GRID_SYSTEM",
 		"GRIDS"		, _TL("Bands"),
 		_TL(""),
 		PARAMETER_INPUT
 	);
 
-	Parameters.Add_Choice(NULL,
+	Parameters.Add_Choice("",
 		"TABLE"		, _TL("Add to Table"),
 		_TL(""),
 		""
 	);
 
-	Parameters.Add_String(Parameters("TABLE"),
+	Parameters.Add_String("TABLE",
 		"NAME"		, _TL("Table Name"),
 		_TL(""),
 		""
 	);
 
-	Parameters.Add_Bool(Parameters("TABLE"),
+	Parameters.Add_Bool("TABLE",
 		"GRID_NAME"	, _TL("Band Name Field"),
 		_TL(""),
 		true
@@ -349,9 +354,9 @@ int CRaster_Save::On_Parameter_Changed(CSG_Parameters *pParameters, CSG_Paramete
 
 	if( !SG_STR_CMP(pParameter->Get_Identifier(), "GRIDS") )
 	{
-		for(int i=0; i<pParameter->asList()->Get_Count(); i++)
+		for(int i=0; i<pParameter->asGridList()->Get_Grid_Count(); i++)
 		{
-			CSG_Grid	*pGrid	= pParameter->asGridList()->asGrid(i);
+			CSG_Grid	*pGrid	= pParameter->asGridList()->Get_Grid(i);
 			
 			if( SG_Get_Data_Manager().Exists(pGrid) && pGrid->Get_Projection().is_Okay() && pGrid->Get_Projection().Get_EPSG() > 0 )
 			{
@@ -409,11 +414,11 @@ bool CRaster_Save::On_Execute(void)
 	}
 
 	//-----------------------------------------------------
-	for(int i=0; i<pGrids->Get_Count(); i++)
+	for(int i=0; i<pGrids->Get_Grid_Count(); i++)
 	{
-		Process_Set_Text(CSG_String::Format("%s: %s [%d/%d]", _TL("export grid"), pGrids->asGrid(i)->Get_Name(), i + 1, pGrids->Get_Count()));
+		Process_Set_Text(CSG_String::Format("%s: %s [%d/%d]", _TL("export grid"), pGrids->Get_Grid(i)->Get_Name(), i + 1, pGrids->Get_Grid_Count()));
 
-		if( !Get_Connection()->Raster_Save(pGrids->asGrid(i), Get_SRID(), Table, pGrids->asGrid(i)->Get_Name()) )
+		if( !Get_Connection()->Raster_Save(pGrids->Get_Grid(i), Get_SRID(), Table, pGrids->Get_Grid(i)->Get_Name()) )
 		{
 			Get_Connection()->Rollback(SavePoint);
 
@@ -423,12 +428,12 @@ bool CRaster_Save::On_Execute(void)
 		//{
 		//	CSG_Bytes	WKB;
 
-		//	if( CSG_Grid_OGIS_Converter::to_WKBinary(WKB, pGrids->asGrid(i), Get_SRID()) )
+		//	if( CSG_Grid_OGIS_Converter::to_WKBinary(WKB, pGrids->Get_Grid(i), Get_SRID()) )
 		//	{
 		//		CSG_String	SQL	= "INSERT INTO \"" + Table + "\" (\"raster\", \"name\") VALUES("
 		//			+ "ST_AddBand('" + WKB.toHexString() + "'::raster, '"
-		//			+ CSG_PG_Connection::Get_Raster_Type_To_SQL(pGrids->asGrid(i)->Get_Type()) + "'::text, 0, NULL), '"
-		//			+ pGrids->asGrid(i)->Get_Name() + "')";
+		//			+ CSG_PG_Connection::Get_Raster_Type_To_SQL(pGrids->Get_Grid(i)->Get_Type()) + "'::text, 0, NULL), '"
+		//			+ pGrids->Get_Grid(i)->Get_Name() + "')";
 
 		//		if( !Get_Connection()->Execute(SQL) )
 		//		{
@@ -466,7 +471,7 @@ CRaster_SRID_Update::CRaster_SRID_Update(void)
 		" Change the SRID of all rasters in the user-specified column and table."
 	));
 
-	Parameters.Add_Choice(NULL,
+	Parameters.Add_Choice("",
 		"TABLES"	, _TL("Tables"),
 		_TL(""),
 		""
@@ -531,4 +536,3 @@ bool CRaster_SRID_Update::On_Execute(void)
 ///////////////////////////////////////////////////////////
 
 //---------------------------------------------------------
-	

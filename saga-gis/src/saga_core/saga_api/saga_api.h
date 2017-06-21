@@ -26,7 +26,8 @@
 // This library is free software; you can redistribute   //
 // it and/or modify it under the terms of the GNU Lesser //
 // General Public License as published by the Free       //
-// Software Foundation, version 2.1 of the License.      //
+// Software Foundation, either version 2.1 of the        //
+// License, or (at your option) any later version.       //
 //                                                       //
 // This library is distributed in the hope that it will  //
 // be useful, but WITHOUT ANY WARRANTY; without even the //
@@ -36,9 +37,7 @@
 //                                                       //
 // You should have received a copy of the GNU Lesser     //
 // General Public License along with this program; if    //
-// not, write to the Free Software Foundation, Inc.,     //
-// 51 Franklin Street, 5th Floor, Boston, MA 02110-1301, //
-// USA.                                                  //
+// not, see <http://www.gnu.org/licenses/>.              //
 //                                                       //
 //-------------------------------------------------------//
 //                                                       //
@@ -78,6 +77,7 @@
 #include "data_manager.h"
 #include "geo_tools.h"
 #include "grid.h"
+#include "grids.h"
 #include "grid_pyramid.h"
 #include "mat_tools.h"
 #include "metadata.h"
@@ -126,10 +126,10 @@
 ///////////////////////////////////////////////////////////
 
 //---------------------------------------------------------
-#define SAGA_MAJOR_VERSION		4
-#define SAGA_MINOR_VERSION		2
+#define SAGA_MAJOR_VERSION		5
+#define SAGA_MINOR_VERSION		0
 #define SAGA_RELEASE_NUMBER		0
-#define SAGA_VERSION			SG_T("4.2.0")
+#define SAGA_VERSION			SG_T("5.0.0")
 
 
 ///////////////////////////////////////////////////////////

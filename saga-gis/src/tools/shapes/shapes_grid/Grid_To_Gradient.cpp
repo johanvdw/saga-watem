@@ -24,7 +24,8 @@
 // Geoscientific Analyses'. SAGA is free software; you   //
 // can redistribute it and/or modify it under the terms  //
 // of the GNU General Public License as published by the //
-// Free Software Foundation; version 2 of the License.   //
+// Free Software Foundation, either version 2 of the     //
+// License, or (at your option) any later version.       //
 //                                                       //
 // SAGA is distributed in the hope that it will be       //
 // useful, but WITHOUT ANY WARRANTY; without even the    //
@@ -33,10 +34,8 @@
 // License for more details.                             //
 //                                                       //
 // You should have received a copy of the GNU General    //
-// Public License along with this program; if not,       //
-// write to the Free Software Foundation, Inc.,          //
-// 51 Franklin Street, 5th Floor, Boston, MA 02110-1301, //
-// USA.                                                  //
+// Public License along with this program; if not, see   //
+// <http://www.gnu.org/licenses/>.                       //
 //                                                       //
 //-------------------------------------------------------//
 //                                                       //
@@ -103,13 +102,13 @@ CGrid_To_Gradient::CGrid_To_Gradient(int Method)
 		));
 
 		Parameters.Add_Grid(
-			NULL	, "DIR"			, _TL("Direction"),
+			""	, "DIR"			, _TL("Direction"),
 			_TL(""),
 			PARAMETER_INPUT
 		);
 
 		Parameters.Add_Grid(
-			NULL	, "LEN"			, _TL("Length"),
+			""	, "LEN"			, _TL("Length"),
 			_TL(""),
 			PARAMETER_INPUT
 		);
@@ -124,13 +123,13 @@ CGrid_To_Gradient::CGrid_To_Gradient(int Method)
 		));
 
 		Parameters.Add_Grid(
-			NULL	, "X"			, _TL("X Component"),
+			""	, "X"			, _TL("X Component"),
 			_TL(""),
 			PARAMETER_INPUT
 		);
 
 		Parameters.Add_Grid(
-			NULL	, "Y"			, _TL("Y Component"),
+			""	, "Y"			, _TL("Y Component"),
 			_TL(""),
 			PARAMETER_INPUT
 		);
@@ -141,36 +140,36 @@ CGrid_To_Gradient::CGrid_To_Gradient(int Method)
 
 	//-----------------------------------------------------
 	Parameters.Add_Shapes(
-		NULL	, "VECTORS"		, _TL("Gradient Vectors"),
+		""	, "VECTORS"		, _TL("Gradient Vectors"),
 		_TL(""),
 		PARAMETER_OUTPUT
 	);
 
-	Parameters.Add_Value(
-		NULL	, "STEP"		, _TL("Step"),
+	Parameters.Add_Int(
+		""	, "STEP"		, _TL("Step"),
 		_TL(""),
-		PARAMETER_TYPE_Int	, 1.0, 1.0, true
+		1, 1, true
 	);
 
 	Parameters.Add_Range(
-		NULL	, "SIZE"		, _TL("Size Range"),
+		""	, "SIZE"		, _TL("Size Range"),
 		_TL("size range as percentage of step"),
 		25.0, 100.0, 0.0, true
 	);
 
 	Parameters.Add_Choice(
-		NULL	, "AGGR"		, _TL("Aggregation"),
+		""	, "AGGR"		, _TL("Aggregation"),
 		_TL("how to request values if step size is more than one cell"),
-		CSG_String::Format(SG_T("%s|%s|"),
+		CSG_String::Format("%s|%s|",
 			_TL("nearest neighbour"),
 			_TL("mean value")
 		), 1
 	);
 
 	Parameters.Add_Choice(
-		NULL	, "STYLE"		, _TL("Style"),
+		""	, "STYLE"		, _TL("Style"),
 		_TL(""),
-		CSG_String::Format(SG_T("%s|%s|%s|"),
+		CSG_String::Format("%s|%s|%s|",
 			_TL("simple line"),
 			_TL("arrow"),
 			_TL("arrow (centered to cell)")
@@ -316,9 +315,9 @@ bool CGrid_To_Gradient::On_Execute(void)
 	pVectors->Add_Field("LEN"	, SG_DATATYPE_Double);
 	pVectors->Add_Field("DIR"	, SG_DATATYPE_Double);
 
-	if( D.Get_ZRange() > 0.0 )
+	if( D.Get_Range() > 0.0 )
 	{
-		sRange	= sRange / D.Get_ZRange();
+		sRange	= sRange / D.Get_Range();
 	}
 
 	//-----------------------------------------------------
@@ -339,7 +338,7 @@ bool CGrid_To_Gradient::On_Execute(void)
 				pVector->Set_Value(2, d);
 				pVector->Set_Value(3, atan2(ex, ey) * M_RAD_TO_DEG);
 
-				if( (d = sMin + sRange * (d - D.Get_ZMin())) > 0.0 )
+				if( (d = sMin + sRange * (d - D.Get_Min())) > 0.0 )
 				{
 					Set_Vector(pVector, p, d * ex, d * ey);
 				}

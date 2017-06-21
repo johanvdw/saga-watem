@@ -24,7 +24,8 @@
 // Geoscientific Analyses'. SAGA is free software; you   //
 // can redistribute it and/or modify it under the terms  //
 // of the GNU General Public License as published by the //
-// Free Software Foundation; version 2 of the License.   //
+// Free Software Foundation, either version 2 of the     //
+// License, or (at your option) any later version.       //
 //                                                       //
 // SAGA is distributed in the hope that it will be       //
 // useful, but WITHOUT ANY WARRANTY; without even the    //
@@ -33,10 +34,8 @@
 // License for more details.                             //
 //                                                       //
 // You should have received a copy of the GNU General    //
-// Public License along with this program; if not,       //
-// write to the Free Software Foundation, Inc.,          //
-// 51 Franklin Street, 5th Floor, Boston, MA 02110-1301, //
-// USA.                                                  //
+// Public License along with this program; if not, see   //
+// <http://www.gnu.org/licenses/>.                       //
 //                                                       //
 //-------------------------------------------------------//
 //                                                       //
@@ -69,46 +68,29 @@
 ///////////////////////////////////////////////////////////
 
 //---------------------------------------------------------
-double	SG_Get_Angle_Diff(double a, double b)
-{
-	double	d	= fmod(b - a, M_PI_360);
-
-	if( d < 0.0 )	d	+= M_PI_360;
-
-	return( d > M_PI_180 ? d - M_PI_180 : d );
-}
-
-
-///////////////////////////////////////////////////////////
-//														 //
-//														 //
-//														 //
-///////////////////////////////////////////////////////////
-
-//---------------------------------------------------------
 CWombling_Base::CWombling_Base(void)
 {
 	//-----------------------------------------------------
-	Parameters.Add_Value(
-		NULL	, "TMAGNITUDE"		, _TL("Minimum Magnitude"),
+	Parameters.Add_Double("",
+		"TMAGNITUDE"	, _TL("Minimum Magnitude"),
 		_TL("Minimum magnitude as percentile."),
-		PARAMETER_TYPE_Double, 90.0, 0.0, true, 100.0, true
+		90.0, 0.0, true, 100.0, true
 	);
 
-	Parameters.Add_Value(
-		NULL	, "TDIRECTION"		, _TL("Maximum Angle"),
+	Parameters.Add_Double("",
+		"TDIRECTION"	, _TL("Maximum Angle"),
 		_TL("Maximum angular difference as degree between adjacent segment points."),
-		PARAMETER_TYPE_Double, 30.0, 0.0, true, 180.0, true
+		30.0, 0.0, true, 180.0, true
 	);
 
-	Parameters.Add_Value(
-		NULL	, "TNEIGHBOUR"		, _TL("Minimum Neighbours"),
+	Parameters.Add_Int("",
+		"TNEIGHBOUR"	, _TL("Minimum Neighbours"),
 		_TL("Minimum number of neighbouring potential edge cells with similar direction."),
-		PARAMETER_TYPE_Int, 1.0, 0.0, true
+		1, 0, true
 	);
 
-	Parameters.Add_Choice(
-		NULL	, "ALIGNMENT"		, _TL("Alignment"),
+	Parameters.Add_Choice("",
+		"ALIGNMENT"		, _TL("Alignment"),
 		_TL(""),
 		CSG_String::Format(SG_T("%s|%s|"),
 			_TL("between cells"),
@@ -116,8 +98,8 @@ CWombling_Base::CWombling_Base(void)
 		), 1
 	);
 
-	Parameters.Add_Choice(
-		NULL	, "NEIGHBOUR"		, _TL("Edge Connectivity"),
+	Parameters.Add_Choice("",
+		"NEIGHBOUR"		, _TL("Edge Connectivity"),
 		_TL(""),
 		CSG_String::Format("%s|%s|",
 			_TL("Rooke's case"),
@@ -169,7 +151,7 @@ bool CWombling_Base::Initialize(CSG_Grid Gradient[2], CSG_Grid *pEdges)
 	Gradient[0].Create(System);	Gradient[0].Set_NoData_Value(-1.0);
 	Gradient[1].Create(System);	Gradient[1].Set_NoData_Value(-1.0);
 
-	pEdges->Create(System, SG_DATATYPE_Char); pEdges->Set_NoData(0.0);
+	pEdges->Create(System, SG_DATATYPE_Char); pEdges->Set_NoData_Value(0.0);
 
 	//-----------------------------------------------------
 	return( true );
@@ -284,7 +266,7 @@ bool CWombling_Base::Get_Edge_Cells(CSG_Grid *Gradient, CSG_Grid *pEdges)
 	//-----------------------------------------------------
 	// 1. magnitude
 
-	double	Threshold	= Gradient[0].Get_Percentile(Parameters("TMAGNITUDE")->asDouble());
+	double	Threshold	= Gradient[0].Get_Quantile(Parameters("TMAGNITUDE")->asDouble());
 
 	for(y=0; y<Gradient[0].Get_NY() && Set_Progress(y, Gradient[0].Get_NY()); y++)
 	{
@@ -347,7 +329,7 @@ int CWombling_Base::_is_Edge_Cell(CSG_Grid Gradient[2], int x, int y)
 			int	ix	= Get_xTo(i, x);
 			int	iy	= Get_yTo(i, y);
 
-			if( Gradient[0].is_InGrid(ix, iy) && Lock_Get(ix, iy) && SG_Get_Angle_Diff(Gradient[1].asDouble(x, y), Gradient[1].asDouble(ix, iy)) <= m_maxAngle )
+			if( Gradient[0].is_InGrid(ix, iy) && Lock_Get(ix, iy) && SG_Get_Angle_Difference(Gradient[1].asDouble(x, y), Gradient[1].asDouble(ix, iy)) <= m_maxAngle )
 			{
 				n++;
 			}
@@ -390,7 +372,7 @@ bool CWombling_Base::Get_Edge_Lines(CSG_Grid Gradient[2], CSG_Grid *pEdge)
 
 					if( pEdge->is_InGrid(ix, iy) )
 					{
-						double	diff	= SG_Get_Angle_Diff(Gradient[1].asDouble(x, y), Gradient[1].asDouble(ix, iy));
+						double	diff	= SG_Get_Angle_Difference(Gradient[1].asDouble(x, y), Gradient[1].asDouble(ix, iy));
 
 						if( diff <= m_maxAngle )
 						{
@@ -428,42 +410,46 @@ CWombling::CWombling(void)
 	Set_Description	(_TW(
 		"Continuous Wombling for edge detection. Uses magnitude of gradient "
 		"to detect edges between adjacent cells. Edge segments connect such "
-		"edges, when the difference of their gradient directions is below given threshold.\n"
-		"\n"
-		"References:\n"
-		"- Fitzpatrick, M.C., Preisser, E.L., Porter, A., Elkinton, J., Waller, L.A., Carlin, B.P., Ellison, A.M. (2010):"
-		" Ecological boundary detection using Bayesian areal wombling. Ecology 91(12): 3448-3455. doi:10.1890/10-0807.1\n"
-		"- Fortin, M.-J. and Dale, M.R.T (2005):"
-		" Spatial Analysis - A Guide for Ecologists. Cambridge University Press.\n"
+		"edges, when the difference of their gradient directions is below given threshold."
 	));
 
+	Add_Reference(
+		"Fitzpatrick, M.C., Preisser, E.L., Porter, A., Elkinton, J., Waller, L.A., Carlin, B.P., Ellison, A.M.", "2010",
+		"Ecological boundary detection using Bayesian areal wombling", "Ecology 91(12): 3448-3455. doi:10.1890/10-0807.1."
+	);
+
+	Add_Reference(
+		"Fortin, M.-J. and Dale, M.R.T", "2005",
+		"Spatial Analysis - A Guide for Ecologists", "Cambridge University Press."
+	);
+
 	//-----------------------------------------------------
-	Parameters.Add_Grid(
-		NULL	, "FEATURE"			, _TL("Feature"),
+	Parameters.Add_Grid("",
+		"FEATURE"		, _TL("Feature"),
 		_TL(""),
 		PARAMETER_INPUT
 	);
 
-	Parameters.Add_Shapes(
-		NULL	, "EDGE_POINTS"		, _TL("Edge Points"),
+	Parameters.Add_Shapes("",
+		"EDGE_POINTS"	, _TL("Edge Points"),
 		_TL(""),
 		PARAMETER_OUTPUT_OPTIONAL, SHAPE_TYPE_Point
 	);
 
-	Parameters.Add_Shapes(
-		NULL	, "EDGE_LINES"		, _TL("Edge Segments"),
+	Parameters.Add_Shapes("",
+		"EDGE_LINES"	, _TL("Edge Segments"),
 		_TL(""),
 		PARAMETER_OUTPUT_OPTIONAL, SHAPE_TYPE_Line
 	);
 
-	Parameters.Add_Value(
-		NULL	, "GRADIENTS_OUT"	, _TL("Output of Gradients"),
+	Parameters.Add_Bool("",
+		"GRADIENTS_OUT"	, _TL("Output of Gradients"),
 		_TL(""),
-		PARAMETER_TYPE_Bool, false
+		false
 	);
 
-	Parameters.Add_Grid_List(
-		NULL	, "GRADIENTS"		, _TL("Gradients"),
+	Parameters.Add_Grid_List("",
+		"GRADIENTS"		, _TL("Gradients"),
 		_TL(""),
 		PARAMETER_OUTPUT_OPTIONAL, false
 	);
@@ -500,11 +486,11 @@ bool CWombling::On_Execute(void)
 	{
 		CSG_Parameter_Grid_List	*pGrids	= Parameters("GRADIENTS")->asGridList();
 
-		if( pGrids->asGrid(0) && pGrids->asGrid(0)->Get_System().is_Equal(Gradient[0].Get_System())
-		&&  pGrids->asGrid(1) && pGrids->asGrid(1)->Get_System().is_Equal(Gradient[1].Get_System()) )
+		if( pGrids->Get_Grid(0) && pGrids->Get_Grid(0)->Get_System().is_Equal(Gradient[0].Get_System())
+		&&  pGrids->Get_Grid(1) && pGrids->Get_Grid(1)->Get_System().is_Equal(Gradient[1].Get_System()) )
 		{
-			pGrids->asGrid(0)->Assign(&Gradient[0]);
-			pGrids->asGrid(1)->Assign(&Gradient[1]);
+			pGrids->Get_Grid(0)->Assign(&Gradient[0]);
+			pGrids->Get_Grid(1)->Assign(&Gradient[1]);
 		}
 		else
 		{
@@ -537,30 +523,34 @@ CWombling_MultiFeature::CWombling_MultiFeature(void)
 	Set_Description	(_TW(
 		"Continuous Wombling for edge detection. Uses magnitude of gradient "
 		"to detect edges between adjacent cells. Edge segments connect such "
-		"edges, when the difference of their gradient directions is below given threshold.\n"
-		"\n"
-		"References:\n"
-		"- Fitzpatrick, M.C., Preisser, E.L., Porter, A., Elkinton, J., Waller, L.A., Carlin, B.P., Ellison, A.M. (2010):"
-		" Ecological boundary detection using Bayesian areal wombling. Ecology 91(12): 3448-3455. doi:10.1890/10-0807.1\n"
-		"- Fortin, M.-J. and Dale, M.R.T (2005):"
-		" Spatial Analysis - A Guide for Ecologists. Cambridge University Press.\n"
+		"edges, when the difference of their gradient directions is below given threshold."
 	));
 
+	Add_Reference(
+		"Fitzpatrick, M.C., Preisser, E.L., Porter, A., Elkinton, J., Waller, L.A., Carlin, B.P., Ellison, A.M.", "2010",
+		"Ecological boundary detection using Bayesian areal wombling", "Ecology 91(12): 3448-3455. doi:10.1890/10-0807.1."
+	);
+
+	Add_Reference(
+		"Fortin, M.-J. and Dale, M.R.T", "2005",
+		"Spatial Analysis - A Guide for Ecologists", "Cambridge University Press."
+	);
+
 	//-----------------------------------------------------
-	Parameters.Add_Grid_List(
-		NULL	, "FEATURES"		, _TL("Features"),
+	Parameters.Add_Grid_List("",
+		"FEATURES"		, _TL("Features"),
 		_TL(""),
 		PARAMETER_INPUT
 	);
 
-	Parameters.Add_Grid_List(
-		NULL	, "EDGE_CELLS"		, _TL("Edges"),
+	Parameters.Add_Grid_List("",
+		"EDGE_CELLS"		, _TL("Edges"),
 		_TL(""),
 		PARAMETER_OUTPUT, false
 	);
 
-	//Parameters.Add_Choice(
-	//	NULL	, "ASPECT_CMP"		, _TL("Direction Difference"),
+	//Parameters.Add_Choice("",
+	//	"ASPECT_CMP"		, _TL("Direction Difference"),
 	//	_TL(""),
 	//	CSG_String::Format("%s|%s|",
 	//		_TL("direction"),
@@ -568,8 +558,8 @@ CWombling_MultiFeature::CWombling_MultiFeature(void)
 	//	), 0
 	//);
 
-	Parameters.Add_Choice(
-		NULL	, "OUTPUT_ADD"		, _TL("Additional Output"),
+	Parameters.Add_Choice("",
+		"OUTPUT_ADD"		, _TL("Additional Output"),
 		_TL(""),
 		CSG_String::Format("%s|%s|%s|",
 			_TL("none"),
@@ -578,16 +568,16 @@ CWombling_MultiFeature::CWombling_MultiFeature(void)
 		), 0
 	);
 
-	Parameters.Add_Grid_List(
-		NULL	, "OUTPUT"			, _TL("Output"),
+	Parameters.Add_Grid_List("",
+		"OUTPUT"			, _TL("Output"),
 		_TL(""),
 		PARAMETER_OUTPUT_OPTIONAL, false
 	);
 
-	Parameters.Add_Value(
-		NULL	, "ZERO_AS_NODATA"	, _TL("Zero as No-Data"),
+	Parameters.Add_Bool("",
+		"ZERO_AS_NODATA"	, _TL("Zero as No-Data"),
 		_TL(""),
-		PARAMETER_TYPE_Bool, true
+		true
 	);
 }
 
@@ -614,9 +604,9 @@ bool CWombling_MultiFeature::On_Execute(void)
 	{
 		pOutput	= Parameters("OUTPUT")->asGridList();
 
-		for(int i=pOutput->Get_Count()-1; i>=0; i--)
+		for(int i=pOutput->Get_Grid_Count()-1; i>=0; i--)
 		{
-			if( !pOutput->asGrid(i)->Get_System().is_Equal(Gradient[0].Get_System()) )
+			if( !pOutput->Get_Grid(i)->Get_System().is_Equal(Gradient[0].Get_System()) )
 			{
 				pOutput->Del_Item(i);
 			}
@@ -624,7 +614,7 @@ bool CWombling_MultiFeature::On_Execute(void)
 	}
 
 	//-----------------------------------------------------
-	CSG_Grid	Count, *pCount	= Parameters("EDGE_CELLS")->asGridList()->asGrid(0);
+	CSG_Grid	Count, *pCount	= Parameters("EDGE_CELLS")->asGridList()->Get_Grid(0);
 
 	if( !pCount || !pCount->Get_System().is_Equal(Gradient[0].Get_System()) )
 	{
@@ -637,11 +627,11 @@ bool CWombling_MultiFeature::On_Execute(void)
 	pCount->Set_NoData_Value(-1.0);
 
 	//-----------------------------------------------------
-	for(int i=0; i<pFeatures->Get_Count() && Process_Get_Okay(); i++)
+	for(int i=0; i<pFeatures->Get_Grid_Count() && Process_Get_Okay(); i++)
 	{
-		Edges.Set_Name(CSG_String::Format("%s [%s]", pFeatures->asGrid(i)->Get_Name(), _TL("Edges")));
+		Edges.Set_Name(CSG_String::Format("%s [%s]", pFeatures->Get_Grid(i)->Get_Name(), _TL("Edges")));
 
-		Get_Gradient(Gradient, pFeatures->asGrid(i), false);
+		Get_Gradient(Gradient, pFeatures->Get_Grid(i), false);
 
 		Get_Edge_Cells(Gradient, &Edges);
 
@@ -649,12 +639,12 @@ bool CWombling_MultiFeature::On_Execute(void)
 
 		if( pOutput )
 		{
-			if( !pOutput->asGrid(i) )
+			if( !pOutput->Get_Grid(i) )
 			{
 				pOutput->Add_Item(SG_Create_Grid());
 			}
 
-			pOutput->asGrid(i)->Create(Parameters("OUTPUT_ADD")->asInt() == 1 ? Gradient[0] : Edges);
+			pOutput->Get_Grid(i)->Create(Parameters("OUTPUT_ADD")->asInt() == 1 ? Gradient[0] : Edges);
 		}
 	}
 

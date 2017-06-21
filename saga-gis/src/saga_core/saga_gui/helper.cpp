@@ -24,7 +24,8 @@
 // Geoscientific Analyses'. SAGA is free software; you   //
 // can redistribute it and/or modify it under the terms  //
 // of the GNU General Public License as published by the //
-// Free Software Foundation; version 2 of the License.   //
+// Free Software Foundation, either version 2 of the     //
+// License, or (at your option) any later version.       //
 //                                                       //
 // SAGA is distributed in the hope that it will be       //
 // useful, but WITHOUT ANY WARRANTY; without even the    //
@@ -33,10 +34,8 @@
 // License for more details.                             //
 //                                                       //
 // You should have received a copy of the GNU General    //
-// Public License along with this program; if not,       //
-// write to the Free Software Foundation, Inc.,          //
-// 51 Franklin Street, 5th Floor, Boston, MA 02110-1301, //
-// USA.                                                  //
+// Public License along with this program; if not, see   //
+// <http://www.gnu.org/licenses/>.                       //
 //                                                       //
 //-------------------------------------------------------//
 //                                                       //
@@ -220,7 +219,7 @@ wxString	Get_FilePath_Absolute(const wxString &Directory, const wxString &FileNa
 }
 
 //---------------------------------------------------------
-wxString		Get_TableInfo_asHTML(CSG_Table *pTable)
+wxString		Get_TableInfo_asHTML(const CSG_Table *pTable)
 {
 	wxString	s;
 
@@ -715,6 +714,7 @@ bool		CONFIG_Read(wxConfigBase *pConfig, CSG_Parameter *pParameter)
 	case PARAMETER_TYPE_String  :
 	case PARAMETER_TYPE_Text    :
 	case PARAMETER_TYPE_FilePath:
+	case PARAMETER_TYPE_Choices :
 		return( pConfig->Read(Entry, &s) && pParameter->Set_Value((const SG_Char *)s) );
 
 	case PARAMETER_TYPE_Range   :
@@ -778,6 +778,7 @@ bool		CONFIG_Write(wxConfigBase *pConfig, CSG_Parameter *pParameter)
 		case PARAMETER_TYPE_String  :
 		case PARAMETER_TYPE_Text    :
 		case PARAMETER_TYPE_FilePath:
+		case PARAMETER_TYPE_Choices :
 			return( pConfig->Write(Entry, pParameter->asString()) );
 
 		case PARAMETER_TYPE_Range   :
@@ -1000,7 +1001,7 @@ wxString Get_Online_Tool_Description(const wxString &Library, const wxString &ID
 		wxHTTP			Server;
 
 		wxString	sServer	= "sourceforge.net";
-		wxString	sPath	= SG_File_Get_Name(Library, false).c_str();
+		wxString	sPath	= SG_File_Get_Name(&Library, false).c_str();
 
 		if( sPath.Find("lib") == 0 )	// remove linux prefix 'lib'
 		{

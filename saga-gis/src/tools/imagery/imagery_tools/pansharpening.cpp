@@ -21,7 +21,8 @@
 // Geoscientific Analyses'. SAGA is free software; you   //
 // can redistribute it and/or modify it under the terms  //
 // of the GNU General Public License as published by the //
-// Free Software Foundation; version 2 of the License.   //
+// Free Software Foundation, either version 2 of the     //
+// License, or (at your option) any later version.       //
 //                                                       //
 // SAGA is distributed in the hope that it will be       //
 // useful, but WITHOUT ANY WARRANTY; without even the    //
@@ -30,10 +31,8 @@
 // License for more details.                             //
 //                                                       //
 // You should have received a copy of the GNU General    //
-// Public License along with this program; if not,       //
-// write to the Free Software Foundation, Inc.,          //
-// 51 Franklin Street, 5th Floor, Boston, MA 02110-1301, //
-// USA.                                                  //
+// Public License along with this program; if not, see   //
+// <http://www.gnu.org/licenses/>.                       //
 //                                                       //
 //-------------------------------------------------------//
 //                                                       //
@@ -102,31 +101,31 @@ CPanSharp_IHS::CPanSharp_IHS(void)
 	);
 
 	//-----------------------------------------------------
-	Parameters.Add_Grid(NULL, "R", _TL("Red"  ), _TL(""), PARAMETER_INPUT);
-	Parameters.Add_Grid(NULL, "G", _TL("Green"), _TL(""), PARAMETER_INPUT);
-	Parameters.Add_Grid(NULL, "B", _TL("Blue" ), _TL(""), PARAMETER_INPUT);
+	Parameters.Add_Grid("", "R", _TL("Red"  ), _TL(""), PARAMETER_INPUT);
+	Parameters.Add_Grid("", "G", _TL("Green"), _TL(""), PARAMETER_INPUT);
+	Parameters.Add_Grid("", "B", _TL("Blue" ), _TL(""), PARAMETER_INPUT);
 
-	CSG_Parameter	*pNode	= Parameters.Add_Grid_System(NULL, "PAN_SYSTEM"	, _TL("High Resolution Grid System"),
+	Parameters.Add_Grid_System("", "PAN_SYSTEM"	, _TL("High Resolution Grid System"),
 		_TL("")
 	);
 
-	Parameters.Add_Grid(pNode,
+	Parameters.Add_Grid("PAN_SYSTEM",
 		"PAN"		, _TL("Panchromatic Channel"),
 		_TL(""),
 		PARAMETER_INPUT, false
 	);
 
-	Parameters.Add_Grid(pNode, "R_SHARP", _TL("Red"  ), _TL(""), PARAMETER_OUTPUT, false);
-	Parameters.Add_Grid(pNode, "G_SHARP", _TL("Green"), _TL(""), PARAMETER_OUTPUT, false);
-	Parameters.Add_Grid(pNode, "B_SHARP", _TL("Blue" ), _TL(""), PARAMETER_OUTPUT, false);
+	Parameters.Add_Grid("PAN_SYSTEM", "R_SHARP", _TL("Red"  ), _TL(""), PARAMETER_OUTPUT, false);
+	Parameters.Add_Grid("PAN_SYSTEM", "G_SHARP", _TL("Green"), _TL(""), PARAMETER_OUTPUT, false);
+	Parameters.Add_Grid("PAN_SYSTEM", "B_SHARP", _TL("Blue" ), _TL(""), PARAMETER_OUTPUT, false);
 
-	Parameters.Add_Grid_List(NULL,
+	Parameters.Add_Grid_List("",
 		"SHARPEN"	, _TL("Sharpened Channels"),
 		_TL(""),
 		PARAMETER_OUTPUT
 	);
 
-	Parameters.Add_Choice(NULL,
+	Parameters.Add_Choice("",
 		"RESAMPLING", _TL("Resampling"),
 		_TL(""),
 		CSG_String::Format("%s|%s|%s|",
@@ -136,7 +135,7 @@ CPanSharp_IHS::CPanSharp_IHS(void)
 		), 2
 	);
 
-	Parameters.Add_Choice(NULL,
+	Parameters.Add_Choice("",
 		"PAN_MATCH"	, _TL("Panchromatic Channel Matching"),
 		_TL(""),
 		CSG_String::Format("%s|%s|",
@@ -181,9 +180,9 @@ bool CPanSharp_IHS::On_Execute(void)
 	//-----------------------------------------------------
 	Process_Set_Text(_TL("RGB to IHS"));
 
-	double	rMin	= pR->Get_ZMin(),	rRange	= pR->Get_ZRange();
-	double	gMin	= pG->Get_ZMin(),	gRange	= pG->Get_ZRange();
-	double	bMin	= pB->Get_ZMin(),	bRange	= pB->Get_ZRange();
+	double	rMin	= pR->Get_Min(),	rRange	= pR->Get_Range();
+	double	gMin	= pG->Get_Min(),	gRange	= pG->Get_Range();
+	double	bMin	= pB->Get_Min(),	bRange	= pB->Get_Range();
 
 	for(y=0; y<pPan->Get_NY() && Set_Progress(y, pPan->Get_NY()); y++)
 	{
@@ -235,9 +234,9 @@ bool CPanSharp_IHS::On_Execute(void)
 
 	if( Parameters("PAN_MATCH")->asInt() == 0 )
 	{
-		Offset_Pan	= pPan->Get_ZMin();
-		Offset		= pR->Get_ZMin();
-		Scale		= pR->Get_ZRange() / pPan->Get_ZRange();
+		Offset_Pan	= pPan->Get_Min();
+		Offset		= pR->Get_Min();
+		Scale		= pR->Get_Range() / pPan->Get_Range();
 	}
 	else
 	{
@@ -317,32 +316,32 @@ CPanSharp_Brovey::CPanSharp_Brovey(void)
 	);
 
 	//-----------------------------------------------------
-	Parameters.Add_Grid(NULL, "R", _TL("Red"  ), _TL(""), PARAMETER_INPUT);
-	Parameters.Add_Grid(NULL, "G", _TL("Green"), _TL(""), PARAMETER_INPUT);
-	Parameters.Add_Grid(NULL, "B", _TL("Blue" ), _TL(""), PARAMETER_INPUT);
+	Parameters.Add_Grid("", "R", _TL("Red"  ), _TL(""), PARAMETER_INPUT);
+	Parameters.Add_Grid("", "G", _TL("Green"), _TL(""), PARAMETER_INPUT);
+	Parameters.Add_Grid("", "B", _TL("Blue" ), _TL(""), PARAMETER_INPUT);
 
-	CSG_Parameter	*pNode	= Parameters.Add_Grid_System(NULL,
+	Parameters.Add_Grid_System("",
 		"PAN_SYSTEM", _TL("High Resolution Grid System"),
 		_TL("")
 	);
 
-	Parameters.Add_Grid(pNode,
+	Parameters.Add_Grid("PAN_SYSTEM",
 		"PAN"		, _TL("Panchromatic Channel"),
 		_TL(""),
 		PARAMETER_INPUT, false
 	);
 
-	Parameters.Add_Grid(pNode, "R_SHARP", _TL("Red"  ), _TL(""), PARAMETER_OUTPUT, false);
-	Parameters.Add_Grid(pNode, "G_SHARP", _TL("Green"), _TL(""), PARAMETER_OUTPUT, false);
-	Parameters.Add_Grid(pNode, "B_SHARP", _TL("Blue" ), _TL(""), PARAMETER_OUTPUT, false);
+	Parameters.Add_Grid("PAN_SYSTEM", "R_SHARP", _TL("Red"  ), _TL(""), PARAMETER_OUTPUT, false);
+	Parameters.Add_Grid("PAN_SYSTEM", "G_SHARP", _TL("Green"), _TL(""), PARAMETER_OUTPUT, false);
+	Parameters.Add_Grid("PAN_SYSTEM", "B_SHARP", _TL("Blue" ), _TL(""), PARAMETER_OUTPUT, false);
 
-	Parameters.Add_Grid_List(NULL,
+	Parameters.Add_Grid_List("",
 		"SHARPEN"	, _TL("Sharpened Channels"),
 		_TL(""),
 		PARAMETER_OUTPUT
 	);
 
-	Parameters.Add_Choice(NULL,
+	Parameters.Add_Choice("",
 		"RESAMPLING", _TL("Resampling"),
 		_TL(""),
 		CSG_String::Format("%s|%s|%s|",
@@ -447,30 +446,30 @@ CPanSharp_CN::CPanSharp_CN(void)
 	);
 
 	//-----------------------------------------------------
-	Parameters.Add_Grid_System(NULL,
+	Parameters.Add_Grid_System("",
 		"LO_RES"	, _TL("Low Resolution Grid System"),
 		_TL("")
 	);
 
-	Parameters.Add_Grid_List(Parameters("LO_RES"),
+	Parameters.Add_Grid_List("LO_RES",
 		"GRIDS"		, _TL("Original Channels"),
 		_TL(""),
 		PARAMETER_INPUT, false
 	);
 
-	Parameters.Add_Grid(NULL,
+	Parameters.Add_Grid("",
 		"PAN"		, _TL("Panchromatic Channel"),
 		_TL(""),
 		PARAMETER_INPUT
 	);
 
-	Parameters.Add_Grid_List(NULL,
+	Parameters.Add_Grid_List("",
 		"SHARPEN"	, _TL("Sharpened Channels"),
 		_TL(""),
 		PARAMETER_OUTPUT
 	);
 
-	Parameters.Add_Choice(NULL,
+	Parameters.Add_Choice("",
 		"RESAMPLING", _TL("Resampling"),
 		_TL(""),
 		CSG_String::Format("%s|%s|%s|",
@@ -503,14 +502,14 @@ bool CPanSharp_CN::On_Execute(void)
 	//-----------------------------------------------------
 	pSharp->Del_Items();
 
-	for(i=0; i<pGrids->Get_Count(); i++)
+	for(i=0; i<pGrids->Get_Grid_Count(); i++)
 	{
-		Process_Set_Text(CSG_String::Format("%s: %s ...", _TL("Resampling"), pGrids->asGrid(i)->Get_Name()));
+		Process_Set_Text(CSG_String::Format("%s: %s ...", _TL("Resampling"), pGrids->Get_Grid(i)->Get_Name()));
 
 		CSG_Grid	*pGrid	= SG_Create_Grid(*Get_System());
 
-		pGrid->Set_Name (pGrids->asGrid(i)->Get_Name());
-		pGrid->Assign   (pGrids->asGrid(i), Resampling);
+		pGrid->Set_Name (pGrids->Get_Grid(i)->Get_Name());
+		pGrid->Assign   (pGrids->Get_Grid(i), Resampling);
 
 		pSharp->Add_Item(pGrid);
 	}
@@ -525,11 +524,11 @@ bool CPanSharp_CN::On_Execute(void)
 
 			if( !pPan->is_NoData(x, y) )
 			{
-				for(i=0; i<pSharp->Get_Count(); i++)
+				for(i=0; i<pSharp->Get_Grid_Count(); i++)
 				{
-					if( !pSharp->asGrid(i)->is_NoData(x, y) )
+					if( !pSharp->Get_Grid(i)->is_NoData(x, y) )
 					{
-						Sum	+= pSharp->asGrid(i)->asDouble(x, y);
+						Sum	+= pSharp->Get_Grid(i)->asDouble(x, y);
 					}
 					else
 					{
@@ -542,18 +541,18 @@ bool CPanSharp_CN::On_Execute(void)
 
 			if( Sum )
 			{
-				Sum	= pPan->asDouble(x, y) * pSharp->Get_Count() / (Sum + pSharp->Get_Count());
+				Sum	= pPan->asDouble(x, y) * pSharp->Get_Grid_Count() / (Sum + pSharp->Get_Grid_Count());
 
-				for(i=0; i<pSharp->Get_Count(); i++)
+				for(i=0; i<pSharp->Get_Grid_Count(); i++)
 				{
-					pSharp->asGrid(i)->Mul_Value(x, y, Sum);
+					pSharp->Get_Grid(i)->Mul_Value(x, y, Sum);
 				}
 			}
 			else
 			{
-				for(i=0; i<pSharp->Get_Count(); i++)
+				for(i=0; i<pSharp->Get_Grid_Count(); i++)
 				{
-					pSharp->asGrid(i)->Set_NoData(x, y);
+					pSharp->Get_Grid(i)->Set_NoData(x, y);
 				}
 			}
 		}
@@ -583,30 +582,30 @@ CPanSharp_PCA::CPanSharp_PCA(void)
 	));
 
 	//-----------------------------------------------------
-	Parameters.Add_Grid_System(NULL,
+	Parameters.Add_Grid_System("",
 		"LO_RES"	, _TL("Low Resolution"),
 		_TL("")
 	);
 
-	Parameters.Add_Grid_List(Parameters("LO_RES"),
+	Parameters.Add_Grid_List("LO_RES",
 		"GRIDS"		, _TL("Original Channels"),
 		_TL(""),
 		PARAMETER_INPUT, false
 	);
 
-	Parameters.Add_Grid(NULL,
+	Parameters.Add_Grid("",
 		"PAN"		, _TL("Panchromatic Channel"),
 		_TL(""),
 		PARAMETER_INPUT
 	);
 
-	Parameters.Add_Grid_List(NULL,
+	Parameters.Add_Grid_List("",
 		"SHARPEN"	, _TL("Sharpened Channels"),
 		_TL(""),
 		PARAMETER_OUTPUT
 	);
 
-	Parameters.Add_Choice(NULL,
+	Parameters.Add_Choice("",
 		"METHOD"	, _TL("Method"),
 		_TL(""),
 		CSG_String::Format("%s|%s|%s|",
@@ -616,7 +615,7 @@ CPanSharp_PCA::CPanSharp_PCA(void)
 		), 1
 	);
 
-	Parameters.Add_Choice(NULL,
+	Parameters.Add_Choice("",
 		"RESAMPLING", _TL("Resampling"),
 		_TL(""),
 		CSG_String::Format("%s|%s|%s|",
@@ -626,7 +625,7 @@ CPanSharp_PCA::CPanSharp_PCA(void)
 		), 2
 	);
 
-	Parameters.Add_Choice(NULL,
+	Parameters.Add_Choice("",
 		"PAN_MATCH"	, _TL("Panchromatic Channel Matching"),
 		_TL(""),
 		CSG_String::Format("%s|%s|",
@@ -635,7 +634,7 @@ CPanSharp_PCA::CPanSharp_PCA(void)
 		), 1
 	);
 
-	Parameters.Add_Bool(NULL,
+	Parameters.Add_Bool("",
 		"OVERWRITE"	, _TL("Overwrite"),
 		_TL("overwrite previous output if adequate"),
 		true
@@ -673,7 +672,7 @@ bool CPanSharp_PCA::On_Execute(void)
 	//-----------------------------------------------------
 	CSG_Parameter_Grid_List	*pPCA	= Tool_Parms.Get_Parameter("PCA")->asGridList();
 
-	int			i, n	= pPCA->Get_Count();
+	int			i, n	= pPCA->Get_Grid_Count();
 
 	CSG_Grid	*PCA	= new CSG_Grid[n];
 	CSG_Grid	*pPan	= Parameters("PAN")->asGrid();
@@ -687,15 +686,15 @@ bool CPanSharp_PCA::On_Execute(void)
 
 	if( Parameters("PAN_MATCH")->asInt() == 0 )	// scale PAN band to fit first PC histogram
 	{
-		Offset_Pan	= pPan->Get_ZMin();
-		Offset		= pPCA->asGrid(0)->Get_ZMin();
-		Scale		= pPCA->asGrid(0)->Get_ZRange() / pPan->Get_ZRange();
+		Offset_Pan	= pPan->Get_Min();
+		Offset		= pPCA->Get_Grid(0)->Get_Min();
+		Scale		= pPCA->Get_Grid(0)->Get_Range() / pPan->Get_Range();
 	}
 	else
 	{
 		Offset_Pan	= pPan->Get_Mean();
-		Offset		= pPCA->asGrid(0)->Get_Mean();
-		Scale		= pPCA->asGrid(0)->Get_StdDev() / pPan->Get_StdDev();
+		Offset		= pPCA->Get_Grid(0)->Get_Mean();
+		Scale		= pPCA->Get_Grid(0)->Get_StdDev() / pPan->Get_StdDev();
 	}
 
 	PCA[0].Create(*Get_System());
@@ -723,15 +722,15 @@ bool CPanSharp_PCA::On_Execute(void)
 
 	for(i=1; i<n; i++)
 	{
-		Process_Set_Text(CSG_String::Format("%s: %s ...", _TL("Resampling"), pPCA->asGrid(i)->Get_Name()));
+		Process_Set_Text(CSG_String::Format("%s: %s ...", _TL("Resampling"), pPCA->Get_Grid(i)->Get_Name()));
 
 		PCA[i].Create(*Get_System());
-		PCA[i].Assign(pPCA->asGrid(i), Resampling);
+		PCA[i].Assign(pPCA->Get_Grid(i), Resampling);
 
-		delete(pPCA->asGrid(i));	// PCA tool was unmanaged, so we have to delete the output
+		delete(pPCA->Get_Grid(i));	// PCA tool was unmanaged, so we have to delete the output
 	}
 
-	delete(pPCA->asGrid(0));
+	delete(pPCA->Get_Grid(0));
 
 	pPCA->Del_Items();
 
@@ -765,20 +764,20 @@ bool CPanSharp_PCA::On_Execute(void)
 		pHiRes->Del_Items();
 	}
 
-	for(i=0; i<pLoRes->Get_Count() && i<pGrids->Get_Count(); i++)
+	for(i=0; i<pLoRes->Get_Grid_Count() && i<pGrids->Get_Grid_Count(); i++)
 	{
-		if( pHiRes->asGrid(i) )
+		if( pHiRes->Get_Grid(i) )
 		{
-			pHiRes->asGrid(i)->Assign(pGrids->asGrid(i));
+			pHiRes->Get_Grid(i)->Assign(pGrids->Get_Grid(i));
 
-			delete(pGrids->asGrid(i));
+			delete(pGrids->Get_Grid(i));
 		}
 		else
 		{
-			pHiRes->Add_Item(pGrids->asGrid(i));
+			pHiRes->Add_Item(pGrids->Get_Grid(i));
 		}
 
-		pHiRes->asGrid(i)->Set_Name(pLoRes->asGrid(i)->Get_Name());
+		pHiRes->Get_Grid(i)->Set_Name(pLoRes->Get_Grid(i)->Get_Name());
 	}
 
 	return( true );
