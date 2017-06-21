@@ -42,7 +42,9 @@ CCalculate_Uparea::CCalculate_Uparea()
 	Parameters.Add_Grid(
 		NULL, "PIT", "Pit",
 		"Gridfile met pits",
-		PARAMETER_OUTPUT
+		PARAMETER_OUTPUT, 
+		true, 
+		SG_DATATYPE_Short
 	);
 
 
@@ -131,6 +133,7 @@ bool CCalculate_Uparea::On_Execute(void)
 	pitnum = 0;
 	PitDat.empty();
 	//Message_Add("Start calculating pits");
+	
 	CalculatePitStuff();
 	CalculateUparea();
 
