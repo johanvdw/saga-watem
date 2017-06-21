@@ -16,9 +16,9 @@ Complete::Complete()
 	Parameters.Add_Grid(NULL, "PRC", _TL("Percelen"), _TL(""), PARAMETER_INPUT);
 	Parameters.Add_Grid(NULL, "K", _TL("K: bodemerosiegevoeligheidsfactor (ton ha MJ-1 mm-1)"), _TL("K: bodemerosiegevoeligheidsfactor (ton ha MJ-1 mm-1)"), PARAMETER_INPUT);
 	Parameters.Add_Grid(NULL, "C", _TL("C: de gewas- en bedrijfsvoeringsfactor (dimensieloos)"), _TL("C: de gewas- en bedrijfsvoeringsfactor (dimensieloos)"), PARAMETER_INPUT);
-
-	Parameters.Add_Grid(NULL, "UPSLOPE_AREA", _TL("UPAREA"), _TL(""), PARAMETER_OUTPUT);
+	
 	Parameters.Add_Grid(NULL, "PIT", _TL("Pit"), _TL(""), PARAMETER_OUTPUT);
+	Parameters.Add_Grid(NULL, "UPSLOPE_AREA", _TL("UPAREA"), _TL(""), PARAMETER_OUTPUT);
 	Parameters.Add_Grid(NULL, "LS", _TL("LS"), _TL(""), PARAMETER_OUTPUT);
 	Parameters.Add_Grid(NULL, "TILL", _TL("Tillage Erosion"), _TL(""), PARAMETER_OUTPUT_OPTIONAL);
 
@@ -54,10 +54,17 @@ Complete::Complete()
 		"", PARAMETER_TYPE_Double, 100, 0, 100
 	);
 
+	/* We assume PCTOROAD to be the same value as PCTOCROP for complete calculation
 	Parameters.Add_Value(
 		NULL, "PCTOROAD", "Parcel Connectivity to road/built-up areas",
 		"", PARAMETER_TYPE_Double, 70, 0, 100
 	);
+	*/
+
+/*	Parameters.Add_Value(
+		NULL, "PCTOCROP2", "Parcel Connectivity to cropland, second scenario", "",
+		PARAMETER_TYPE_Double, 100, 0, 100)
+	)*/
 
 
 }
@@ -72,7 +79,7 @@ bool Complete::On_Execute(void)
 		&& SG_TOOL_PARAMETER_SET("UPSLOPE_AREA", Parameters("UPSLOPE_AREA"))
 		&& SG_TOOL_PARAMETER_SET("PCTOCROP", Parameters("PCTOCROP"))
 		&& SG_TOOL_PARAMETER_SET("PCTOFOREST", Parameters("PCTOFOREST"))
-		&& SG_TOOL_PARAMETER_SET("PCTOROAD", Parameters("PCTOROAD"))
+		&& SG_TOOL_PARAMETER_SET("PCTOROAD", Parameters("PCTOCROP"))
 	);
 
 	SG_RUN_TOOL_ExitOnError("watem", 2, //LS calculation,
