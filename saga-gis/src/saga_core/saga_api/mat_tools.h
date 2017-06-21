@@ -580,6 +580,7 @@ public:
 	double						Get_Median			(void)		{	return( Get_Quantile(50.0) );	}
 	double						Get_Quantile		(double Quantile);
 	double						Get_Gini			(void);
+	double						Get_Cumsum          (double Cumsum);
 
 	void						Add					(const CSG_Simple_Statistics &Statistics);
 

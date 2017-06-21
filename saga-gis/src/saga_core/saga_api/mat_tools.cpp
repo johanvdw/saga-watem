@@ -575,6 +575,29 @@ double CSG_Simple_Statistics::Get_Quantile(double Quantile)
 	return( m_Mean );
 }
 
+double CSG_Simple_Statistics::Get_Cumsum(double Cumsum)
+{
+	if (m_Values.Get_Size() > 0)
+	{
+		if (!m_bSorted)
+		{
+			qsort(m_Values.Get_Array(), m_Values.Get_Size(), sizeof(double), SG_Compare_Double);
+
+			m_bSorted = true;
+		}
+
+		sLong index = (sLong)(0.5 + (m_Values.Get_Size() - 1) * Cumsum / 100.0);
+		double result = 0;
+		for (sLong i = 0; i < index; i++)
+		{
+			result += Get_Value(i);
+		}
+		return(result);
+	}
+
+	return(m_Mean);
+}
+
 //---------------------------------------------------------
 /**
   * The Gini coefficient is a measure of statistical dispersion
