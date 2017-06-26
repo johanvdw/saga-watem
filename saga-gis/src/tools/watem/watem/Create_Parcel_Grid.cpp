@@ -57,7 +57,7 @@ bool Create_Parcel_Grid::On_Execute()
 		&& SG_TOOL_PARAMETER_SET("GRID", infra)
 		&& SG_TOOL_PARAMETER_SET("OUTPUT", 0) // data / no data
 		&& SG_TOOL_PARAMETER_SET("MULTIPLE", 1)
-		&& SG_TOOL_PARAMETER_SET("POLY_TYPE", 0)
+		&& SG_TOOL_PARAMETER_SET("POLY_TYPE", 1)//cell: als er een pixels overlapt met infrastructuur moet hele pixels water worden
 	);
 
 	// grids maken van waterwegen
@@ -70,7 +70,7 @@ bool Create_Parcel_Grid::On_Execute()
 		&& SG_TOOL_PARAMETER_SET("GRID", vha_pol)
 		&& SG_TOOL_PARAMETER_SET("OUTPUT", 0) // data / no data
 		&& SG_TOOL_PARAMETER_SET("MULTIPLE", 1)
-		&& SG_TOOL_PARAMETER_SET("POLY_TYPE", 0)
+		&& SG_TOOL_PARAMETER_SET("POLY_TYPE", 1) //cell: als er een pixels overlapt met water moet hele pixels water worden
 	);
 
 	CSG_Grid * vha_line;
@@ -82,7 +82,7 @@ bool Create_Parcel_Grid::On_Execute()
 		&& SG_TOOL_PARAMETER_SET("GRID", vha_line)
 		&& SG_TOOL_PARAMETER_SET("OUTPUT", 0) // data / no data
 		&& SG_TOOL_PARAMETER_SET("MULTIPLE", 1)
-		&& SG_TOOL_PARAMETER_SET("POLY_TYPE", 0)
+		&& SG_TOOL_PARAMETER_SET("LINE_TYPE", 1) //thick lines
 	);
 
 	// verschillende grids combineren

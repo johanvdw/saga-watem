@@ -399,7 +399,7 @@ void CCalculate_Uparea::CalculatePitStuff()
 										if (labs(k) != searchradius && labs(l) != searchradius) {
 											continue;
 										}
-										if (DEM->asDouble(i + k, j + l) < minvalue)
+										if (is_InGrid(i +k, j+l) && DEM->asDouble(i + k, j + l) < minvalue)
 										{
 											minvalue = DEM->asDouble(i + k, j + l);
 											PitDat[nvlag].outc = i + k;
