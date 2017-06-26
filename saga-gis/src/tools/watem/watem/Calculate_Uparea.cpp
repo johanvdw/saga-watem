@@ -123,10 +123,9 @@ bool CCalculate_Uparea::On_Execute(void)
 	// Execute calculation...
 
 	// make sure m_pUp_Area is empty (as we only add) -- TODO check if this is really necessary
+	Up_Area->Assign(0.0);
 	for (int i = 0; i < Get_NX(); i++)
-#pragma omp parallel for
-		for (int j = 0; j < Get_NY(); j++)
-			Up_Area->Set_Value(i, j, 0);
+
 	//m_pAspect = Parameters("ASPECT")->asGrid();
 	//pitwin = Parameters("PITWIN")->asInt();
 	pitwin = 200;
