@@ -781,7 +781,7 @@ void CCalculate_Uparea::DistributeTilDirEvent(int i, int j, double *AREA, double
 					int row = PitDat[vlag].outr;
 					int col = PitDat[vlag].outc;
 
-					if (PRC->asInt(col, row) == -1) {
+					if (is_InGrid(col, row) && PRC->asInt(col, row) == -1) {
 						rivvlag = 0;
 						RivDat[rivvlag].latinput += *AREA;
 						*AREA = 0.0;
