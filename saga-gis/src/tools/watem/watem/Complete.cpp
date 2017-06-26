@@ -15,7 +15,7 @@ Complete::Complete()
 	Parameters.Add_Grid(NULL, "DEM", _TL("DEM"), _TL(""), PARAMETER_INPUT);
 	Parameters.Add_Grid(NULL, "PRC", _TL("Percelen"), _TL(""), PARAMETER_INPUT);
 	Parameters.Add_Grid(NULL, "K", _TL("K: bodemerosiegevoeligheidsfactor (ton ha MJ-1 mm-1)"), _TL("K: bodemerosiegevoeligheidsfactor (ton ha MJ-1 mm-1)"), PARAMETER_INPUT);
-	Parameters.Add_Grid(NULL, "C", _TL("C: de gewas- en bedrijfsvoeringsfactor (dimensieloos)"), _TL("C: de gewas- en bedrijfsvoeringsfactor (dimensieloos)"), PARAMETER_INPUT);
+	//Parameters.Add_Grid(NULL, "C", _TL("C: de gewas- en bedrijfsvoeringsfactor (dimensieloos)"), _TL("C: de gewas- en bedrijfsvoeringsfactor (dimensieloos)"), PARAMETER_INPUT);
 	
 	Parameters.Add_Grid(NULL, "PIT", _TL("Pit"), _TL(""), PARAMETER_OUTPUT);
 	Parameters.Add_Grid(NULL, "UPSLOPE_AREA", _TL("UPAREA"), _TL(""), PARAMETER_OUTPUT);
@@ -54,6 +54,10 @@ Complete::Complete()
 		"", PARAMETER_TYPE_Double, 100, 0, 100
 	);
 
+	Parameters.Add_Value(
+		NULL, "SAVE_MEMORY", "Save memory", "save memory", PARAMETER_TYPE_Bool, false
+	);
+
 	/* We assume PCTOROAD to be the same value as PCTOCROP for complete calculation
 	Parameters.Add_Value(
 		NULL, "PCTOROAD", "Parcel Connectivity to road/built-up areas",
@@ -71,6 +75,7 @@ Complete::Complete()
 
 bool Complete::On_Execute(void)
 {
+	Parameters("K")->asGrid()->Set_Cache(true);
 
 	SG_RUN_TOOL_ExitOnError("watem", 1, //uparea,
 		SG_TOOL_PARAMETER_SET("DEM", Parameters("DEM"))
@@ -88,15 +93,37 @@ bool Complete::On_Execute(void)
 		&& SG_TOOL_PARAMETER_SET("LS", Parameters("LS"))
 		);
 
+	// C grid genereren op basis van percelengrid
+	CSG_Grid * C = new CSG_Grid(*Get_System(), SG_DATATYPE_Float);
+
+	CSG_Grid * PRC = Parameters("PRC")->asGrid();
+
+	#pragma omp parallel for
+	for (int i = 0; i < C->Get_NCells(); i++) {
+		switch (PRC->asInt(i))
+		{
+			case 10000: C->Set_Value(i, 0.001); break;
+			case -1:
+			case -2:
+			case 0: C->Set_Value(i, 0); break;
+			default: C->Set_Value(i, 0.37); break;
+		}
+			
+
+		
+	}
+
 	SG_RUN_TOOL_ExitOnError("watem", 3, //watererosie op basis LS,
 		SG_TOOL_PARAMETER_SET("LS", Parameters("LS"))
 		&& SG_TOOL_PARAMETER_SET("K", Parameters("K"))
-		&& SG_TOOL_PARAMETER_SET("C", Parameters("C"))
+		&& SG_TOOL_PARAMETER_SET("C", C)
 		&& SG_TOOL_PARAMETER_SET("WATER_EROSION", Parameters("WATER_EROSION"))
 		&& SG_TOOL_PARAMETER_SET("R", Parameters("R"))
 		&& SG_TOOL_PARAMETER_SET("P", Parameters("P"))
 		&& SG_TOOL_PARAMETER_SET("CORR", Parameters("CORR"))
 		);
+
+	delete C;
 
 	if (Parameters("TILL")->asGrid() != NULL)
 	{
