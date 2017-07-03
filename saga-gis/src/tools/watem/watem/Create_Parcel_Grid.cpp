@@ -13,7 +13,8 @@ Create_Parcel_Grid::Create_Parcel_Grid()
 	));
 
 	Parameters.Add_Shapes(NULL, "PARCEL_SHAPES", "Percelen", "Percelen", PARAMETER_INPUT, SHAPE_TYPE_Polygon);
-	Parameters.Add_Grid(NULL, "PARCEL_GRID", "Parcel grid", "Parcel grid",PARAMETER_OUTPUT, true, SG_DATATYPE_Short);
+	Parameters.Add_Grid(NULL, "LANDUSE", "Landgebruik", "Landgebruik", PARAMETER_INPUT);
+	Parameters.Add_Grid(NULL, "PRC", "Parcel grid", "Parcel grid",PARAMETER_OUTPUT, true, SG_DATATYPE_Short);
 
 	Parameters.Add_Shapes(NULL, "INFRA", "Infrastructuur (polygoon)", "Infrastructuur", PARAMETER_INPUT, SHAPE_TYPE_Polygon);
 	Parameters.Add_Shapes(NULL, "VHA_POL", "VHA (polygoon)", "VHA (polygoon)", PARAMETER_INPUT, SHAPE_TYPE_Polygon);
@@ -28,7 +29,10 @@ Create_Parcel_Grid::~Create_Parcel_Grid()
 
 bool Create_Parcel_Grid::On_Execute()
 {
-	CSG_Grid * parcel_grid = Parameters("PARCEL_GRID")->asGrid();
+	CSG_Grid * prc = Parameters("PRC")->asGrid();
+	CSG_Grid * landuse = Parameters("LANDUSE")->asGrid();
+
+	CSG_Grid * parcel_grid = new CSG_Grid(prc->Get_System(), SG_DATATYPE_Long);
 
 	SG_RUN_TOOL_ExitOnError("grid_gridding", 0, 
 		SG_TOOL_PARAMETER_SET("INPUT", Parameters("PARCEL_SHAPES"))
@@ -37,19 +41,28 @@ bool Create_Parcel_Grid::On_Execute()
 		&& SG_TOOL_PARAMETER_SET("OUTPUT", 1)
 		&& SG_TOOL_PARAMETER_SET("MULTIPLE", 1)
 		&& SG_TOOL_PARAMETER_SET("POLY_TYPE", 0)
-		&& SG_TOOL_PARAMETER_SET("GRID_TYPE", 1) //integer 2 byte
+		&& SG_TOOL_PARAMETER_SET("GRID_TYPE", 2) //integer 4 byte
 	);
 
-	// vervolgens worden deze percelen hernummerd
+	// vervolgens worden deze percelen hernummerd en over het landgebruik gelegd
 
 	#pragma omp parallel for
-	for (int i = 0; i < parcel_grid->Get_NCells(); i++) {
-		parcel_grid->Set_Value(i, (parcel_grid->asInt(i) % 9997) + 2);
+	for (int i = 0; i < prc->Get_NCells(); i++) {
+		if (!parcel_grid->is_NoData(i) && parcel_grid->asInt(i) >= 0)
+		{
+			prc->Set_Value(i, (parcel_grid->asInt(i) % 9997) + 2);
+		}
+		else
+		{
+			prc->Set_Value(i, landuse->asInt(i));
+		}
+		
 	}
+	delete parcel_grid;
 
 	// grid maken van infrastructuur
 	CSG_Grid * infra;
-	infra = new CSG_Grid(parcel_grid->Get_System(), SG_DATATYPE_Bit);
+	infra = new CSG_Grid(prc->Get_System(), SG_DATATYPE_Bit);
 
 	SG_RUN_TOOL_ExitOnError("grid_gridding", 0,
 		SG_TOOL_PARAMETER_SET("INPUT", Parameters("INFRA"))
@@ -62,7 +75,7 @@ bool Create_Parcel_Grid::On_Execute()
 
 	// grids maken van waterwegen
 	CSG_Grid * vha_pol;
-	vha_pol = new CSG_Grid(parcel_grid->Get_System(), SG_DATATYPE_Bit);
+	vha_pol = new CSG_Grid(prc->Get_System(), SG_DATATYPE_Bit);
 
 	SG_RUN_TOOL_ExitOnError("grid_gridding", 0,
 		SG_TOOL_PARAMETER_SET("INPUT", Parameters("VHA_POL"))
@@ -74,7 +87,7 @@ bool Create_Parcel_Grid::On_Execute()
 	);
 
 	CSG_Grid * vha_line;
-	vha_line = new CSG_Grid(parcel_grid->Get_System(), SG_DATATYPE_Bit);
+	vha_line = new CSG_Grid(prc->Get_System(), SG_DATATYPE_Bit);
 
 	SG_RUN_TOOL_ExitOnError("grid_gridding", 0,
 		SG_TOOL_PARAMETER_SET("INPUT", Parameters("VHA_LINE"))
@@ -87,11 +100,11 @@ bool Create_Parcel_Grid::On_Execute()
 
 	// verschillende grids combineren
 #pragma omp parallel for
-	for (int i = 0; i < parcel_grid->Get_NCells(); i++) {
+	for (int i = 0; i < prc->Get_NCells(); i++) {
 		if (vha_line->asInt(i) == 1 || vha_pol->asInt(i) == 1)
-			parcel_grid->Set_Value(i, -1);
+			prc->Set_Value(i, -1);
 		else if (infra->asInt(i) == 1)
-			parcel_grid->Set_Value(i, -2);
+			prc->Set_Value(i, -2);
 	}
 
 	delete infra;
