@@ -320,12 +320,7 @@ void CCalculate_Uparea::CalculatePitStuff()
 	int nrow = Get_NY();
 	int ncol = Get_NX();
 
-	// dit kan misschien  weggelaten worden
-#pragma omp parallel for
-	for (int pi = 0; pi < Get_NCells(); pi++)
-	{
-		Pit->Set_Value(pi, 0);
-	}
+	Pit->Assign(0.0);
 
 	for (j = nrow - 2; j > 0; j--) // buitenste rand niet meenemen. Van beneden naar boven zoals watem
 	{
@@ -787,8 +782,8 @@ void CCalculate_Uparea::DistributeTilDirEvent(int i, int j, double *AREA, double
 						*AREA = 0.0;
 					}
 					else {
-
-						Up_Area->Add_Value(PitDat[vlag].outc, PitDat[vlag].outr, *AREA);
+						if (is_InGrid(col, row))
+							Up_Area->Add_Value(PitDat[vlag].outc, PitDat[vlag].outr, *AREA);
 
 						PitDat[vlag].input += *AREA;
 
