@@ -75,7 +75,7 @@ Complete::Complete()
 
 bool Complete::On_Execute(void)
 {
-	Parameters("K")->asGrid()->Set_Cache(true);
+	// Parameters("K")->asGrid()->Set_Cache(true); //TODO: uitzoeken waarom dit niet werkt
 
 	SG_RUN_TOOL_ExitOnError("watem", 1, //uparea,
 		SG_TOOL_PARAMETER_SET("DEM", Parameters("DEM"))
