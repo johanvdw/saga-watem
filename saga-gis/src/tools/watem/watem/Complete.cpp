@@ -97,9 +97,9 @@ bool Complete::On_Execute(void)
 	int conn = 100 - Parameters("PCTOCROP")->asDouble();
 	CSG_String connectivity_string = CSG_String::Format("%d", conn);
 
-	CSG_Grid * water_erosion;
-	water_erosion = Parameters("LS")->asGrid();
-	water_erosion->Set_Name("LS_" + connectivity_string);
+	CSG_Grid * ls;
+	ls = Parameters("LS")->asGrid();
+	ls->Set_Name("LS_" + connectivity_string);
 
 	// C grid genereren op basis van percelengrid
 	CSG_Grid * C = new CSG_Grid(*Get_System(), SG_DATATYPE_Float);

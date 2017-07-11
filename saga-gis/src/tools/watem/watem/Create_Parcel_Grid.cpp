@@ -14,11 +14,25 @@ Create_Parcel_Grid::Create_Parcel_Grid()
 
 	Parameters.Add_Shapes(NULL, "PARCEL_SHAPES", "Percelen", "Percelen", PARAMETER_INPUT, SHAPE_TYPE_Polygon);
 	Parameters.Add_Grid(NULL, "LANDUSE", "Landgebruik", "Landgebruik", PARAMETER_INPUT);
+
 	Parameters.Add_Grid(NULL, "PRC", "Parcel grid", "Parcel grid",PARAMETER_OUTPUT, true, SG_DATATYPE_Short);
 
-	Parameters.Add_Shapes(NULL, "INFRA", "Infrastructuur (polygoon)", "Infrastructuur", PARAMETER_INPUT, SHAPE_TYPE_Polygon);
+	//Parameters.Add_Shapes(NULL, "INFRA", "Infrastructuur (polygoon)", "Infrastructuur", PARAMETER_INPUT, SHAPE_TYPE_Polygon);
+
 	Parameters.Add_Shapes(NULL, "VHA_POL", "VHA (polygoon)", "VHA (polygoon)", PARAMETER_INPUT, SHAPE_TYPE_Polygon);
 	Parameters.Add_Shapes(NULL, "VHA_LINE", "VHA (lijnen)", "VHA (lijnen) - Wlas", PARAMETER_INPUT, SHAPE_TYPE_Line);
+
+	Parameters.Add_Shapes(NULL, "SBN", "GRB Sbn (spoorbaan)", "GRB Sbn (spoorbaan)", PARAMETER_INPUT, SHAPE_TYPE_Polygon);
+	Parameters.Add_Shapes(NULL, "WBN", "GRB Wbn (wegbaan)", "GRB Wbn (wegbaan)", PARAMETER_INPUT, SHAPE_TYPE_Polygon);
+
+	Parameters.Add_Shapes(NULL, "WGA", "GRB Wga (wegaanhorigheid)", "GRB Wga (wegaanhorigheid)", PARAMETER_INPUT, SHAPE_TYPE_Polygon);
+	
+	Parameters.Add_Shapes(NULL, "GBG", "GRB Gbg (gebouw aan de grond)", "GRB Gbg (gebouw aan de grond)", PARAMETER_INPUT, SHAPE_TYPE_Polygon);
+	Parameters.Add_Shapes(NULL, "GBA", "GRB Gbg (gebouwaanhorigheid)", "GRB Gba (gebouwaanhorigheid)", PARAMETER_INPUT, SHAPE_TYPE_Polygon);
+	Parameters.Add_Shapes(NULL, "TRN", "GRB Trn (terrein)", "GRB Trn (Terrein) - enkel bepaalde klassen worden gebruikt", PARAMETER_INPUT, SHAPE_TYPE_Polygon);
+	Parameters.Add_Shapes(NULL, "KNW", "GRB Knw (Kunstwerk)", "GRB Knw (Kunstwerk)", PARAMETER_INPUT, SHAPE_TYPE_Polygon);
+
+
 	
 }
 
@@ -27,10 +41,43 @@ Create_Parcel_Grid::~Create_Parcel_Grid()
 {
 }
 
+
+CSG_Grid * BinaryShapetoGrid(CSG_Parameter* shape, const CSG_Grid_System &system, const int poly_type)
+{
+	CSG_Grid *  grid = new CSG_Grid(system, SG_DATATYPE_Bit);
+	SG_RUN_TOOL_ExitOnError("grid_gridding", 0,
+		SG_TOOL_PARAMETER_SET("INPUT", shape)
+		&& SG_TOOL_PARAMETER_SET("TARGET_DEFINITION", 1)	// grid or grid system
+		&& SG_TOOL_PARAMETER_SET("GRID", grid)
+		&& SG_TOOL_PARAMETER_SET("OUTPUT", 0) // data / no data
+		&& SG_TOOL_PARAMETER_SET("MULTIPLE", 1)
+		&& SG_TOOL_PARAMETER_SET("POLY_TYPE", poly_type)//cell: als er een pixels overlapt met infrastructuur moet hele pixels infrastructuur  worden
+	);
+	return grid;
+}
+
 bool Create_Parcel_Grid::On_Execute()
 {
 	CSG_Grid * prc = Parameters("PRC")->asGrid();
 	CSG_Grid * landuse = Parameters("LANDUSE")->asGrid();
+
+	// grid maken van GRB achtergrondlagen (gebouwen, kunstwerken)
+	CSG_Grid * gbg, *gba, *wga, *knw;
+	gbg = BinaryShapetoGrid(Parameters("GBG"), prc->Get_System(), 1);
+	gba = BinaryShapetoGrid(Parameters("GBA"), prc->Get_System(), 1);
+	wga = BinaryShapetoGrid(Parameters("WGA"), prc->Get_System(), 1);
+	knw = BinaryShapetoGrid(Parameters("KNW"), prc->Get_System(), 1);
+
+	// landgebruik combineren met GRB achtergrondlagen
+#pragma omp parallel for
+	for (int i = 0; i < prc->Get_NCells(); i++) {
+		if (gbg->asInt(i) == 1 || gba->asInt(i) == 1 || wga->asInt(i) == 1 || knw->asInt(i) == 1)
+			prc->Set_Value(i, -1);
+		else 
+			prc->Set_Value(i, landuse->asInt(i));
+	}
+
+	delete gbg, gba, wga, knw;
 
 	CSG_Grid * parcel_grid = new CSG_Grid(prc->Get_System(), SG_DATATYPE_Long);
 
@@ -52,39 +99,21 @@ bool Create_Parcel_Grid::On_Execute()
 		{
 			prc->Set_Value(i, (parcel_grid->asInt(i) % 9997) + 2);
 		}
-		else
-		{
-			prc->Set_Value(i, landuse->asInt(i));
-		}
-		
 	}
 	delete parcel_grid;
 
-	// grid maken van infrastructuur
-	CSG_Grid * infra;
-	infra = new CSG_Grid(prc->Get_System(), SG_DATATYPE_Bit);
+	
+	// grids maken van wegen en waterwegen
 
-	SG_RUN_TOOL_ExitOnError("grid_gridding", 0,
-		SG_TOOL_PARAMETER_SET("INPUT", Parameters("INFRA"))
-		&& SG_TOOL_PARAMETER_SET("TARGET_DEFINITION", 1)	// grid or grid system
-		&& SG_TOOL_PARAMETER_SET("GRID", infra)
-		&& SG_TOOL_PARAMETER_SET("OUTPUT", 0) // data / no data
-		&& SG_TOOL_PARAMETER_SET("MULTIPLE", 1)
-		&& SG_TOOL_PARAMETER_SET("POLY_TYPE", 1)//cell: als er een pixels overlapt met infrastructuur moet hele pixels water worden
-	);
+	// todo : wegenregister agiv (lijnen)
+	CSG_Grid *wbn, *sbn;
+	wbn = BinaryShapetoGrid(Parameters("WBN"), prc->Get_System(), 1);
+	sbn = BinaryShapetoGrid(Parameters("SBN"), prc->Get_System(), 1);
 
-	// grids maken van waterwegen
+
 	CSG_Grid * vha_pol;
-	vha_pol = new CSG_Grid(prc->Get_System(), SG_DATATYPE_Bit);
+	vha_pol = BinaryShapetoGrid(Parameters("VHA_POL"), prc->Get_System(), 1);
 
-	SG_RUN_TOOL_ExitOnError("grid_gridding", 0,
-		SG_TOOL_PARAMETER_SET("INPUT", Parameters("VHA_POL"))
-		&& SG_TOOL_PARAMETER_SET("TARGET_DEFINITION", 1)	// grid or grid system
-		&& SG_TOOL_PARAMETER_SET("GRID", vha_pol)
-		&& SG_TOOL_PARAMETER_SET("OUTPUT", 0) // data / no data
-		&& SG_TOOL_PARAMETER_SET("MULTIPLE", 1)
-		&& SG_TOOL_PARAMETER_SET("POLY_TYPE", 1) //cell: als er een pixels overlapt met water moet hele pixels water worden
-	);
 
 	CSG_Grid * vha_line;
 	vha_line = new CSG_Grid(prc->Get_System(), SG_DATATYPE_Bit);
@@ -99,17 +128,16 @@ bool Create_Parcel_Grid::On_Execute()
 	);
 
 	// verschillende grids combineren
-#pragma omp parallel for
+	#pragma omp parallel for
 	for (int i = 0; i < prc->Get_NCells(); i++) {
 		if (vha_line->asInt(i) == 1 || vha_pol->asInt(i) == 1)
 			prc->Set_Value(i, -1);
-		else if (infra->asInt(i) == 1)
+		else if (wbn->asInt(i) == 1 || sbn->asInt(i) == 1)
 			prc->Set_Value(i, -2);
 	}
 
-	delete infra;
-	delete vha_pol;
-	delete vha_line;
+
+	delete vha_pol, vha_line, wbn, sbn;
 
 	return true;
 }
