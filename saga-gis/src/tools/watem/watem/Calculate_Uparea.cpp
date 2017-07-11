@@ -128,7 +128,7 @@ bool CCalculate_Uparea::On_Execute(void)
 
 	//m_pAspect = Parameters("ASPECT")->asGrid();
 	//pitwin = Parameters("PITWIN")->asInt();
-	pitwin = 200;
+	pitwin = 200;  
 	pitnum = 0;
 	PitDat.empty();
 	//Message_Add("Start calculating pits");
@@ -745,20 +745,22 @@ void CCalculate_Uparea::DistributeTilDirEvent(int i, int j, double *AREA, double
 					vlag = Pit->asInt(i + ROWMIN, j + COLMIN);
 					int row = PitDat[vlag].outr;
 					int col = PitDat[vlag].outc;
-					if (is_InGrid(col, row) && PRC->asInt(col, row) == -1) {
-						rivvlag = 0;
-						RivDat[rivvlag].latinput += *AREA;
+					if (is_InGrid(col, row)) {
+						if (PRC->asInt(col, row) == -1) {
+							rivvlag = 0;
+							RivDat[rivvlag].latinput += *AREA;
 
+							*AREA = 0.0;
+						}
+						else {
 
-						*AREA = 0.0;
+							Up_Area->Add_Value(PitDat[vlag].outc, PitDat[vlag].outr, *AREA);
+
+							PitDat[vlag].input += *AREA;
+
+						}
 					}
-					else {
 
-						Up_Area->Add_Value(PitDat[vlag].outc, PitDat[vlag].outr, *AREA);
-
-						PitDat[vlag].input += *AREA;
-
-					}
 					FINISH->Set_Value(i, j, 1);
 
 				}
@@ -783,7 +785,7 @@ void CCalculate_Uparea::DistributeTilDirEvent(int i, int j, double *AREA, double
 					}
 					else {
 						if (is_InGrid(col, row))
-							Up_Area->Add_Value(PitDat[vlag].outc, PitDat[vlag].outr, *AREA);
+							Up_Area->Add_Value(col, row, *AREA);
 
 						PitDat[vlag].input += *AREA;
 

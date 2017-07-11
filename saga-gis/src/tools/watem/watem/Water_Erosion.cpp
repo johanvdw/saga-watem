@@ -87,6 +87,8 @@ bool Water_Erosion::On_Execute()
 
 	water_erosion->Set_NoData_Value(-99);
 	
+	//todo: stijl zoals pixelkaart
+
 	return true;
 }
 
