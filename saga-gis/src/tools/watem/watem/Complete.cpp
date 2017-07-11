@@ -1,7 +1,5 @@
 #include "Complete.h"
 
-
-
 Complete::Complete()
 {
 	Set_Name(_TL("Complete Berekening Erosiekaart"));
@@ -84,14 +82,24 @@ bool Complete::On_Execute(void)
 		&& SG_TOOL_PARAMETER_SET("UPSLOPE_AREA", Parameters("UPSLOPE_AREA"))
 		&& SG_TOOL_PARAMETER_SET("PCTOCROP", Parameters("PCTOCROP"))
 		&& SG_TOOL_PARAMETER_SET("PCTOFOREST", Parameters("PCTOFOREST"))
-		&& SG_TOOL_PARAMETER_SET("PCTOROAD", Parameters("PCTOCROP"))
-	);
+		&& SG_TOOL_PARAMETER_SET("PCTOROAD", Parameters("PCTOCROP")) 
+	);// als waarde voor PCTOROAD wordt hier (bewust) ook de waarde van crop gebruikt
+
 
 	SG_RUN_TOOL_ExitOnError("watem", 2, //LS calculation,
 		SG_TOOL_PARAMETER_SET("DEM", Parameters("DEM"))
 		&& SG_TOOL_PARAMETER_SET("UPSLOPE_AREA", Parameters("UPSLOPE_AREA"))
 		&& SG_TOOL_PARAMETER_SET("LS", Parameters("LS"))
 		);
+
+	// include connectivity in ls area name
+
+	int conn = 100 - Parameters("PCTOCROP")->asDouble();
+	CSG_String connectivity_string = CSG_String::Format("%d", conn);
+
+	CSG_Grid * water_erosion;
+	water_erosion = Parameters("LS")->asGrid();
+	water_erosion->Set_Name("LS_" + connectivity_string);
 
 	// C grid genereren op basis van percelengrid
 	CSG_Grid * C = new CSG_Grid(*Get_System(), SG_DATATYPE_Float);
@@ -124,6 +132,11 @@ bool Complete::On_Execute(void)
 		);
 
 	delete C;
+
+
+	CSG_Grid * water_erosion;
+	water_erosion = Parameters("WATER_EROSION")->asGrid();
+	water_erosion->Set_Name("water_erosion_" + connectivity_string);
 
 	if (Parameters("TILL")->asGrid() != NULL)
 	{

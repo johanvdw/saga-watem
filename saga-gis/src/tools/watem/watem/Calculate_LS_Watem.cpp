@@ -184,6 +184,8 @@ double CCalculate_LS_Watem::Get_LS(int x, int y)
 		{
 			//opm: dit staat zo in oorspronkelijke pascal code - niet volgens documentatie
 			//Sfactor: = 3.0*(power(SIN(slope[i, j]), 0.8)) + 0.56
+
+			// op overleg met KUL werd vermeld dat we hier eventueel minimum van de twee zouden kunnen nemen. Nog niet aangepast
 			S = 3.0 * pow(sin_Slope, 0.8) + 0.56;
 		}
 		else
