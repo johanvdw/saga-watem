@@ -64,6 +64,7 @@
 #include <wx/dcmemory.h>
 #include <wx/image.h>
 #include <wx/filename.h>
+#include <wx/clipbrd.h>
 
 #include "res_commands.h"
 #include "res_dialogs.h"
@@ -203,6 +204,7 @@ wxMenu * CWKSP_Grid::Get_Menu(void)
 		CMD_Menu_Add_Item(pMenu, false, ID_CMD_DATA_SAVETODB);
 
 	CMD_Menu_Add_Item(pMenu, false, ID_CMD_GRID_SAVEAS_IMAGE);
+	CMD_Menu_Add_Item(pMenu, false, ID_CMD_GRID_CLIPBOARD_IMAGE);
 
 	if( m_pObject->is_File_Native() && m_pObject->is_Modified() )
 		CMD_Menu_Add_Item(pMenu, false, ID_CMD_DATA_RELOAD);
@@ -218,8 +220,8 @@ wxMenu * CWKSP_Grid::Get_Menu(void)
 	CMD_Menu_Add_Item(pMenu, false, ID_CMD_GRID_SCATTERPLOT);
 
 	pMenu->AppendSeparator();
-	CMD_Menu_Add_Item(pMenu, false, ID_CMD_WKSP_ITEM_SETTINGS_COPY);
 	CMD_Menu_Add_Item(pMenu, false, ID_CMD_GRID_SET_LUT);
+	CMD_Menu_Add_Item(pMenu, false, ID_CMD_WKSP_ITEM_SETTINGS_COPY);
 
 	return( pMenu );
 }
@@ -239,6 +241,10 @@ bool CWKSP_Grid::On_Command(int Cmd_ID)
 
 	case ID_CMD_GRID_SAVEAS_IMAGE:
 		_Save_Image();
+		break;
+
+	case ID_CMD_GRID_CLIPBOARD_IMAGE:
+		_Save_Image_Clipboard();
 		break;
 
 	case ID_CMD_GRID_HISTOGRAM:
@@ -368,7 +374,7 @@ void CWKSP_Grid::On_Create_Parameters(void)
 	((CSG_Parameter_Choice *)m_Parameters("COLORS_TYPE")->Get_Data())->Set_Items(
 		CSG_String::Format("%s|%s|%s|%s|%s|%s|%s|",
 			_TL("Single Symbol"   ),	// CLASSIFY_UNIQUE
-			_TL("Lookup Table"    ),	// CLASSIFY_LUT
+			_TL("Classified"      ),	// CLASSIFY_LUT
 			_TL("Discrete Colors" ),	// CLASSIFY_METRIC
 			_TL("Graduated Colors"),	// CLASSIFY_GRADUATED
 			_TL("Shade"           ),	// CLASSIFY_SHADE
@@ -730,29 +736,19 @@ int CWKSP_Grid::On_Parameter_Changed(CSG_Parameters *pParameters, CSG_Parameter 
 //---------------------------------------------------------
 void CWKSP_Grid::_LUT_Create(void)
 {
-	int				Type;
-	CSG_Colors		*pColors;
-	CSG_Table		LUT;
-
 	//-----------------------------------------------------
 	static CSG_Parameters	Parameters;
 
 	if( Parameters.Get_Count() == 0 )
 	{
-		Parameters.Create(NULL, _TL("Create Lookup Table"), _TL(""));
-
-		Parameters.Add_Colors("",
-			"COLOR"	, _TL("Colors"),
-			_TL("")
-		)->asColors()->Set_Count(10);
-
-		Parameters.Add_Choice("",
-			"TYPE"	, _TL("Classification Type"),
-			_TL(""),
-			CSG_String::Format("%s|%s|%s|",
+		Parameters.Create(NULL, _TL("Classify"), _TL(""));
+		Parameters.Add_Colors("", "COLOR" , _TL("Colors"        ), _TL(""))->asColors()->Set_Count(11);
+		Parameters.Add_Choice("", "METHOD", _TL("Classification"), _TL(""),
+			CSG_String::Format("%s|%s|%s|%s|",
 				_TL("unique values"),
 				_TL("equal intervals"),
-				_TL("quantiles")
+				_TL("quantiles"),
+				_TL("natural breaks")
 			), 1
 		);
 	}
@@ -763,69 +759,70 @@ void CWKSP_Grid::_LUT_Create(void)
 	}
 
 	//-----------------------------------------------------
-	pColors	= Parameters("COLOR")->asColors();
-	Type	= Parameters("TYPE" )->asInt();
+	CSG_Colors	Colors(*Parameters("COLOR")->asColors());
 
-	LUT.Create(*m_Parameters("LUT")->asTable());
-	LUT.Del_Records();
+	CSG_Table	Classes(m_Parameters("LUT")->asTable());
 
-	switch( Type )
+	switch( Parameters("METHOD")->asInt() )
 	{
 	//-----------------------------------------------------
 	case 0:	// unique values
-		if( Get_Grid()->Set_Index() )
+	{
+		CSG_Unique_Number_Statistics	s;
+
+		#define MAX_CLASSES	1024
+
+		for(sLong iCell = 0; iCell<Get_Grid()->Get_NCells() && s.Get_Count()<MAX_CLASSES && PROGRESSBAR_Set_Position(iCell, Get_Grid()->Get_NCells()); iCell++)
 		{
-			double		Value;
-
-			for(sLong iCell=0, jCell; iCell<Get_Grid()->Get_NCells() && PROGRESSBAR_Set_Position(iCell, Get_Grid()->Get_NCells()); iCell++)
+			if( !Get_Grid()->is_NoData(iCell) )
 			{
-				if( Get_Grid()->Get_Sorted(iCell, jCell, false) && (LUT.Get_Record_Count() == 0 || Value != Get_Grid()->asDouble(jCell)) )
-				{
-					Value	= Get_Grid()->asDouble(jCell);
-
-					CSG_Table_Record	*pClass	= LUT.Add_Record();
-
-					pClass->Set_Value(1, SG_Get_String(Value, -2));		// Name
-					pClass->Set_Value(2, SG_Get_String(Value, -2));		// Description
-					pClass->Set_Value(3, Value);						// Minimum
-					pClass->Set_Value(4, Value);						// Maximum
-				}
-			}
-
-			pColors->Set_Count(LUT.Get_Count());
-
-			for(int iClass=0; iClass<LUT.Get_Count(); iClass++)
-			{
-				LUT.Get_Record(iClass)->Set_Value(0, pColors->Get_Color(iClass));
+				s	+= Get_Grid()->asDouble(iCell);
 			}
 		}
+
+		Colors.Set_Count(s.Get_Count());
+
+		for(int iClass=0; iClass<s.Get_Count(); iClass++)
+		{
+			double		Value	= s.Get_Value(iClass);
+
+			CSG_String	Name	= SG_Get_String(Value, -2);
+
+			CSG_Table_Record	*pClass	= Classes.Add_Record();
+
+			pClass->Set_Value(0, Colors[iClass]);	// Color
+			pClass->Set_Value(1, Name          );	// Name
+			pClass->Set_Value(2, Name          );	// Description
+			pClass->Set_Value(3, Value         );	// Minimum
+			pClass->Set_Value(4, Value         );	// Maximum
+		}
+
 		break;
+	}
 
 	//-----------------------------------------------------
 	case 1:	// equal intervals
-		if( Get_Grid()->Get_Range() && pColors->Get_Count() > 0 )
+		if( Get_Grid()->Get_Range() && Colors.Get_Count() > 0 )
 		{
 			double	Minimum, Maximum, Interval;
 
-			Interval	= Get_Grid()->Get_Range() / (double)pColors->Get_Count();
+			Interval	= Get_Grid()->Get_Range() / (double)Colors.Get_Count();
 			Minimum		= Get_Grid()->Get_Min  ();
 
-			for(int iClass=0; iClass<pColors->Get_Count(); iClass++, Minimum+=Interval)
+			for(int iClass=0; iClass<Colors.Get_Count(); iClass++, Minimum+=Interval)
 			{
-				Maximum	= iClass < pColors->Get_Count() - 1 ? Minimum + Interval : Get_Grid()->Get_Max() + 1.0;
+				Maximum	= iClass < Colors.Get_Count() - 1 ? Minimum + Interval : Get_Grid()->Get_Max() + 1.0;
 
-				CSG_String	sValue;	sValue.Printf("%s - %s",
-					SG_Get_String(Minimum, -2).c_str(),
-					SG_Get_String(Maximum, -2).c_str()
-				);
+				CSG_String	Name	= SG_Get_String(Minimum, -2)
+							+ " - " + SG_Get_String(Maximum, -2);
 
-				CSG_Table_Record	*pClass	= LUT.Add_Record();
+				CSG_Table_Record	*pClass	= Classes.Add_Record();
 
-				pClass->Set_Value(0, pColors->Get_Color(iClass));
-				pClass->Set_Value(1, sValue);	// Name
-				pClass->Set_Value(2, sValue);	// Description
-				pClass->Set_Value(3, Minimum);	// Minimum
-				pClass->Set_Value(4, Maximum);	// Maximum
+				pClass->Set_Value(0, Colors[iClass]);	// Color
+				pClass->Set_Value(1, Name          );	// Name
+				pClass->Set_Value(2, Name          );	// Description
+				pClass->Set_Value(3, Minimum       );	// Minimum
+				pClass->Set_Value(4, Maximum       );	// Maximum
 			}
 		}
 		break;
@@ -833,9 +830,9 @@ void CWKSP_Grid::_LUT_Create(void)
 	//-----------------------------------------------------
 	case 2:	// quantiles
 		{
-			if( Get_Grid()->Get_NCells() < pColors->Get_Count() )
+			if( Get_Grid()->Get_NCells() < Colors.Get_Count() )
 			{
-				pColors->Set_Count(Get_Grid()->Get_NCells());
+				Colors.Set_Count(Get_Grid()->Get_NCells());
 			}
 
 			sLong	jCell, nCells;
@@ -843,7 +840,7 @@ void CWKSP_Grid::_LUT_Create(void)
 
 			Maximum	= Get_Grid()->Get_Min();
 			nCells	= Get_Grid()->Get_NCells() - Get_Grid()->Get_NoData_Count();
-			iCell	= Count	= nCells / (double)pColors->Get_Count();
+			iCell	= Count	= nCells / (double)Colors.Get_Count();
 
 			for(iCell=0.0; iCell<Get_Grid()->Get_NCells(); iCell++)
 			{
@@ -855,25 +852,49 @@ void CWKSP_Grid::_LUT_Create(void)
 
 			iCell	+= Count;
 
-			for(int iClass=0; iClass<pColors->Get_Count(); iClass++, iCell+=Count)
+			for(int iClass=0; iClass<Colors.Get_Count(); iClass++, iCell+=Count)
 			{
 				Get_Grid()->Get_Sorted(iCell, jCell, false);
 
 				Minimum	= Maximum;
 				Maximum	= iCell < Get_Grid()->Get_NCells() ? Get_Grid()->asDouble(jCell) : Get_Grid()->Get_Max() + 1.0;
 
-				CSG_String	sValue;	sValue.Printf("%s - %s",
-					SG_Get_String(Minimum, -2).c_str(),
-					SG_Get_String(Maximum, -2).c_str()
-				);
+				CSG_String	Name	= SG_Get_String(Minimum, -2)
+							+ " - " + SG_Get_String(Maximum, -2);
 
-				CSG_Table_Record	*pClass	= LUT.Add_Record();
+				CSG_Table_Record	*pClass	= Classes.Add_Record();
 
-				pClass->Set_Value(0, pColors->Get_Color(iClass));
-				pClass->Set_Value(1, sValue);	// Name
-				pClass->Set_Value(2, sValue);	// Description
-				pClass->Set_Value(3, Minimum);	// Minimum
-				pClass->Set_Value(4, Maximum);	// Maximum
+				pClass->Set_Value(0, Colors[iClass]);	// Color
+				pClass->Set_Value(1, Name          );	// Name
+				pClass->Set_Value(2, Name          );	// Description
+				pClass->Set_Value(3, Minimum       );	// Minimum
+				pClass->Set_Value(4, Maximum       );	// Maximum
+			}
+		}
+		break;
+
+	//-----------------------------------------------------
+	case 3:	// natural breaks
+		{
+			CSG_Natural_Breaks	Breaks(Get_Grid(), Colors.Get_Count(), 255);
+
+			if( Breaks.Get_Count() <= Colors.Get_Count() ) return;
+
+			for(int iClass=0; iClass<Colors.Get_Count(); iClass++)
+			{
+				CSG_Table_Record	*pClass	= Classes.Add_Record();
+
+				double	Minimum	= Breaks[iClass    ];
+				double	Maximum	= Breaks[iClass + 1];
+
+				CSG_String	Name	= SG_Get_String(Minimum, -2)
+							+ " - " + SG_Get_String(Maximum, -2);
+
+				pClass->Set_Value(0, Colors[iClass]);	// Color
+				pClass->Set_Value(1, Name          );	// Name
+				pClass->Set_Value(2, Name          );	// Description
+				pClass->Set_Value(3, Minimum       );	// Minimum
+				pClass->Set_Value(4, Maximum       );	// Maximum
 			}
 		}
 		break;
@@ -882,11 +903,9 @@ void CWKSP_Grid::_LUT_Create(void)
 	//-----------------------------------------------------
 	PROGRESSBAR_Set_Position(0);
 
-	if( LUT.Get_Count() > 0 )
+	if( Classes.Get_Count() > 0 )
 	{
-		m_Parameters("LUT")->asTable()->Assign(&LUT);
-
-		DataObject_Changed();
+		m_Parameters("LUT")->asTable()->Assign(&Classes);
 
 		m_Parameters("COLORS_TYPE")->Set_Value(CLASSIFY_LUT);	// Lookup Table
 
@@ -1251,64 +1270,85 @@ bool CWKSP_Grid::asImage(CSG_Grid *pImage)
 }
 
 //---------------------------------------------------------
-void CWKSP_Grid::_Save_Image(void)
+bool CWKSP_Grid::_Save_Image(void)
 {
-	int				type;
-	wxString		file;
-	wxBitmap		BMP;
-	CSG_File		Stream;
-	CSG_Parameters	Parms;
+	static CSG_Parameters	P(NULL, _TL("Save Grid as Image..."), _TL(""), SG_T(""));
 
-	//-----------------------------------------------------
-	Parms.Set_Name(_TL("Save Grid as Image..."));
-
-	Parms.Add_Bool  ("", "WORLD", _TL("Save Georeference"), _TL(""), true);
-	Parms.Add_Bool  ("", "LG"   , _TL("Legend: Save"     ), _TL(""), true);
-	Parms.Add_Double("", "LZ"   , _TL("Legend: Zoom"     ), _TL(""), 1.0, 0.0, true);
-
-	//-----------------------------------------------------
-	if( DLG_Image_Save(file, type) && DLG_Parameters(&Parms) )
+	if( P.Get_Count() == 0 )
 	{
-		if( Get_Image_Grid(BMP) )
+		P.Add_Bool  ("", "WORLD", _TL("Save Georeference"), _TL(""), true);
+		P.Add_Bool  ("", "LG"   , _TL("Legend: Save"     ), _TL(""), true);
+		P.Add_Double("", "LZ"   , _TL("Legend: Zoom"     ), _TL(""), 1.0, 0.0, true);
+	}
+
+	//-----------------------------------------------------
+	int			Type;
+	wxString	File;
+	wxBitmap	Bitmap;
+
+	if( !DLG_Image_Save(File, Type) || !DLG_Parameters(&P) || !Get_Image_Grid(Bitmap) )
+	{
+		return( false );
+	}
+
+	Bitmap.SaveFile(File, (wxBitmapType)Type);
+
+	//-----------------------------------------------------
+	if( P("LG")->asBool() && Get_Image_Legend(Bitmap, P("LZ")->asDouble()) )
+	{
+		wxFileName	fn(File); fn.SetName(wxString::Format("%s_legend", fn.GetName().c_str()));
+
+		Bitmap.SaveFile(fn.GetFullPath(), (wxBitmapType)Type);
+	}
+
+	if( P("WORLD")->asBool() )
+	{
+		wxFileName	fn(File);
+
+		switch( Type )
 		{
-			BMP.SaveFile(file, (wxBitmapType)type);
+		default                : fn.SetExt("world");	break;
+		case wxBITMAP_TYPE_BMP : fn.SetExt("bpw"  );	break;
+		case wxBITMAP_TYPE_GIF : fn.SetExt("gfw"  );	break;
+		case wxBITMAP_TYPE_JPEG: fn.SetExt("jgw"  );	break;
+		case wxBITMAP_TYPE_PNG : fn.SetExt("pgw"  );	break;
+		case wxBITMAP_TYPE_PCX : fn.SetExt("pxw"  );	break;
+		case wxBITMAP_TYPE_TIF : fn.SetExt("tfw"  );	break; 
 		}
 
-		if( Parms("LG")->asBool() && Get_Image_Legend(BMP, Parms("LZ")->asDouble()) )
+		CSG_File	Stream;
+
+		if( Stream.Open(fn.GetFullPath().wx_str(), SG_FILE_W, false) )
 		{
-			wxFileName	fn(file);
-			fn.SetName(wxString::Format("%s_legend", fn.GetName().c_str()));
-
-			BMP.SaveFile(fn.GetFullPath(), (wxBitmapType)type);
-		}
-
-		if( Parms("WORLD")->asBool() )
-		{
-			wxFileName	fn(file);
-
-			switch( type )
-			{
-			default                : fn.SetExt("world");	break;
-			case wxBITMAP_TYPE_BMP : fn.SetExt("bpw"  );	break;
-			case wxBITMAP_TYPE_GIF : fn.SetExt("gfw"  );	break;
-			case wxBITMAP_TYPE_JPEG: fn.SetExt("jgw"  );	break;
-			case wxBITMAP_TYPE_PNG : fn.SetExt("pgw"  );	break;
-			case wxBITMAP_TYPE_PCX : fn.SetExt("pxw"  );	break;
-			case wxBITMAP_TYPE_TIF : fn.SetExt("tfw"  );	break; 
-			}
-
-			if( Stream.Open(fn.GetFullPath().wx_str(), SG_FILE_W, false) )
-			{
-				Stream.Printf("%.10f\n%.10f\n%.10f\n%.10f\n%.10f\n%.10f\n",
-					 Get_Grid()->Get_Cellsize(),
-					 0.0, 0.0,
-					-Get_Grid()->Get_Cellsize(),
-					 Get_Grid()->Get_XMin(),
-					 Get_Grid()->Get_YMax()
-				);
-			}
+			Stream.Printf("%.10f\n%.10f\n%.10f\n%.10f\n%.10f\n%.10f\n",
+				 Get_Grid()->Get_Cellsize(),
+				 0.0, 0.0,
+				-Get_Grid()->Get_Cellsize(),
+				 Get_Grid()->Get_XMin(),
+				 Get_Grid()->Get_YMax()
+			);
 		}
 	}
+
+	return( true );
+}
+
+//---------------------------------------------------------
+bool CWKSP_Grid::_Save_Image_Clipboard(void)
+{
+	wxBitmap	Bitmap;
+
+	if( Get_Image_Grid(Bitmap) && wxTheClipboard->Open() )
+	{
+		wxBitmapDataObject	*pBitmap	= new wxBitmapDataObject;
+		pBitmap->SetBitmap(Bitmap);
+		wxTheClipboard->SetData(pBitmap);
+		wxTheClipboard->Close();
+
+		return( true );
+	}
+
+	return( false );
 }
 
 //---------------------------------------------------------

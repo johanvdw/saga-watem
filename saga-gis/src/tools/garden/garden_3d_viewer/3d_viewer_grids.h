@@ -1,5 +1,5 @@
 /**********************************************************
- * Version $Id$
+ * Version $Id: 3d_viewer_grids.h 911 2011-02-14 16:38:15Z reklov_w $
  *********************************************************/
 
 ///////////////////////////////////////////////////////////
@@ -9,13 +9,13 @@
 //      System for Automated Geoscientific Analyses      //
 //                                                       //
 //                     Tool Library                      //
-//                  Grid_Visualisation                   //
+//                      3d_viewer                        //
 //                                                       //
 //-------------------------------------------------------//
 //                                                       //
-//                  Grid_Color_Blend.h                   //
+//                   3d_viewer_grids.h                   //
 //                                                       //
-//                 Copyright (C) 2003 by                 //
+//                 Copyright (C) 2017 by                 //
 //                      Olaf Conrad                      //
 //                                                       //
 //-------------------------------------------------------//
@@ -43,30 +43,23 @@
 //                                                       //
 //    contact:    Olaf Conrad                            //
 //                Institute of Geography                 //
-//                University of Goettingen               //
-//                Goldschmidtstr. 5                      //
-//                37077 Goettingen                       //
+//                University of Hamburg                  //
 //                Germany                                //
 //                                                       //
 ///////////////////////////////////////////////////////////
 
 //---------------------------------------------------------
 
-
 ///////////////////////////////////////////////////////////
-//														 //
-//                                                       //
 //														 //
 ///////////////////////////////////////////////////////////
 
 //---------------------------------------------------------
-#ifndef HEADER_INCLUDED__Grid_Color_Blend_H
-#define HEADER_INCLUDED__Grid_Color_Blend_H
+#ifndef HEADER_INCLUDED__3d_viewer_grids_H
+#define HEADER_INCLUDED__3d_viewer_grids_H
 
 
 ///////////////////////////////////////////////////////////
-//														 //
-//                                                       //
 //														 //
 ///////////////////////////////////////////////////////////
 
@@ -76,52 +69,37 @@
 
 ///////////////////////////////////////////////////////////
 //														 //
-//                                                       //
-//														 //
 ///////////////////////////////////////////////////////////
 
 //---------------------------------------------------------
-class CGrid_Color_Blend : public CSG_Tool_Grid
+class C3D_Viewer_Grids : public CSG_Tool  
 {
 public:
-	CGrid_Color_Blend(void);
+	C3D_Viewer_Grids(void);
 
-	virtual bool			needs_GUI				(void)	{	return( true );	}
+	virtual bool			needs_GUI			(void)	{	return( true );	}
 
 
 protected:
 
-	virtual int				On_Parameter_Changed	(CSG_Parameters *pParameters, CSG_Parameter *pParameter);
-	virtual int				On_Parameters_Enable	(CSG_Parameters *pParameters, CSG_Parameter *pParameter);
+	virtual bool			On_Execute			(void);
 
-	virtual bool			On_Execute				(void);
-
-	virtual bool			Set_Progress			(double Position, double Range);
-
-
-private:
-
-	int						m_nFiles;
-
-	double					m_Range_Min, m_Range_Max;
-
-	CSG_Grid				*m_pGrid;
-
-	CSG_Parameter_Grid_List	*m_pGrids;
-
-
-	void					Blend					(int iGrid);
-
-	void					Save					(void);
 
 };
 
 
 ///////////////////////////////////////////////////////////
 //														 //
-//                                                       //
+///////////////////////////////////////////////////////////
+
+//---------------------------------------------------------
+#endif // #ifndef HEADER_INCLUDED__3d_viewer_grids_H
+
+
+///////////////////////////////////////////////////////////
+//														 //
+//														 //
 //														 //
 ///////////////////////////////////////////////////////////
 
 //---------------------------------------------------------
-#endif // #ifndef HEADER_INCLUDED__Grid_Color_Blend_H

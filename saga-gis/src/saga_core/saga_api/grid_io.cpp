@@ -427,11 +427,6 @@ bool CSG_Grid::_Save_Native(const CSG_String &FileName, bool bBinary)
 //---------------------------------------------------------
 bool CSG_Grid::_Load_Compressed(const CSG_String &_FileName, TSG_Grid_Memory_Type Memory_Type, bool bLoadData)
 {
-	if( !SG_File_Cmp_Extension(_FileName, "sg-grd-z") )
-	{
-		return( false );
-	}
-
 	Set_File_Name(_FileName, true);
 
 	CSG_File_Zip	Stream(_FileName, SG_FILE_R);
@@ -1167,6 +1162,14 @@ bool CSG_Grid_File_Info::Save(const CSG_String &FileName, const CSG_Grid &Grid, 
 	CSG_Grid_File_Info	Info(Grid);
 
 	return( Info.Save(FileName, bBinary) );
+}
+
+//---------------------------------------------------------
+bool CSG_Grid_File_Info::Save(const CSG_File &Stream, const CSG_Grid &Grid, bool bBinary)
+{
+	CSG_Grid_File_Info	Info(Grid);
+
+	return( Info.Save(Stream, bBinary) );
 }
 
 

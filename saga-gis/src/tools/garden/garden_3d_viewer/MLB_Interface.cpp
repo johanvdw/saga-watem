@@ -99,6 +99,7 @@ CSG_String Get_Info(int i)
 #include "3d_viewer_shapes.h"
 #include "3d_viewer_globe_grid.h"
 #include "3d_viewer_multiple_grids.h"
+#include "3d_viewer_grids.h"
 
 
 //---------------------------------------------------------
@@ -113,6 +114,7 @@ CSG_Tool *		Create_Tool(int i)
 	case 2:		return( new C3D_Viewer_Shapes );
 	case 3:		return( new C3D_Viewer_Globe_Grid );
 	case 4:		return( new C3D_Viewer_Multiple_Grids );
+	case 5:		return( new C3D_Viewer_Grids );
 
 	default:	return( NULL );
 //	default:	return( TLB_INTERFACE_SKIP_TOOL );
