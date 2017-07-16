@@ -42,9 +42,9 @@ CCalculate_Uparea::CCalculate_Uparea()
 	Parameters.Add_Grid(
 		NULL, "PIT", "Pit",
 		"Gridfile met pits",
-		PARAMETER_OUTPUT, 
-		true, 
-		SG_DATATYPE_Short
+		PARAMETER_OUTPUT,
+		true,
+		SG_DATATYPE_Long
 	);
 
 
@@ -113,7 +113,7 @@ bool CCalculate_Uparea::On_Execute(void)
 	// include connectivity in upslope area name
 	int conn = 100 - TFCAtoCropLand;
 	CSG_String connectivity_string = CSG_String::Format("%d", conn);
-	Up_Area->Set_Name("Upslope_area_"  + connectivity_string);
+	Up_Area->Set_Name("Upslope_area_" + connectivity_string);
 
 	//-----------------------------------------------------
 	// Check for valid parameter settings...
@@ -126,13 +126,13 @@ bool CCalculate_Uparea::On_Execute(void)
 	Up_Area->Assign(0.0);
 	for (int i = 0; i < Get_NX(); i++)
 
-	//m_pAspect = Parameters("ASPECT")->asGrid();
-	//pitwin = Parameters("PITWIN")->asInt();
-	pitwin = 200;  
+		//m_pAspect = Parameters("ASPECT")->asGrid();
+		//pitwin = Parameters("PITWIN")->asInt();
+		pitwin = 200;
 	pitnum = 0;
 	PitDat.empty();
 	//Message_Add("Start calculating pits");
-	
+
 	CalculatePitStuff();
 	CalculateUparea();
 
@@ -168,8 +168,8 @@ bool CCalculate_Uparea::On_Execute(void)
 	FINISH->Delete();
 	PitDat.empty();
 	pitnum = 0;
-	
-	
+
+
 
 	return true;
 }
@@ -246,7 +246,7 @@ void CCalculate_Uparea::CalculateUparea()
 	for (i = 0; i < pitnum; i++) {
 		a = PitDat[i].outr;
 		b = PitDat[i].outc;
-		if (is_InGrid(b,a) && PRC->asInt(b, a) == -1) {
+		if (is_InGrid(b, a) && PRC->asInt(b, a) == -1) {
 
 			vlag = 0;
 			RivDat[vlag].latuparea += PitDat[i].input;
@@ -380,12 +380,12 @@ void CCalculate_Uparea::CalculatePitStuff()
 								check = true;
 							}
 
-						} 
+						}
 					}
 					if (check == false)
 					{
 						// additional code Johan: search near a pit for lower cells with a maximum radius of pit_radius if PIT_FLOW is selected
-						if ( pit_flow && PitDat[nvlag].outc == -1 && PitDat[nvlag].outr == -1) {
+						if (pit_flow && PitDat[nvlag].outc == -1 && PitDat[nvlag].outr == -1) {
 							for (int searchradius = 1; searchradius < pit_radius; searchradius++)
 							{
 								double minvalue = DEM->asDouble(i, j);
@@ -394,7 +394,7 @@ void CCalculate_Uparea::CalculatePitStuff()
 										if (labs(k) != searchradius && labs(l) != searchradius) {
 											continue;
 										}
-										if (is_InGrid(i +k, j+l) && DEM->asDouble(i + k, j + l) < minvalue)
+										if (is_InGrid(i + k, j + l) && DEM->asDouble(i + k, j + l) < minvalue)
 										{
 											minvalue = DEM->asDouble(i + k, j + l);
 											PitDat[nvlag].outc = i + k;
@@ -402,13 +402,13 @@ void CCalculate_Uparea::CalculatePitStuff()
 										}
 									}
 								}
-								if (minvalue < DEM -> asDouble(i, j))
+								if (minvalue < DEM->asDouble(i, j))
 									break;
 							}
 						}
 						goto _Lnopit;
 					}
-						
+
 					for (k = -W; k <= W; k++) {
 						for (l = -W; l <= W; l++) {
 							if (labs(k) != W && labs(l) != W) {
@@ -451,7 +451,7 @@ void CCalculate_Uparea::CalculatePitStuff()
 		for (i = 1; i <= nvlag; i++) {
 			int row = PitDat[i].outr;
 			int col = PitDat[i].outc;
-			if (row !=-1 && col!=-1 && Pit->asInt(col, row) != 0) {
+			if (row != -1 && col != -1 && Pit->asInt(col, row) != 0) {
 				vlag = Pit->asInt(k, l);
 				PitDat[i].outr = PitDat[vlag].outr;
 				PitDat[i].outc = PitDat[vlag].outc;
@@ -459,17 +459,6 @@ void CCalculate_Uparea::CalculatePitStuff()
 		}
 
 
-
-		for (i = 1; i < ncol; i++) { //zonder buitenste rijen?
-
-			for (j = 1; j < nrow; j++) {
-				if (Pit->asInt(i, j) != 0 && PRC->asInt(i, j) == -1) {
-					vlag = Pit->asInt(i, j);
-					PitDat[vlag].outr = j;
-					PitDat[vlag].outc = i;
-				}
-			}
-		}
 
 	}
 
@@ -480,7 +469,7 @@ void CCalculate_Uparea::CalculatePitStuff()
 	{
 		for (int j = 1; j < nrow - 1; j++)
 		{
-			if ((Pit->asDouble(i, j) != 0) && (PRC->asDouble(i, j) == -1))
+			if ((Pit->asInt(i, j) > 0) && (PRC->asInt(i, j) == -1))
 			{
 				vlag = Pit->asInt(i, j);
 				PitDat[vlag].outr = j;
@@ -510,7 +499,7 @@ void CCalculate_Uparea::DistributeTilDirEvent(int i, int j, double *AREA, double
 	int ROWMIN, COLMIN, ROWMIN2, COLMIN2, K, L;
 	bool parequal;
 	bool closeriver = false;
-	
+
 	double Direction;
 	int vlag, rivvlag, v, w;
 
@@ -600,8 +589,8 @@ void CCalculate_Uparea::DistributeTilDirEvent(int i, int j, double *AREA, double
 
 
 	// check if receiving cell is a pit
-	if ((is_InGrid(i + K1, j + L1) && (Pit->asInt(i + K1, j + L1) != 0)) ||
-		(is_InGrid(i + K2, j + L2) && (Pit->asInt(i + K2, j + L2) != 0))) {
+	if ((is_InGrid(i + K1, j + L1) && (Pit->asInt(i + K1, j + L1) > 0)) ||
+		(is_InGrid(i + K2, j + L2) && (Pit->asInt(i + K2, j + L2) > 0))) {
 		if (is_InGrid(i + K1, j + L1))
 			vlag = Pit->asInt(i + K1, j + L1);
 		else vlag = 0;
@@ -623,7 +612,7 @@ void CCalculate_Uparea::DistributeTilDirEvent(int i, int j, double *AREA, double
 				PitDat[vlag].input += *AREA;
 			}
 		}
-	
+
 		FINISH->Set_Value(i, j, 1);
 	}
 
@@ -799,7 +788,7 @@ void CCalculate_Uparea::DistributeTilDirEvent(int i, int j, double *AREA, double
 					{
 						if (PRC->asInt(i + ROWMIN2, j + COLMIN2) == 10000)
 							Abis = *AREA * (100 - TFCAtoForestOrPasture) / 100.0;
-						else if (PRC->asInt(i + ROWMIN2, j + COLMIN2) >0)
+						else if (PRC->asInt(i + ROWMIN2, j + COLMIN2) > 0)
 						{
 
 							Abis = *AREA * (100 - TFCAtoCropLand) / 100.0;
@@ -816,14 +805,14 @@ void CCalculate_Uparea::DistributeTilDirEvent(int i, int j, double *AREA, double
 						   if grid cell is -1 or - 2 then there is no result. The previous value of abis is used. */
 						if (PRC->asInt(i + ROWMIN2, j + COLMIN2) == 10000)
 							Abis = *AREA * (100 - TFCAtoForestOrPasture) / 100.0;
-						else if (PRC->asInt(i + ROWMIN2, j + COLMIN2) >0)
+						else if (PRC->asInt(i + ROWMIN2, j + COLMIN2) > 0)
 						{
 
 							Abis = *AREA * (100 - TFCAtoCropLand) / 100.0;
 						}
 					}
 
-						
+
 					Up_Area->Add_Value(i + ROWMIN2, j + COLMIN2, Abis);
 
 					if (PRC->asInt(i + ROWMIN2, j + COLMIN2) == 9999) {
