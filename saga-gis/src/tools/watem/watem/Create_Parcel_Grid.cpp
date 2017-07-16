@@ -138,6 +138,8 @@ bool Create_Parcel_Grid::On_Execute()
 
 
 	delete vha_pol, vha_line, wbn, sbn;
+	//todo: no data op 0 zetten!
+
 
 	return true;
 }
