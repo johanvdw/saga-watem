@@ -44,7 +44,7 @@ CCalculate_Uparea::CCalculate_Uparea()
 		"Gridfile met pits",
 		PARAMETER_OUTPUT,
 		true,
-		SG_DATATYPE_Long
+		SG_DATATYPE_DWord
 	);
 
 
@@ -98,6 +98,7 @@ bool CCalculate_Uparea::On_Execute(void)
 	Pit = Parameters("PIT")->asGrid();
 	PRC = Parameters("PRC")->asGrid();
 	Up_Area = Parameters("UPSLOPE_AREA")->asGrid();
+	DataObject_Set_Colors(Up_Area, 11, SG_COLORS_WHITE_BLUE, false);
 
 	pPitDataTable = Parameters("PITDATA")->asTable();
 
@@ -205,7 +206,7 @@ void CCalculate_Uparea::CalculateUparea()
 
 	FINISH = new CSG_Grid(*Get_System(), SG_DATATYPE_Bit);
 
-
+	SG_UI_Process_Set_Text(_TL("Calculating Uparea"));
 	//eerst sorteren, dan van hoogste naar laagste pixel gaan.
 	for (int t = 0; t < ncol*nrow; t++)
 	{
@@ -321,8 +322,8 @@ void CCalculate_Uparea::CalculatePitStuff()
 	int ncol = Get_NX();
 
 	Pit->Assign(0.0);
-
-	for (j = nrow - 2; j > 0; j--) // buitenste rand niet meenemen. Van beneden naar boven zoals watem
+	SG_UI_Process_Set_Text(_TL("Creating pit index"));
+	for (j = nrow - 2; j > 0; j-- && Set_Progress(nrow - j)) // buitenste rand niet meenemen. Van beneden naar boven zoals watem
 	{
 		for (i = 1; i < ncol - 1; i++)
 		{
