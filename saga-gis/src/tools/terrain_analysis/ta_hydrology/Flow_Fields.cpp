@@ -88,11 +88,16 @@ bool CFlow_Fields::On_Execute(void)
 						int	ix = Get_xTo(i, x);
 						int	iy = Get_yTo(i, y);
 
-						if (m_bStopAtEdge) UpArea->Add_Value(ix, iy, Up_Area   * dz[i] / dzSum);
+						
 
 						if (fields->asInt(n) != fields->asInt(ix, iy))
 						{
 							flow_map[std::make_pair(fields->asInt(n), fields->asInt(ix, iy))] += Up_Area   * dz[i] / dzSum;
+							if (!m_bStopAtEdge) UpArea->Add_Value(ix, iy, Up_Area   * dz[i] / dzSum);
+						}
+						else
+						{
+							UpArea->Add_Value(ix, iy, Up_Area   * dz[i] / dzSum);
 						}
 					}
 				}
@@ -126,8 +131,6 @@ double CFlow_Fields::Get_Flow(int x, int y, double dz[8])
 
 	double	d, z = DEM->asDouble(x, y), dzSum = 0.0;
 
-	int		ID = fields->asInt(x, y);
-
 	for (int i = 0; i<8; i++)
 	{
 		dz[i] = 0.0;
@@ -137,14 +140,7 @@ double CFlow_Fields::Get_Flow(int x, int y, double dz[8])
 
 		if (DEM->is_InGrid(ix, iy) && (d = z - DEM->asDouble(ix, iy)) > 0.0)
 		{
-			if (ID == fields->asInt(ix, iy))
-			{
-				dzSum += (dz[i] = pow(d / Get_Length(i), 1.1));
-			}
-			else if (m_bStopAtEdge)
-			{
-				dzSum += pow(d / Get_Length(i), 1.1);
-			}
+			dzSum += (dz[i] = pow(d / Get_Length(i), 1.1));
 		}
 	}
 
