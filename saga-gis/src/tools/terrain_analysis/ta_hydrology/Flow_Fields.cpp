@@ -62,6 +62,8 @@ bool CFlow_Fields::On_Execute(void)
 
 	double dzSum, dz[8];
 
+	UpArea->Assign(0.0);
+
 	//todo: convert fields to a (temporary) grid - now already input
 
 	if (!DEM->Set_Index())	// create index ...
@@ -88,12 +90,11 @@ bool CFlow_Fields::On_Execute(void)
 						int	ix = Get_xTo(i, x);
 						int	iy = Get_yTo(i, y);
 
-						
 
-						if (fields->asInt(n) != fields->asInt(ix, iy))
+						if (fields->asInt(x,y) != fields->asInt(ix, iy))
 						{
-							flow_map[std::make_pair(fields->asInt(n), fields->asInt(ix, iy))] += Up_Area   * dz[i] / dzSum;
 							if (!m_bStopAtEdge) UpArea->Add_Value(ix, iy, Up_Area   * dz[i] / dzSum);
+							flow_map[std::make_pair(fields->asInt(x,y), fields->asInt(ix, iy))] += Up_Area   * dz[i] / dzSum;
 						}
 						else
 						{
