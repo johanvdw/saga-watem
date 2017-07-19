@@ -39,6 +39,10 @@ CFlow_Fields::CFlow_Fields()
 	Parameters.Add_Grid(
 		NULL, "UPAREA", "Uparea", "uparea", PARAMETER_OUTPUT
 	);
+
+	Parameters.Add_Bool(
+		NULL, "STOP", "Stop at edge", "Stop flow at the edge of a field", PARAMETER_INPUT);
+
 }
 
 
@@ -49,10 +53,11 @@ CFlow_Fields::~CFlow_Fields()
 bool CFlow_Fields::On_Execute(void)
 {
 	DEM = Parameters("ELEVATION")->asGrid();
-	fields = Parameters("FIELD")->asGrid();
+	fields = Parameters("FIELDS")->asGrid();
 	CSG_Table * flow = Parameters("FLOW")->asTable();
 	UpArea = Parameters("UPAREA")->asGrid();
-	
+	m_bStopAtEdge = Parameters("STOP")->asBool();
+
 	map<pair<int, int>, double> flow_map;
 
 	double dzSum, dz[8];
@@ -83,11 +88,16 @@ bool CFlow_Fields::On_Execute(void)
 						int	ix = Get_xTo(i, x);
 						int	iy = Get_yTo(i, y);
 
-						UpArea->Add_Value(ix, iy, Up_Area   * dz[i] / dzSum);
+						
 
 						if (fields->asInt(n) != fields->asInt(ix, iy))
 						{
 							flow_map[std::make_pair(fields->asInt(n), fields->asInt(ix, iy))] += Up_Area   * dz[i] / dzSum;
+							if (!m_bStopAtEdge) UpArea->Add_Value(ix, iy, Up_Area   * dz[i] / dzSum);
+						}
+						else
+						{
+							UpArea->Add_Value(ix, iy, Up_Area   * dz[i] / dzSum);
 						}
 					}
 				}
@@ -96,43 +106,44 @@ bool CFlow_Fields::On_Execute(void)
 		}
 	}
 
+	flow->Add_Field("from", SG_DATATYPE_Long);
+	flow->Add_Field("to", SG_DATATYPE_Long);
+	flow->Add_Field("area", SG_DATATYPE_Double);
+
+	for (map<pair<int, int>, double>::iterator it = flow_map.begin(); it != flow_map.end(); it++)
+	{
+		CSG_Table_Record * row = flow->Add_Record();
+		row->Set_Value(0, it->first.first);
+		row->Set_Value(1, it->first.second);
+		row->Set_Value(2, it->second);
+	}
+
 	return true;
 };
 
 
-
-
-	double CFlow_Fields::Get_Flow(int x, int y, double dz[8])
+double CFlow_Fields::Get_Flow(int x, int y, double dz[8])
+{
+	if (fields->is_NoData(x, y))
 	{
-		if (fields->is_NoData(x, y))
-		{
-			return(0.0);
-		}
-
-		double	d, z = DEM->asDouble(x, y), dzSum = 0.0;
-
-		int		ID = fields->asInt(x, y);
-
-		for (int i = 0; i<8; i++)
-		{
-			dz[i] = 0.0;
-
-			int	ix = Get_xTo(i, x);
-			int	iy = Get_yTo(i, y);
-
-			if (DEM->is_InGrid(ix, iy) && (d = z - DEM->asDouble(ix, iy)) > 0.0)
-			{
-				if (ID == fields->asInt(ix, iy))
-				{
-					dzSum += (dz[i] = pow(d / Get_Length(i), 1.1));
-				}
-				else if (m_bStopAtEdge)
-				{
-					dzSum += pow(d / Get_Length(i), 1.1);
-				}
-			}
-		}
-
-		return(dzSum);
+		return(0.0);
 	}
+
+	double	d, z = DEM->asDouble(x, y), dzSum = 0.0;
+
+	for (int i = 0; i<8; i++)
+	{
+		dz[i] = 0.0;
+
+		int	ix = Get_xTo(i, x);
+		int	iy = Get_yTo(i, y);
+
+		if (DEM->is_InGrid(ix, iy) && (d = z - DEM->asDouble(ix, iy)) > 0.0)
+		{
+			dzSum += (dz[i] = pow(d / Get_Length(i), 1.1));
+		}
+	}
+
+	return(dzSum);
+}
 

@@ -1,4 +1,8 @@
-#include <saga_api/saga_api.h>
+#include "MLB_Interface.h"
+
+#ifndef HEADER_INCLUDED__Flow_Fields_H
+#define HEADER_INCLUDED__Flow_Fields_H
+
 class CFlow_Fields :
 	public CSG_Tool_Grid
 {
@@ -16,3 +20,4 @@ private:
 	bool m_bStopAtEdge;
 };
 
+#endif
