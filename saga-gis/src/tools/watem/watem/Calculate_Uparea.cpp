@@ -85,7 +85,7 @@ CCalculate_Uparea::CCalculate_Uparea()
 	);
 
 	Parameters.Add_Value(
-		"FLOW_PIT", "PIT_RADIUS", "Search radius from pit.", "Maximum radius from a pit to which upstream water can flow", PARAMETER_TYPE_Int, 4, 0);
+		"PIT_FLOW", "PIT_RADIUS", "Search radius from pit.", "Maximum radius from a pit to which upstream water can flow", PARAMETER_TYPE_Int, 4, 0);
 }
 
 bool CCalculate_Uparea::On_Execute(void)

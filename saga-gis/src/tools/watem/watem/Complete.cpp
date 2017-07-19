@@ -56,6 +56,14 @@ Complete::Complete()
 		NULL, "SAVE_MEMORY", "Save memory", "save memory", PARAMETER_TYPE_Bool, false
 	);
 
+	Parameters.Add_Value(
+		NULL, "PIT_FLOW", "Flow from pits into closeby cells (within radius)", "", PARAMETER_TYPE_Bool, false
+	);
+
+	Parameters.Add_Value(
+		"PIT_FLOW", "PIT_RADIUS", "Search radius from pit.", "Maximum radius from a pit to which upstream water can flow", PARAMETER_TYPE_Int, 4, 0);
+	
+
 	/* We assume PCTOROAD to be the same value as PCTOCROP for complete calculation
 	Parameters.Add_Value(
 		NULL, "PCTOROAD", "Parcel Connectivity to road/built-up areas",
@@ -69,7 +77,7 @@ Complete::Complete()
 	)*/
 
 
-}
+};
 
 bool Complete::On_Execute(void)
 {
@@ -83,6 +91,8 @@ bool Complete::On_Execute(void)
 		&& SG_TOOL_PARAMETER_SET("PCTOCROP", Parameters("PCTOCROP"))
 		&& SG_TOOL_PARAMETER_SET("PCTOFOREST", Parameters("PCTOFOREST"))
 		&& SG_TOOL_PARAMETER_SET("PCTOROAD", Parameters("PCTOCROP")) 
+		&& SG_TOOL_PARAMETER_SET("PIT_FLOW", Parameters("PIT_FLOW"))
+		&& SG_TOOL_PARAMETER_SET("PIT_RADIUS", Parameters("PIT_RADIUS"))
 	);// als waarde voor PCTOROAD wordt hier (bewust) ook de waarde van crop gebruikt
 
 
