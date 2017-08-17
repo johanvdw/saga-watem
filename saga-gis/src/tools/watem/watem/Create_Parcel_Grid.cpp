@@ -9,7 +9,7 @@ Create_Parcel_Grid::Create_Parcel_Grid()
 	Set_Author("Johan Van de Wauw (2017)");
 
 	Set_Description(_TW(
-		"Prepares input parcel file for watem."
+		"Prepares input parcel file for the watem module."
 	));
 
 	Parameters.Add_Shapes(NULL, "PARCEL_SHAPES", "Percelen", "Percelen", PARAMETER_INPUT, SHAPE_TYPE_Polygon);
@@ -72,7 +72,7 @@ bool Create_Parcel_Grid::On_Execute()
 #pragma omp parallel for
 	for (int i = 0; i < prc->Get_NCells(); i++) {
 		if (gbg->asInt(i) == 1 || gba->asInt(i) == 1 || wga->asInt(i) == 1 || knw->asInt(i) == 1)
-			prc->Set_Value(i, -1);
+			prc->Set_Value(i, -2);
 		else 
 			prc->Set_Value(i, landuse->asInt(i));
 	}
