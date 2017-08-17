@@ -15,7 +15,7 @@ Complete::Complete()
 	Parameters.Add_Grid(NULL, "K", _TL("K: bodemerosiegevoeligheidsfactor (ton ha MJ-1 mm-1)"), _TL("K: bodemerosiegevoeligheidsfactor (ton ha MJ-1 mm-1)"), PARAMETER_INPUT);
 	//Parameters.Add_Grid(NULL, "C", _TL("C: de gewas- en bedrijfsvoeringsfactor (dimensieloos)"), _TL("C: de gewas- en bedrijfsvoeringsfactor (dimensieloos)"), PARAMETER_INPUT);
 	
-	Parameters.Add_Grid(NULL, "PIT", _TL("Pit"), _TL(""), PARAMETER_OUTPUT);
+	Parameters.Add_Grid(NULL, "PIT", _TL("Pit"), _TL(""), PARAMETER_OUTPUT, true, SG_DATATYPE_DWord);
 	Parameters.Add_Grid(NULL, "UPSLOPE_AREA", _TL("UPAREA"), _TL(""), PARAMETER_OUTPUT);
 	Parameters.Add_Grid(NULL, "LS", _TL("LS"), _TL(""), PARAMETER_OUTPUT);
 	Parameters.Add_Grid(NULL, "TILL", _TL("Tillage Erosion"), _TL(""), PARAMETER_OUTPUT_OPTIONAL);
@@ -62,26 +62,24 @@ Complete::Complete()
 
 	Parameters.Add_Value(
 		"PIT_FLOW", "PIT_RADIUS", "Search radius from pit.", "Maximum radius from a pit to which upstream water can flow", PARAMETER_TYPE_Int, 4, 0);
-	
-
-	/* We assume PCTOROAD to be the same value as PCTOCROP for complete calculation
-	Parameters.Add_Value(
-		NULL, "PCTOROAD", "Parcel Connectivity to road/built-up areas",
-		"", PARAMETER_TYPE_Double, 70, 0, 100
-	);
-	*/
-
-/*	Parameters.Add_Value(
-		NULL, "PCTOCROP2", "Parcel Connectivity to cropland, second scenario", "",
-		PARAMETER_TYPE_Double, 100, 0, 100)
-	)*/
-
 
 };
 
 bool Complete::On_Execute(void)
 {
-	// Parameters("K")->asGrid()->Set_Cache(true); //TODO: uitzoeken waarom dit niet werkt
+	bool savememory = Parameters("SAVE_MEMORY")->asBool();
+	if (savememory)
+		return false; //optio not working correctly
+
+
+	CSG_Grid * K = Parameters("K")->asGrid();
+	CSG_Grid * PRC = Parameters("PRC")->asGrid();
+	CSG_Grid * DEM = Parameters("DEM")->asGrid();
+	CSG_Grid * UPSLOPE_AREA = Parameters("UPSLOPE_AREA")->asGrid();
+	CSG_Grid * PIT = Parameters("PIT")->asGrid();
+
+	if (savememory)
+		K->Set_Compression(true);
 
 	SG_RUN_TOOL_ExitOnError("watem", 1, //uparea,
 		SG_TOOL_PARAMETER_SET("DEM", Parameters("DEM"))
@@ -90,17 +88,25 @@ bool Complete::On_Execute(void)
 		&& SG_TOOL_PARAMETER_SET("UPSLOPE_AREA", Parameters("UPSLOPE_AREA"))
 		&& SG_TOOL_PARAMETER_SET("PCTOCROP", Parameters("PCTOCROP"))
 		&& SG_TOOL_PARAMETER_SET("PCTOFOREST", Parameters("PCTOFOREST"))
-		&& SG_TOOL_PARAMETER_SET("PCTOROAD", Parameters("PCTOCROP")) 
+		&& SG_TOOL_PARAMETER_SET("PCTOROAD", Parameters("PCTOCROP"))
 		&& SG_TOOL_PARAMETER_SET("PIT_FLOW", Parameters("PIT_FLOW"))
 		&& SG_TOOL_PARAMETER_SET("PIT_RADIUS", Parameters("PIT_RADIUS"))
 	);// als waarde voor PCTOROAD wordt hier (bewust) ook de waarde van crop gebruikt
+
+	if (savememory) {
+		DEM->Set_Index(false);
+		DEM->Set_Compression(true);
+		PRC->Set_Compression(true);
+		PIT->Set_Compression(true);
+		UPSLOPE_AREA->Set_Compression(true);
+	}
 
 
 	SG_RUN_TOOL_ExitOnError("watem", 2, //LS calculation,
 		SG_TOOL_PARAMETER_SET("DEM", Parameters("DEM"))
 		&& SG_TOOL_PARAMETER_SET("UPSLOPE_AREA", Parameters("UPSLOPE_AREA"))
 		&& SG_TOOL_PARAMETER_SET("LS", Parameters("LS"))
-		);
+	);
 
 	// include connectivity in ls area name
 
@@ -111,10 +117,14 @@ bool Complete::On_Execute(void)
 	ls = Parameters("LS")->asGrid();
 	ls->Set_Name("LS_" + connectivity_string);
 
+	if (savememory) {
+		ls->Set_Compression(true);
+	}
+
 	// C grid genereren op basis van percelengrid
 	CSG_Grid * C = new CSG_Grid(*Get_System(), SG_DATATYPE_Float);
 
-	CSG_Grid * PRC = Parameters("PRC")->asGrid();
+
 
 	#pragma omp parallel for
 	for (int i = 0; i < C->Get_NCells(); i++) {
