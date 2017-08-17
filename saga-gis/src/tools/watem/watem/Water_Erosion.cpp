@@ -73,9 +73,11 @@ bool Water_Erosion::On_Execute()
 
 	water_erosion = Parameters("WATER_EROSION")->asGrid();
 
+
 	R = Parameters("R")->asDouble();
 	P = Parameters("P")->asDouble();
 	double corr = Parameters("CORR")->asDouble();
+	water_erosion->Set_NoData_Value(-99);
 #pragma omp parallel for
 	for (int i = 0; i < Get_NCells(); i++){
 			double v = R * K->asDouble(i) * LS->asDouble(i) * C->asDouble(i) * P / corr; //correctiefactor voor 5x5 grid ipv 25x25 grid
@@ -85,7 +87,7 @@ bool Water_Erosion::On_Execute()
 			water_erosion->Set_Value(i, v);
 		}
 
-	water_erosion->Set_NoData_Value(-99);
+	
 	
 	//todo: stijl zoals pixelkaart
 
