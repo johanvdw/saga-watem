@@ -1,0 +1,78 @@
+#include "Parcel_Filter.h"
+
+
+
+Parcel_Filter::Parcel_Filter()
+{
+	Set_Name(_TL("00: filter grid"));
+
+	Set_Author(_TL("Copyright (c) 2017.  Johan Van de Wauw"));
+
+	Set_Description(_TW(
+		"Bfilter grid"
+	)
+	);
+
+
+	//-----------------------------------------------------
+	// Define your parameters list...
+
+
+	Parameters.Add_Grid(
+		NULL, "DEM", "Elevation",
+		"",
+		PARAMETER_INPUT
+	);
+
+	Parameters.Add_Grid(
+		NULL, "PRC", "Percelen",
+		"Percelengrid met unieke identifier per perceel. Bossen krijgen waarde 10000. Bebouwde gebieden en wegen -2 en rivieren -1.",
+		PARAMETER_INPUT
+	);
+
+
+	Parameters.Add_Grid(
+		NULL, "DEM_FILTER", "Filtered DEM",
+		"DEM gefilterd met een 3x3 filter die enkel binnen de perceelsgrenzen actief is.",
+		PARAMETER_OUTPUT
+	);
+
+
+}
+
+Parcel_Filter::~Parcel_Filter()
+{
+}
+
+
+bool Parcel_Filter::On_Execute()
+{
+
+	// Get parameter settings...
+	CSG_Grid * DEM = Parameters("DEM")->asGrid();
+	CSG_Grid * PRC = Parameters("PRC")->asGrid();
+	CSG_Grid * DEM_FILTER = Parameters("DEM_FILTER")->asGrid();
+
+
+	for (int y = 0; y < Get_NY() && Set_Progress(y); y++) {
+#pragma omp parallel for
+		for (int x = 0; x < Get_NX(); x++) {
+			int current_prc = PRC->asInt(x,y);
+			double sum = DEM->asDouble(x, y);
+			int n = 1;
+			for (int i = 0; i < 8; i++)
+			{
+				int ix = Get_xTo(i, x);
+				int iy = Get_yTo(i, y);
+				// all surrounding cells are added if they are in the grid and in the same parcel
+				if (is_InGrid(ix, iy) && PRC->asInt(ix, iy) == current_prc)
+				{
+					sum += DEM->asDouble(ix, iy);
+					n++;
+				}
+			}
+			DEM_FILTER->Set_Value(x, y, sum / n);
+		}
+	}
+	return true;
+}
