@@ -49,7 +49,7 @@ CCalculate_Uparea::CCalculate_Uparea()
 
 
 	Parameters.Add_Grid(
-		NULL, "UPSLOPE_AREA", _TL("Upslope Length Factor"),
+		NULL, "UPSLOPE_AREA", _TL("Upslope Area"),
 		"Upslope Area",
 		PARAMETER_OUTPUT
 	);
@@ -152,7 +152,11 @@ bool CCalculate_Uparea::On_Execute(void)
 			pPitDataTable->Add_Field("C", SG_DATATYPE_Int);
 		if (pPitDataTable->Get_Field("R") == -1)
 			pPitDataTable->Add_Field("R", SG_DATATYPE_Int);
-		int i = 1;
+		if (pPitDataTable->Get_Field("OutX") == -1)
+			pPitDataTable->Add_Field("OutX", SG_DATATYPE_Double);
+		if (pPitDataTable->Get_Field("OutY") == -1)
+			pPitDataTable->Add_Field("OutY", SG_DATATYPE_Double);
+		int i = 1; // initial ID
 		for (TPitData& pit : PitDat)
 		{
 			CSG_Table_Record * row = pPitDataTable->Add_Record();
@@ -162,6 +166,9 @@ bool CCalculate_Uparea::On_Execute(void)
 			row->Add_Value("Number", pit.aantal);
 			row->Add_Value("C", pit.c + 1);
 			row->Add_Value("R", Get_NY() - pit.r);
+			TSG_Point xy = Get_System()->Get_Grid_to_World(pit.outr, pit.outc);
+			row->Add_Value("OutX", xy.x);
+			row->Add_Value("OutY", xy.y);
 		}
 	}
 
@@ -387,7 +394,7 @@ void CCalculate_Uparea::CalculatePitStuff()
 					{
 						// additional code Johan: search near a pit for lower cells with a maximum radius of pit_radius if PIT_FLOW is selected
 						if (pit_flow && PitDat[nvlag].outc == -1 && PitDat[nvlag].outr == -1) {
-							for (int searchradius = 1; searchradius < pit_radius; searchradius++)
+							for (int searchradius = 1; searchradius <= pit_radius; searchradius++)
 							{
 								double minvalue = DEM->asDouble(i, j);
 								for (k = -searchradius; k <= searchradius; k++) {
