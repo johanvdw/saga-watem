@@ -19,8 +19,8 @@ Create_Parcel_Grid::Create_Parcel_Grid()
 
 	//Parameters.Add_Shapes(NULL, "INFRA", "Infrastructuur (polygoon)", "Infrastructuur", PARAMETER_INPUT, SHAPE_TYPE_Polygon);
 
-	Parameters.Add_Shapes(NULL, "VHA_POL", "VHA (polygoon)", "VHA (polygoon)", PARAMETER_INPUT, SHAPE_TYPE_Polygon);
-	Parameters.Add_Shapes(NULL, "VHA_LINE", "VHA (lijnen)", "VHA (lijnen) - Wlas", PARAMETER_INPUT, SHAPE_TYPE_Line);
+	Parameters.Add_Shapes(NULL, "WTZ", "GRB WTZ (VHA-polygoon)", "VHA (polygoon)", PARAMETER_INPUT, SHAPE_TYPE_Polygon);
+	Parameters.Add_Shapes(NULL, "WLAS", "GRB Wlas (VHA-lijnen)", "VHA (lijnen) - Wlas", PARAMETER_INPUT, SHAPE_TYPE_Line);
 
 	Parameters.Add_Shapes(NULL, "SBN", "GRB Sbn (spoorbaan)", "GRB Sbn (spoorbaan)", PARAMETER_INPUT, SHAPE_TYPE_Polygon);
 	Parameters.Add_Shapes(NULL, "WBN", "GRB Wbn (wegbaan)", "GRB Wbn (wegbaan)", PARAMETER_INPUT, SHAPE_TYPE_Polygon);
@@ -112,14 +112,14 @@ bool Create_Parcel_Grid::On_Execute()
 
 
 	CSG_Grid * vha_pol;
-	vha_pol = BinaryShapetoGrid(Parameters("VHA_POL"), prc->Get_System(), 1);
+	vha_pol = BinaryShapetoGrid(Parameters("WTZ"), prc->Get_System(), 1);
 
 
 	CSG_Grid * vha_line;
 	vha_line = new CSG_Grid(prc->Get_System(), SG_DATATYPE_Bit);
 
 	SG_RUN_TOOL_ExitOnError("grid_gridding", 0,
-		SG_TOOL_PARAMETER_SET("INPUT", Parameters("VHA_LINE"))
+		SG_TOOL_PARAMETER_SET("INPUT", Parameters("WLAS"))
 		&& SG_TOOL_PARAMETER_SET("TARGET_DEFINITION", 1)	// grid or grid system
 		&& SG_TOOL_PARAMETER_SET("GRID", vha_line)
 		&& SG_TOOL_PARAMETER_SET("OUTPUT", 0) // data / no data
