@@ -4,7 +4,7 @@
 
 Create_Parcel_Grid::Create_Parcel_Grid()
 {
-	Set_Name(_TL("Prepares input parcel files for watem module."));
+	Set_Name(_TL("1. Prepares input parcel files for watem module."));
 
 	Set_Author("Johan Van de Wauw (2017)");
 

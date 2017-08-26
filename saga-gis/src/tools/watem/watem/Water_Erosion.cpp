@@ -7,7 +7,7 @@ Water_Erosion::Water_Erosion()
 	//-----------------------------------------------------
 	// Give some information about your tool...
 
-	Set_Name(_TL("03: Watererosie berekening op basis van LS"));
+	Set_Name(_TL("3.3. Watererosie berekening op basis van LS"));
 
 	Set_Author(_TL("Copyrights (c) 2016 by KULeuven. Converted to SAGA/C++ by Johan Van de Wauw"));
 

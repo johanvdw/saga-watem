@@ -120,11 +120,12 @@ CSG_Tool *		Create_Tool(int i)
 		case 0:		return (TLB_INTERFACE_SKIP_TOOL);
 		case 1:     return (new Create_Parcel_Grid);
 		case 2:		return (new Parcel_Filter);
-		case 3:     return(new CCalculate_Uparea);
-		case 4:  	return( new CCalculate_LS_Watem);
-		case 5:     return (new Water_Erosion);
-		case 6:		return (new Tillage_Erosion);
-		case 7:	    return (new Complete);
+		case 3:	    return (new Complete);
+		case 4:    return (new CCalculate_Uparea);
+		case 5:  	return( new CCalculate_LS_Watem);
+		case 6:    return (new Water_Erosion);
+		case 7:	return (new Tillage_Erosion);
+		
 		
 
 		default:	return( NULL );
