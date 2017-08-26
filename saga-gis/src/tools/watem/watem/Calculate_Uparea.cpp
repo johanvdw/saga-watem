@@ -5,7 +5,7 @@ CCalculate_Uparea::CCalculate_Uparea()
 	//-----------------------------------------------------
 	// Give some information about your tool...
 
-	Set_Name(_TL("01: Uparea berekening"));
+	Set_Name(_TL("3.1. Uparea berekening"));
 
 	Set_Author(_TL("Copyright (c) 2006 - 2016 by KULeuven. Converted to SAGA/C++ by Johan Van de Wauw"));
 

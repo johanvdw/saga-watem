@@ -38,7 +38,7 @@ CCalculate_LS_Watem::CCalculate_LS_Watem(void)
 	//-----------------------------------------------------
 	// Give some information about your tool...
 
-	Set_Name	(_TL("02: LS berekening"));
+	Set_Name	(_TL("3.2. LS berekening"));
 
 	Set_Author	(_TL("Copyright (c) 2003 Olaf Conrad. Modified by Johan Van de Wauw (2016) to make model identical to Watem"));
 
