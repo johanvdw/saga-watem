@@ -9,7 +9,7 @@ Parcel_Filter::Parcel_Filter()
 	Set_Author(_TL("Copyright (c) 2017.  Johan Van de Wauw"));
 
 	Set_Description(_TW(
-		"Bfilter grid"
+		"De tool voert een 3x3 filter uit op een digitaal hoogtemodel die enkel cellen binnen het perceel gebruikt."
 	)
 	);
 
@@ -26,7 +26,7 @@ Parcel_Filter::Parcel_Filter()
 
 	Parameters.Add_Grid(
 		NULL, "PRC", "Percelen",
-		"Percelengrid met unieke identifier per perceel. Bossen krijgen waarde 10000. Bebouwde gebieden en wegen -2, rivieren -1.",
+		"Percelengrid met unieke identifier per perceel, kan aangemaakt worden met de tool 'aanmaak percelengrid'",
 		PARAMETER_INPUT
 	);
 

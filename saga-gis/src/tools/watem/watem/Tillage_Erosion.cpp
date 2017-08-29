@@ -21,7 +21,7 @@ Tillage_Erosion::Tillage_Erosion()
 
 	Parameters.Add_Grid(
 		NULL, "DEM", "Elevation",
-		"",
+		"Digitaal hoogtemodel.",
 		PARAMETER_INPUT
 	);
 

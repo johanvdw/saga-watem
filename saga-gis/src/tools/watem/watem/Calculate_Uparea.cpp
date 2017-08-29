@@ -50,7 +50,7 @@ CCalculate_Uparea::CCalculate_Uparea()
 
 	Parameters.Add_Grid(
 		NULL, "UPSLOPE_AREA", _TL("Upslope Area"),
-		"Upslope Area",
+		"Upslope Area: oppervlakte dat afstroomt naar een pixel",
 		PARAMETER_OUTPUT
 	);
 
@@ -77,15 +77,15 @@ CCalculate_Uparea::CCalculate_Uparea()
 
 	Parameters.Add_Value(
 		NULL, "WRONG", "Use old (wrong) calculation near roads and rivers",
-		"", PARAMETER_TYPE_Bool, false
+		"De oorspronkelijke berekening gebruiken voor wegen en rivieren of de gecorrigeerde versie.", PARAMETER_TYPE_Bool, false
 	);
 
 	Parameters.Add_Value(
-		NULL, "PIT_FLOW", "Flow from pits into closeby cells (within radius)", "", PARAMETER_TYPE_Bool, false
+		NULL, "PIT_FLOW", "Flow from pits into closeby cells (within radius)", "Geeft aan of in de buurt van pits gezocht moet worden naar lagergelegen cellen waar dan nog water naar kan stromen. Gebruikt de maximale zoekstraal die hieronder bepaald wordt. ", PARAMETER_TYPE_Bool, false
 	);
 
 	Parameters.Add_Value(
-		"PIT_FLOW", "PIT_RADIUS", "Search radius from pit.", "Maximum radius from a pit to which upstream water can flow", PARAMETER_TYPE_Int, 4, 0);
+		"PIT_FLOW", "PIT_RADIUS", "Search radius from pit.", "Maximale zoekstraal waarin naar pixels gezocht wordt die lager liggen dan gevonden pits. Enkel van toepassing als ook PIT_FLOW geselecterd is.", PARAMETER_TYPE_Int, 4, 0);
 }
 
 bool CCalculate_Uparea::On_Execute(void)

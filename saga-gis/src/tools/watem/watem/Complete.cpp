@@ -4,21 +4,21 @@ Complete::Complete()
 {
 	Set_Name(_TL("3. Berekening Erosiekaart (compleet)"));
 
-	Set_Author("Based on Watem (KULeuven). Converted to SAGA by Johan Van de Wauw (2016)");
+	Set_Author("Based on Watem (KULeuven). Converted to SAGA by Johan Van de Wauw (2016-2017)");
 
 	Set_Description(_TW(
-		"Volledige berekening erosiekaart in 1 stap."
+		"Volledige berekening erosiekaart in 1 stap. Deze module voert volgende stappen uit: Berekening upslope area, berekening LS factor, berekening watererosie en optioneel de berekening van de bewerkingserosie. Maakt gebruik van standaardwaarden voor de C-factor."
 	));
 
-	Parameters.Add_Grid(NULL, "DEM", _TL("DEM"), _TL(""), PARAMETER_INPUT);
-	Parameters.Add_Grid(NULL, "PRC", _TL("Percelen"), _TL(""), PARAMETER_INPUT);
+	Parameters.Add_Grid(NULL, "DEM", _TL("DEM"), _TL("Digitaal hoogtemodel. Eventueel met gebruik van filter."), PARAMETER_INPUT);
+	Parameters.Add_Grid(NULL, "PRC", _TL("Percelen"), _TL("Percelengrid zoals aangemaakt met de tool 'aanmaak percelengrid'"), PARAMETER_INPUT);
 	Parameters.Add_Grid(NULL, "K", _TL("K: bodemerosiegevoeligheidsfactor (ton ha MJ-1 mm-1)"), _TL("K: bodemerosiegevoeligheidsfactor (ton ha MJ-1 mm-1)"), PARAMETER_INPUT);
 	//Parameters.Add_Grid(NULL, "C", _TL("C: de gewas- en bedrijfsvoeringsfactor (dimensieloos)"), _TL("C: de gewas- en bedrijfsvoeringsfactor (dimensieloos)"), PARAMETER_INPUT);
 	
-	Parameters.Add_Grid(NULL, "PIT", _TL("Pit"), _TL(""), PARAMETER_OUTPUT, true, SG_DATATYPE_DWord);
-	Parameters.Add_Grid(NULL, "UPSLOPE_AREA", _TL("UPAREA"), _TL(""), PARAMETER_OUTPUT);
-	Parameters.Add_Grid(NULL, "LS", _TL("LS"), _TL(""), PARAMETER_OUTPUT);
-	Parameters.Add_Grid(NULL, "TILL", _TL("Tillage Erosion"), _TL(""), PARAMETER_OUTPUT_OPTIONAL);
+	Parameters.Add_Grid(NULL, "PIT", _TL("Pit"), _TL("Grid met pits zoals bepaald in de uparea berekening"), PARAMETER_OUTPUT, true, SG_DATATYPE_DWord);
+	Parameters.Add_Grid(NULL, "UPSLOPE_AREA", _TL("UPAREA"), _TL("Upslope Area: oppervlakte dat afstroomt naar een pixel"), PARAMETER_OUTPUT);
+	Parameters.Add_Grid(NULL, "LS", _TL("LS"), _TL("LS: de topografische hellings- en lengtefactor (dimensieloos)"), PARAMETER_OUTPUT);
+	Parameters.Add_Grid(NULL, "TILL", _TL("Tillage Erosion"), _TL("Gemiddels bodemverlies als gevolg van bodemerosie  (ton ha-1 jaar-1)"), PARAMETER_OUTPUT_OPTIONAL);
 
 	Parameters.Add_Value(
 		NULL, "R", "R",
@@ -53,7 +53,7 @@ Complete::Complete()
 	);
 
 	Parameters.Add_Value(
-		NULL, "SAVE_MEMORY", "Save memory", "save memory", PARAMETER_TYPE_Bool, false
+		NULL, "SAVE_MEMORY", "Save memory", "Experimentele optie om het geheugengebruik tijdens het uitvoeren te verminderen.", PARAMETER_TYPE_Bool, false
 	);
 
 	Parameters.Add_Value(
@@ -133,7 +133,7 @@ bool Complete::On_Execute(void)
 			case 10000: C->Set_Value(i, 0.001); break;
 			case -1:
 			case -2:
-			case 0: C->Set_Value(i, 0); break;
+			case 0: C->Set_NoData(i); break;
 			default: C->Set_Value(i, 0.37); break;
 		}
 			
