@@ -4,18 +4,18 @@
 
 Create_Parcel_Grid::Create_Parcel_Grid()
 {
-	Set_Name(_TL("1. Prepares input parcel files for watem module."));
+	Set_Name(_TL("1. Aanmaak percelengrid (PRC)"));
 
 	Set_Author("Johan Van de Wauw (2017)");
 
 	Set_Description(_TW(
-		"Prepares input parcel file for the watem module."
+		"Maakt percelengridkaart aan die vereist is voor het gebruik in de berekening van de erosiekaart. Hierbij krijgen percelen een code tussen 2 en 9999, bos 10000, rivieren en open water -2, bebouwing 1"
 	));
 
-	Parameters.Add_Shapes(NULL, "PARCEL_SHAPES", "Percelen", "Percelen", PARAMETER_INPUT, SHAPE_TYPE_Polygon);
-	Parameters.Add_Grid(NULL, "LANDUSE", "Landgebruik", "Landgebruik", PARAMETER_INPUT);
+	Parameters.Add_Shapes(NULL, "PARCEL_SHAPES", "Percelen", "Percelen (shapefile)", PARAMETER_INPUT, SHAPE_TYPE_Polygon);
+	Parameters.Add_Grid(NULL, "LANDUSE", "Landgebruik", "Landgebruik (grid)", PARAMETER_INPUT);
 
-	Parameters.Add_Grid(NULL, "PRC", "Parcel grid", "Parcel grid",PARAMETER_OUTPUT, true, SG_DATATYPE_Short);
+	Parameters.Add_Grid(NULL, "PRC", "Percelen grid", "Percelengridkaart gecodeerd volgens watem ",PARAMETER_OUTPUT, true, SG_DATATYPE_Short);
 
 	//Parameters.Add_Shapes(NULL, "INFRA", "Infrastructuur (polygoon)", "Infrastructuur", PARAMETER_INPUT, SHAPE_TYPE_Polygon);
 

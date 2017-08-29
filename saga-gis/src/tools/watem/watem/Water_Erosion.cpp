@@ -9,10 +9,10 @@ Water_Erosion::Water_Erosion()
 
 	Set_Name(_TL("3.3. Watererosie berekening op basis van LS"));
 
-	Set_Author(_TL("Copyrights (c) 2016 by KULeuven. Converted to SAGA/C++ by Johan Van de Wauw"));
+	Set_Author(_TL("2016 - Johan Van de Wauw"));
 
 	Set_Description(_TW(
-		"(c) 2016")
+		"Berekening van de watererosie op basis van de LS factor en de C factor. Berekende waarden zijn maximaal 150.")
 	);
 
 
@@ -34,7 +34,7 @@ Water_Erosion::Water_Erosion()
 
 	Parameters.Add_Grid(
 		NULL, "C", "C: de gewas- en bedrijfsvoeringsfactor (dimensieloos)",
-		"",
+		"Grid met de gewas en bedrijfsvoeringsfactor. ",
 		PARAMETER_INPUT
 	);
 
