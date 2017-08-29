@@ -105,14 +105,13 @@ bool Create_Parcel_Grid::On_Execute()
 	
 	// grids maken van wegen en waterwegen
 
-	// todo : wegenregister agiv (lijnen)
 	CSG_Grid *wbn, *sbn;
-	wbn = BinaryShapetoGrid(Parameters("WBN"), prc->Get_System(), 1);
-	sbn = BinaryShapetoGrid(Parameters("SBN"), prc->Get_System(), 1);
+	wbn = BinaryShapetoGrid(Parameters("WBN"), prc->Get_System(), 0);
+	sbn = BinaryShapetoGrid(Parameters("SBN"), prc->Get_System(), 0);
 
 
 	CSG_Grid * vha_pol;
-	vha_pol = BinaryShapetoGrid(Parameters("WTZ"), prc->Get_System(), 1);
+	vha_pol = BinaryShapetoGrid(Parameters("WTZ"), prc->Get_System(), 0);
 
 
 	CSG_Grid * vha_line;
@@ -124,7 +123,7 @@ bool Create_Parcel_Grid::On_Execute()
 		&& SG_TOOL_PARAMETER_SET("GRID", vha_line)
 		&& SG_TOOL_PARAMETER_SET("OUTPUT", 0) // data / no data
 		&& SG_TOOL_PARAMETER_SET("MULTIPLE", 1)
-		&& SG_TOOL_PARAMETER_SET("LINE_TYPE", 1) //thick lines
+		&& SG_TOOL_PARAMETER_SET("LINE_TYPE", 0) //thin lines
 	);
 
 	// verschillende grids combineren
