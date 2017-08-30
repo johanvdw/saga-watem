@@ -65,6 +65,16 @@ CCalculate_LS_Watem::CCalculate_LS_Watem(void)
 		PARAMETER_INPUT
 	);
 
+	CSG_Parameter * useprc = Parameters.Add_Bool(
+		NULL, "USEPRC", "Perceelsgrenzen gebruiken in de berekening van de slope",
+		"Perceelsgrenzen gebruiken bij de berekening van de slope: enkel pixels binnen dezelfde unit worden in beschouwing genomen", false
+	);
+
+	Parameters.Add_Grid(
+		useprc, "PRC", _TL("Percelen grid (PRC)"),
+		"Percelengrid met unieke identifier per perceel. Bossen krijgen waarde 10000. Bebouwde gebieden en wegen -2 en rivieren -1.",
+		PARAMETER_INPUT_OPTIONAL
+	);
 
 	Parameters.Add_Grid(
 		NULL, "LS"	, _TL("Calculated LS"),
@@ -98,6 +108,9 @@ bool CCalculate_LS_Watem::On_Execute(void)
 
 	m_pDEM		= Parameters("DEM" )->asGrid();
 	m_pUp_Area = Parameters("UPSLOPE_AREA")->asGrid();
+	PRC = Parameters("PRC")->asGrid();
+	use_prc = Parameters("USEPRC")->asBool();
+
 	pLS		= Parameters("LS")->asGrid();
 	m_Stability = 0;
 	m_Erosivity = 1;
@@ -115,8 +128,10 @@ bool CCalculate_LS_Watem::On_Execute(void)
 		#pragma omp parallel for
 		for(x=0; x<Get_NX(); x++)
 		{
-			double ls = Get_LS(x, y);
-			pLS->Set_Value(x, y, ls);
+			if (m_pDEM->is_NoData(x, y))
+				pLS->Set_NoData(x, y);
+			else
+				pLS->Set_Value(x, y, Get_LS(x, y));
 		}
 	}
 
@@ -134,10 +149,103 @@ double CCalculate_LS_Watem::Get_LS(int x, int y)
 
 	//-----------------------------------------------------
 
+
 	if (!m_pDEM->Get_Gradient(x, y, Slope, Aspect))
 	{
 		return(-1.0);
 	}
+
+	if (use_prc)
+	{
+		CSG_Grid_System * system = Get_System();
+
+		int current_parcel = PRC->asInt(x, y);
+		double	z = m_pDEM->asDouble(x, y), dz[4];
+		bool in_parcel[4] = { false, false, false, false };
+		for (int i = 0, iDir = 0, ix, iy; i<4; i++, iDir += 2)
+		{
+			if (is_InGrid(
+				ix = system->Get_xTo(iDir, x),
+				iy = system->Get_yTo(iDir, y)) && (current_parcel == PRC->asInt(ix, iy)))
+			{
+				dz[i] = m_pDEM->asDouble(ix, iy) - z;
+				in_parcel[i] = true;
+			}
+			else if (is_InGrid(
+				ix = system->Get_xFrom(iDir, x),
+				iy = system->Get_yFrom(iDir, y)) && (current_parcel == PRC->asInt(ix, iy)))
+			{
+				dz[i] = z - m_pDEM->asDouble(ix, iy);
+				in_parcel[i] = true;
+			}
+			else
+			{
+				dz[i] = 0.0;
+			}
+		}
+		double G = 0;
+		double H = 0;
+		/*if (in_parcel[0] & in_parcel[2])
+			G = (dz[0] - dz[2]) / (2.0 * Get_Cellsize())
+		else
+			G = ()
+
+		if (in_parcel[1] & in_parcel[3])
+			H = (dz[1] - dz[3]) / (2.0 * Get_Cellsize());
+			*/
+		if (in_parcel[0] || in_parcel[2])
+			G = (dz[0] - dz[2]) / ((in_parcel[0] + in_parcel[2])* Get_Cellsize());
+		if (in_parcel[1] || in_parcel[3])
+			H = (dz[1] - dz[3]) / ((in_parcel[1] + in_parcel[3]) * Get_Cellsize());
+		Slope = atan(sqrt(G*G + H*H));
+
+	}
+
+
+	/*
+	bool CSG_Grid::Get_Gradient(int x, int y, double &Slope, double &Aspect) const
+{
+	if( is_InGrid(x, y) )
+	{
+		double	z	= asDouble(x, y), dz[4];
+
+		for(int i=0, iDir=0, ix, iy; i<4; i++, iDir+=2)
+		{
+			if( is_InGrid(
+				ix = m_System.Get_xTo  (iDir, x),
+				iy = m_System.Get_yTo  (iDir, y)) )
+			{
+				dz[i]	= asDouble(ix, iy) - z;
+			}
+			else if( is_InGrid(
+				ix = m_System.Get_xFrom(iDir, x),
+				iy = m_System.Get_yFrom(iDir, y)) )
+			{
+				dz[i]	= z - asDouble(ix, iy);
+			}
+			else
+			{
+				dz[i]	= 0.0;
+			}
+		}
+
+		double G	= (dz[0] - dz[2]) / (2.0 * Get_Cellsize());
+        double H	= (dz[1] - dz[3]) / (2.0 * Get_Cellsize());
+
+		Slope	= atan(sqrt(G*G + H*H));
+		Aspect	= G != 0.0 ? M_PI_180 + atan2(H, G) : H > 0.0 ? M_PI_270 : H < 0.0 ? M_PI_090 : -1.0;
+
+		return( true );
+	}
+
+	Slope	=  0.0;
+	Aspect	= -1.0;
+
+	return( false );
+}
+	
+	*/
+
 
 	//if (m_Method_Slope == 1)	// distance weighted average up-slope slope
 	//{

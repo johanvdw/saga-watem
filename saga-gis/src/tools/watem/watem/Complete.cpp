@@ -63,6 +63,10 @@ Complete::Complete()
 	Parameters.Add_Value(
 		"PIT_FLOW", "PIT_RADIUS", "Search radius from pit.", "Maximum radius from a pit to which upstream water can flow", PARAMETER_TYPE_Int, 4, 0);
 
+	Parameters.Add_Value(
+		NULL,"LS_USE_PRC", "Perceelsgrenzen gebruiken in LS berekening", "Perceelsgrenzen gebruiken in LS berekening (slope enkel binnen veld). ", PARAMETER_TYPE_Bool, false
+	);
+
 };
 
 bool Complete::On_Execute(void)
@@ -105,6 +109,8 @@ bool Complete::On_Execute(void)
 	SG_RUN_TOOL_ExitOnError("watem", 5, //LS calculation,
 		SG_TOOL_PARAMETER_SET("DEM", Parameters("DEM"))
 		&& SG_TOOL_PARAMETER_SET("UPSLOPE_AREA", Parameters("UPSLOPE_AREA"))
+		&& SG_TOOL_PARAMETER_SET("USEPRC", Parameters("LS_USE_PRC"))
+		&& SG_TOOL_PARAMETER_SET("PRC", Parameters("PRC"))
 		&& SG_TOOL_PARAMETER_SET("LS", Parameters("LS"))
 	);
 
