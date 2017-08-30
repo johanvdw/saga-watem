@@ -25,6 +25,7 @@
 //---------------------------------------------------------
 #include "Calculate_LS_Watem.h"
 
+#include <algorithm>  
 
 ///////////////////////////////////////////////////////////
 //														 //
@@ -288,30 +289,27 @@ double CCalculate_LS_Watem::Get_LS(int x, int y)
 
 		//-----------------------------------------------------
 
+		if (Slope < 0.08975817419)		// <  9% (= atan(0.09)), ca. 5 Degree
+		{
+			S = 10.8 * sin_Slope + 0.03;
+		}
+		else if (m_Stability == 0)		// >= 9%, stable
+		{
+			S = 16.8 * sin_Slope - 0.5;
+		}
+		else							// >= 9%, thawing, unstable
+		{
+			S = pow(sin_Slope / 0.896, 0.6);
+		}
+
 		if (Area / (x * Get_Cellsize()) < 5.0)
 		{
 			//opm: dit staat zo in oorspronkelijke pascal code - niet volgens documentatie
 			//Sfactor: = 3.0*(power(SIN(slope[i, j]), 0.8)) + 0.56
 
 			// op overleg met KUL werd vermeld dat we hier eventueel minimum van de twee zouden kunnen nemen. Nog niet aangepast
-			S = 3.0 * pow(sin_Slope, 0.8) + 0.56;
+			S = std::min(3.0 * pow(sin_Slope, 0.8) + 0.56, S);
 		}
-		else
-		{
-			if (Slope < 0.08975817419)		// <  9% (= atan(0.09)), ca. 5 Degree
-			{
-				S = 10.8 * sin_Slope + 0.03;
-			}
-			else if (m_Stability == 0)		// >= 9%, stable
-			{
-				S = 16.8 * sin_Slope - 0.5;
-			}
-			else							// >= 9%, thawing, unstable
-			{
-				S = pow(sin_Slope / 0.896, 0.6);
-			}
-		}
-
 
 		LS = L * S;
 	}
