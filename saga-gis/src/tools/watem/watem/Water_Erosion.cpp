@@ -9,7 +9,7 @@ Water_Erosion::Water_Erosion()
 
 	Set_Name(_TL("3.3. Watererosie berekening op basis van LS"));
 
-	Set_Author(_TL("2016 - Johan Van de Wauw"));
+	Set_Author(_TL("2016-2017  - Johan Van de Wauw"));
 
 	Set_Description(_TW(
 		"Berekening van de watererosie op basis van de LS factor en de C factor. Berekende waarden zijn maximaal 150.")
@@ -77,15 +77,21 @@ bool Water_Erosion::On_Execute()
 	R = Parameters("R")->asDouble();
 	P = Parameters("P")->asDouble();
 	double corr = Parameters("CORR")->asDouble();
-	water_erosion->Set_NoData_Value(-99);
+	water_erosion->Set_NoData_Value(-99999);
 #pragma omp parallel for
 	for (int i = 0; i < Get_NCells(); i++){
-			double v = R * K->asDouble(i) * LS->asDouble(i) * C->asDouble(i) * P / corr; //correctiefactor voor 5x5 grid ipv 25x25 grid
+		if (C->is_NoData(i) || LS->is_NoData(i) || K->is_NoData(i))
+			water_erosion->Set_NoData(i);
+		else
+		{
+			double v = R * K->asDouble(i) * LS->asDouble(i) * C->asDouble(i) * P / corr; 
 			if (v > 150)
 				v = 150;
-			if (v < -1) v = -99;
+			if (v < 0) v = -99999;
 			water_erosion->Set_Value(i, v);
 		}
+
+	}
 
 	
 	
