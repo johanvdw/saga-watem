@@ -1,7 +1,6 @@
 #include "Flow_Fields.h"
 #include <map>
 
-
 using std::map;
 using std::pair;
 
@@ -22,13 +21,6 @@ CFlow_Fields::CFlow_Fields()
 		_TL(""),
 		PARAMETER_INPUT
 	);
-
-
-	/*Parameters.Add_Shapes(
-		NULL, "FIELDS", _TL("Fields"),
-		_TL("Fields for which you want to calculate the in/outflow"),
-		PARAMETER_INPUT, SHAPE_TYPE_Polygon
-	);*/
 
 	Parameters.Add_Table(
 		NULL, "FLOW", _TL("Flow table"),
@@ -66,7 +58,7 @@ bool CFlow_Fields::On_Execute(void)
 
 	//todo: convert fields to a (temporary) grid - now already input
 
-	if (!DEM->Set_Index())	// create index ...
+	if (!DEM->Set_Index())
 	{
 		return(false);
 	}
@@ -107,19 +99,16 @@ bool CFlow_Fields::On_Execute(void)
 		}
 	}
 
-	if (flow->Get_Field("from") == -1)
-		flow->Add_Field("from", SG_DATATYPE_Long);
-	if (flow->Get_Field("to") == -1)
-		flow->Add_Field("to", SG_DATATYPE_Long);
-	if (flow->Get_Field("area") == -1)
-		flow->Add_Field("area", SG_DATATYPE_Double);
-	flow->Del_Records();
+	flow->Add_Field("from", SG_DATATYPE_Long);
+	flow->Add_Field("to", SG_DATATYPE_Long);
+	flow->Add_Field("area", SG_DATATYPE_Double);
+
 	for (map<pair<int, int>, double>::iterator it = flow_map.begin(); it != flow_map.end(); it++)
 	{
 		CSG_Table_Record * row = flow->Add_Record();
-		row->Set_Value("from", it->first.first);
-		row->Set_Value("to", it->first.second);
-		row->Set_Value("area", it->second);
+		row->Set_Value(0, it->first.first);
+		row->Set_Value(1, it->first.second);
+		row->Set_Value(2, it->second);
 	}
 
 	return true;

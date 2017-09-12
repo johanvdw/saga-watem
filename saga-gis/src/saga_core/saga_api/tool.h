@@ -91,6 +91,7 @@
 #define SG_XML_TOOL					SG_T("module")
 #define SG_XML_TOOL_ATT_NAME		SG_T("name")
 #define SG_XML_TOOL_ATT_ID			SG_T("id")
+#define SG_XML_TOOL_ATT_VERSION		SG_T("version")
 #define SG_XML_TOOL_ATT_AUTHOR		SG_T("author")
 #define SG_XML_SPECIFICATION		SG_T("specification")
 #define SG_XML_SPEC_ATT_GRID		SG_T("grid")
@@ -137,6 +138,15 @@
 ///////////////////////////////////////////////////////////
 
 //---------------------------------------------------------
+typedef enum ESG_Summary_Format
+{
+	SG_SUMMARY_FMT_FLAT	= 0,
+	SG_SUMMARY_FMT_HTML,
+	SG_SUMMARY_FMT_XML
+}
+TSG_Summary_Format;
+
+//---------------------------------------------------------
 typedef enum ESG_Tool_Type
 {
 	TOOL_TYPE_Base			= 0,
@@ -146,13 +156,6 @@ typedef enum ESG_Tool_Type
 	TOOL_TYPE_Chain
 }
 TSG_Tool_Type;
-
-
-///////////////////////////////////////////////////////////
-//														 //
-//														 //
-//														 //
-///////////////////////////////////////////////////////////
 
 //---------------------------------------------------------
 typedef enum ESG_Tool_Error
@@ -199,10 +202,11 @@ public:
 	const CSG_String &			Get_File_Name				(void)	const;	// Returns the file name of the tool's library or, if this is a tool chain, the associated XML file.
 	const CSG_String &			Get_Name					(void)	const;
 	const CSG_String &			Get_Author					(void)	const;
+	const CSG_String &			Get_Version					(void)	const;
 	const CSG_String &			Get_Description				(void)	const;
 	const CSG_Strings &			Get_References				(void)	const;
 	const SG_Char *				Get_Icon					(void)	{	return( NULL );	}
-	CSG_String					Get_Summary					(bool bParameters = true, const CSG_String &Menu = "", const CSG_String &Description = "", bool bXML = false);
+	CSG_String					Get_Summary					(bool bParameters = true, const CSG_String &Menu = "", const CSG_String &Description = "", int Format = SG_SUMMARY_FMT_HTML);
 
 	virtual CSG_String			Get_MenuPath				(void)	{	return( SG_T("") );	}
 	virtual CSG_String			Get_MenuPath				(bool bSolved);
@@ -253,6 +257,7 @@ protected:
 	//-----------------------------------------------------
 	void						Set_Name					(const CSG_String &String);
 	void						Set_Author					(const CSG_String &String);
+	void						Set_Version					(const CSG_String &String);
 	void						Set_Description				(const CSG_String &String);
 
 	void						Add_Reference				(const CSG_String &Authors, const CSG_String &Year, const CSG_String &Title, const CSG_String &Where, const SG_Char *Link = NULL, const SG_Char *Link_Text = NULL);
@@ -329,7 +334,7 @@ private:
 
 	CSG_Parameters				**m_pParameters;
 
-	CSG_String					m_ID, m_Library, m_Library_Menu, m_File_Name, m_Author;
+	CSG_String					m_ID, m_Library, m_Library_Menu, m_File_Name, m_Author, m_Version;
 
 
 	bool						_Synchronize_DataObjects	(void);

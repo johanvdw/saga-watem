@@ -68,8 +68,22 @@
 #include <wx/wxcrtvararg.h>
 #include <wx/wfstream.h>
 #include <wx/zipstrm.h>
+#include <wx/log.h>
 
 #include "api_core.h"
+
+
+///////////////////////////////////////////////////////////
+//														 //
+//														 //
+//														 //
+///////////////////////////////////////////////////////////
+
+//---------------------------------------------------------
+#define m_pStream_Base	((wxStreamBase   *)m_pStream)
+#define m_pStream_In	((wxInputStream  *)m_pStream)
+#define m_pStream_Out	((wxOutputStream *)m_pStream)
+#define m_pStream_File	((wxFFileStream  *)m_pStream)
 
 
 ///////////////////////////////////////////////////////////
@@ -130,14 +144,14 @@ bool CSG_File::Open(const CSG_String &FileName, int Mode, bool bBinary, int Enco
 
 		m_pStream	= new wxFFileInputStream (FileName.c_str(), sMode + sEncoding);
 	}
-	else if( Mode == SG_FILE_RW && SG_File_Exists(FileName) )
+	else if( Mode == SG_FILE_RW )
 	{
-		wxString	sMode	= bBinary ? "r+b" : "r+";
+		wxString	sMode	= SG_File_Exists(FileName) ? (bBinary ? "r+b" : "r+") : (bBinary ? "w+b" : "w+");
 
-		m_pStream	= (wxInputStream *)new wxFFileStream(FileName.c_str(), sMode + sEncoding);
+		m_pStream	= new wxFFileStream      (FileName.c_str(), sMode + sEncoding);
 	}
 
-	if( !m_pStream || !m_pStream->IsOk() )
+	if( !m_pStream || !m_pStream_Base->IsOk() )
 	{
 		Close();
 
@@ -152,7 +166,7 @@ bool CSG_File::Close(void)
 {
 	if( m_pStream )
 	{
-		delete(m_pStream);
+		delete(m_pStream_Base);
 
 		m_pStream	= NULL;
 
@@ -165,35 +179,28 @@ bool CSG_File::Close(void)
 //---------------------------------------------------------
 sLong CSG_File::Length(void) const
 {
-	return( m_pStream ? m_pStream->GetLength() : -1 );
+	return( m_pStream ? m_pStream_Base->GetLength() : -1 );
 }
 
 //---------------------------------------------------------
 bool CSG_File::is_EOF(void)	const
 {
-	return( is_Reading() && ((wxInputStream *)m_pStream)->Eof() );
+	return( is_Reading() && m_pStream_In->Eof() );
 }
 
 //---------------------------------------------------------
 bool CSG_File::Seek(sLong Offset, int Origin) const
 {
-	if( is_Reading() )
+	if( m_pStream )
 	{
-		switch( Origin )
-		{
-		default             : return( ((wxInputStream  *)m_pStream)->SeekI(Offset, wxFromStart  ) != wxInvalidOffset );
-		case SG_FILE_CURRENT: return( ((wxInputStream  *)m_pStream)->SeekI(Offset, wxFromCurrent) != wxInvalidOffset );
-		case SG_FILE_END    : return( ((wxInputStream  *)m_pStream)->SeekI(Offset, wxFromEnd    ) != wxInvalidOffset );
-		}
-	}
+		wxSeekMode	Seek = Origin == SG_FILE_CURRENT ? wxFromCurrent : Origin == SG_FILE_END ? wxFromEnd : wxFromStart;
 
-	if( is_Writing() )
-	{
-		switch( Origin )
+		switch( m_Mode )
 		{
-		default             : return( ((wxOutputStream *)m_pStream)->SeekO(Offset, wxFromStart  ) != wxInvalidOffset );
-		case SG_FILE_CURRENT: return( ((wxOutputStream *)m_pStream)->SeekO(Offset, wxFromCurrent) != wxInvalidOffset );
-		case SG_FILE_END    : return( ((wxOutputStream *)m_pStream)->SeekO(Offset, wxFromEnd    ) != wxInvalidOffset );
+		case SG_FILE_R : return( m_pStream_In  ->SeekI(Offset, Seek) != wxInvalidOffset );
+		case SG_FILE_W : return( m_pStream_Out ->SeekO(Offset, Seek) != wxInvalidOffset );
+		case SG_FILE_RW: return( m_pStream_File->SeekI(Offset, Seek) != wxInvalidOffset
+							&&   m_pStream_File->SeekO(Offset, Seek) != wxInvalidOffset );
 		}
 	}
 
@@ -207,14 +214,14 @@ bool CSG_File::Seek_End  (void) const	{	return( Seek(0, SEEK_END) );	}
 //---------------------------------------------------------
 sLong CSG_File::Tell(void) const
 {
-	if( is_Reading() )
+	if( m_pStream )
 	{
-		return( ((wxInputStream  *)m_pStream)->TellI() );
-	}
-
-	if( is_Writing() )
-	{
-		return( ((wxOutputStream *)m_pStream)->TellO() );
+		switch( m_Mode )
+		{
+		case SG_FILE_R : return( m_pStream_In  ->TellI() );
+		case SG_FILE_W : return( m_pStream_Out ->TellO() );
+		case SG_FILE_RW: return( m_pStream_File->TellI() );
+		}
 	}
 
 	return( -1 );
@@ -274,20 +281,25 @@ int CSG_File::Printf(const wchar_t *Format, ...)
 //---------------------------------------------------------
 size_t CSG_File::Read(void *Buffer, size_t Size, size_t Count) const
 {
-	return( is_Reading() && Size > 0 && Count > 0 ? ((wxInputStream *)m_pStream)->Read(Buffer, Size * Count).LastRead() / Size : 0 );
+	return( !is_Reading() || Size == 0 || Count == 0 ? 0 : m_Mode == SG_FILE_RW
+		? m_pStream_File->Read(Buffer, Size * Count).LastRead() / Size
+		: m_pStream_In  ->Read(Buffer, Size * Count).LastRead() / Size
+	);
 }
 
 size_t CSG_File::Read(CSG_String &Buffer, size_t Size) const
 {
 	if( is_Reading() && Size > 0 )
 	{
-		CSG_Array	b(1, Size);
+		CSG_Array	b(sizeof(char), Size + 1);
 
 		size_t	 i	= Read(b.Get_Array(), b.Get_Value_Size(), Size);
 
 		if( i > 0 )
 		{
-			Buffer	= (const char *)b.Get_Array();
+			char	*s	= (char *)b.Get_Array(); s[Size] = '\0';
+
+			Buffer	= s;
 
 			return( i );
 		}
@@ -301,7 +313,10 @@ size_t CSG_File::Read(CSG_String &Buffer, size_t Size) const
 //---------------------------------------------------------
 size_t CSG_File::Write(void *Buffer, size_t Size, size_t Count) const
 {
-	return( is_Writing() ? ((wxOutputStream *)m_pStream)->Write(Buffer, Size * Count).LastWrite() : 0 );
+	return( !is_Writing() || Size == 0 || Count == 0 ? 0 : m_Mode == SG_FILE_RW
+		? m_pStream_File->Write(Buffer, Size * Count).LastWrite()
+		: m_pStream_Out ->Write(Buffer, Size * Count).LastWrite()
+	);
 }
 
 size_t CSG_File::Write(const CSG_String &Buffer) const
@@ -318,7 +333,7 @@ bool CSG_File::Read_Line(CSG_String &sLine)	const
 
 		int		c;
 
-		while( !is_EOF() && (c = ((wxInputStream *)m_pStream)->GetC()) != 0x0A && c != EOF )
+		while( !is_EOF() && (c = Read_Char()) != 0x0A && c != EOF )
 		{
 			if( c != 0x0D )
 			{
@@ -335,7 +350,7 @@ bool CSG_File::Read_Line(CSG_String &sLine)	const
 //---------------------------------------------------------
 int CSG_File::Read_Char(void) const
 {
-	return( is_Reading() ? ((wxInputStream *)m_pStream)->GetC() : 0 );
+	return( !is_Reading() ? 0 : m_Mode == SG_FILE_RW ? m_pStream_File->GetC() : m_pStream_In->GetC() );
 }
 
 //---------------------------------------------------------
@@ -427,7 +442,7 @@ bool CSG_File::Scan(double &Value) const
 		{
 			CSG_String	s	= (char)c;
 
-			while( !is_EOF() && (isdigit(c = Read_Char()) || strchr("", c)) )
+			while( !is_EOF() && (isdigit(c = Read_Char()) || strchr(".,eE", c) || strchr("", c)) )
 			{
 				s	+= (char)c;
 			}
@@ -447,7 +462,7 @@ bool CSG_File::Scan(CSG_String &Value, SG_Char Separator) const
 
 		int		c;
 
-		while( !is_EOF() && (c = ((wxInputStream *)m_pStream)->GetC()) != Separator && c != EOF )
+		while( !is_EOF() && (c = Read_Char()) != Separator && c != EOF )
 		{
 			Value	+= (char)c;
 		}
@@ -509,6 +524,8 @@ CSG_File_Zip::CSG_File_Zip(const CSG_String &FileName, int Mode)
 //---------------------------------------------------------
 bool CSG_File_Zip::Open(const CSG_String &FileName, int Mode)
 {
+	wxLogNull	logNo;	// suppress user notification dialog for invalid zip files
+
 	Close();
 
 	m_Mode	= Mode;
@@ -519,10 +536,10 @@ bool CSG_File_Zip::Open(const CSG_String &FileName, int Mode)
 	}
 	else if( Mode == SG_FILE_R && SG_File_Exists(FileName) )
 	{
-		m_pStream	= new wxZipInputStream(new wxFileInputStream(FileName.c_str()));
+		m_pStream	= new wxZipInputStream (new wxFileInputStream (FileName.c_str()));
 	}
 
-	if( !m_pStream || !m_pStream->IsOk() )
+	if( !m_pStream || !m_pStream_Base->IsOk() )
 	{
 		Close();
 

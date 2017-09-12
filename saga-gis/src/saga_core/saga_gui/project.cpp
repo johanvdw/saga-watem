@@ -677,16 +677,13 @@ bool CWKSP_Project::_Load_Data(CSG_MetaData &Entry, const wxString &ProjectDir, 
 	{
 		if( Type == SG_DATAOBJECT_TYPE_Grid && Entry("PARAMETERS"))
 		{
-			for(int i=0, Memory; i<Entry["PARAMETERS"].Get_Children_Count() && !pItem; i++)
+			for(int i=0; i<Entry["PARAMETERS"].Get_Children_Count() && !pItem; i++)
 			{
-				if( Entry["PARAMETERS"][i].Cmp_Property("id", "MEMORY_MODE") )
+				if( Entry["PARAMETERS"][i].Cmp_Property("id", "FILE_CACHE") )
 				{
-					switch( Entry["PARAMETERS"][i].Get_Property("index", Memory) ? Memory : 0 )
-					{
-					default:	pItem	= g_pData->Add(SG_Create_Grid(&File, SG_DATATYPE_Undefined, GRID_MEMORY_Normal     ));	break;
-					case  1:	pItem	= g_pData->Add(SG_Create_Grid(&File, SG_DATATYPE_Undefined, GRID_MEMORY_Compression));	break;
-					case  2:	pItem	= g_pData->Add(SG_Create_Grid(&File, SG_DATATYPE_Undefined, GRID_MEMORY_Cache      ));	break;
-					}
+					bool	bCached	= Entry["PARAMETERS"][i].Cmp_Content("TRUE", true);
+
+					pItem	= g_pData->Add(SG_Create_Grid(&File, SG_DATATYPE_Undefined, bCached));
 				}
 			}
 		}
@@ -735,6 +732,11 @@ bool CWKSP_Project::_Load_Data(CSG_MetaData &Entry, const wxString &ProjectDir, 
 	}
 
 	pItem->Get_Parameters()->Serialize(*Entry.Get_Child("PARAMETERS"), false);
+
+	if( Type == SG_DATAOBJECT_TYPE_Grid )
+	{
+		pItem->Get_Parameter("FILE_CACHE")->Set_Value(((CWKSP_Grid *)pItem)->Get_Grid()->is_Cached());
+	}
 
 	pItem->Parameters_Changed();
 

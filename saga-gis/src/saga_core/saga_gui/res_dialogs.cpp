@@ -209,10 +209,10 @@ bool DLG_Get_FILE_Filter_GDAL_Read(int Type, wxString &Filter)
 
 	if( Type == 2 || Type == 0 )	// raster
 	{
-		ADD_FILTER("sg-grd-z");
 		ADD_FILTER("sg-grd"  );
-		ADD_FILTER("sg-gds-z");
+		ADD_FILTER("sg-grd-z");
 		ADD_FILTER("sg-gds"  );
+		ADD_FILTER("sg-gds-z");
 		ADD_FILTER("sgrd"    );
 		ADD_FILTER("dgm"     );
 		ADD_FILTER("grd"     );
@@ -258,7 +258,7 @@ wxString DLG_Get_FILE_Filter(int ID_DLG)
 			"%s (*.dll, *.so, *.xml)|*.dll;*.so;*.xml;*.dylib|"
 			"%s (*.sprj)|*.sprj|"
 			"%s (*.sgrd, *.sg-grd-z)|*.sgrd;*.sg-grd;*.sg-grd-z;*.dgm;*.grd|"
-			"%s (*.sg-gds)|*.sg-gds-z|"
+			"%s (*.sg-gds, *.sg-gds-z)|*.sg-gds;*.sg-gds-z|"
 			"%s (*.shp)|*.shp|"
 			"%s (*.spc, *.sg-pts, *.sg-pts-z)|*.spc;*.sg-pts;*.sg-pts-z|"
 			"%s (*.txt, *.csv, *.dbf)|*.txt;*.csv;*.dbf|"
@@ -530,27 +530,18 @@ wxSize		DLG_Get_Def_Size(void)
 ///////////////////////////////////////////////////////////
 
 //---------------------------------------------------------
-bool		DLG_Parameters(CSG_Parameters *pParameters, const wxString &Caption)
+bool		DLG_Parameters(CSG_Parameters *pParameters, const wxString &Caption, const wxString &Description)
 {
-	bool	bResult	= false;
-
 	if( pParameters && pParameters->Get_Count() > 0 )
 	{
-		CSG_String	Name	= pParameters->Get_Name();
+		wxString	Name(pParameters->Get_Name().c_str());
 
-		if( !Caption.IsEmpty() )
-		{
-			pParameters->Set_Name(&Caption);
-		}
+		CDLG_Parameters	dlg(pParameters, Caption.IsEmpty() ? Name : Caption, Description);
 
-		CDLG_Parameters	dlg(pParameters);
-
-		bResult	= dlg.ShowModal() == wxID_OK;
-
-		pParameters->Set_Name(Name);
+		return( dlg.ShowModal() == wxID_OK );
 	}
 
-	return( bResult );
+	return( false );
 }
 
 //---------------------------------------------------------

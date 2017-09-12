@@ -107,9 +107,9 @@ CDLG_Base::CDLG_Base(int id, wxString Caption, bool bCancelBtn)
 {
 	MDI_Top_Window_Push(this);
 
-	m_Panel_Buttons	= new wxPanel(this);
+	m_pPanel_Buttons	= new wxPanel(this);
 
-	m_nButtons		= 0;
+	m_nButtons	= 0;
 
 	Add_Button(wxID_OK);
 
@@ -129,8 +129,6 @@ CDLG_Base::~CDLG_Base(void)
 
 
 ///////////////////////////////////////////////////////////
-//														 //
-//														 //
 //														 //
 ///////////////////////////////////////////////////////////
 
@@ -183,15 +181,13 @@ void CDLG_Base::Set_Positions(void)
 	xDivide	= GetClientSize().GetWidth() - BUTTON_WIDTH - 2 * CONTROL_DIST;
 	yTotal	= GetClientSize().GetHeight() - 2 * CONTROL_DIST;
 
-	m_Panel_Buttons->SetSize(wxRect(xDivide + CONTROL_DIST, CONTROL_DIST, BUTTON_WIDTH, yTotal));
+	m_pPanel_Buttons->SetSize(wxRect(xDivide + CONTROL_DIST, CONTROL_DIST, BUTTON_WIDTH, yTotal));
 
 	Set_Position(wxRect(CONTROL_DIST, CONTROL_DIST, xDivide - 2 * CONTROL_DIST, yTotal));
 }
 
 
 ///////////////////////////////////////////////////////////
-//														 //
-//														 //
 //														 //
 ///////////////////////////////////////////////////////////
 
@@ -225,21 +221,23 @@ void CDLG_Base::_Exit(bool bOk)
 
 ///////////////////////////////////////////////////////////
 //														 //
-//														 //
-//														 //
 ///////////////////////////////////////////////////////////
 
 //---------------------------------------------------------
-void CDLG_Base::Add_Button(int Button_ID)
+wxButton * CDLG_Base::Add_Button(int Button_ID)
 {
+	wxButton	*pButton	= NULL;
+
 	if( Button_ID > 0 )
 	{
-		wxButton	*b	= new wxButton(m_Panel_Buttons, Button_ID, CTRL_Get_Name(Button_ID));
+		pButton	= new wxButton(m_pPanel_Buttons, Button_ID, CTRL_Get_Name(Button_ID));
 
-		b->SetSize(0, CONTROL_DIST + m_nButtons * (CONTROL_DIST + b->GetDefaultSize().y), BUTTON_WIDTH, b->GetDefaultSize().y);
+		pButton->SetSize(0, CONTROL_DIST + m_nButtons * (CONTROL_DIST + pButton->GetDefaultSize().y), BUTTON_WIDTH, pButton->GetDefaultSize().y);
 	}
 
 	m_nButtons++;
+
+	return( pButton );
 }
 
 
