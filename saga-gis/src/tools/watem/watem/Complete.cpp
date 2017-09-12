@@ -155,7 +155,7 @@ bool Complete::On_Execute(void)
 	if (savememory) {
 		PRC->Set_Cache(true);
 		water_erosion->Set_Cache(false);
-
+		K->Set_Cache(false);
 	}
 
 	SG_RUN_TOOL_ExitOnError("watem", 6, //watererosie op basis LS,
