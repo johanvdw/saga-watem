@@ -72,18 +72,22 @@ Complete::Complete()
 bool Complete::On_Execute(void)
 {
 	bool savememory = Parameters("SAVE_MEMORY")->asBool();
-	if (savememory)
-		return false; //optio not working correctly
-
-
+	
 	CSG_Grid * K = Parameters("K")->asGrid();
 	CSG_Grid * PRC = Parameters("PRC")->asGrid();
 	CSG_Grid * DEM = Parameters("DEM")->asGrid();
 	CSG_Grid * UPSLOPE_AREA = Parameters("UPSLOPE_AREA")->asGrid();
 	CSG_Grid * PIT = Parameters("PIT")->asGrid();
+	CSG_Grid * water_erosion = Parameters("WATER_EROSION")->asGrid();
 
-	if (savememory)
-		K->Set_Compression(true);
+	CSG_Grid * ls = Parameters("LS")->asGrid();
+
+	if (savememory) {
+		K->Set_Cache(true);
+		water_erosion->Set_Cache(true);
+		ls->Set_Cache(true);
+	}
+		
 
 	SG_RUN_TOOL_ExitOnError("watem", 4, //uparea,
 		SG_TOOL_PARAMETER_SET("DEM", Parameters("DEM"))
@@ -99,10 +103,10 @@ bool Complete::On_Execute(void)
 
 	if (savememory) {
 		DEM->Set_Index(false);
-		DEM->Set_Compression(true);
-		PRC->Set_Compression(true);
-		PIT->Set_Compression(true);
-		UPSLOPE_AREA->Set_Compression(true);
+		//DEM->Set_Cache(true);
+		//PRC->Set_Cache(true);
+		PIT->Set_Cache(true);
+		ls->Set_Cache(false);
 	}
 
 
@@ -114,22 +118,23 @@ bool Complete::On_Execute(void)
 		&& SG_TOOL_PARAMETER_SET("LS", Parameters("LS"))
 	);
 
+	if (savememory) {
+		DEM->Set_Cache(true);
+		UPSLOPE_AREA->Set_Cache(true);
+	}
+
 	// include connectivity in ls area name
 
 	int conn = 100 - Parameters("PCTOCROP")->asDouble();
 	CSG_String connectivity_string = CSG_String::Format("%d", conn);
 
-	CSG_Grid * ls;
-	ls = Parameters("LS")->asGrid();
+
 	ls->Set_Name("LS_" + connectivity_string);
 
-	if (savememory) {
-		ls->Set_Compression(true);
-	}
 
 	// C grid genereren op basis van percelengrid
-	CSG_Grid * C = new CSG_Grid(*Get_System(), SG_DATATYPE_Float);
-
+	CSG_Grid * C = new CSG_Grid(*Get_System(), SG_DATATYPE_Short); // we use a short to save memory
+	C->Set_Scaling(0.001);
 
 
 	#pragma omp parallel for
@@ -147,6 +152,12 @@ bool Complete::On_Execute(void)
 		
 	}
 
+	if (savememory) {
+		PRC->Set_Cache(true);
+		water_erosion->Set_Cache(false);
+
+	}
+
 	SG_RUN_TOOL_ExitOnError("watem", 6, //watererosie op basis LS,
 		SG_TOOL_PARAMETER_SET("LS", Parameters("LS"))
 		&& SG_TOOL_PARAMETER_SET("K", Parameters("K"))
@@ -160,8 +171,7 @@ bool Complete::On_Execute(void)
 	delete C;
 
 
-	CSG_Grid * water_erosion;
-	water_erosion = Parameters("WATER_EROSION")->asGrid();
+
 	water_erosion->Set_Name("water_erosion_" + connectivity_string);
 
 	if (Parameters("TILL")->asGrid() != NULL)
