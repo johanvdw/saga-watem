@@ -186,14 +186,7 @@ double CCalculate_LS_Watem::Get_LS(int x, int y)
 		}
 		double G = 0;
 		double H = 0;
-		/*if (in_parcel[0] & in_parcel[2])
-			G = (dz[0] - dz[2]) / (2.0 * Get_Cellsize())
-		else
-			G = ()
 
-		if (in_parcel[1] & in_parcel[3])
-			H = (dz[1] - dz[3]) / (2.0 * Get_Cellsize());
-			*/
 		if (in_parcel[0] || in_parcel[2])
 			G = (dz[0] - dz[2]) / ((in_parcel[0] + in_parcel[2])* Get_Cellsize());
 		if (in_parcel[1] || in_parcel[3])
@@ -203,49 +196,7 @@ double CCalculate_LS_Watem::Get_LS(int x, int y)
 	}
 
 
-	/*
-	bool CSG_Grid::Get_Gradient(int x, int y, double &Slope, double &Aspect) const
-{
-	if( is_InGrid(x, y) )
-	{
-		double	z	= asDouble(x, y), dz[4];
-
-		for(int i=0, iDir=0, ix, iy; i<4; i++, iDir+=2)
-		{
-			if( is_InGrid(
-				ix = m_System.Get_xTo  (iDir, x),
-				iy = m_System.Get_yTo  (iDir, y)) )
-			{
-				dz[i]	= asDouble(ix, iy) - z;
-			}
-			else if( is_InGrid(
-				ix = m_System.Get_xFrom(iDir, x),
-				iy = m_System.Get_yFrom(iDir, y)) )
-			{
-				dz[i]	= z - asDouble(ix, iy);
-			}
-			else
-			{
-				dz[i]	= 0.0;
-			}
-		}
-
-		double G	= (dz[0] - dz[2]) / (2.0 * Get_Cellsize());
-        double H	= (dz[1] - dz[3]) / (2.0 * Get_Cellsize());
-
-		Slope	= atan(sqrt(G*G + H*H));
-		Aspect	= G != 0.0 ? M_PI_180 + atan2(H, G) : H > 0.0 ? M_PI_270 : H < 0.0 ? M_PI_090 : -1.0;
-
-		return( true );
-	}
-
-	Slope	=  0.0;
-	Aspect	= -1.0;
-
-	return( false );
-}
 	
-	*/
 
 
 	//if (m_Method_Slope == 1)	// distance weighted average up-slope slope
