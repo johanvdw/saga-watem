@@ -67,6 +67,17 @@ Complete::Complete()
 		NULL,"LS_USE_PRC", "Perceelsgrenzen gebruiken in LS berekening", "Perceelsgrenzen gebruiken in LS berekening (slope enkel binnen veld). ", PARAMETER_TYPE_Bool, false
 	);
 
+	Parameters.Add_Choice("",
+		"METHOD", _TL("LS Calculation"),
+		_TL(""),
+		CSG_String::Format("%s|%s|%s|%s|",
+			_TL("Moore & Nieber 1989"),
+			_TL("Desmet & Govers 1996"),
+			_TL("Wischmeier & Smith 1978"),
+			_TL("Van Oost, 2003")
+		), 3
+	);
+
 };
 
 bool Complete::On_Execute(void)
@@ -116,6 +127,7 @@ bool Complete::On_Execute(void)
 		&& SG_TOOL_PARAMETER_SET("USEPRC", Parameters("LS_USE_PRC"))
 		&& SG_TOOL_PARAMETER_SET("PRC", Parameters("PRC"))
 		&& SG_TOOL_PARAMETER_SET("LS", Parameters("LS"))
+		&& SG_TOOL_PARAMETER_SET("METHOD", Parameters("METHOD"))
 	);
 
 	if (savememory) {
