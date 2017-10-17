@@ -215,72 +215,93 @@ double CCalculate_LS_Watem::Get_LS(int x, int y)
 	switch (m_Method)
 	{
 		//-----------------------------------------------------
-	default:	// Moore and Nieber
-	{
-		LS = (0.4 + 1) * pow(Area / 22.13, 0.4) * pow(sin_Slope / 0.0896, 1.3);
-	}
-	break;
-
-	//-----------------------------------------------------
-	case 1:		// Desmet and Govers
-	{
-		double	L, S, m, x;
-
-		m = m_Erosivity * (sin_Slope / 0.0896) / (3.0 * pow(sin_Slope, 0.8) + 0.56);
-		m = m / (1.0 + m);
-
-		x = fabs(sin(Aspect)) + fabs(cos(Aspect));
-
-		// x: coefficient that adjusts for width of flow at the center of the cell.
-		// It has a value of 1.0 when the flow is toward a side and sqrt(2.0) when
-		// the flow is toward a corner (Kinnel 2005).
-
-		L = (pow(Area + Get_Cellarea(), m + 1.0) - pow(Area, m + 1.0))
-			/ (pow(Get_Cellsize(), m + 2.0) * pow(22.13, m) * pow(x, m));
+		default:	// Moore and Nieber
+		{
+			LS = (0.4 + 1) * pow(Area / 22.13, 0.4) * pow(sin_Slope / 0.0896, 1.3);
+		}
+		break;
 
 		//-----------------------------------------------------
+		case 1:		// Desmet and Govers
+		{
+			double	L, S, m, x;
 
-		if (Slope < 0.08975817419)		// <  9% (= atan(0.09)), ca. 5 Degree
-		{
-			S = 10.8 * sin_Slope + 0.03;
-		}
-		else if (m_Stability == 0)		// >= 9%, stable
-		{
-			S = 16.8 * sin_Slope - 0.5;
-		}
-		else							// >= 9%, thawing, unstable
-		{
-			S = pow(sin_Slope / 0.896, 0.6);
-		}
+			m = m_Erosivity * (sin_Slope / 0.0896) / (3.0 * pow(sin_Slope, 0.8) + 0.56);
+			m = m / (1.0 + m);
 
-		if (Area / (x * Get_Cellsize()) < 5.0)
-		{
-			//opm: dit staat zo in oorspronkelijke pascal code - niet volgens documentatie
-			//Sfactor: = 3.0*(power(SIN(slope[i, j]), 0.8)) + 0.56
+			x = fabs(sin(Aspect)) + fabs(cos(Aspect));
 
-			// op overleg met KUL werd vermeld dat we hier eventueel minimum van de twee zouden kunnen nemen. Nog niet aangepast
-			S = std::min(3.0 * pow(sin_Slope, 0.8) + 0.56, S);
-		}
+			// x: coefficient that adjusts for width of flow at the center of the cell.
+			// It has a value of 1.0 when the flow is toward a side and sqrt(2.0) when
+			// the flow is toward a corner (Kinnel 2005).
 
-		LS = L * S;
-	}
-	break;
+			L = (pow(Area + Get_Cellarea(), m + 1.0) - pow(Area, m + 1.0))
+				/ (pow(Get_Cellsize(), m + 2.0) * pow(22.13, m) * pow(x, m));
 
-	//-----------------------------------------------------
-	case 2:		// Wischmeier and Smith
-	{
-		if (Slope > 0.0505)	// >  ca. 3°
-		{
-			LS = sqrt(Area / 22.13)
-				* (65.41 * sin_Slope * sin_Slope + 4.56 * sin_Slope + 0.065);
+			//-----------------------------------------------------
+
+			if (Slope < 0.08975817419)		// <  9% (= atan(0.09)), ca. 5 Degree
+			{
+				S = 10.8 * sin_Slope + 0.03;
+			}
+			else if (m_Stability == 0)		// >= 9%, stable
+			{
+				S = 16.8 * sin_Slope - 0.5;
+			}
+			else							// >= 9%, thawing, unstable
+			{
+				S = pow(sin_Slope / 0.896, 0.6);
+			}
+
+			if (Area / (x * Get_Cellsize()) < 5.0)
+			{
+				//opm: dit staat zo in oorspronkelijke pascal code - niet volgens documentatie
+				//Sfactor: = 3.0*(power(SIN(slope[i, j]), 0.8)) + 0.56
+
+				// op overleg met KUL werd vermeld dat we hier eventueel minimum van de twee zouden kunnen nemen. Nog niet aangepast
+				S = std::min(3.0 * pow(sin_Slope, 0.8) + 0.56, S);
+			}
+
+			LS = L * S;
 		}
-		else					// <= ca. 3°
+		break;
+
+		//-----------------------------------------------------
+		case 2:		// Wischmeier and Smith
 		{
-			LS = pow(Area / 22.13, 3.0 * pow(Slope, 0.6))
-				* (65.41 * sin_Slope * sin_Slope + 4.56 * sin_Slope + 0.065);
+			if (Slope > 0.0505)	// >  ca. 3°
+			{
+				LS = sqrt(Area / 22.13)
+					* (65.41 * sin_Slope * sin_Slope + 4.56 * sin_Slope + 0.065);
+			}
+			else					// <= ca. 3°
+			{
+				LS = pow(Area / 22.13, 3.0 * pow(Slope, 0.6))
+					* (65.41 * sin_Slope * sin_Slope + 4.56 * sin_Slope + 0.065);
+			}
 		}
-	}
-	break;
+		break;
+
+		case 3: // Van Oost
+		{
+			double adjust = fabs(sin(Aspect)) + fabs(cos(Aspect));
+			double exp = 0;
+			if (Area < 10000) {
+				exp = 0.3 + pow(Area / 10000, 0.8);
+			}
+			else {
+				exp = 0.72;
+			}
+
+			if (exp > 0.72) {
+				exp = 0.72;
+			}
+			double sfactor = -1.5 * 17 / (1 + pow(2.718281828, 2.3 - 6.1 * sin(Slope)));
+			double lfactor = pow(Area + Get_Cellarea(), exp + 1)
+				- pow(Area, exp + 1) / (pow(adjust, exp) * pow(Get_Cellsize(), exp + 2)*pow(22.13, exp));
+			LS = sfactor * lfactor;
+
+		}
 
 	}
 
