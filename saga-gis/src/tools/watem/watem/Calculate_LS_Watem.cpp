@@ -305,9 +305,11 @@ double CCalculate_LS_Watem::Get_LS(int x, int y)
 			if (exp > 0.72) {
 				exp = 0.72;
 			}
+
 			double sfactor = -1.5 + 17 / (1 + pow(2.718281828, 2.3 - 6.1 * sin(Slope)));
 			double lfactor = (pow(Area + Get_Cellarea(), exp + 1) - pow(Area, exp + 1) )
 				/ (pow(adjust, exp) * pow(Get_Cellsize(), exp + 2)*pow(22.13, exp));
+
 			LS = sfactor * lfactor;
 
 		}
