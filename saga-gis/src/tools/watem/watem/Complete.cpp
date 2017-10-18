@@ -182,9 +182,14 @@ bool Complete::On_Execute(void)
 
 	delete C;
 
-
-
 	water_erosion->Set_Name("water_erosion_" + connectivity_string);
+
+	if (savememory) {
+		K->Set_Cache(true);
+		PIT->Set_Cache(false);
+		UPSLOPE_AREA->Set_Cache(false);
+		ls->Set_Cache(false);
+	}
 
 	if (Parameters("TILL")->asGrid() != NULL)
 	{
