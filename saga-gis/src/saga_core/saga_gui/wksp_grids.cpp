@@ -184,6 +184,9 @@ wxMenu * CWKSP_Grids::Get_Menu(void)
 	CMD_Menu_Add_Item(pMenu, false, ID_CMD_DATA_SAVE);
 	CMD_Menu_Add_Item(pMenu, false, ID_CMD_DATA_SAVEAS);
 
+	if( PGSQL_has_Connections() )
+		CMD_Menu_Add_Item(pMenu, false, ID_CMD_DATA_SAVETODB);
+
 	CMD_Menu_Add_Item(pMenu, false, ID_CMD_GRID_SAVEAS_IMAGE);
 
 	if( m_pObject->is_File_Native() && m_pObject->is_Modified() )
@@ -194,6 +197,9 @@ wxMenu * CWKSP_Grids::Get_Menu(void)
 
 	pMenu->AppendSeparator();
 	CMD_Menu_Add_Item(pMenu, false, ID_CMD_DATA_PROJECTION);
+
+	if( m_pObject->Get_MetaData().Get_Children_Count() > 0 )
+		CMD_Menu_Add_Item(pMenu, false, ID_CMD_DATA_METADATA);
 
 	pMenu->AppendSeparator();
 	CMD_Menu_Add_Item(pMenu, true , ID_CMD_GRID_HISTOGRAM);
@@ -298,6 +304,23 @@ void CWKSP_Grids::On_Create_Parameters(void)
 		Get_Grids()->Get_Offset()
 	);
 
+	m_Parameters.Add_Double("NODE_GENERAL",
+		"MAX_SAMPLES"	, _TL("Maximum Samples"),
+		_TL("Maximum number of samples used to build statistics and histograms expressed as percent of the total number of cells."),
+		100.0 * (double)Get_Grids()->Get_Max_Samples() / (double)Get_Grids()->Get_NCells(), 0., true, 100., true
+	);
+
+	//-----------------------------------------------------
+	m_Parameters.Add_Choice("NODE_GENERAL", "DIM_ATTRIBUTE"	    , _TL("Attribute"),
+		_TL(""),
+		_Get_List_Attributes(), Get_Grids()->Get_Z_Attribute()
+	);
+
+	m_Parameters.Add_Choice("NODE_GENERAL", "DIM_NAME"			, _TL("Name"),
+		_TL(""),
+		_Get_List_Attributes(), Get_Grids()->Get_Z_Attribute()
+	);
+
 	//-----------------------------------------------------
 	// Display...
 
@@ -314,7 +337,7 @@ void CWKSP_Grids::On_Create_Parameters(void)
 	//-----------------------------------------------------
 	// Classification...
 
-	((CSG_Parameter_Choice *)m_Parameters("COLORS_TYPE")->Get_Data())->Set_Items(
+	m_Parameters("COLORS_TYPE")->asChoice()->Set_Items(
 		CSG_String::Format("%s|%s|%s|%s|%s|",
 			_TL("Single Symbol"   ), // GRIDS_CLASSIFY_UNIQUE
 			_TL("Lookup Table"    ), // GRIDS_CLASSIFY_LUT
@@ -362,7 +385,7 @@ void CWKSP_Grids::On_Create_Parameters(void)
 	);
 
 	//-----------------------------------------------------
-	m_Parameters.Add_Choice("NODE_METRIC", "BAND", _TL("Band" ), _TL(""), _Get_Bands_List(), 0);
+	m_Parameters.Add_Choice("NODE_METRIC", "BAND", _TL("Band" ), _TL(""), _Get_List_Bands(), 0);
 
 	//-----------------------------------------------------
 	m_Parameters.Add_Node("NODE_COLORS", "NODE_OVERLAY", _TL("RGB Composite"),
@@ -378,9 +401,13 @@ void CWKSP_Grids::On_Create_Parameters(void)
 		), 1
 	);
 
-	m_Parameters.Add_Choice("NODE_OVERLAY", "BAND_R", _TL("Red"  ), _TL(""), _Get_Bands_List(), 0);
-	m_Parameters.Add_Choice("NODE_OVERLAY", "BAND_G", _TL("Green"), _TL(""), _Get_Bands_List(), 1);
-	m_Parameters.Add_Choice("NODE_OVERLAY", "BAND_B", _TL("Blue" ), _TL(""), _Get_Bands_List(), 2);
+	m_Parameters.Add_Choice("NODE_OVERLAY", "BAND_R", _TL("Red"  ), _TL(""), _Get_List_Bands(), 0);
+	m_Parameters.Add_Choice("NODE_OVERLAY", "BAND_G", _TL("Green"), _TL(""), _Get_List_Bands(), 1);
+	m_Parameters.Add_Choice("NODE_OVERLAY", "BAND_B", _TL("Blue" ), _TL(""), _Get_List_Bands(), 2);
+
+//	m_Parameters.Add_Range("BAND_R", "BAND_R_RANGE", _TL("Value Range"), _TL(""));
+//	m_Parameters.Add_Range("BAND_G", "BAND_G_RANGE", _TL("Value Range"), _TL(""));
+//	m_Parameters.Add_Range("BAND_B", "BAND_B_RANGE", _TL("Value Range"), _TL(""));
 }
 
 
@@ -411,16 +438,34 @@ CSG_Grid * CWKSP_Grids::Get_Grid(int i)
 ///////////////////////////////////////////////////////////
 
 //---------------------------------------------------------
-CSG_String CWKSP_Grids::_Get_Bands_List(void)
+CSG_String CWKSP_Grids::_Get_List_Attributes(void)
 {
-	CSG_String	Bands;
+	CSG_String	List;
+
+	for(int i=0; i<Get_Grids()->Get_Attributes().Get_Field_Count(); i++)
+	{
+		List	+= Get_Grids()->Get_Attributes().Get_Field_Name(i); List += "|";
+	}
+
+	return( List );
+}
+
+//---------------------------------------------------------
+CSG_String CWKSP_Grids::_Get_List_Bands(int Attribute)
+{
+	if( Attribute < 0 || Attribute >= Get_Grids()->Get_Attributes().Get_Field_Count() )
+	{
+		Attribute	= Get_Grids()->Get_Z_Name_Field();
+	}
+
+	CSG_String	List;
 
 	for(int i=0; i<Get_Grids()->Get_NZ(); i++)
 	{
-		Bands	+= Get_Grids()->Get_Grid_Name(i, SG_GRIDS_NAME_INDEX) + "|";
+		List	+= Get_Grids()->Get_Attributes()[i].asString(Attribute); List += "|";
 	}
 
-	return( Bands );
+	return( List );
 }
 
 
@@ -442,12 +487,28 @@ void CWKSP_Grids::On_DataObject_Changed(void)
 	m_Parameters("GENERAL_Z_OFFSET")->Set_Value(Get_Grids()->Get_Offset ());
 
 	//-----------------------------------------------------
-	CSG_String	Bands	= _Get_Bands_List();
+	m_Parameters("MAX_SAMPLES")->Set_Value(
+		100.0 * (double)Get_Grids()->Get_Max_Samples() / (double)Get_Grids()->Get_NCells()
+	);
 
-	((CSG_Parameter_Choice *)m_Parameters("BAND"  )->Get_Data())->Set_Items(Bands);
-	((CSG_Parameter_Choice *)m_Parameters("BAND_R")->Get_Data())->Set_Items(Bands);
-	((CSG_Parameter_Choice *)m_Parameters("BAND_G")->Get_Data())->Set_Items(Bands);
-	((CSG_Parameter_Choice *)m_Parameters("BAND_B")->Get_Data())->Set_Items(Bands);
+	//-----------------------------------------------------
+	CSG_String	List;
+
+	List	= _Get_List_Attributes();
+
+	m_Parameters("DIM_ATTRIBUTE")->asChoice()->Set_Items(List);
+	m_Parameters("DIM_ATTRIBUTE")->Set_Value(Get_Grids()->Get_Z_Attribute ());
+
+	m_Parameters("DIM_NAME"     )->asChoice()->Set_Items(List);
+	m_Parameters("DIM_NAME"     )->Set_Value(Get_Grids()->Get_Z_Name_Field());
+
+	//-----------------------------------------------------
+	List	= _Get_List_Bands();
+
+	m_Parameters("BAND"  )->asChoice()->Set_Items(List);
+	m_Parameters("BAND_R")->asChoice()->Set_Items(List);
+	m_Parameters("BAND_G")->asChoice()->Set_Items(List);
+	m_Parameters("BAND_B")->asChoice()->Set_Items(List);
 }
 
 //---------------------------------------------------------
@@ -459,9 +520,26 @@ void CWKSP_Grids::On_Parameters_Changed(void)
 	Get_Grids()->Set_Unit   (m_Parameters("GENERAL_Z_UNIT"  )->asString());
 	Get_Grids()->Set_Scaling(m_Parameters("GENERAL_Z_FACTOR")->asDouble(), m_Parameters("GENERAL_Z_OFFSET")->asDouble());
 
+	Get_Grids()->Set_Max_Samples(Get_Grid()->Get_NCells() * (m_Parameters("MAX_SAMPLES")->asDouble() / 100.0) );
+
 	if( m_Parameters("COLORS_TYPE")->asInt() == GRIDS_CLASSIFY_OVERLAY )
 	{
 		_Fit_Colors();
+	}
+
+	//-----------------------------------------------------
+	Get_Grids()->Set_Z_Attribute(m_Parameters("DIM_ATTRIBUTE")->asInt());
+
+	if( Get_Grids()->Get_Z_Name_Field() != m_Parameters("DIM_NAME")->asInt() )
+	{
+		Get_Grids()->Set_Z_Name_Field(m_Parameters("DIM_NAME")->asInt());
+
+		CSG_String	List	= _Get_List_Bands();
+
+		m_Parameters("BAND"  )->asChoice()->Set_Items(List);
+		m_Parameters("BAND_R")->asChoice()->Set_Items(List);
+		m_Parameters("BAND_G")->asChoice()->Set_Items(List);
+		m_Parameters("BAND_B")->asChoice()->Set_Items(List);
 	}
 }
 
@@ -516,6 +594,16 @@ int CWKSP_Grids::On_Parameter_Changed(CSG_Parameters *pParameters, CSG_Parameter
 				newRange->Set_LoVal(((oldRange->Get_LoVal() - oldOffset) / oldFactor) * newFactor + newOffset);
 				newRange->Set_HiVal(((oldRange->Get_HiVal() - oldOffset) / oldFactor) * newFactor + newOffset);
 			}
+		}
+
+		if(	!SG_STR_CMP(pParameter->Get_Identifier(), "DIM_NAME") )
+		{
+			CSG_String	List	= _Get_List_Bands(pParameter->asInt());
+
+			pParameters->Get("BAND"  )->asChoice()->Set_Items(List);
+			pParameters->Get("BAND_R")->asChoice()->Set_Items(List);
+			pParameters->Get("BAND_G")->asChoice()->Set_Items(List);
+			pParameters->Get("BAND_B")->asChoice()->Set_Items(List);
 		}
 
 		if( pParameters->Get("COLORS_TYPE")->asInt() == GRIDS_CLASSIFY_METRIC
@@ -777,12 +865,12 @@ double CWKSP_Grids::Get_Value_StdDev (void)	{	return( ((CSG_Grids *)m_pObject)->
 //---------------------------------------------------------
 bool CWKSP_Grids::Fit_Colors(void)
 {
-	CSG_String	Bands	= _Get_Bands_List();
+	CSG_String	List	= _Get_List_Bands();
 
-	((CSG_Parameter_Choice *)m_Parameters("BAND"  )->Get_Data())->Set_Items(Bands);
-	((CSG_Parameter_Choice *)m_Parameters("BAND_R")->Get_Data())->Set_Items(Bands);
-	((CSG_Parameter_Choice *)m_Parameters("BAND_G")->Get_Data())->Set_Items(Bands);
-	((CSG_Parameter_Choice *)m_Parameters("BAND_B")->Get_Data())->Set_Items(Bands);
+	m_Parameters("BAND"  )->asChoice()->Set_Items(List);
+	m_Parameters("BAND_R")->asChoice()->Set_Items(List);
+	m_Parameters("BAND_G")->asChoice()->Set_Items(List);
+	m_Parameters("BAND_B")->asChoice()->Set_Items(List);
 
 	return( _Fit_Colors() );
 }

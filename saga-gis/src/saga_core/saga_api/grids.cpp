@@ -82,13 +82,17 @@ CSG_Grids * SG_Create_Grids(void)
 //---------------------------------------------------------
 CSG_Grids * SG_Create_Grids(const CSG_Grids &Grids)
 {
-	return( new CSG_Grids(Grids) );
+	CSG_Grids	*pGrids	= new CSG_Grids(Grids);
+
+	if( !pGrids->is_Valid() ) { delete(pGrids); pGrids = NULL; } return( pGrids );
 }
 
 //---------------------------------------------------------
-CSG_Grids * SG_Create_Grids(const CSG_Grids *pGrids, bool bCopyData)
+CSG_Grids * SG_Create_Grids(const CSG_Grids *_pGrids, bool bCopyData)
 {
-	return( new CSG_Grids(pGrids, bCopyData) );
+	CSG_Grids	*pGrids	= new CSG_Grids(_pGrids, bCopyData);
+
+	if( !pGrids->is_Valid() ) { delete(pGrids); pGrids = NULL; } return( pGrids );
 }
 
 //---------------------------------------------------------
@@ -96,32 +100,31 @@ CSG_Grids * SG_Create_Grids(const CSG_String &FileName, bool bLoadData)
 {
 	CSG_Grids	*pGrids	= new CSG_Grids(FileName, bLoadData);
 
-	if( pGrids->is_Valid() )
-	{
-		return( pGrids );
-	}
-
-	delete(pGrids);
-
-	return( NULL );
+	if( !pGrids->is_Valid() ) { delete(pGrids); pGrids = NULL; } return( pGrids );
 }
 
 //---------------------------------------------------------
 CSG_Grids * SG_Create_Grids(const CSG_Grid_System &System, int NZ, double zMin, TSG_Data_Type Type)
 {
-	return( new CSG_Grids(System, NZ, zMin, Type) );
+	CSG_Grids	*pGrids	= new CSG_Grids(System, NZ, zMin, Type);
+
+	if( !pGrids->is_Valid() ) { delete(pGrids); pGrids = NULL; } return( pGrids );
 }
 
 //---------------------------------------------------------
 CSG_Grids * SG_Create_Grids(const CSG_Grid_System &System, const CSG_Table &Attributes, int zAttribute, TSG_Data_Type Type, bool bCreateGrids)
 {
-	return( new CSG_Grids(System, Attributes, zAttribute, Type) );
+	CSG_Grids	*pGrids	= new CSG_Grids(System, Attributes, zAttribute, Type, bCreateGrids);
+
+	if( bCreateGrids && !pGrids->is_Valid() ) { delete(pGrids); pGrids = NULL; } return( pGrids );
 }
 
 //---------------------------------------------------------
 CSG_Grids * SG_Create_Grids(int NX, int NY, int NZ, double Cellsize, double xMin, double yMin, double zMin, TSG_Data_Type Type)
 {
-	return( new CSG_Grids(NX, NY, NZ, Cellsize, xMin, yMin, zMin, Type) );
+	CSG_Grids	*pGrids	= new CSG_Grids(NX, NY, NZ, Cellsize, xMin, yMin, zMin, Type);
+
+	if( !pGrids->is_Valid() ) { delete(pGrids); pGrids = NULL; } return( pGrids );
 }
 
 
@@ -267,8 +270,7 @@ bool CSG_Grids::Destroy(void)
 
 	m_Attributes.Destroy();
 	m_Attributes.Add_Field("Z", SG_DATATYPE_Double);
-
-	m_Z_Attribute	= 0;
+	m_Z_Attribute	= m_Z_Name	= 0;
 
 	return( CSG_Data_Object::Destroy() );
 }
@@ -290,7 +292,8 @@ bool CSG_Grids::Create(const CSG_Grids *pGrids, bool bCopyData)
 	if( pGrids && pGrids->is_Valid() && Create(pGrids->Get_System(), 0, 0.0, pGrids->Get_Type()) )
 	{
 		m_Attributes.Create(&pGrids->m_Attributes);
-		Set_Z_Attribute(pGrids->Get_Z_Attribute());
+		Set_Z_Attribute (pGrids->Get_Z_Attribute ());
+		Set_Z_Name_Field(pGrids->Get_Z_Name_Field());
 
 		if( bCopyData )
 		{
@@ -386,7 +389,9 @@ void CSG_Grids::Set_Unit(const CSG_String &Unit)
 //---------------------------------------------------------
 void CSG_Grids::Set_Scaling(double Scale, double Offset)
 {
-	for(int i=0; i<Get_Grid_Count(); i++)
+	m_pGrids[0]->Set_Scaling(Scale, Offset);
+
+	for(int i=1; i<Get_Grid_Count(); i++)
 	{
 		m_pGrids[i]->Set_Scaling(Scale, Offset);
 	}
@@ -399,7 +404,9 @@ bool CSG_Grids::Set_NoData_Value_Range(double loValue, double hiValue)
 {
 	if( CSG_Data_Object::Set_NoData_Value_Range(loValue, hiValue) )	// this is a CSG_Data_Object base class property
 	{
-		for(int i=0; i<Get_Grid_Count(); i++)
+		m_pGrids[0]->Set_NoData_Value_Range(loValue, hiValue);
+
+		for(int i=1; i<Get_Grid_Count(); i++)
 		{
 			m_pGrids[i]->Set_NoData_Value_Range(loValue, hiValue);
 		}
@@ -489,6 +496,15 @@ bool CSG_Grids::Del_Attribute(int i)
 			m_Z_Attribute--;
 		}
 
+		if( m_Z_Name > i )
+		{
+			m_Z_Name--;
+		}
+		else if( m_Z_Name == i )
+		{
+			m_Z_Name	= -1;	// same as m_Z_Attribute
+		}
+
 		return( true );
 	}
 
@@ -506,6 +522,24 @@ bool CSG_Grids::Set_Z_Attribute(int i)
 	}
 
 	return( false );
+}
+
+//---------------------------------------------------------
+bool CSG_Grids::Set_Z_Name_Field(int i)
+{
+	if( i >= 0 && i < m_Attributes.Get_Field_Count() )
+	{
+		m_Z_Name	= i;
+
+		return( true );
+	}
+
+	return( false );
+}
+
+int CSG_Grids::Get_Z_Name_Field(void)	const
+{
+	return( m_Z_Name >= 0 && m_Z_Name < m_Attributes.Get_Field_Count() ? m_Z_Name : m_Z_Attribute );
 }
 
 //---------------------------------------------------------
@@ -808,31 +842,40 @@ bool CSG_Grids::Del_Grids(bool bDetach)
 //---------------------------------------------------------
 CSG_String CSG_Grids::Get_Grid_Name(int i, int Style) const
 {
-	if( Style == 0 )
-	{
-		Style	= SG_GRIDS_NAME_OWNER|SG_GRIDS_NAME_INDEX;
-	}
-
 	CSG_String	s;
 
-	if( (Style & SG_GRIDS_NAME_INDEX) != 0 )
+	if( i >= 0 && i < Get_Grid_Count() )
 	{
-		s.Printf("%s %d", _TL("Band"), i + 1);
-	}
+		if( Style == 0 )
+		{
+			Style	= SG_GRIDS_NAME_OWNER|SG_GRIDS_NAME_GRID;
+		}
 
-	if( (Style & SG_GRIDS_NAME_VALUE) != 0 )
-	{
-		s	+= (s.is_Empty() ? "[" : " [") + SG_Get_String(Get_Z(i), -10) + "]";
-	}
+		if( (Style & SG_GRIDS_NAME_OWNER) != 0 )
+		{
+			s	= CSG_String(Get_Name());
+		}
 
-	if( (Style & SG_GRIDS_NAME_GRID ) != 0 && *m_pGrids[i]->Get_Name() != '\0' )
-	{
-		s	+= (s.is_Empty() ? "(" : " (") + CSG_String(m_pGrids[i]->Get_Name()) + ")";
-	}
+		if( (Style & SG_GRIDS_NAME_INDEX) != 0 )
+		{
+			if( !s.is_Empty() )	s	+= ".";
 
-	if( (Style & SG_GRIDS_NAME_OWNER) != 0 )
-	{
-		s	= CSG_String(Get_Name()) + "." + s;
+			s.Printf("%s %d", _TL("Band"), i + 1);
+		}
+
+		if( (Style & SG_GRIDS_NAME_VALUE) != 0 )
+		{
+			if( !s.is_Empty() )	s	+= ".";
+
+			s	+= SG_Get_String(Get_Z(i), -10);
+		}
+
+		if( (Style & SG_GRIDS_NAME_GRID ) != 0 )
+		{
+			if( !s.is_Empty() )	s	+= ".";
+
+			s	+= m_Attributes[i].asString(Get_Z_Name_Field());
+		}
 	}
 
 	return( s );
@@ -1007,27 +1050,27 @@ CSG_Grids & CSG_Grids::Divide(double Value)
 ///////////////////////////////////////////////////////////
 
 //---------------------------------------------------------
-double CSG_Grids::Get_Value(const TSG_Point_Z &p, TSG_Grid_Resampling Resampling) const
+double CSG_Grids::Get_Value(const TSG_Point_Z &p, TSG_Grid_Resampling Resampling, TSG_Grid_Resampling ZResampling) const
 {
 	double	Value;
 
-	return( Get_Value(p.x, p.y, p.z, Value, Resampling) ? Value : Get_NoData_Value() );
+	return( Get_Value(p.x, p.y, p.z, Value, Resampling, ZResampling) ? Value : Get_NoData_Value() );
 }
 
-double CSG_Grids::Get_Value(double x, double y, double z, TSG_Grid_Resampling Resampling) const
+double CSG_Grids::Get_Value(double x, double y, double z, TSG_Grid_Resampling Resampling, TSG_Grid_Resampling ZResampling) const
 {
 	double	Value;
 
-	return( Get_Value(x, y, z, Value, Resampling) ? Value : Get_NoData_Value() );
+	return( Get_Value(x, y, z, Value, Resampling, ZResampling) ? Value : Get_NoData_Value() );
 }
 
-bool CSG_Grids::Get_Value(const TSG_Point_Z &p, double &Value, TSG_Grid_Resampling Resampling) const
+bool CSG_Grids::Get_Value(const TSG_Point_Z &p, double &Value, TSG_Grid_Resampling Resampling, TSG_Grid_Resampling ZResampling) const
 {
-	return( Get_Value(p.x, p.y, p.z, Value, Resampling) );
+	return( Get_Value(p.x, p.y, p.z, Value, Resampling, ZResampling) );
 }
 
 //---------------------------------------------------------
-bool CSG_Grids::Get_Value(double x, double y, double z, double &Value, TSG_Grid_Resampling Resampling) const
+bool CSG_Grids::Get_Value(double x, double y, double z, double &Value, TSG_Grid_Resampling Resampling, TSG_Grid_Resampling ZResampling) const
 {
 	if(	!Get_System().Get_Extent(true).Contains(x, y) )
 	{
@@ -1043,13 +1086,24 @@ bool CSG_Grids::Get_Value(double x, double y, double z, double &Value, TSG_Grid_
 
 	if( dz == 0.0 )
 	{
-		m_pGrids[iz]->Get_Value(x, y, Value, Resampling);
+		return( m_pGrids[iz]->Get_Value(x, y, Value, Resampling) );
 	}
-	else if( iz + 1 >= Get_NZ() )	{	return( false );	}
-	else switch( Resampling )
+
+	if( ZResampling == GRID_RESAMPLING_Undefined )
+	{
+		ZResampling	= Resampling;
+	}
+
+	if( (ZResampling == GRID_RESAMPLING_BicubicSpline || ZResampling == GRID_RESAMPLING_BSpline)
+	&&  (iz < 1 || iz >= m_Attributes.Get_Count() - 2) )
+	{
+		ZResampling	= GRID_RESAMPLING_Bilinear;
+	}
+
+	switch( ZResampling )
 	{
 	case GRID_RESAMPLING_NearestNeighbour: default:
-		return( m_pGrids[Get_Z(iz + 1) - z < dz ? iz + 1 : iz]->Get_Value(x, y, Value, Resampling) );
+		return( m_pGrids[dz < 0.5 ? iz : iz + 1]->Get_Value(x, y, Value, Resampling) );
 
 	case GRID_RESAMPLING_Bilinear:
 		{
@@ -1058,7 +1112,7 @@ bool CSG_Grids::Get_Value(double x, double y, double z, double &Value, TSG_Grid_
 			if( m_pGrids[iz    ]->Get_Value(x, y, v[0], Resampling)
 			&&  m_pGrids[iz + 1]->Get_Value(x, y, v[1], Resampling) )
 			{
-				Value	= v[0] + dz * (v[1] - v[0]) / (Get_Z(iz + 1) - z);
+				Value	= v[0] + dz * (v[1] - v[0]);
 
 				return( true );
 			}
@@ -1089,29 +1143,27 @@ bool CSG_Grids::Get_Value(double x, double y, double z, double &Value, TSG_Grid_
 //---------------------------------------------------------
 bool CSG_Grids::_Get_Z(double z, int &iz, double &dz) const
 {
-	for(iz=0; iz<m_Attributes.Get_Count(); iz++)
+	if( z < m_Attributes[0                           ].asDouble(m_Z_Attribute)
+	||  z > m_Attributes[m_Attributes.Get_Count() - 1].asDouble(m_Z_Attribute) )
 	{
-		dz	= z - m_Attributes[iz].asDouble(m_Z_Attribute);
+		return( false );
+	}
 
-		if( dz > 0.0 )
+	double	z0, z1	= m_Attributes[0].asDouble(m_Z_Attribute);
+
+	for(iz=0; iz<m_Attributes.Get_Count()-1; iz++)
+	{
+		z0 = z1; z1	= m_Attributes[iz + 1].asDouble(m_Z_Attribute);
+
+		if( z < z1 )
 		{
-			if( iz == 0 )
-			{
-				return( false );
-			}
+			dz	= z0 < z1 ? (z - z0) / (z1 - z0) : 0.0;
 
-			iz--;
-
-			return( true );
-		}
-
-		if( dz == 0.0 )
-		{
 			return( true );
 		}
 	}
 
-	return( false );
+	return( (dz = z - z1) == 0.0 );
 }
 
 
@@ -1126,11 +1178,6 @@ bool CSG_Grids::_Get_Z(double z, int &iz, double &dz) const
 
 bool CSG_Grids::_Set_Index(void)
 {
-	if( Get_Data_Count() <= 0 )
-	{
-		return( false );	// nothing to do
-	}
-
 	//-----------------------------------------------------
 	if( m_Index == NULL && (m_Index = (sLong *)SG_Malloc((size_t)Get_NCells() * sizeof(sLong))) == NULL )
 	{
@@ -1142,17 +1189,17 @@ bool CSG_Grids::_Set_Index(void)
 	//-----------------------------------------------------
 	const sLong	M	= 7;
 
-	sLong	i, j, k, l, ir, n, *istack, jstack, nstack, indxt, itemp;
+	sLong	i, j, k, l, ir, n, *istack, jstack, nstack, indxt, itemp, nData;
 	double	a;
 
 	//-----------------------------------------------------
 	SG_UI_Process_Set_Text(CSG_String::Format("%s: %s", _TL("Create index"), Get_Name()));
 
-	for(i=0, j=0, k=Get_Data_Count(); i<Get_NCells(); i++)
+	for(i=0, j=0, nData=Get_NCells(); i<Get_NCells(); i++)
 	{
 		if( is_NoData(i) )
 		{
-			m_Index[k++]	= i;
+			m_Index[--nData]	= i;
 		}
 		else // if( !is_NoData(i) )
 		{
@@ -1163,7 +1210,7 @@ bool CSG_Grids::_Set_Index(void)
 	//-----------------------------------------------------
 	l		= 0;
 	n		= 0;
-	ir		= Get_Data_Count() - 1;
+	ir		= nData - 1;
 
 	nstack	= 64;
 	istack	= (sLong *)SG_Malloc((size_t)nstack * sizeof(sLong));
@@ -1173,7 +1220,7 @@ bool CSG_Grids::_Set_Index(void)
 	{
 		if( ir - l < M )
 		{
-			if( !SG_UI_Process_Set_Progress((double)(n += M - 1), (double)Get_Data_Count()) )
+			if( !SG_UI_Process_Set_Progress((double)(n += M - 1), (double)nData) )
 			{
 				SG_FREE_SAFE(istack);
 				SG_FREE_SAFE(m_Index);
@@ -1291,18 +1338,37 @@ bool CSG_Grids::On_Update(void)
 {
 	if( is_Valid() )
 	{
+		double	Offset = Get_Offset(), Scaling = is_Scaled() ? Get_Scaling() : 0.0;
+
 		m_Statistics.Invalidate();
 
-		for(int z=0; z<Get_NZ(); z++)
+		if( Get_Max_Samples() > 0 && Get_Max_Samples() < Get_NCells() )
 		{
-			for(int y=0; y<Get_NY(); y++)
+			double	d	= (double)Get_NCells() / (double)Get_Max_Samples();
+
+			for(double i=0; i<(double)Get_NCells(); i+=d)
 			{
-				for(int x=0; x<Get_NX(); x++)
+				double	Value	= asDouble((sLong)i, false);
+
+				if( !is_NoData_Value(Value) )
 				{
-					if( !is_NoData(x, y, z) )
-					{
-						m_Statistics.Add_Value(asDouble(x, y, z));
-					}
+					m_Statistics	+= Scaling ? Offset + Scaling * Value : Value;
+				}
+			}
+
+			m_Statistics.Set_Count(m_Statistics.Get_Count() >= Get_Max_Samples() ? Get_NCells()	// any no-data cells ?
+				: (sLong)(Get_NCells() * (double)m_Statistics.Get_Count() / (double)Get_Max_Samples())
+			);
+		}
+		else
+		{
+			for(sLong i=0; i<Get_NCells(); i++)
+			{
+				double	Value	= asDouble(i, false);
+
+				if( !is_NoData_Value(Value) )
+				{
+					m_Statistics	+= Scaling ? Offset + Scaling * Value : Value;
 				}
 			}
 		}
@@ -1387,7 +1453,7 @@ const CSG_Simple_Statistics & CSG_Grids::Get_Statistics(void)
 
 //---------------------------------------------------------
 /**
-  * Calulate statistics for the region specified with rWorld.
+  * Calculate statistics for the region specified with rWorld.
   * Returns false, if there is no overlapping. Set bHoldValues
   * to true, if you need to obtain quantiles.
 */
@@ -1406,21 +1472,68 @@ bool CSG_Grids::Get_Statistics(const CSG_Rect &rWorld, CSG_Simple_Statistics &St
 
 	Statistics.Create(bHoldValues);
 
-	for(int z=0; z<Get_NZ(); z++)
+	int		nx		= 1 + (xMax - xMin);
+	int		ny		= 1 + (yMax - yMin);
+	sLong	nCells	= nx * ny;
+
+	double	Offset = Get_Offset(), Scaling = is_Scaled() ? Get_Scaling() : 0.0;
+
+	if( Get_Max_Samples() > 0 && Get_Max_Samples() < nCells )
 	{
-		for(int y=yMin; y<=yMax; y++)
+		double	d = (double)nCells / (double)Get_Max_Samples();
+
+		for(double i=0; i<(double)nCells; i+=d)
 		{
-			for(int x=xMin; x<=xMax; x++)
+			int	y	= yMin + (int)i / nx;
+			int	x	= xMin + (int)i % nx;
+
+			for(int z=0; z<Get_NZ(); z++)
 			{
-				if( !is_NoData(x, y, z) )
+				double	Value	= asDouble(x, y, z, false);
+
+				if( !is_NoData_Value(Value) )
 				{
-					Statistics	+= asDouble(x, y, z);
+					Statistics	+= Scaling ? Offset + Scaling * Value : Value;
+				}
+			}
+		}
+	}
+	else
+	{
+		for(int x=xMin; x<=xMax; x++)
+		{
+			for(int y=yMin; y<=yMax; y++)
+			{
+				for(int z=0; z<Get_NZ(); z++)
+				{
+					double	Value	= asDouble(x, y, z, false);
+
+					if( !is_NoData_Value(Value) )
+					{
+						Statistics	+= Scaling ? Offset + Scaling * Value : Value;
+					}
 				}
 			}
 		}
 	}
 
 	return( Statistics.Get_Count() > 0 );
+}
+
+//---------------------------------------------------------
+bool CSG_Grids::Set_Max_Samples(sLong Max_Samples)
+{
+	if( CSG_Data_Object::Set_Max_Samples(Max_Samples) )
+	{
+		for(int i=0; i<Get_Grid_Count(); i++)
+		{
+			Get_Grid_Ptr(i)->Set_Max_Samples(Max_Samples);
+		}
+
+		return( true );
+	}
+
+	return( false );
 }
 
 
@@ -1928,17 +2041,22 @@ bool CSG_Grids::_Load_Header(CSG_File &Stream)
 	{
 		const CSG_MetaData	&Fields	= Header["ATTRIBUTES"];
 
-		if( !Fields.Get_Property("Z_FIELD", m_Z_Attribute) )
-		{
-			m_Z_Attribute	= 0;
-		}
-
 		for(int iField=0; iField<Fields.Get_Children_Count(); iField++)
 		{
 			if( Fields[iField].Cmp_Name("FIELD") && Fields[iField].Get_Property("TYPE") )
 			{
 				m_Attributes.Add_Field(Fields[iField].Get_Content(), SG_Data_Type_Get_Type(Fields[iField].Get_Property("TYPE")));
 			}
+		}
+
+		if( !Fields.Get_Property("Z_FIELD", m_Z_Attribute) || m_Z_Attribute >= m_Attributes.Get_Field_Count() )
+		{
+			m_Z_Attribute	= 0;
+		}
+
+		if( !Fields.Get_Property("Z_NAME", m_Z_Name      ) || m_Z_Name      >= m_Attributes.Get_Field_Count() )
+		{
+			m_Z_Name	= -1;	// same as m_Z_Attribute
 		}
 	}
 
@@ -1965,6 +2083,8 @@ bool CSG_Grids::_Load_Header(CSG_File &Stream)
 
 		if( m_Attributes.Get_Field_Count() > 0 && Header["ATTRIBUTES"]("RECORDS") )
 		{
+			CSG_Table	Attributes(m_Attributes);
+
 			const CSG_MetaData	&Records	= Header["ATTRIBUTES"]["RECORDS"];
 
 			for(int iRecord=0; iRecord<Records.Get_Children_Count(); iRecord++)
@@ -1973,16 +2093,34 @@ bool CSG_Grids::_Load_Header(CSG_File &Stream)
 				{
 					CSG_String_Tokenizer	Values(Records[iRecord].Get_Content(), ";");
 
-					CSG_Table_Record	*pRecord	= m_Attributes.Add_Record();
-
-					for(iField=0; Values.Has_More_Tokens() && iField<m_Attributes.Get_Field_Count(); iField++)
+					if( Values.Get_Tokens_Count() == (size_t)Attributes.Get_Field_Count() )
 					{
-						pRecord->Set_Value(iField, Values.Get_Next_Token());
+						CSG_Table_Record	*pRecord	= Attributes.Add_Record();
+
+						for(int iField=0; iField<m_Attributes.Get_Field_Count(); iField++)
+						{
+							pRecord->Set_Value(iField, Values.Get_Next_Token());
+						}
+
+						if( !Add_Grid(*pRecord) )
+						{
+							return( false );
+						}
 					}
 				}
 			}
+		}
+	}
+	else if( Header("NZ") && Header["NZ"].Get_Content().asInt() > 0 )
+	{
+		m_Attributes.Add_Field("ID", SG_DATATYPE_Int);
 
-			return( Create(CSG_Grid_System(Get_System()), CSG_Table(m_Attributes), m_Z_Attribute, Get_Type(), true) );
+		for(int i=0, n=Header["NZ"].Get_Content().asInt(); i<n; i++)
+		{
+			if( !Add_Grid(i + 1.) )
+			{
+				return( false );
+			}
 		}
 	}
 	// <<< DEPRECATED <<< //
@@ -2030,6 +2168,7 @@ bool CSG_Grids::_Save_Header(CSG_File &Stream)
 	CSG_MetaData	&Attributes	= *Header.Add_Child("ATTRIBUTES");
 
 	Attributes.Add_Property("Z_FIELD", m_Z_Attribute);
+	Attributes.Add_Property("Z_NAME" , m_Z_Name     );
 
 	for(int iField=0; iField<m_Attributes.Get_Field_Count(); iField++)
 	{
@@ -2050,21 +2189,31 @@ bool CSG_Grids::_Save_Header(CSG_File &Stream)
 //---------------------------------------------------------
 bool CSG_Grids::_Load_Attributes(CSG_File &Stream)
 {
+	CSG_Table	Attributes(m_Attributes);
+
 	CSG_String	sLine;
 
 	while( Stream.Read_Line(sLine) && !sLine.is_Empty() )
 	{
 		CSG_String_Tokenizer	Values(sLine, "\t");
 
-		CSG_Table_Record	*pRecord	= m_Attributes.Add_Record();
-
-		for(int iField=0; iField<m_Attributes.Get_Field_Count(); iField++)
+		if( Values.Get_Tokens_Count() == (size_t)Attributes.Get_Field_Count() )
 		{
-			pRecord->Set_Value(iField, Values.Get_Next_Token());
+			CSG_Table_Record	*pRecord	= Attributes.Add_Record();
+
+			for(int iField=0; iField<m_Attributes.Get_Field_Count(); iField++)
+			{
+				pRecord->Set_Value(iField, Values.Get_Next_Token());
+			}
+
+			if( !Add_Grid(*pRecord) )
+			{
+				return( false );
+			}
 		}
 	}
 
-	return( Create(CSG_Grid_System(Get_System()), CSG_Table(m_Attributes), m_Z_Attribute, Get_Type(), true) );
+	return( true );
 }
 
 //---------------------------------------------------------
@@ -2090,6 +2239,11 @@ bool CSG_Grids::_Save_Attributes(CSG_File &Stream)
 //---------------------------------------------------------
 bool CSG_Grids::_Load_Data(CSG_File &Stream, CSG_Grid *pGrid)
 {
+	if( !pGrid )
+	{
+		return( false );
+	}
+
 	TSG_Data_Type	Type	= Get_Type();
 
 	CSG_Array	Line(1, Get_nLineBytes());

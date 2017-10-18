@@ -1817,11 +1817,15 @@ bool CSG_Parameter_Grid_System::Set_Value(void *Value)
 			{
 				CSG_Parameter_List	*pList	= pParameter->asList();
 
-				for(int j=pList->Get_Item_Count()-1; j>=0; j--)
+				if( !m_System.is_Valid() )
+				{
+					pList->Del_Items();
+				}
+				else for(int j=pList->Get_Item_Count()-1; j>=0; j--)
 				{
 					CSG_Data_Object	*pObject	= pList->Get_Item(j);
 
-					bool	bInvalid	= !m_System.is_Valid() || !(pManager && pManager->Exists(pObject));
+					bool	bInvalid	= !(pManager && pManager->Exists(pObject));
 
 					if( !bInvalid && pObject != DATAOBJECT_NOTSET && pObject != DATAOBJECT_CREATE )
 					{
@@ -1922,9 +1926,9 @@ bool CSG_Parameter_Table_Field::Add_Default(double Value, double Minimum, bool b
 //---------------------------------------------------------
 const SG_Char * CSG_Parameter_Table_Field::asString(void)
 {
-	CSG_Table	*pTable;
+	CSG_Table	*pTable	= Get_Table();
 
-	if( (pTable = Get_Table()) != NULL )
+	if( pTable )
 	{
 		if( m_Value >= 0 && m_Value < pTable->Get_Field_Count() )
 		{
@@ -1946,9 +1950,9 @@ double CSG_Parameter_Table_Field::asDouble(void) const
 //---------------------------------------------------------
 bool CSG_Parameter_Table_Field::Set_Value(int Value)
 {
-	CSG_Table	*pTable	= Get_Table();
-
 	m_Value	= Value;
+
+	CSG_Table	*pTable	= Get_Table();
 
 	if( pTable && pTable->Get_Field_Count() > 0 && m_Value >= 0 )
 	{
@@ -1973,9 +1977,9 @@ bool CSG_Parameter_Table_Field::Set_Value(int Value)
 //---------------------------------------------------------
 bool CSG_Parameter_Table_Field::Set_Value(const CSG_String &Value)
 {
-	CSG_Table	*pTable;
+	CSG_Table	*pTable	= Get_Table();
 
-	if( Value.Length() > 0 && (pTable = Get_Table()) != NULL )
+	if( pTable )
 	{
 		for(int i=0; i<pTable->Get_Field_Count(); i++)
 		{
@@ -1994,26 +1998,7 @@ bool CSG_Parameter_Table_Field::Set_Value(const CSG_String &Value)
 //---------------------------------------------------------
 CSG_Table * CSG_Parameter_Table_Field::Get_Table(void)	const
 {
-	CSG_Table		*pTable;
-	CSG_Parameter	*pParent;
-
-	pTable		= NULL;
-
-	if( (pParent = m_pOwner->Get_Parent()) != NULL )
-	{
-		switch( m_pOwner->Get_Parent()->Get_Type() )
-		{
-		default:
-			break;
-
-		case PARAMETER_TYPE_Table:
-		case PARAMETER_TYPE_Shapes:
-		case PARAMETER_TYPE_TIN:
-		case PARAMETER_TYPE_PointCloud:
-			pTable	= pParent->asTable();
-			break;
-		}
-	}
+	CSG_Table	*pTable	= m_pOwner->Get_Parent() ? m_pOwner->Get_Parent()->asTable() : NULL;
 
 	return( pTable && pTable != DATAOBJECT_CREATE && pTable->Get_Field_Count() > 0 ? pTable : NULL );
 }
@@ -2135,7 +2120,7 @@ bool CSG_Parameter_Table_Fields::Set_Value(const CSG_String &Value)
 		{
 			m_Fields[m_nFields++]	= iField;
 
-			m_String	+= CSG_String::Format(m_String.Length() ? SG_T(",%d") : SG_T("%d"), iField);
+			m_String	+= CSG_String::Format(m_String.is_Empty() ? "%d" : ",%d", iField);
 		}
 	}
 
@@ -2150,24 +2135,7 @@ bool CSG_Parameter_Table_Fields::Set_Value(const CSG_String &Value)
 //---------------------------------------------------------
 CSG_Table * CSG_Parameter_Table_Fields::Get_Table(void)	const
 {
-	CSG_Table		*pTable		= NULL;
-	CSG_Parameter	*pParent	= m_pOwner->Get_Parent();
-
-	if( pParent )
-	{
-		switch( m_pOwner->Get_Parent()->Get_Type() )
-		{
-		default:
-			break;
-
-		case PARAMETER_TYPE_Table:
-		case PARAMETER_TYPE_Shapes:
-		case PARAMETER_TYPE_TIN:
-		case PARAMETER_TYPE_PointCloud:
-			pTable	= pParent->asTable();
-			break;
-		}
-	}
+	CSG_Table	*pTable	= m_pOwner->Get_Parent() ? m_pOwner->Get_Parent()->asTable() : NULL;
 
 	return( pTable && pTable != DATAOBJECT_CREATE && pTable->Get_Field_Count() > 0 ? pTable : NULL );
 }

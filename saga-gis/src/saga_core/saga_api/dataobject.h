@@ -88,13 +88,11 @@
 ///////////////////////////////////////////////////////////
 
 //---------------------------------------------------------
-#define SG_META_SRC				SG_T("SOURCE")
-#define SG_META_SRC_FILE		SG_T("FILE")
-#define SG_META_SRC_DB			SG_T("DATABASE")
-#define SG_META_SRC_PROJ		SG_T("PROJECTION")
-
-#define SG_META_HST				SG_T("HISTORY")
-#define SG_META_HST_FILE		SG_T("FILE")
+#define SG_META_SOURCE		"SOURCE"
+#define SG_META_FILEPATH	"FILE"
+#define SG_META_DATABASE	"DATABASE"
+#define SG_META_PROJECTION	"PROJECTION"
+#define SG_META_HISTORY		"HISTORY"
 
 
 ///////////////////////////////////////////////////////////
@@ -136,6 +134,18 @@ TSG_Data_Object_Type;
 //---------------------------------------------------------
 SAGA_API_DLL_EXPORT CSG_String	SG_Get_DataObject_Identifier	(TSG_Data_Object_Type Type);
 SAGA_API_DLL_EXPORT CSG_String	SG_Get_DataObject_Name			(TSG_Data_Object_Type Type);
+
+
+///////////////////////////////////////////////////////////
+//														 //
+///////////////////////////////////////////////////////////
+
+//---------------------------------------------------------
+/** Set the default value for the number of maximum samples used for building data object statistics */
+SAGA_API_DLL_EXPORT bool		SG_DataObject_Set_Max_Samples	(sLong Max_Samples);
+
+/** Get the default value for the number of maximum samples used for building data object statistics */
+SAGA_API_DLL_EXPORT sLong		SG_DataObject_Get_Max_Samples	(void);
 
 
 ///////////////////////////////////////////////////////////
@@ -207,10 +217,10 @@ public:
 	CSG_Data_Object *				Get_Owner		(void)	const				{	return( m_pOwner );		}
 	void							Set_Owner		(CSG_Data_Object *pOwner)	{	m_pOwner = pOwner;		}
 
-	CSG_MetaData &					Get_MetaData	(void)	const			{	return( *m_pMetaData );		}
-	CSG_MetaData &					Get_MetaData_DB	(void)	const 			{	return( *m_pMetaData_DB );	}
-	CSG_MetaData &					Get_History		(void)					{	return( *m_pHistory );		}
-	const CSG_MetaData &			Get_History		(void)	const			{	return( *m_pHistory );		}
+	CSG_MetaData &					Get_MetaData	(void)	const			{	return( *m_pMD_Source   );	}
+	CSG_MetaData &					Get_MetaData_DB	(void)	const 			{	return( *m_pMD_Database );	}
+	CSG_MetaData &					Get_History		(void)					{	return( *m_pMD_History  );	}
+	const CSG_MetaData &			Get_History		(void)	const			{	return( *m_pMD_History  );	}
 
 	CSG_Projection &				Get_Projection	(void);
 	const CSG_Projection &			Get_Projection	(void)	const;
@@ -233,6 +243,9 @@ public:
 	}
 
 	bool							Save_History_to_Model	(const CSG_String &File)	const;
+
+	virtual bool					Set_Max_Samples		(sLong Max_Samples);
+	sLong							Get_Max_Samples		(void)	const	{	return( m_Max_Samples );	}
 
 
 protected:
@@ -263,12 +276,14 @@ private:
 
 	int								m_File_Type;
 
+	sLong							m_Max_Samples;
+
 	double							m_NoData_Value, m_NoData_hiValue;
 
 	CSG_String						m_FileName, m_Name, m_Description;
 
 
-	CSG_MetaData					m_MetaData, *m_pMetaData, *m_pHistory, *m_pFile, *m_pProjection, *m_pMetaData_DB;
+	CSG_MetaData					m_MetaData, *m_pMD_Source, *m_pMD_History, *m_pMD_Database;
 
 	CSG_Projection					m_Projection;
 

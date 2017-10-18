@@ -223,10 +223,13 @@ bool CSG_Grid_System::Assign(double Cellsize, const CSG_Rect &Extent)
 {
 	if( Cellsize > 0.0 && Extent.Get_XRange() >= 0.0 && Extent.Get_YRange() >= 0.0 )
 	{
-		return( Assign(Cellsize, Extent.Get_XMin(), Extent.Get_YMin(),
-			1 + (int)(0.5 + Extent.Get_XRange() / Cellsize),
-			1 + (int)(0.5 + Extent.Get_YRange() / Cellsize))
-		);
+		int		nx	= 1 + (int)(0.5 + Extent.Get_XRange() / Cellsize);
+		int		ny	= 1 + (int)(0.5 + Extent.Get_YRange() / Cellsize);
+
+		double	x	= !fmod(Extent.Get_XRange(), Cellsize) ? Extent.Get_XMin() : Extent.Get_Center().Get_X() - Cellsize * nx / 2.;
+		double	y	= !fmod(Extent.Get_YRange(), Cellsize) ? Extent.Get_YMin() : Extent.Get_Center().Get_Y() - Cellsize * ny / 2.;
+
+		return( Assign(Cellsize, x, y, nx, ny) );
 	}
 
 	return( Assign(0.0, 0.0, 0.0, 0, 0) );

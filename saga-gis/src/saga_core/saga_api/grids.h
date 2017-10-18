@@ -206,6 +206,9 @@ public:		///////////////////////////////////////////////
 	bool							Set_Z_Attribute		(int i);
 	int								Get_Z_Attribute		(void)	const	{	return( m_Z_Attribute );	}
 
+	bool							Set_Z_Name_Field	(int i);
+	int								Get_Z_Name_Field	(void)	const;
+
 	bool							Set_Z				(int i, double Value);
 	double							Get_Z				(int i)	const	{	return( m_Attributes[i].asDouble(m_Z_Attribute) );	}
 
@@ -251,6 +254,8 @@ public:		///////////////////////////////////////////////
 
 	const CSG_Simple_Statistics &	Get_Statistics		(void);
 	bool							Get_Statistics		(const CSG_Rect &rWorld, CSG_Simple_Statistics &Statistics, bool bHoldValues = false)	const;
+
+	virtual bool					Set_Max_Samples		(sLong Max_Samples);
 
 
 	//-----------------------------------------------------
@@ -339,10 +344,10 @@ public:		///////////////////////////////////////////////
 	//-----------------------------------------------------
 	// Get Value...
 
-	double							Get_Value	(double x, double y, double z,                TSG_Grid_Resampling Resampling = GRID_RESAMPLING_BSpline) const;
-	double							Get_Value	(const TSG_Point_Z         &p,                TSG_Grid_Resampling Resampling = GRID_RESAMPLING_BSpline) const;
-	bool							Get_Value	(double x, double y, double z, double &Value, TSG_Grid_Resampling Resampling = GRID_RESAMPLING_BSpline) const;
-	bool							Get_Value	(const TSG_Point_Z         &p, double &Value, TSG_Grid_Resampling Resampling = GRID_RESAMPLING_BSpline) const;
+	double							Get_Value	(double x, double y, double z,                TSG_Grid_Resampling Resampling = GRID_RESAMPLING_BSpline, TSG_Grid_Resampling ZResampling = GRID_RESAMPLING_Undefined) const;
+	double							Get_Value	(const TSG_Point_Z         &p,                TSG_Grid_Resampling Resampling = GRID_RESAMPLING_BSpline, TSG_Grid_Resampling ZResampling = GRID_RESAMPLING_Undefined) const;
+	bool							Get_Value	(double x, double y, double z, double &Value, TSG_Grid_Resampling Resampling = GRID_RESAMPLING_BSpline, TSG_Grid_Resampling ZResampling = GRID_RESAMPLING_Undefined) const;
+	bool							Get_Value	(const TSG_Point_Z         &p, double &Value, TSG_Grid_Resampling Resampling = GRID_RESAMPLING_BSpline, TSG_Grid_Resampling ZResampling = GRID_RESAMPLING_Undefined) const;
 
 	virtual BYTE					asByte		(int x, int y, int z, bool bScaled = true) const	{	return( SG_ROUND_TO_BYTE (asDouble(x, y, z, bScaled)) );	}
 	virtual BYTE					asByte		(sLong             i, bool bScaled = true) const	{	return( SG_ROUND_TO_BYTE (asDouble(      i, bScaled)) );	}
@@ -458,7 +463,7 @@ protected:	///////////////////////////////////////////////
 //---------------------------------------------------------
 private:	///////////////////////////////////////////////
 
-	int								m_Z_Attribute;
+	int								m_Z_Attribute, m_Z_Name;
 
 	sLong							*m_Index;
 

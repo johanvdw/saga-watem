@@ -129,6 +129,29 @@ CWKSP_Data_Item::~CWKSP_Data_Item(void)
 ///////////////////////////////////////////////////////////
 
 //---------------------------------------------------------
+void Add_Metadata2Parameters(const CSG_MetaData &M, CSG_Parameters &P, CSG_Parameter *pParent = NULL)
+{
+	for(int i=0; i<M.Get_Children_Count(); i++)
+	{
+		CSG_String	Properties;
+
+		for(int j=0; j<M[i].Get_Property_Count(); j++)
+		{
+			Properties	+= "\n" + M[i].Get_Property_Name(j) + ": " + M[i].Get_Property(i);
+		}
+
+		if( M[i].Get_Children_Count() > 0 )
+		{
+			Add_Metadata2Parameters(M[i], P, P.Add_Node(pParent, SG_Get_String(P.Get_Count()), M[i].Get_Name(), Properties));
+		}
+		else
+		{
+			P.Add_Info_String(pParent, SG_Get_String(P.Get_Count()), M[i].Get_Name(), Properties, M[i].Get_Content());
+		}
+	}
+}
+
+//---------------------------------------------------------
 bool CWKSP_Data_Item::On_Command(int Cmd_ID)
 {
 	switch( Cmd_ID )
@@ -150,6 +173,7 @@ bool CWKSP_Data_Item::On_Command(int Cmd_ID)
 		case WKSP_ITEM_Table :	PGSQL_Save_Table ((CSG_Table  *)m_pObject);	break;
 		case WKSP_ITEM_Shapes:	PGSQL_Save_Shapes((CSG_Shapes *)m_pObject);	break;
 		case WKSP_ITEM_Grid  :	PGSQL_Save_Grid  ((CSG_Grid   *)m_pObject);	break;
+		case WKSP_ITEM_Grids :	PGSQL_Save_Grids ((CSG_Grids  *)m_pObject);	break;
 
 		default:	break;
 		}
@@ -166,6 +190,17 @@ bool CWKSP_Data_Item::On_Command(int Cmd_ID)
 		if( m_pObject->Delete() )
 		{
 			g_pACTIVE->Update_Description();
+		}
+		break;
+
+	case ID_CMD_DATA_METADATA:
+		if( m_pObject->Get_MetaData().Get_Children_Count() > 0 )
+		{
+			CSG_Parameters	P;
+
+			Add_Metadata2Parameters(m_pObject->Get_MetaData(), P);
+
+			DLG_Parameters(&P, wxString::Format("%s [%s]", _TL("View Metadata"), m_pObject->Get_Name()));
 		}
 		break;
 	}

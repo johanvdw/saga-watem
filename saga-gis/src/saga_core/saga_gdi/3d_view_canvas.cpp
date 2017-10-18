@@ -93,6 +93,7 @@ CSG_3DView_Canvas::CSG_3DView_Canvas(void)
 
 	m_bgColor		= SG_COLOR_WHITE;
 	m_bBox			= true;
+	m_BoxBuffer		= 0.01;
 	m_bStereo		= false;
 	m_dStereo		= 2.0;
 }
@@ -123,6 +124,15 @@ bool CSG_3DView_Canvas::Draw(void)
 		return( false );
 	}
 
+	static bool	bDrawing	= false;
+
+	if( bDrawing )
+	{
+		return( false );
+	}
+
+	bDrawing	= true;
+
 	_Draw_Background();
 
 	//-------------------------------------------------
@@ -130,12 +140,16 @@ bool CSG_3DView_Canvas::Draw(void)
 	||  m_Data_Min.y >= m_Data_Max.y
 	||  m_Data_Min.z >  m_Data_Max.z )
 	{
+		bDrawing	= false;
+
 		return( false );
 	}
 
 	//-------------------------------------------------
 	if( !On_Before_Draw() )
 	{
+		bDrawing	= false;
+
 		return( false );
 	}
 
@@ -197,6 +211,8 @@ bool CSG_3DView_Canvas::Draw(void)
 		m_Projector.Set_yRotation(yRotate);
 	}
 
+	bDrawing	= false;
+
 	return( true );
 }
 
@@ -252,9 +268,9 @@ void CSG_3DView_Canvas::_Draw_Box(void)
 
 	TSG_Point_Z	p[2][4], Buffer;
 
-	Buffer.x	= 0.01 * (m_Data_Max.x - m_Data_Min.x);
-	Buffer.y	= 0.01 * (m_Data_Max.y - m_Data_Min.y);
-	Buffer.z	= 0.01 * (m_Data_Max.z - m_Data_Min.z);
+	Buffer.x	= m_BoxBuffer * (m_Data_Max.x - m_Data_Min.x);
+	Buffer.y	= m_BoxBuffer * (m_Data_Max.y - m_Data_Min.y);
+	Buffer.z	= m_BoxBuffer * (m_Data_Max.z - m_Data_Min.z);
 
 	for(int i=0; i<2; i++)
 	{
