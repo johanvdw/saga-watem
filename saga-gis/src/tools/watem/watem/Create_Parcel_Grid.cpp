@@ -16,9 +16,6 @@ Create_Parcel_Grid::Create_Parcel_Grid()
 	Parameters.Add_Grid(NULL, "LANDUSE", "Landgebruik", "Landgebruik (grid)", PARAMETER_INPUT);
 
 	Parameters.Add_Grid(NULL, "PRC", "Percelen grid", "Percelengridkaart gecodeerd volgens watem ",PARAMETER_OUTPUT, true, SG_DATATYPE_Short);
-
-	//Parameters.Add_Shapes(NULL, "INFRA", "Infrastructuur (polygoon)", "Infrastructuur", PARAMETER_INPUT, SHAPE_TYPE_Polygon);
-
 	Parameters.Add_Shapes(NULL, "WTZ", "GRB WTZ (VHA-polygoon)", "VHA (polygoon)", PARAMETER_INPUT, SHAPE_TYPE_Polygon);
 	Parameters.Add_Shapes(NULL, "WLAS", "GRB Wlas (VHA-lijnen)", "VHA (lijnen) - Wlas", PARAMETER_INPUT, SHAPE_TYPE_Line);
 
@@ -28,7 +25,7 @@ Create_Parcel_Grid::Create_Parcel_Grid()
 	Parameters.Add_Shapes(NULL, "WGA", "GRB Wga (wegaanhorigheid)", "GRB Wga (wegaanhorigheid)", PARAMETER_INPUT, SHAPE_TYPE_Polygon);
 	
 	Parameters.Add_Shapes(NULL, "GBG", "GRB Gbg (gebouw aan de grond)", "GRB Gbg (gebouw aan de grond)", PARAMETER_INPUT, SHAPE_TYPE_Polygon);
-	Parameters.Add_Shapes(NULL, "GBA", "GRB Gbg (gebouwaanhorigheid)", "GRB Gba (gebouwaanhorigheid)", PARAMETER_INPUT, SHAPE_TYPE_Polygon);
+	Parameters.Add_Shapes(NULL, "GBA", "GRB Gba (gebouwaanhorigheid)", "GRB Gba (gebouwaanhorigheid)", PARAMETER_INPUT, SHAPE_TYPE_Polygon);
 	Parameters.Add_Shapes(NULL, "TRN", "GRB Trn (terrein)", "GRB Trn (Terrein) - enkel bepaalde klassen worden gebruikt", PARAMETER_INPUT, SHAPE_TYPE_Polygon);
 	Parameters.Add_Shapes(NULL, "KNW", "GRB Knw (Kunstwerk)", "GRB Knw (Kunstwerk)", PARAMETER_INPUT, SHAPE_TYPE_Polygon);
 
@@ -138,6 +135,7 @@ bool Create_Parcel_Grid::On_Execute()
 
 	delete vha_pol, vha_line, wbn, sbn;
 	//todo: no data op 0 zetten!
+	// nu komt nodata van landuse denk ik?
 
 
 	return true;

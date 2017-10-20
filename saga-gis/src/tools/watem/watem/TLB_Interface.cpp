@@ -94,7 +94,7 @@ CSG_String Get_Info(int i)
 		));
 
 	case TLB_INFO_Version:
-		return( SG_T("1.5.1") );
+		return( SG_T("1.6.0") );
 
 	case TLB_INFO_Menu_Path:
 		return( _TL("Watem" ));
@@ -112,6 +112,7 @@ CSG_String Get_Info(int i)
 #include "Complete.h"
 #include "Create_Parcel_Grid.h"
 #include "Parcel_filter.h"
+#include "Calculate_C_Grid.h"
 
 //---------------------------------------------------------
 // 4. Allow your tools to be created here...
@@ -129,12 +130,11 @@ CSG_Tool *		Create_Tool(int i)
 		case 1:     return (new Create_Parcel_Grid);
 		case 2:		return (new Parcel_Filter);
 		case 3:	    return (new Complete);
-		case 4:    return (new CCalculate_Uparea);
-		case 5:  	return( new CCalculate_LS_Watem);
+		case 4:     return (new CCalculate_Uparea);
+		case 5:  	return (new CCalculate_LS_Watem);
 		case 6:    return (new Water_Erosion);
 		case 7:	return (new Tillage_Erosion);
-		
-		
+		case 8:     return (new Calculate_C_Grid);
 
 		default:	return( NULL );
 	}

@@ -7,13 +7,12 @@ Complete::Complete()
 	Set_Author("Based on Watem (KULeuven). Converted to SAGA by Johan Van de Wauw (2016-2017)");
 
 	Set_Description(_TW(
-		"Volledige berekening erosiekaart in 1 stap. Deze module voert volgende stappen uit: Berekening upslope area, berekening LS factor, berekening watererosie en optioneel de berekening van de bewerkingserosie. Maakt gebruik van standaardwaarden voor de C-factor."
+		"Volledige berekening erosiekaart in één stap. Deze module voert volgende stappen uit: Berekening upslope area, berekening LS factor, berekening C, berekening watererosie en optioneel de berekening van de bewerkingserosie. Maakt gebruik van standaardwaarden voor de C-factor."
 	));
 
 	Parameters.Add_Grid(NULL, "DEM", _TL("DEM"), _TL("Digitaal hoogtemodel. Eventueel met gebruik van filter."), PARAMETER_INPUT);
 	Parameters.Add_Grid(NULL, "PRC", _TL("Percelen"), _TL("Percelengrid zoals aangemaakt met de tool 'aanmaak percelengrid'"), PARAMETER_INPUT);
 	Parameters.Add_Grid(NULL, "K", _TL("K: bodemerosiegevoeligheidsfactor (ton ha MJ-1 mm-1)"), _TL("K: bodemerosiegevoeligheidsfactor (ton ha MJ-1 mm-1)"), PARAMETER_INPUT);
-	//Parameters.Add_Grid(NULL, "C", _TL("C: de gewas- en bedrijfsvoeringsfactor (dimensieloos)"), _TL("C: de gewas- en bedrijfsvoeringsfactor (dimensieloos)"), PARAMETER_INPUT);
 	
 	Parameters.Add_Grid(NULL, "PIT", _TL("Pit"), _TL("Grid met pits zoals bepaald in de uparea berekening"), PARAMETER_OUTPUT, true, SG_DATATYPE_DWord);
 	Parameters.Add_Grid(NULL, "UPSLOPE_AREA", _TL("UPAREA"), _TL("Upslope Area: oppervlakte dat afstroomt naar een pixel"), PARAMETER_OUTPUT);
@@ -32,7 +31,8 @@ Complete::Complete()
 
 	Parameters.Add_Value(
 		NULL, "CORR", "correctiefactor grid",
-		"Correctiefactor omdat de berekeningen bepaald werden op een standaard plot van 22.1 meter. 1.4 voor grids van 5x5", PARAMETER_TYPE_Double, 1.4, 0, 20
+		"Correctiefactor omdat de berekeningen bepaald werden op een standaard plot van 22.1 meter. 1.4 voor grids van 5x5", 
+		PARAMETER_TYPE_Double, 1.4, 0, 20
 	);
 
 
@@ -53,18 +53,22 @@ Complete::Complete()
 	);
 
 	Parameters.Add_Value(
-		NULL, "SAVE_MEMORY", "Save memory", "Experimentele optie om het geheugengebruik tijdens het uitvoeren te verminderen.", PARAMETER_TYPE_Bool, false
+		NULL, "SAVE_MEMORY", "Save memory", 
+		"Optie om het geheugengebruik tijdens het uitvoeren te verminderen. Opgelet: kan de doorlooptijd sterk verhogen.", 
+		PARAMETER_TYPE_Bool, false
 	);
 
 	Parameters.Add_Value(
-		NULL, "PIT_FLOW", "Flow from pits into closeby cells (within radius)", "", PARAMETER_TYPE_Bool, false
+		NULL, "PIT_FLOW", "Flow from pits into closeby cells (within radius)", "", PARAMETER_TYPE_Bool, true
 	);
 
 	Parameters.Add_Value(
-		"PIT_FLOW", "PIT_RADIUS", "Search radius from pit.", "Maximum radius from a pit to which upstream water can flow", PARAMETER_TYPE_Int, 4, 0);
+		"PIT_FLOW", "PIT_RADIUS", "Search radius from pit.",
+		"Maximum radius from a pit to which upstream water can flow", PARAMETER_TYPE_Int, 4, 0);
 
 	Parameters.Add_Value(
-		NULL,"LS_USE_PRC", "Perceelsgrenzen gebruiken in LS berekening", "Perceelsgrenzen gebruiken in LS berekening (slope enkel binnen veld). ", PARAMETER_TYPE_Bool, false
+		NULL,"LS_USE_PRC", "Perceelsgrenzen gebruiken in LS berekening", 
+		"Perceelsgrenzen gebruiken in LS berekening (slope enkel binnen veld). ", PARAMETER_TYPE_Bool, true
 	);
 
 	Parameters.Add_Choice("",
@@ -72,10 +76,10 @@ Complete::Complete()
 		_TL(""),
 		CSG_String::Format("%s|%s|%s|%s|",
 			_TL("Moore & Nieber 1989"),
-			_TL("Desmet & Govers 1996"),
+			_TL("Desmet & Govers 1996 (standaard WATEM)"),
 			_TL("Wischmeier & Smith 1978"),
 			_TL("Van Oost, 2003")
-		), 3
+		), 1
 	);
 
 };
@@ -99,7 +103,6 @@ bool Complete::On_Execute(void)
 		ls->Set_Cache(true);
 	}
 		
-
 	SG_RUN_TOOL_ExitOnError("watem", 4, //uparea,
 		SG_TOOL_PARAMETER_SET("DEM", Parameters("DEM"))
 		&& SG_TOOL_PARAMETER_SET("PRC", Parameters("PRC"))
@@ -120,7 +123,6 @@ bool Complete::On_Execute(void)
 		ls->Set_Cache(false);
 	}
 
-
 	SG_RUN_TOOL_ExitOnError("watem", 5, //LS calculation,
 		SG_TOOL_PARAMETER_SET("DEM", Parameters("DEM"))
 		&& SG_TOOL_PARAMETER_SET("UPSLOPE_AREA", Parameters("UPSLOPE_AREA"))
@@ -136,33 +138,18 @@ bool Complete::On_Execute(void)
 	}
 
 	// include connectivity in ls area name
-
 	int conn = 100 - Parameters("PCTOCROP")->asDouble();
 	CSG_String connectivity_string = CSG_String::Format("%d", conn);
 
-
 	ls->Set_Name("LS_" + connectivity_string);
-
 
 	// C grid genereren op basis van percelengrid
 	CSG_Grid * C = new CSG_Grid(*Get_System(), SG_DATATYPE_Short); // we use a short to save memory
-	C->Set_Scaling(0.001);
 
-
-	#pragma omp parallel for
-	for (int i = 0; i < C->Get_NCells(); i++) {
-		switch (PRC->asInt(i))
-		{
-			case 10000: C->Set_Value(i, 0.001); break;
-			case -1:
-			case -2:
-			case 0: C->Set_NoData(i); break;
-			default: C->Set_Value(i, 0.37); break;
-		}
-			
-
-		
-	}
+	SG_RUN_TOOL_ExitOnError("watem", 8, //watererosie op basis LS,
+		SG_TOOL_PARAMETER_SET("PRC", Parameters("PRC"))
+		&& SG_TOOL_PARAMETER_SET("C", C)
+	);
 
 	if (savememory) {
 		PRC->Set_Cache(true);
