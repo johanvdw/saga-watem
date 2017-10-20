@@ -7,12 +7,12 @@ Water_Erosion::Water_Erosion()
 	//-----------------------------------------------------
 	// Give some information about your tool...
 
-	Set_Name(_TL("3.3. Watererosie berekening op basis van LS"));
+	Set_Name(_TL("3.4. Watererosie berekening op basis van LS"));
 
 	Set_Author(_TL("2016-2017  - Johan Van de Wauw"));
 
 	Set_Description(_TW(
-		"Berekening van de watererosie op basis van de LS factor en de C factor. Berekende waarden zijn maximaal 150.")
+		"Berekening van de watererosie op basis van de LS factor en de C factor. Berekende waarden worden afgetopt op 150.")
 	);
 
 

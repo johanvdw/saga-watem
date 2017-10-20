@@ -88,10 +88,10 @@ CCalculate_LS_Watem::CCalculate_LS_Watem(void)
 		_TL(""),
 		CSG_String::Format("%s|%s|%s|%s|",
 			_TL("Moore & Nieber 1989"),
-			_TL("Desmet & Govers 1996"),
+			_TL("Desmet & Govers 1996 (standaard WATEM)"),
 			_TL("Wischmeier & Smith 1978"),
 			_TL("Van Oost, 2003")
-		), 3
+		), 1
 	);
 
 }
@@ -235,8 +235,8 @@ double CCalculate_LS_Watem::Get_LS(int x, int y)
 		{
 			double	L, S, m, x;
 
-			m = m_Erosivity * (sin_Slope / 0.0896) / (3.0 * pow(sin_Slope, 0.8) + 0.56);
-			m = m / (1.0 + m);
+			double beta = m_Erosivity * (sin_Slope / 0.0896) / (3.0 * pow(sin_Slope, 0.8) + 0.56);
+			m = beta / (1.0 + beta);
 
 			x = fabs(sin(Aspect)) + fabs(cos(Aspect));
 

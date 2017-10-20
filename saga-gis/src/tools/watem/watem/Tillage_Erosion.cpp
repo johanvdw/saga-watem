@@ -1,11 +1,9 @@
 #include "Tillage_Erosion.h"
 
 
-
 Tillage_Erosion::Tillage_Erosion()
 {
-
-	Set_Name(_TL("3.4. Tillage erosion berekening"));
+	Set_Name(_TL("3.5. Tillage erosion berekening"));
 
 	Set_Author(_TL("Copyright (c) 2006 - 2016 by KULeuven. Converted to SAGA/C++ by Johan Van de Wauw"));
 
