@@ -182,7 +182,7 @@ bool Complete::On_Execute(void)
 
 	delete C;
 
-	water_erosion->Set_Name("water_erosion_" + connectivity_string);
+	water_erosion->Set_Name("watero_" + connectivity_string);
 
 	if (savememory) {
 		K->Set_Cache(true);
