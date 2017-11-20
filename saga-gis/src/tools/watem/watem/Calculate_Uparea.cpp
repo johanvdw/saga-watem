@@ -197,7 +197,7 @@ void CCalculate_Uparea::CalculateUparea()
 
 {
 	int i, j, vlag, nvlag, rivvlag;
-	double OPPCOR, AREA, massbalance;
+	double OPPCOR, AREA;
 	int maxorder = 1;
 	int a, b;
 
@@ -229,7 +229,7 @@ void CCalculate_Uparea::CalculateUparea()
 		OPPCOR = Get_Cellarea() * (1 - ptef);
 		AREA = Up_Area->asDouble(i, j) + OPPCOR;
 
-		DistributeTilDirEvent(i, j, &AREA, &massbalance);
+		DistributeTilDirEvent(i, j, &AREA);
 		Up_Area->Add_Value(i, j, OPPCOR);
 
 	}
@@ -422,7 +422,7 @@ void CCalculate_Uparea::CalculatePitStuff()
 
 
 
-void CCalculate_Uparea::DistributeTilDirEvent(int i, int j, double *AREA, double * massbalance)
+void CCalculate_Uparea::DistributeTilDirEvent(int i, int j, double *AREA)
 
 {
 	int nrow = Get_NY();
@@ -749,15 +749,6 @@ void CCalculate_Uparea::DistributeTilDirEvent(int i, int j, double *AREA, double
 				}
 				else {
 					Up_Area->Add_Value(i + ROWMIN2, j + COLMIN2, Abis);
-
-					if (PRC->asInt(i + ROWMIN2, j + COLMIN2) == 9999) {
-						*massbalance += *AREA;
-					}
-					if ((i + ROWMIN2 < 1 || i + ROWMIN2 > Get_NY() || j + COLMIN2 < 1 ||
-						j + COLMIN2 > Get_NX()) | (PRC->asInt(i + ROWMIN2, j + COLMIN2) == 0)) {
-						*massbalance += *AREA;
-
-					}
 				}
 			}
 		}
@@ -765,16 +756,6 @@ void CCalculate_Uparea::DistributeTilDirEvent(int i, int j, double *AREA, double
 
 		else { //normal case: part1 and part 2 !=0
 
-
-			if (!is_InGrid(i + K1, j + L1) ||
-				(PRC->asInt(i + K1, j + L1) == 0) || (PRC->asInt(i + K1, j + L1) == 9999)) {
-
-				*massbalance += PART1;
-			}
-			if (!is_InGrid(i + K2, j + L2) || (PRC->asInt(i + K2, j + L2) == 9999)) {
-
-				*massbalance += PART2;
-			}
 			if (is_InGrid(i + K1, j + L1))
 				Up_Area->Add_Value(i + K1, j + L1, PART1);
 			if (is_InGrid(i + K2, j + L2))
