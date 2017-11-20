@@ -23,8 +23,7 @@ private:
 
 	void CalculateUparea();
 	void CalculatePitStuff();
-	void DistributeTilDirEvent (int i, int j, double *AREA,  double *massbalance
-		);
+	void DistributeTilDirEvent (int i, int j, double *AREA);
 	std::vector<TPitData> PitDat;
 	int pitnum = 0;
 	int pitwin = 200;

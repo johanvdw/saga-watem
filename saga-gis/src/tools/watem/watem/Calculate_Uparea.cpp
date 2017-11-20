@@ -2,9 +2,6 @@
 
 CCalculate_Uparea::CCalculate_Uparea()
 {
-	//-----------------------------------------------------
-	// Give some information about your tool...
-
 	Set_Name(_TL("3.1. Uparea berekening"));
 
 	Set_Author(_TL("Copyright (c) 2006 - 2016 by KULeuven. Converted to SAGA/C++ by Johan Van de Wauw"));
@@ -13,13 +10,8 @@ CCalculate_Uparea::CCalculate_Uparea()
 		"This module converts a digital elevation model grid and a parcel grid and converts it to an uplope area.\n\n"
 		"The method takes into account parcel borders, rivers (grid value -1) and landuse (forest has value 10000).\n"
 		"Pits are taken into account. Optionally a grid with Pits and a table with pit information can be generated. "
-	)
+		)
 	);
-
-
-	//-----------------------------------------------------
-	// Define your parameters list...
-
 
 	Parameters.Add_Grid(
 		NULL, "DEM", "Digitaal hoogtemodel",
@@ -33,12 +25,6 @@ CCalculate_Uparea::CCalculate_Uparea()
 		PARAMETER_INPUT
 	);
 
-	/*Parameters.Add_Grid(
-		NULL, "ASPECT", "Aspect",
-		"",
-		PARAMETER_INPUT_OPTIONAL
-	);*/
-
 	Parameters.Add_Grid(
 		NULL, "PIT", "Pit",
 		"Gridfile met pits",
@@ -46,7 +32,6 @@ CCalculate_Uparea::CCalculate_Uparea()
 		true,
 		SG_DATATYPE_DWord
 	);
-
 
 	Parameters.Add_Grid(
 		NULL, "UPSLOPE_AREA", _TL("Upslope Area"),
@@ -77,15 +62,20 @@ CCalculate_Uparea::CCalculate_Uparea()
 
 	Parameters.Add_Value(
 		NULL, "WRONG", "Use old (wrong) calculation near roads and rivers",
-		"De oorspronkelijke berekening gebruiken voor wegen en rivieren of de gecorrigeerde versie.", PARAMETER_TYPE_Bool, false
+		"De oorspronkelijke berekening gebruiken voor wegen en rivieren of de gecorrigeerde versie.", 
+		PARAMETER_TYPE_Bool, false
 	);
 
 	Parameters.Add_Value(
-		NULL, "PIT_FLOW", "Flow from pits into closeby cells (within radius)", "Geeft aan of in de buurt van pits gezocht moet worden naar lagergelegen cellen waar dan nog water naar kan stromen. Gebruikt de maximale zoekstraal die hieronder bepaald wordt. ", PARAMETER_TYPE_Bool, false
+		NULL, "PIT_FLOW", "Flow from pits into closeby cells (within radius)", 
+		"Geeft aan of in de buurt van pits gezocht moet worden naar lagergelegen cellen waar dan nog water naar kan stromen. Gebruikt de maximale zoekstraal die hieronder bepaald wordt. ",
+		PARAMETER_TYPE_Bool, false
 	);
 
 	Parameters.Add_Value(
-		"PIT_FLOW", "PIT_RADIUS", "Search radius from pit.", "Maximale zoekstraal waarin naar pixels gezocht wordt die lager liggen dan gevonden pits. Enkel van toepassing als ook PIT_FLOW geselecterd is.", PARAMETER_TYPE_Int, 4, 0);
+		"PIT_FLOW", "PIT_RADIUS", "Search radius from pit.", 
+		"Maximale zoekstraal waarin naar pixels gezocht wordt die lager liggen dan gevonden pits. Enkel van toepassing als ook PIT_FLOW geselecterd is.",
+		PARAMETER_TYPE_Int, 4, 0);
 }
 
 bool CCalculate_Uparea::On_Execute(void)
@@ -117,22 +107,16 @@ bool CCalculate_Uparea::On_Execute(void)
 	Up_Area->Set_Name("Upslope_area_" + connectivity_string);
 
 	//-----------------------------------------------------
-	// Check for valid parameter settings...
-
-
-	//-----------------------------------------------------
 	// Execute calculation...
 
-	// make sure m_pUp_Area is empty (as we only add) -- TODO check if this is really necessary
+	// make sure m_pUp_Area is empty
 	Up_Area->Assign(0.0);
 	for (int i = 0; i < Get_NX(); i++)
 
-		//m_pAspect = Parameters("ASPECT")->asGrid();
-		//pitwin = Parameters("PITWIN")->asInt();
-		pitwin = 200;
+
+	pitwin = 200;
 	pitnum = 0;
 	PitDat.empty();
-	//Message_Add("Start calculating pits");
 
 	CalculatePitStuff();
 	CalculateUparea();
@@ -180,8 +164,6 @@ bool CCalculate_Uparea::On_Execute(void)
 	PitDat.empty();
 	pitnum = 0;
 
-
-
 	return true;
 }
 
@@ -191,10 +173,7 @@ CCalculate_Uparea::~CCalculate_Uparea()
 
 }
 
-
-
 void CCalculate_Uparea::CalculateUparea()
-
 {
 	int i, j, vlag, nvlag, rivvlag;
 	double OPPCOR, AREA;
@@ -202,8 +181,6 @@ void CCalculate_Uparea::CalculateUparea()
 	int a, b;
 
 	nvlag = 1;
-
-
 
 	int nrow = Get_NY();
 	int ncol = Get_NX();
@@ -219,7 +196,6 @@ void CCalculate_Uparea::CalculateUparea()
 		int i, j;
 		DEM->Get_Sorted(t, i, j);
 
-		//		Message_Add("Grid Sorted");
 		if (PRC->asInt(i, j) == 0) {
 			continue;
 		}
@@ -231,9 +207,7 @@ void CCalculate_Uparea::CalculateUparea()
 
 		DistributeTilDirEvent(i, j, &AREA);
 		Up_Area->Add_Value(i, j, OPPCOR);
-
 	}
-
 
 	// zet de waarde van de uparea binnen in de pits 
 	for (i = 0; i < ncol; i++) {
@@ -244,12 +218,10 @@ void CCalculate_Uparea::CalculateUparea()
 			}
 		}
 	}
-
 }
 
 void CCalculate_Uparea::CalculatePitStuff()
 {
-
 	int vlag, i, j, k, l, m, n, W;
 	int nvlag = -1;
 	int hulp;
@@ -286,7 +258,6 @@ void CCalculate_Uparea::CalculatePitStuff()
 				nvlag++; //depressie zoeken
 				Pit->Set_Value(i, j, nvlag + 1);
 
-				//setlength(PitDat, nvlag + 1);
 				TPitData p;
 				p.aantal = 0;
 				p.outr = -1;
@@ -309,16 +280,11 @@ void CCalculate_Uparea::CalculatePitStuff()
 								continue;
 							}
 
-
 							if (DEM->asDouble(i + k, j + l) == DEM->asDouble(i, j)) {
-
 								Pit->Set_Value(i + k, j + l, nvlag);
-
 								PitDat[nvlag].aantal++;
-
 								check = true;
 							}
-
 						}
 					}
 					if (check == false)
@@ -342,7 +308,6 @@ void CCalculate_Uparea::CalculatePitStuff()
 									}
 								}
 								if (minvalue < DEM->asDouble(i, j))
-									// johan: outarea verminderen als perceelsgrens?
 									break;
 							}
 						}
@@ -373,7 +338,6 @@ void CCalculate_Uparea::CalculatePitStuff()
 											minimum = DEM->asDouble(i + k + m, j + l + n);
 											PitDat[nvlag].c = i + k;
 											PitDat[nvlag].r = j + l;
-
 										}
 									}
 								}
@@ -399,7 +363,7 @@ void CCalculate_Uparea::CalculatePitStuff()
 		}
 	}
 
-	//nagaan of rivier door de pit gaat
+	//nagaan of rivier door de pit gaat - dan is outlet pit zelf
 	for (int i = 1; i < ncol - 1; i++)
 	{
 		for (int j = 1; j < nrow - 1; j++)
@@ -409,11 +373,8 @@ void CCalculate_Uparea::CalculatePitStuff()
 				vlag = Pit->asInt(i, j);
 				PitDat[vlag].outr = j;
 				PitDat[vlag].outc = i;
-
 			}
-
 		}
-
 	}
 
 	pitnum = nvlag;
@@ -455,7 +416,6 @@ void CCalculate_Uparea::DistributeTilDirEvent(int i, int j, double *AREA)
 			for (L = -1; L <= 1; L++) {
 				if (!is_InGrid(i + K, j + L) || (K == 0 && L == 0)) {
 					continue;
-
 				}
 
 				if ((PRC->asInt(i + K, j + L) == -1) & (DEM->asDouble(i + K, j + L) < DEM->asDouble(i, j))) {
@@ -463,12 +423,9 @@ void CCalculate_Uparea::DistributeTilDirEvent(int i, int j, double *AREA)
 					COLMIN = L;
 					*AREA = 0.0;
 					FINISH->Set_Value(i, j, 1);
-
 				}
-
 			}
 		}
-
 		return;
 	}
 
@@ -753,7 +710,6 @@ void CCalculate_Uparea::DistributeTilDirEvent(int i, int j, double *AREA)
 			}
 		}
 
-
 		else { //normal case: part1 and part 2 !=0
 
 			if (is_InGrid(i + K1, j + L1))
@@ -762,7 +718,5 @@ void CCalculate_Uparea::DistributeTilDirEvent(int i, int j, double *AREA)
 				Up_Area->Add_Value(i + K2, j + L2, PART2);
 		}
 	}
-
 	FINISH->Set_Value(i, j, 1.0);
-
 }
