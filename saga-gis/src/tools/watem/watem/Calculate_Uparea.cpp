@@ -497,14 +497,14 @@ void CCalculate_Uparea::DistributeTilDirEvent(int i, int j, double *AREA)
 
 				if (PRC->asInt(w, v) != PRC->asInt(i,j))
 				{
-					if (PRC->asInt(i + ROWMIN2, j + COLMIN2) == 10000)
+					if (PRC->asInt(w,v) == 10000)
 						*AREA = *AREA * (100 - TFCAtoForestOrPasture) / 100.0;
-					else if (PRC->asInt(i + ROWMIN2, j + COLMIN2) > 0)
+					else if (PRC->asInt(w, v) > 0)
 					{
 
 						*AREA = *AREA * (100 - TFCAtoCropLand) / 100.0;
 					}
-					else if (PRC->asInt(i + ROWMIN2, j + COLMIN2) == -2)
+					else if (PRC->asInt(w, v) == -2)
 					{
 						*AREA = *AREA * (100 - TFCAtoRoad) / 100.0;
 					}
