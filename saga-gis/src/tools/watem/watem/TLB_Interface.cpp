@@ -9,14 +9,14 @@
 //      System for Automated Geoscientific Analyses      //
 //                                                       //
 //                     Tool Library                      //
-//                       Lectures                        //
+//                       watem                           //
 //                                                       //
 //-------------------------------------------------------//
 //                                                       //
 //                   TLB_Interface.cpp                   //
 //                                                       //
-//                 Copyright (C) 2003 by                 //
-//                      Olaf Conrad                      //
+//                 Copyright (C) 2017 by                 //
+//                   Johan Van de Wauw                   //
 //                                                       //
 //-------------------------------------------------------//
 //                                                       //
@@ -37,17 +37,6 @@
 // write to the Free Software Foundation, Inc.,          //
 // 51 Franklin Street, 5th Floor, Boston, MA 02110-1301, //
 // USA.                                                  //
-//                                                       //
-//-------------------------------------------------------//
-//                                                       //
-//    e-mail:     oconrad@saga-gis.org                   //
-//                                                       //
-//    contact:    Olaf Conrad                            //
-//                Institute of Geography                 //
-//                University of Goettingen               //
-//                Goldschmidtstr. 5                      //
-//                37077 Goettingen                       //
-//                Germany                                //
 //                                                       //
 ///////////////////////////////////////////////////////////
 
@@ -94,7 +83,7 @@ CSG_String Get_Info(int i)
 		));
 
 	case TLB_INFO_Version:
-		return( SG_T("1.6.0") );
+		return( SG_T("1.7.0") );
 
 	case TLB_INFO_Menu_Path:
 		return( _TL("Watem" ));
