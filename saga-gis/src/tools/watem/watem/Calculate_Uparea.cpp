@@ -156,6 +156,8 @@ bool CCalculate_Uparea::On_Execute(void)
 			pPitDataTable->Add_Field("OutX", SG_DATATYPE_Double);
 		if (pPitDataTable->Get_Field("OutY") == -1)
 			pPitDataTable->Add_Field("OutY", SG_DATATYPE_Double);
+		if (pPitDataTable->Get_Field("input") == -1)
+			pPitDataTable->Add_Field("input", SG_DATATYPE_Double);
 		int i = 1; // initial ID
 		for (TPitData& pit : PitDat)
 		{
@@ -169,6 +171,7 @@ bool CCalculate_Uparea::On_Execute(void)
 			TSG_Point xy = Get_System()->Get_Grid_to_World(pit.outr, pit.outc);
 			row->Add_Value("OutX", xy.x);
 			row->Add_Value("OutY", xy.y);
+			row->Add_Value("input", pit.input);
 		}
 	}
 
@@ -296,6 +299,8 @@ void CCalculate_Uparea::CalculateUparea()
 	floattostr(Rivdat[i].latuparea),chr(9),floattostr(Rivdat[i].inuparea),chr(9),floattostr(Rivdat[i].outuparea),chr(9));
 	end;
 	closefile(output);*/
+
+	// zet de waarde van de uparea binnen in de pits 
 	for (i = 0; i < ncol; i++) {
 		for (j = 0; j < nrow; j++) {
 			if (Pit->asInt(i, j) != 0) {
@@ -304,6 +309,8 @@ void CCalculate_Uparea::CalculateUparea()
 			}
 		}
 	}
+
+	// zet de waarde van de uparea binnen de rivieren. Mss beter 0 van maken.
 	for (i = 1; i <= ncol; i++) {
 		for (j = 1; j < nrow; j++) {
 			if (PRC->asInt(i, j) == -1) {
@@ -411,6 +418,7 @@ void CCalculate_Uparea::CalculatePitStuff()
 									}
 								}
 								if (minvalue < DEM->asDouble(i, j))
+									// johan: outarea verminderen als perceelsgrens?
 									break;
 							}
 						}
