@@ -623,7 +623,25 @@ void CCalculate_Uparea::DistributeTilDirEvent(int i, int j, double *AREA, double
 				PitDat[vlag].input += *AREA;
 			}
 			else {
-				Up_Area->Add_Value(w, v, *AREA); //opm Johan: hier wordt geen rekening gehouden met de perceelskaart!
+
+				if (PRC->asInt(w, v) != PRC->asInt(i,j))
+				{
+					if (PRC->asInt(i + ROWMIN2, j + COLMIN2) == 10000)
+						*AREA = *AREA * (100 - TFCAtoForestOrPasture) / 100.0;
+					else if (PRC->asInt(i + ROWMIN2, j + COLMIN2) > 0)
+					{
+
+						*AREA = *AREA * (100 - TFCAtoCropLand) / 100.0;
+					}
+					else if (PRC->asInt(i + ROWMIN2, j + COLMIN2) == -2)
+					{
+						*AREA = *AREA * (100 - TFCAtoRoad) / 100.0;
+					}
+					else *AREA = 0;
+				}
+
+
+				Up_Area->Add_Value(w, v, *AREA);
 
 				PitDat[vlag].input += *AREA;
 			}
@@ -778,6 +796,34 @@ void CCalculate_Uparea::DistributeTilDirEvent(int i, int j, double *AREA, double
 				}
 			}
 			else { //receiving cell belongs to a different parcel
+				if (!wrong)
+				{
+					if (PRC->asInt(i + ROWMIN2, j + COLMIN2) == 10000)
+						Abis = *AREA * (100 - TFCAtoForestOrPasture) / 100.0;
+					else if (PRC->asInt(i + ROWMIN2, j + COLMIN2) > 0)
+					{
+
+						Abis = *AREA * (100 - TFCAtoCropLand) / 100.0;
+					}
+					else if (PRC->asInt(i + ROWMIN2, j + COLMIN2) == -2)
+					{
+						Abis = *AREA * (100 - TFCAtoRoad) / 100.0;
+					}
+					else Abis = 0;
+				}
+				else //use wrong calulation
+				{
+					/* WRONG calculation - but the same as the original version of WATEM
+					if grid cell is -1 or - 2 then there is no result. The previous value of abis is used. */
+					if (PRC->asInt(i + ROWMIN2, j + COLMIN2) == 10000)
+						Abis = *AREA * (100 - TFCAtoForestOrPasture) / 100.0;
+					else if (PRC->asInt(i + ROWMIN2, j + COLMIN2) > 0)
+					{
+
+						Abis = *AREA * (100 - TFCAtoCropLand) / 100.0;
+					}
+				}
+
 				if (Pit->asInt(i + ROWMIN2, j + COLMIN2) != 0) {
 					vlag = Pit->asInt(i + ROWMIN2, j + COLMIN2);
 					int row = PitDat[vlag].outr;
@@ -790,49 +836,15 @@ void CCalculate_Uparea::DistributeTilDirEvent(int i, int j, double *AREA, double
 					}
 					else {
 						if (is_InGrid(col, row))
-							Up_Area->Add_Value(col, row, *AREA);
-
-						PitDat[vlag].input += *AREA;
-
+							Up_Area->Add_Value(col, row, Abis);
+							PitDat[vlag].input += Abis;
 					}
 					FINISH->Set_Value(i, j, 1);
-
-
 				}
 				else {
-					if (!wrong)
-					{
-						if (PRC->asInt(i + ROWMIN2, j + COLMIN2) == 10000)
-							Abis = *AREA * (100 - TFCAtoForestOrPasture) / 100.0;
-						else if (PRC->asInt(i + ROWMIN2, j + COLMIN2) > 0)
-						{
-
-							Abis = *AREA * (100 - TFCAtoCropLand) / 100.0;
-						}
-						else if (PRC->asInt(i + ROWMIN2, j + COLMIN2) == -2)
-						{
-							Abis = *AREA * (100 - TFCAtoRoad) / 100.0;
-						}
-						else Abis = 0;
-					}
-					else //use wrong calulation
-					{
-						/* WRONG calculation - but the same as the original version of WATEM
-						   if grid cell is -1 or - 2 then there is no result. The previous value of abis is used. */
-						if (PRC->asInt(i + ROWMIN2, j + COLMIN2) == 10000)
-							Abis = *AREA * (100 - TFCAtoForestOrPasture) / 100.0;
-						else if (PRC->asInt(i + ROWMIN2, j + COLMIN2) > 0)
-						{
-
-							Abis = *AREA * (100 - TFCAtoCropLand) / 100.0;
-						}
-					}
-
-
 					Up_Area->Add_Value(i + ROWMIN2, j + COLMIN2, Abis);
 
 					if (PRC->asInt(i + ROWMIN2, j + COLMIN2) == 9999) {
-
 						*massbalance += *AREA;
 					}
 					if ((i + ROWMIN2 < 1 || i + ROWMIN2 > Get_NY() || j + COLMIN2 < 1 ||
