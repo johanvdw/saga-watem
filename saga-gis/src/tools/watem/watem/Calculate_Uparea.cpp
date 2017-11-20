@@ -198,17 +198,12 @@ void CCalculate_Uparea::CalculateUparea()
 {
 	int i, j, vlag, nvlag, rivvlag;
 	double OPPCOR, AREA, massbalance;
-	int Nextsegmentid;
-	std::vector<int> rivsegmentlatinputcheck;
-	std::vector<int> rivsegmentupcheck;
 	int maxorder = 1;
 	int a, b;
 
 	nvlag = 1;
 
-	rivsegmentlatinputcheck.resize(nvlag);
-	rivsegmentupcheck.resize(nvlag);
-	RivDat.resize(nvlag);
+
 
 	int nrow = Get_NY();
 	int ncol = Get_NX();
@@ -237,68 +232,8 @@ void CCalculate_Uparea::CalculateUparea()
 		DistributeTilDirEvent(i, j, &AREA, &massbalance);
 		Up_Area->Add_Value(i, j, OPPCOR);
 
-		if (PRC->asInt(i, j) == -1) {
-			rivvlag = 1;
-			RivDat[rivvlag].outuparea = RivDat[rivvlag].latuparea;
-			RivDat[rivvlag].check = 1;
-
-		}
 	}
 
-
-
-	for (i = 0; i < nvlag; i++) {
-		rivsegmentlatinputcheck[i] = 0;
-
-		rivsegmentupcheck[i] = 0;
-
-	}
-
-	for (i = 0; i < pitnum; i++) {
-		a = PitDat[i].outr;
-		b = PitDat[i].outc;
-		if (is_InGrid(b, a) && PRC->asInt(b, a) == -1) {
-
-			vlag = 0;
-			RivDat[vlag].latuparea += PitDat[i].input;
-			RivDat[vlag].outuparea = RivDat[vlag].latuparea;
-		}
-	}
-
-
-
-
-	for (j = 1; j <= maxorder; j++) {
-		for (i = 0; i < nvlag; i++) {
-			if (RivDat[i].check == 1) {
-				if (RivDat[i].order == j) {
-					Nextsegmentid = RivDat[i].segmentdown;
-
-					if (Nextsegmentid == -2) {
-						continue;
-					}
-					else {
-						RivDat[Nextsegmentid].inuparea += RivDat[i].outuparea;
-						RivDat[Nextsegmentid].outuparea += RivDat[i].outuparea;
-
-					}
-				}
-			}
-		}
-	}
-
-	/*     Temporary disabled
-	assignfile(output,extractFilepath(DTMFilename)+'\tmp.txt') ;
-	reset(output);
-	rewrite(output);
-	writeln(output,inttostr(nvlag-1));
-	for i:=1 to nvlag-1 do
-	begin
-	writeln(inttostr(Rivdat[i].segmentid),chr(9),inttostr(Rivdat[i].fnode),chr(9),
-	inttostr(Rivdat[i].tnode),chr(9),floattostr(Rivdat[i].length),chr(9),inttostr(Rivdat[i].order),chr(9),inttostr(Rivdat[i].segmentdown),char(9),
-	floattostr(Rivdat[i].latuparea),chr(9),floattostr(Rivdat[i].inuparea),chr(9),floattostr(Rivdat[i].outuparea),chr(9));
-	end;
-	closefile(output);*/
 
 	// zet de waarde van de uparea binnen in de pits 
 	for (i = 0; i < ncol; i++) {
@@ -309,17 +244,6 @@ void CCalculate_Uparea::CalculateUparea()
 			}
 		}
 	}
-
-	// zet de waarde van de uparea binnen de rivieren. Mss beter 0 van maken.
-	for (i = 1; i <= ncol; i++) {
-		for (j = 1; j < nrow; j++) {
-			if (PRC->asInt(i, j) == -1) {
-				rivvlag = 0;
-				Up_Area->Add_Value(i, j, RivDat[rivvlag].outuparea);
-			}
-		}
-	}
-
 
 }
 
@@ -473,12 +397,7 @@ void CCalculate_Uparea::CalculatePitStuff()
 				PitDat[i].outc = PitDat[vlag].outc;
 			}
 		}
-
-
-
 	}
-
-
 
 	//nagaan of rivier door de pit gaat
 	for (int i = 1; i < ncol - 1; i++)
@@ -542,9 +461,6 @@ void CCalculate_Uparea::DistributeTilDirEvent(int i, int j, double *AREA, double
 				if ((PRC->asInt(i + K, j + L) == -1) & (DEM->asDouble(i + K, j + L) < DEM->asDouble(i, j))) {
 					ROWMIN = K;
 					COLMIN = L;
-					rivvlag = 0;//constant weinig zinvol zo
-					RivDat[rivvlag].latuparea += *AREA;
-
 					*AREA = 0.0;
 					FINISH->Set_Value(i, j, 1);
 
@@ -618,8 +534,6 @@ void CCalculate_Uparea::DistributeTilDirEvent(int i, int j, double *AREA, double
 
 		if (is_InGrid(w, v)) {
 			if (Pit->asInt(w, v) == -1) {
-				rivvlag = 1;
-				RivDat[rivvlag].latinput += *AREA;
 				PitDat[vlag].input += *AREA;
 			}
 			else {
@@ -770,17 +684,11 @@ void CCalculate_Uparea::DistributeTilDirEvent(int i, int j, double *AREA, double
 					int col = PitDat[vlag].outc;
 					if (is_InGrid(col, row)) {
 						if (PRC->asInt(col, row) == -1) {
-							rivvlag = 0;
-							RivDat[rivvlag].latinput += *AREA;
-
 							*AREA = 0.0;
 						}
 						else {
-
 							Up_Area->Add_Value(PitDat[vlag].outc, PitDat[vlag].outr, *AREA);
-
 							PitDat[vlag].input += *AREA;
-
 						}
 					}
 
@@ -830,8 +738,6 @@ void CCalculate_Uparea::DistributeTilDirEvent(int i, int j, double *AREA, double
 					int col = PitDat[vlag].outc;
 
 					if (is_InGrid(col, row) && PRC->asInt(col, row) == -1) {
-						rivvlag = 0;
-						RivDat[rivvlag].latinput += *AREA;
 						*AREA = 0.0;
 					}
 					else {
