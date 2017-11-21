@@ -196,7 +196,8 @@ void CCalculate_Uparea::CalculateUparea()
 		int i, j;
 		DEM->Get_Sorted(t, i, j);
 
-		if (PRC->asInt(i, j) == 0) {
+		if (PRC->asInt(i, j) == 0 || DEM->is_NoData(i,j)) {
+			Up_Area->Set_Value(i, j, 0);
 			continue;
 		}
 
@@ -487,23 +488,28 @@ void CCalculate_Uparea::DistributeTilDirEvent(int i, int j, double *AREA)
 				PitDat[vlag].input += *AREA;
 			}
 			else {
+				double area_out;
 				if (PRC->asInt(w, v) != PRC->asInt(i,j))
 				{
 					if (PRC->asInt(w,v) == 10000)
-						*AREA = *AREA * (100 - TFCAtoForestOrPasture) / 100.0;
+						area_out = *AREA * (100 - TFCAtoForestOrPasture) / 100.0;
 					else if (PRC->asInt(w, v) > 0)
 					{
 
-						*AREA = *AREA * (100 - TFCAtoCropLand) / 100.0;
+						area_out = *AREA * (100 - TFCAtoCropLand) / 100.0;
 					}
 					else if (PRC->asInt(w, v) == -2)
 					{
-						*AREA = *AREA * (100 - TFCAtoRoad) / 100.0;
+						area_out = *AREA * (100 - TFCAtoRoad) / 100.0;
 					}
-					else *AREA = 0;
+					else area_out = 0;
+				}
+				else
+				{
+					area_out = *AREA;
 				}
 
-				Up_Area->Add_Value(w, v, *AREA);
+				Up_Area->Add_Value(w, v, area_out);
 				PitDat[vlag].input += *AREA;
 			}
 		}
@@ -654,7 +660,6 @@ void CCalculate_Uparea::DistributeTilDirEvent(int i, int j, double *AREA)
 						Abis = *AREA * (100 - TFCAtoForestOrPasture) / 100.0;
 					else if (PRC->asInt(i + ROWMIN2, j + COLMIN2) > 0)
 					{
-
 						Abis = *AREA * (100 - TFCAtoCropLand) / 100.0;
 					}
 				}
@@ -670,7 +675,7 @@ void CCalculate_Uparea::DistributeTilDirEvent(int i, int j, double *AREA)
 					else {
 						if (is_InGrid(col, row))
 							Up_Area->Add_Value(col, row, Abis);
-							PitDat[vlag].input += Abis;
+							PitDat[vlag].input += *AREA;
 					}
 					FINISH->Set_Value(i, j, 1);
 				}
