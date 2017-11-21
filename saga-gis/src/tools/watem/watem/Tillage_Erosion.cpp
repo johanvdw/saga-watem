@@ -148,9 +148,6 @@ bool Tillage_Erosion::On_Execute() {
 		FINISH->Set_Value(j, i,1);
 
 		TILL->Set_Value(j, i,(INFLOW->asDouble(j, i) - outflow) / (res * res));
-
-
-
 	}
 
 	

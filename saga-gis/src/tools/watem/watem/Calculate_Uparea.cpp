@@ -237,7 +237,7 @@ void CCalculate_Uparea::CalculatePitStuff()
 	{
 		for (i = 1; i < ncol - 1; i++)
 		{
-			if (Pit->asInt(i, j) != 0 || PRC->asInt(i, j) == 0) {
+			if (Pit->asInt(i, j) != 0 || PRC->asInt(i, j) == 0 || DEM->is_NoData(i,j)) {
 				continue;
 			}
 			hulp = 0;
@@ -380,11 +380,7 @@ void CCalculate_Uparea::CalculatePitStuff()
 	pitnum = nvlag;
 }
 
-
-
-
 void CCalculate_Uparea::DistributeTilDirEvent(int i, int j, double *AREA)
-
 {
 	int nrow = Get_NY();
 	int ncol = Get_NX();
@@ -468,14 +464,11 @@ void CCalculate_Uparea::DistributeTilDirEvent(int i, int j, double *AREA)
 					L1 = 0;
 					K2 = 0;
 					L2 = 1;
-
-
 				}
 
 			}
 		}
 	}
-
 
 	// check if receiving cell is a pit
 	if ((is_InGrid(i + K1, j + L1) && (Pit->asInt(i + K1, j + L1) > 0)) ||
@@ -494,7 +487,6 @@ void CCalculate_Uparea::DistributeTilDirEvent(int i, int j, double *AREA)
 				PitDat[vlag].input += *AREA;
 			}
 			else {
-
 				if (PRC->asInt(w, v) != PRC->asInt(i,j))
 				{
 					if (PRC->asInt(w,v) == 10000)
@@ -511,13 +503,10 @@ void CCalculate_Uparea::DistributeTilDirEvent(int i, int j, double *AREA)
 					else *AREA = 0;
 				}
 
-
 				Up_Area->Add_Value(w, v, *AREA);
-
 				PitDat[vlag].input += *AREA;
 			}
 		}
-
 		FINISH->Set_Value(i, j, 1);
 	}
 
@@ -525,27 +514,20 @@ void CCalculate_Uparea::DistributeTilDirEvent(int i, int j, double *AREA)
 		//goed checken wanneer en of deze code eigenlijk gebruikt wordt: kan enkel als dem gelijk denk ik. Of misschien bij raar aspect tov pixelwaarden (zadelachtig)
 		if (is_InGrid(i + K1, j + L1) && (FINISH->asInt(i + K1, j + L1) == 1)) {
 			if (is_InGrid(i + K2, j + L2) && (FINISH->asInt(i + K2, j + L2) == 1)) {
-
 				PART1 = 0.0;
-
 				PART2 = 0.0;
 			}
 			else {
 				PART2 += PART1;
-
 				PART1 = 0.0;
 			}
 		}
-
-
 		else {
 			if (is_InGrid(i + K2, j + L2) && (FINISH->asInt(i + K2, j + L2) == 1)) {
 				PART1 += PART2;
 				PART2 = 0.0;
 			}
 		}
-
-
 
 		if (is_InGrid(i + K1, j + L1) && (DEM->asDouble(i + K1, j + L1) > DEM->asDouble(i, j))) {
 			if (is_InGrid(i + K2, j + L2) && (DEM->asDouble(i + K2, j + L2) > DEM->asDouble(i, j))) {
@@ -557,7 +539,6 @@ void CCalculate_Uparea::DistributeTilDirEvent(int i, int j, double *AREA)
 					PART1 = 0.0;
 					PART2 = 0.0;
 				}
-
 				else {
 					PART2 += PART1;
 					PART1 = 0.0;
@@ -565,7 +546,6 @@ void CCalculate_Uparea::DistributeTilDirEvent(int i, int j, double *AREA)
 			}
 		}
 		else {
-
 			if (is_InGrid(i + K2, j + L2) && (DEM->asDouble(i + K2, j + L2) > DEM->asDouble(i, j))) {
 				if (is_InGrid(i + K1, j + L1) && (PRC->asInt(i + K1, j + L1) != PRC->asInt(i, j))) {
 					PART2 = 0.0;
@@ -596,7 +576,6 @@ void CCalculate_Uparea::DistributeTilDirEvent(int i, int j, double *AREA)
 			}
 		}
 
-
 		if (PART1 == 0.0 && PART2 == 0.0) {
 			// no receiving cells were found (lagergelegen of ander perceel)         
 			parequal = false;
@@ -610,7 +589,6 @@ void CCalculate_Uparea::DistributeTilDirEvent(int i, int j, double *AREA)
 				for (L = -1; L <= 1; L++) {
 					if (K == 0 && L == 0) {
 						continue;
-
 					}
 					if (!is_InGrid(i + K, j + L))
 						continue;
@@ -622,7 +600,6 @@ void CCalculate_Uparea::DistributeTilDirEvent(int i, int j, double *AREA)
 						COLMIN = L;
 						parequal = true;
 					}
-
 					if (((DEM->asDouble(i + K, j + L) < MINIMUM2) & (DEM->asDouble(i + K, j + L) <
 						DEM->asDouble(i, j))) &&
 						FINISH->asInt(i + K, j + L) == 0) {
@@ -633,9 +610,7 @@ void CCalculate_Uparea::DistributeTilDirEvent(int i, int j, double *AREA)
 				}
 			}
 			if (parequal) {
-
 				if (Pit->asInt(i + ROWMIN, j + COLMIN) != 0) {
-
 					vlag = Pit->asInt(i + ROWMIN, j + COLMIN);
 					int row = PitDat[vlag].outr;
 					int col = PitDat[vlag].outc;
@@ -650,14 +625,9 @@ void CCalculate_Uparea::DistributeTilDirEvent(int i, int j, double *AREA)
 					}
 
 					FINISH->Set_Value(i, j, 1);
-
 				}
-
-
 				else {
-
 					Up_Area->Add_Value(i + ROWMIN, j + COLMIN, *AREA);
-
 				}
 			}
 			else { //receiving cell belongs to a different parcel
