@@ -7,6 +7,8 @@ Tillage_Erosion::Tillage_Erosion()
 
 	Set_Author(_TL("Copyright (c) 2006 - 2016 by KULeuven. Converted to SAGA/C++ by Johan Van de Wauw"));
 
+	Set_Version("1.7.0");
+
 	Set_Description(_TW(
 		"Berekening van de Bewerkingserosie. Gebaseerd op de code van WATEM (KULeuven)."
 		)
