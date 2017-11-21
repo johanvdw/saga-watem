@@ -9,7 +9,8 @@ Create_Parcel_Grid::Create_Parcel_Grid()
 	Set_Author("Johan Van de Wauw (2017)");
 
 	Set_Description(_TW(
-		"Maakt percelengridkaart aan die vereist is voor het gebruik in de berekening van de erosiekaart. Hierbij krijgen percelen een code tussen 2 en 9999, bos 10000, rivieren en open water -2, bebouwing 1"
+		"Maakt percelengridkaart aan die vereist is voor het gebruik in de berekening van de erosiekaart. "
+		"Hierbij krijgen percelen een code tussen 2 en 9999, bos 10000, rivieren en open water -1, bebouwing -2"
 	));
 
 	Parameters.Add_Shapes(NULL, "PARCEL_SHAPES", "Percelen", "Percelen (shapefile)", PARAMETER_INPUT, SHAPE_TYPE_Polygon);

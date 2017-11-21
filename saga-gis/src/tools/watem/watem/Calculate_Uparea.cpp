@@ -7,7 +7,7 @@ CCalculate_Uparea::CCalculate_Uparea()
 	Set_Author(_TL("Copyright (c) 2006 - 2016 by KULeuven. Converted to SAGA/C++ by Johan Van de Wauw"));
 
 	Set_Description(_TW(
-		"This module converts a digital elevation model grid and a parcel grid and converts it to an uplope area.\n\n"
+		"This module converts a digital elevation model grid and a parcel grid and converts it to an upslope area.\n\n"
 		"The method takes into account parcel borders, rivers (grid value -1) and landuse (forest has value 10000).\n"
 		"Pits are taken into account. Optionally a grid with Pits and a table with pit information can be generated. "
 		)
