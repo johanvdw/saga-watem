@@ -102,7 +102,7 @@ CSG_String Get_Info(int i)
 #include "Tillage_Erosion.h"
 #include "Complete.h"
 #include "Create_Parcel_Grid.h"
-#include "Parcel_filter.h"
+#include "Parcel_Filter.h"
 #include "Calculate_C_Grid.h"
 
 //---------------------------------------------------------
