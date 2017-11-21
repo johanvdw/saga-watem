@@ -11,6 +11,8 @@ Water_Erosion::Water_Erosion()
 
 	Set_Author(_TL("2016-2017  - Johan Van de Wauw"));
 
+	Set_Version("1.7.0");
+
 	Set_Description(_TW(
 		"Berekening van de watererosie op basis van de LS factor en de C factor. Berekende waarden worden afgetopt op 150.")
 	);

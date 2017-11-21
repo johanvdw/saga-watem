@@ -8,6 +8,8 @@ Create_Parcel_Grid::Create_Parcel_Grid()
 
 	Set_Author("Johan Van de Wauw (2017)");
 
+	Set_Version("1.7.0");
+
 	Set_Description(_TW(
 		"Maakt percelengridkaart aan die vereist is voor het gebruik in de berekening van de erosiekaart. "
 		"Hierbij krijgen percelen een code tussen 2 en 9999, bos 10000, rivieren en open water -1, bebouwing -2"
@@ -18,7 +20,7 @@ Create_Parcel_Grid::Create_Parcel_Grid()
 
 	Parameters.Add_Grid(NULL, "PRC", "Percelen grid", "Percelengridkaart gecodeerd volgens watem ",PARAMETER_OUTPUT, true, SG_DATATYPE_Short);
 	Parameters.Add_Shapes(NULL, "WTZ", "GRB WTZ (VHA-polygoon)", "VHA (polygoon)", PARAMETER_INPUT, SHAPE_TYPE_Polygon);
-	Parameters.Add_Shapes(NULL, "WLAS", "GRB Wlas (VHA-lijnen)", "VHA (lijnen) - Wlas", PARAMETER_INPUT, SHAPE_TYPE_Line);
+	Parameters.Add_Shapes(NULL, "WLAS", "VHA Lijnen", "VHA (lijnen). Eventueel kan de laag GRB Wlas gebruikt worden, deze loopt echter soms achter op de VHA.", PARAMETER_INPUT, SHAPE_TYPE_Line);
 
 	Parameters.Add_Shapes(NULL, "SBN", "GRB Sbn (spoorbaan)", "GRB Sbn (spoorbaan)", PARAMETER_INPUT, SHAPE_TYPE_Polygon);
 	Parameters.Add_Shapes(NULL, "WBN", "GRB Wbn (wegbaan)", "GRB Wbn (wegbaan)", PARAMETER_INPUT, SHAPE_TYPE_Polygon);
