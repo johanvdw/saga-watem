@@ -43,7 +43,7 @@ CCalculate_LS_Watem::CCalculate_LS_Watem(void)
 
 	Set_Author	(_TL("Copyright (c) 2003 Olaf Conrad. Modified by Johan Van de Wauw (2016) to make model identical to Watem"));
 
-	Set_Version("1.7.0");
+	Set_Version("1.7.1");
 
 	Set_Description	(_TW(
 		"Berekening van de LS factor analoog aan de bereking in Watem/sedem."
@@ -70,7 +70,7 @@ CCalculate_LS_Watem::CCalculate_LS_Watem(void)
 
 	CSG_Parameter * useprc = Parameters.Add_Bool(
 		NULL, "USEPRC", "Perceelsgrenzen gebruiken in de berekening van de slope",
-		"Perceelsgrenzen gebruiken bij de berekening van de slope: enkel pixels binnen dezelfde unit worden in beschouwing genomen", false
+		"Perceelsgrenzen gebruiken bij de berekening van de slope: enkel pixels binnen dezelfde unit worden in beschouwing genomen", true
 	);
 
 	Parameters.Add_Grid(
