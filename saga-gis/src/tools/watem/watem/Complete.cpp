@@ -6,10 +6,11 @@ Complete::Complete()
 
 	Set_Author("Based on Watem (KULeuven). Converted to SAGA by Johan Van de Wauw (2016-2017)");
 
-	Set_Version("1.7.0");
+	Set_Version("1.7.1");
 
 	Set_Description(_TW(
-		"Volledige berekening erosiekaart in één stap. Deze module voert volgende stappen uit: Berekening upslope area, berekening LS factor, berekening C, berekening watererosie en optioneel de berekening van de bewerkingserosie. Maakt gebruik van standaardwaarden voor de C-factor."
+		"Volledige berekening erosiekaart in één stap. Deze module voert volgende stappen uit: Berekening upslope area, berekening LS factor, berekening C, "
+		"berekening watererosie en optioneel de berekening van de bewerkingserosie. Maakt gebruik van standaardwaarden voor de C-factor."
 	));
 
 	Parameters.Add_Grid(NULL, "DEM", _TL("DEM"), _TL("Digitaal hoogtemodel. Eventueel met gebruik van filter."), PARAMETER_INPUT);
@@ -19,7 +20,7 @@ Complete::Complete()
 	Parameters.Add_Grid(NULL, "PIT", _TL("Pit"), _TL("Grid met pits zoals bepaald in de uparea berekening"), PARAMETER_OUTPUT, true, SG_DATATYPE_DWord);
 	Parameters.Add_Grid(NULL, "UPSLOPE_AREA", _TL("UPAREA"), _TL("Upslope Area: oppervlakte dat afstroomt naar een pixel"), PARAMETER_OUTPUT);
 	Parameters.Add_Grid(NULL, "LS", _TL("LS"), _TL("LS: de topografische hellings- en lengtefactor (dimensieloos)"), PARAMETER_OUTPUT);
-	Parameters.Add_Grid(NULL, "TILL", _TL("Tillage Erosion"), _TL("Gemiddels bodemverlies als gevolg van bodemerosie  (ton ha-1 jaar-1)"), PARAMETER_OUTPUT_OPTIONAL);
+	Parameters.Add_Grid(NULL, "TILL", _TL("Tillage Erosion"), _TL("Gemiddeld bodemverlies als gevolg van bodemerosie  (ton ha-1 jaar-1)"), PARAMETER_OUTPUT_OPTIONAL);
 
 	Parameters.Add_Value(
 		NULL, "R", "R",
