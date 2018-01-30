@@ -85,7 +85,7 @@ CSG_String Get_Info(int i)
 		));
 
 	case TLB_INFO_Version:
-		return( SG_T("1.7.1") );
+		return( SG_T("1.7.2") );
 
 	case TLB_INFO_Menu_Path:
 		return( _TL("Watem" ));
