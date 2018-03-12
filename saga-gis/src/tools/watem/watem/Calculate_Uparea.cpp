@@ -71,7 +71,7 @@ CCalculate_Uparea::CCalculate_Uparea()
 	Parameters.Add_Value(
 		NULL, "PIT_FLOW", "Flow from pits into closeby cells (within radius)", 
 		"Geeft aan of in de buurt van pits gezocht moet worden naar lagergelegen cellen waar dan nog water naar kan stromen. Gebruikt de maximale zoekstraal die hieronder bepaald wordt. ",
-		PARAMETER_TYPE_Bool, false
+		PARAMETER_TYPE_Bool, true
 	);
 
 	Parameters.Add_Value(
