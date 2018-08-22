@@ -22,6 +22,11 @@ CAcyclical::CAcyclical(void)
     );
 
     Parameters.Add_Table(
+        NULL, "UPSTREAM_NODES", _TL("upstream nodes"),
+        "",
+        PARAMETER_OUTPUT);
+
+    Parameters.Add_Table(
         NULL, "UPSTREAM_EDGES", _TL("upstream edges"),
         "",
         PARAMETER_OUTPUT);
@@ -35,11 +40,13 @@ bool CAcyclical::On_Execute(void)
 {
     std::map<int, node> node_links;
     auto pInLines	= Parameters("INPUTLINES")->asShapes();
-    auto pUpstream_Edges	= Parameters("UPSTREAM_EDGES")->asTable();
+    auto pUpstream_Nodes	= Parameters("UPSTREAM_NODES")->asTable();
 
-    pUpstream_Edges->Add_Field("edge", SG_DATATYPE_Int);
-    pUpstream_Edges->Add_Field("upstream", SG_DATATYPE_Int);
-    pUpstream_Edges->Add_Field("contribution", SG_DATATYPE_Double);
+    pUpstream_Nodes->Add_Field("node", SG_DATATYPE_Int);
+    pUpstream_Nodes->Add_Field("upstream_nodes", SG_DATATYPE_Int);
+    pUpstream_Nodes->Add_Field("proportion", SG_DATATYPE_Double);
+
+    pUpstreamEdges = Parameters("UPSTREAM_EDGES")->asTable();
 
     int start_field = pInLines->Get_Field("start_id");
     int end_field = pInLines->Get_Field("end_id");
@@ -71,6 +78,7 @@ bool CAcyclical::On_Execute(void)
         {
             node *j = &node_links[*it];
             int orig_edge = *it;
+
             // track these nodes downstream if all upstream links have been evaluated
               // pseudocode= if not all finished: it++
               for(int i=0; i < j->finished.size(); i++){
@@ -81,11 +89,19 @@ bool CAcyclical::On_Execute(void)
                   }
               }
 
-
-
             for (int iTo=0; iTo < j->to.size() ; iTo++)
             {
                 int end_node_id = j->to[iTo];
+
+                // check for closed links
+                if (j->upstream.find(end_node_id) != j->upstream.end())
+                {
+                    // this is a problem -> closed links exist
+                    // easiest solution: remove the link to the downstream point and process again
+                    j->to.erase(j->to.begin()+iTo);
+                    iTo --;
+                    // better solution --> climb back to last upstream point where the flow splits
+                }
 
                 node * nextnode = &node_links[end_node_id];
 
@@ -96,7 +112,6 @@ bool CAcyclical::On_Execute(void)
                 }
                 //nextnode->upstream.insert(j->upstream.begin(), j->upstream.end());
 
-                // en het punt zelf - aan te passen, mag maar 1x
                 nextnode->upstream[orig_edge] += 1.0/j->to.size();
 
                 // add to todo if it is not yet there
@@ -118,13 +133,12 @@ bool CAcyclical::On_Execute(void)
 
     for (auto it=node_links.begin(); it != node_links.end(); it++)
     {
-
         for (auto up=it->second.upstream.begin(); up != it->second.upstream.end(); up++)
         {
-            auto *pRecord = pUpstream_Edges->Add_Record();
-            pRecord->Set_Value("edge", it->first);
-            pRecord->Set_Value("upstream", up->first);
-            pRecord->Set_Value("contribution", up->second);
+            auto *pRecord = pUpstream_Nodes->Add_Record();
+            pRecord->Set_Value("node", it->first);
+            pRecord->Set_Value("upstream_nodes", up->first);
+            pRecord->Set_Value("proportion", up->second);
         }
 
     }
