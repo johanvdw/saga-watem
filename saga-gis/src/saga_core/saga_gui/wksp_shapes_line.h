@@ -94,7 +94,8 @@ protected:
 
 	bool						m_bPoints;
 
-	int							m_iSize, m_Size_Type, m_Line_Style, m_Label_Freq, m_Effect;
+	int							m_iSize, m_Size_Type, m_Line_Style, m_Effect,
+								m_Label_Style, m_Label_Freq, m_Label_Align, m_Label_Orient;
 
 	double						m_Size, m_dSize, m_Size_Min;
 
@@ -109,7 +110,7 @@ protected:
 
 	virtual int					On_Parameter_Changed	(CSG_Parameters *pParameters, CSG_Parameter *pParameter, int Flags);
 
-	virtual void				Draw_Initialize			(CWKSP_Map_DC &dc_Map);
+	virtual void				Draw_Initialize			(CWKSP_Map_DC &dc_Map, int Flags);
 	virtual void				Draw_Shape				(CWKSP_Map_DC &dc_Map, CSG_Shape *pShape, int Selection);
 	virtual void				Draw_Label				(CWKSP_Map_DC &dc_Map, CSG_Shape *pShape, const wxString &Label);
 

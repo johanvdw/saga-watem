@@ -85,6 +85,7 @@
 typedef enum ESG_Grid_File_Format
 {
 	GRID_FILE_FORMAT_Undefined			= 0,
+	GRID_FILE_FORMAT_Binary_old,
 	GRID_FILE_FORMAT_Binary,
 	GRID_FILE_FORMAT_ASCII,
 	GRID_FILE_FORMAT_Compressed
@@ -790,6 +791,7 @@ public:		///////////////////////////////////////////////
 			case SG_DATATYPE_DWord : ((DWORD  **)m_Values)[y][x] = SG_ROUND_TO_DWORD(Value); break;
 			case SG_DATATYPE_Int   : ((int    **)m_Values)[y][x] = SG_ROUND_TO_INT  (Value); break;
 			case SG_DATATYPE_Long  : ((sLong  **)m_Values)[y][x] = SG_ROUND_TO_SLONG(Value); break;
+			case SG_DATATYPE_ULong : ((uLong  **)m_Values)[y][x] = SG_ROUND_TO_ULONG(Value); break;
 			case SG_DATATYPE_Bit   : ((BYTE   **)m_Values)[y][x / 8] = Value != 0.0
 					? ((BYTE  **)m_Values)[y][x / 8] |   m_Bitmask[x % 8]
 					: ((BYTE  **)m_Values)[y][x / 8] & (~m_Bitmask[x % 8]);
@@ -873,7 +875,7 @@ private:	///////////////////////////////////////////////
 	bool						_Load_PGSQL				(const CSG_String &FileName, bool bCached, bool bLoadData);
 
 	bool						_Load_Native			(const CSG_String &FileName, bool bCached, bool bLoadData);
-	bool						_Save_Native			(const CSG_String &FileName, bool bBinary);
+	bool						_Save_Native			(const CSG_String &FileName, TSG_Grid_File_Format Format);
 
 	bool						_Load_Compressed		(const CSG_String &FileName, bool bCached, bool bLoadData);
 	bool						_Save_Compressed		(const CSG_String &FileName);
@@ -957,6 +959,11 @@ SAGA_API_DLL_EXPORT void			SG_Grid_Cache_Set_Threshold		(int nBytes);
 SAGA_API_DLL_EXPORT void			SG_Grid_Cache_Set_Threshold_MB	(double nMegabytes);
 SAGA_API_DLL_EXPORT sLong			SG_Grid_Cache_Get_Threshold		(void);
 SAGA_API_DLL_EXPORT double			SG_Grid_Cache_Get_Threshold_MB	(void);
+
+//---------------------------------------------------------
+SAGA_API_DLL_EXPORT bool					SG_Grid_Set_File_Format_Default		(int Format);
+SAGA_API_DLL_EXPORT TSG_Grid_File_Format	SG_Grid_Get_File_Format_Default		(void);
+SAGA_API_DLL_EXPORT CSG_String				SG_Grid_Get_File_Extension_Default	(void);
 
 
 ///////////////////////////////////////////////////////////

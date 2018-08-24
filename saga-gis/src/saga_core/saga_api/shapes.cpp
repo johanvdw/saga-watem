@@ -78,13 +78,11 @@ CSG_String	SG_Get_ShapeType_Name(TSG_Shape_Type Type)
 {
 	switch( Type )
 	{
-	case SHAPE_TYPE_Point:		return( _TL("Point") );
-	case SHAPE_TYPE_Points:		return( _TL("Points") );
-	case SHAPE_TYPE_Line:		return( _TL("Line") );
-	case SHAPE_TYPE_Polygon:	return( _TL("Polygon") );
-
-	default:
-	case SHAPE_TYPE_Undefined:	return( _TL("Undefined") );
+	case SHAPE_TYPE_Point  : return( _TL("Point"    ) );
+	case SHAPE_TYPE_Points : return( _TL("Points"   ) );
+	case SHAPE_TYPE_Line   : return( _TL("Line"     ) );
+	case SHAPE_TYPE_Polygon: return( _TL("Polygon"  ) );
+	default                : return( _TL("Undefined") );
 	}
 }
 
@@ -227,16 +225,10 @@ bool CSG_Shapes::Create(const CSG_String &File_Name)
 
 	SG_UI_Msg_Add(CSG_String::Format("%s: %s...", _TL("Load shapes"), File_Name.c_str()), true);
 
-	//-----------------------------------------------------
-	bool	bResult	= File_Name.BeforeFirst(':').Cmp("PGSQL") && SG_File_Exists(File_Name) && _Load_ESRI(File_Name);
-
-	if( bResult )
-	{
-		Set_File_Name(File_Name, true);
-	}
+	bool	bResult	= false;
 
 	//-----------------------------------------------------
-	else if( File_Name.BeforeFirst(':').Cmp("PGSQL") == 0 )	// database source
+	if( File_Name.BeforeFirst(':').Cmp("PGSQL") == 0 )	// database source
 	{
 		CSG_String	s(File_Name);
 
@@ -288,6 +280,10 @@ bool CSG_Shapes::Create(const CSG_String &File_Name)
 			SG_UI_ProgressAndMsg_Lock(false);
 		}
 	}
+	else
+	{
+		bResult	= _Load_ESRI(File_Name) || _Load_GDAL(File_Name);
+	}
 
 	//-----------------------------------------------------
 	if( bResult )
@@ -301,6 +297,7 @@ bool CSG_Shapes::Create(const CSG_String &File_Name)
 		return( true );
 	}
 
+	//-----------------------------------------------------
 	for(int iShape=Get_Count()-1; iShape>=0; iShape--)	// be kind, keep at least those shapes that have been loaded successfully
 	{
 		if( !Get_Shape(iShape)->is_Valid() )
@@ -314,6 +311,7 @@ bool CSG_Shapes::Create(const CSG_String &File_Name)
 		Destroy();
 	}
 
+	//-----------------------------------------------------
 	SG_UI_Process_Set_Ready();
 	SG_UI_Msg_Add(_TL("failed"), false, SG_UI_MSG_STYLE_FAILURE);
 
@@ -364,21 +362,15 @@ bool CSG_Shapes::Destroy(void)
 //---------------------------------------------------------
 bool CSG_Shapes::Assign(CSG_Data_Object *pObject)
 {
-	int			iShape;
-	CSG_Shape	*pShape;
-	CSG_Shapes	*pShapes;
-
-	//-----------------------------------------------------
 	if(	pObject && pObject->is_Valid() && (pObject->Get_ObjectType() == SG_DATAOBJECT_TYPE_Shapes || pObject->Get_ObjectType() == SG_DATAOBJECT_TYPE_PointCloud) )
 	{
-		pShapes	= (CSG_Shapes *)pObject;
+		CSG_Shapes	*pShapes	= (CSG_Shapes *)pObject;
 
 		Create(pShapes->Get_Type(), pShapes->Get_Name(), pShapes, pShapes->Get_Vertex_Type());
 
-		for(iShape=0; iShape<pShapes->Get_Count() && SG_UI_Process_Set_Progress(iShape, pShapes->Get_Count()); iShape++)
+		for(int iShape=0; iShape<pShapes->Get_Count() && SG_UI_Process_Set_Progress(iShape, pShapes->Get_Count()); iShape++)
 		{
-			pShape	= Add_Shape();
-			pShape->Assign(pShapes->Get_Shape(iShape));
+			Add_Shape(pShapes->Get_Shape(iShape));
 		}
 
 		SG_UI_Process_Set_Ready();
@@ -401,11 +393,73 @@ bool CSG_Shapes::Assign(CSG_Data_Object *pObject)
 ///////////////////////////////////////////////////////////
 
 //---------------------------------------------------------
+static TSG_Shape_File_Format	gSG_Shape_File_Format_Default	= SHAPE_FILE_FORMAT_ESRI;
+
+//---------------------------------------------------------
+bool					SG_Shapes_Set_File_Format_Default	(int Format)
+{
+	switch( Format )
+	{
+	case SHAPE_FILE_FORMAT_ESRI      :
+	case SHAPE_FILE_FORMAT_GeoPackage:
+	case SHAPE_FILE_FORMAT_GeoJSON   :
+		gSG_Shape_File_Format_Default	= (TSG_Shape_File_Format)Format;
+		return( true );
+	}
+
+	return( false );
+}
+
+//---------------------------------------------------------
+TSG_Shape_File_Format	SG_Shapes_Get_File_Format_Default	(void)
+{
+	return( gSG_Shape_File_Format_Default );
+}
+
+//---------------------------------------------------------
+CSG_String				SG_Shapes_Get_File_Extension_Default	(void)
+{
+	switch( gSG_Shape_File_Format_Default )
+	{
+	default:
+	case SHAPE_FILE_FORMAT_ESRI      :	return( "shp"     );
+	case SHAPE_FILE_FORMAT_GeoPackage:	return( "gpkg"    );
+	case SHAPE_FILE_FORMAT_GeoJSON   :	return( "geojson" );
+	}
+}
+
+
+///////////////////////////////////////////////////////////
+//														 //
+///////////////////////////////////////////////////////////
+
+//---------------------------------------------------------
 bool CSG_Shapes::Save(const CSG_String &File_Name, int Format)
 {
-	SG_UI_Msg_Add(CSG_String::Format(SG_T("%s: %s..."), _TL("Save shapes"), File_Name.c_str()), true);
+	SG_UI_Msg_Add(CSG_String::Format("%s: %s...", _TL("Save shapes"), File_Name.c_str()), true);
 
-	if( _Save_ESRI(File_Name) )
+	//-----------------------------------------------------
+	if( Format == SHAPE_FILE_FORMAT_Undefined )
+	{
+		Format	= gSG_Shape_File_Format_Default;
+
+		if( SG_File_Cmp_Extension(File_Name, "shp"    ) )	Format	= SHAPE_FILE_FORMAT_ESRI      ;
+		if( SG_File_Cmp_Extension(File_Name, "gpkg"   ) )	Format	= SHAPE_FILE_FORMAT_GeoPackage;
+		if( SG_File_Cmp_Extension(File_Name, "geojson") )	Format	= SHAPE_FILE_FORMAT_GeoJSON   ;
+	}
+
+	//-----------------------------------------------------
+	bool	bResult	= false;
+
+	switch( Format )
+	{
+	case SHAPE_FILE_FORMAT_ESRI      : bResult = _Save_ESRI(File_Name           ); break;
+	case SHAPE_FILE_FORMAT_GeoPackage: bResult = _Save_GDAL(File_Name, "GPKG"   ); break;
+	case SHAPE_FILE_FORMAT_GeoJSON   : bResult = _Save_GDAL(File_Name, "GeoJSON"); break;
+	}
+
+	//-----------------------------------------------------
+	if( bResult )
 	{
 		Set_Modified(false);
 
@@ -553,18 +607,17 @@ bool CSG_Shapes::On_Update(void)
 //---------------------------------------------------------
 CSG_Shape * CSG_Shapes::Get_Shape(TSG_Point Point, double Epsilon)
 {
-	int			iShape;
-	double		d, dNearest;
 	CSG_Rect	r(Point.x - Epsilon, Point.y - Epsilon, Point.x + Epsilon, Point.y + Epsilon);
-	CSG_Shape	*pShape, *pNearest;
 
-	pNearest	= NULL;
+	CSG_Shape	*pNearest	= NULL;
 
 	if( r.Intersects(Get_Extent()) != INTERSECTION_None )
 	{
-		for(iShape=0, dNearest=-1.0; iShape<Get_Count(); iShape++)
+		double	dNearest	= -1.0;
+
+		for(int iShape=0; iShape<Get_Count(); iShape++)
 		{
-			pShape	= Get_Shape(iShape);
+			CSG_Shape	*pShape	= Get_Shape(iShape);
 
 			if( pShape->Intersects(r) )
 			{
@@ -572,7 +625,7 @@ CSG_Shape * CSG_Shapes::Get_Shape(TSG_Point Point, double Epsilon)
 				{
 					if( r.Intersects(pShape->Get_Extent(iPart)) )
 					{
-						d	= pShape->Get_Distance(Point, iPart);
+						double	d	= pShape->Get_Distance(Point, iPart);
 
 						if( d == 0.0 )
 						{

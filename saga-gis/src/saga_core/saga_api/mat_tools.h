@@ -128,6 +128,7 @@
 #define SG_ROUND_TO_DWORD(x)	((DWORD)(x < 0.0 ? x - 0.5 : x + 0.5))
 #define SG_ROUND_TO_INT(x)		((int  )(x < 0.0 ? x - 0.5 : x + 0.5))
 #define SG_ROUND_TO_LONG(x)		((long )(x < 0.0 ? x - 0.5 : x + 0.5))
+#define SG_ROUND_TO_ULONG(x)	((uLong)(x < 0.0 ? x - 0.5 : x + 0.5))
 #define SG_ROUND_TO_SLONG(x)	((sLong)(x < 0.0 ? x - 0.5 : x + 0.5))
 
 
@@ -153,6 +154,10 @@ SAGA_API_DLL_EXPORT	CSG_String	SG_Get_Double_asString	(double Number, int Width 
 SAGA_API_DLL_EXPORT	int			SG_Compare_Int			(const void *a, const void *b);
 SAGA_API_DLL_EXPORT	int			SG_Compare_Double		(const void *a, const void *b);
 SAGA_API_DLL_EXPORT	int			SG_Compare_Char_Ptr		(const void *a, const void *b);
+
+//---------------------------------------------------------
+SAGA_API_DLL_EXPORT	double		SG_Degree_To_Decimal	(              double  Deg, double  Min, double  Sec);
+SAGA_API_DLL_EXPORT	void		SG_Decimal_To_Degree	(double Value, double &Deg, double &Min, double &Sec);
 
 
 ///////////////////////////////////////////////////////////
@@ -300,6 +305,14 @@ private:
 
 //---------------------------------------------------------
 SAGA_API_DLL_EXPORT CSG_Vector	operator *			(double Scalar, const CSG_Vector &Vector);
+
+//---------------------------------------------------------
+SAGA_API_DLL_EXPORT bool	SG_VectorR2_Rotate		(double &x, double &y, double Angle);
+SAGA_API_DLL_EXPORT bool	SG_VectorR2_Rotate		(double     Vector[2], double Angle);
+SAGA_API_DLL_EXPORT bool	SG_VectorR2_Rotate		(CSG_Vector &Vector  , double Angle);
+
+SAGA_API_DLL_EXPORT bool	SG_VectorR3_Rotate		(double     Vector[3], size_t Axis, double Angle);
+SAGA_API_DLL_EXPORT bool	SG_VectorR3_Rotate		(CSG_Vector &Vector  , size_t Axis, double Angle);
 
 
 ///////////////////////////////////////////////////////////
@@ -1672,7 +1685,7 @@ public:
 	typedef struct SSG_Formula_Item
 	{
 		const SG_Char		*name;
-		TSG_PFNC_Formula_1	f;			
+		TSG_PFNC_Formula_1	f;
 		int					n_pars;		
 		int					varying;	// Does the result of the function vary even when the parameters stay the same? varying = 1 for e.g. random - number generators.
 	}
@@ -1696,6 +1709,9 @@ private:
 	int							m_Error_Position, m_Length;
 
 	TMAT_Formula				m_Formula;
+
+	TSG_Formula_Item			*m_Functions;
+
 
 	CSG_String					m_sFormula, m_sError;
 
@@ -1748,62 +1764,65 @@ class SAGA_API_DLL_EXPORT CSG_Trend
 {
 public:
 	CSG_Trend(void);
-	virtual ~CSG_Trend(void);
 
-	bool						Set_Formula			(const SG_Char *Formula = NULL);
+	bool						Set_Formula			(const CSG_String &Formula);
 	CSG_String					Get_Formula			(int Type = SG_TREND_STRING_Complete);
 
-	int							Get_Parameter_Count	(void) const	{	return( m_Params.m_Count );		}
-	double *					Get_Parameters		(void) const	{	return( m_Params.m_A );			}
+	int							Get_Parameter_Count	(void) const	{	return( m_Params   .Get_Count() );	}
+	double *					Get_Parameters		(void) const	{	return( m_Params.m_A.Get_Data() );	}
+	bool						Init_Parameter		(const SG_Char &Variable, double Value);
 
 	void						Clr_Data			(void);
-	void						Set_Data			(double *xData, double *yData, int nData, bool bAdd = false);
-	void						Set_Data			(const CSG_Points &Data, bool bAdd = false);
-	void						Add_Data			(double x, double y);
-	int							Get_Data_Count		(void) const	{	return( m_Data.Get_Count() );	}
-	double						Get_Data_X			(int Index)		{	return( m_Data.Get_X(Index) );	}
-	double						Get_Data_Y			(int Index)		{	return( m_Data.Get_Y(Index) );	}
-	double						Get_Data_XMin		(void)			{	return( m_xMin );	}
-	double						Get_Data_XMax		(void)			{	return( m_xMax );	}
-	double						Get_Data_YMin		(void)			{	return( m_yMin );	}
-	double						Get_Data_YMax		(void)			{	return( m_yMax );	}
+	bool						Add_Data			(double  x, double  y);
+	void						Set_Data			(double *x, double *y, int n, bool bAdd = false);
+	void						Set_Data			(const CSG_Points &Data     , bool bAdd = false);
+	int							Get_Data_Count		(void)	const	{	return( m_Data.Get_NCols() );	}
+	double						Get_Data_X			(int i)	const	{	return( m_Data[0][i] );	}
+	double						Get_Data_Y			(int i)	const	{	return( m_Data[1][i] );	}
+	double						Get_Data_XMin		(void)	const	{	return( m_xMin );	}
+	double						Get_Data_XMax		(void)	const	{	return( m_xMax );	}
+	double						Get_Data_YMin		(void)	const	{	return( m_yMin );	}
+	double						Get_Data_YMax		(void)	const	{	return( m_yMax );	}
 
 	bool						Set_Max_Iterations	(int Iterations);
-	int							Get_Max_Iterations	(void)			{	return( m_Iter_Max);	}
+	int							Get_Max_Iterations	(void)	const	{	return( m_Iter_Max);	}
 	bool						Set_Max_Lambda		(double Lambda);
-	double						Get_Max_Lambda		(void)			{	return( m_Lambda_Max);	}
+	double						Get_Max_Lambda		(void)	const	{	return( m_Lambda_Max);	}
 
-	bool						Get_Trend			(double *xData, double *yData, int nData, const SG_Char *Formula = NULL);
-	bool						Get_Trend			(const CSG_Points &Data, const SG_Char *Formula = NULL);
+	bool						Get_Trend			(double *x, double *y, int n, const CSG_String &Formula);
+	bool						Get_Trend			(const CSG_Points &Data     , const CSG_String &Formula);
+	bool						Get_Trend			(const CSG_String &Formula);
 	bool						Get_Trend			(void);
 
-	bool						is_Okay				(void)			{	return( m_bOkay );		}
+	bool						is_Okay				(void)	const	{	return( m_bOkay );	}
 
 	CSG_String					Get_Error			(void);
 
-	double						Get_ChiSquare		(void);
-	double						Get_R2				(void);
+	double						Get_ChiSquare		(void)	const	{	return( m_bOkay ? m_ChiSqr   : 0.0 );	}
+	double						Get_R2				(void)	const	{	return( m_bOkay ? m_ChiSqr_o : 0.0 );	}
 
-	double						Get_Value			(double x);
+	double						Get_Value			(double x)	const	{	return( m_bOkay ? m_Formula.Get_Value(x) : 0.0 );	}
 
 
 private:
 
 	//-----------------------------------------------------
-	class SAGA_API_DLL_EXPORT CFncParams
+	class SAGA_API_DLL_EXPORT CParams
 	{
 	public:
-		CFncParams(void);
-		virtual ~CFncParams(void);
+		CParams(void)	{}
 
-		bool					Create				(const SG_Char *Variables, int nVariables);
+		bool					Create				(const CSG_String &Variables);
 		bool					Destroy				(void);
 
-		int						m_Count;
+		int						Get_Count			(void)	const	{	return( (int)m_Variables.Length() );	}
 
-		SG_Char					*m_Variables;
 
-		double					*m_A, *m_Atry, *m_dA, *m_dA2, *m_Beta, **m_Alpha, **m_Covar;
+		CSG_String				m_Variables;
+
+		CSG_Vector				m_A, m_Atry, m_dA, m_dA2, m_Beta;
+
+		CSG_Matrix				m_Alpha, m_Covar;
 
 	};
 
@@ -1815,18 +1834,18 @@ private:
 
 	double						m_ChiSqr, m_ChiSqr_o, m_Lambda, m_Lambda_Max, m_xMin, m_xMax, m_yMin, m_yMax;
 
-	CSG_Points					m_Data;
+	CParams						m_Params;
 
-	CFncParams					m_Params;
+	CSG_Matrix					m_Data;
 
 	CSG_Formula					m_Formula;
 
 
 	bool						_Fit_Function		(void);
 	bool						_Get_Gaussj			(void);
-	bool						_Get_mrqcof			(double *Parameters, double **Alpha, double *Beta);
+	bool						_Get_mrqcof			(CSG_Vector &Parameters, CSG_Matrix &Alpha, CSG_Vector &Beta);
 
-	void						_Get_Function		(double x, double *Parameters, double &y, double *dy_da);
+	void						_Get_Function		(double &y, double *dy_da, double x, const double *Parameters);
 
 };
 

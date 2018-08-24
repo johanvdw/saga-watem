@@ -67,8 +67,6 @@
 #include <wx/filename.h>
 #include <wx/utils.h>
 
-#include "saga_api.h"
-
 #include "tool_chain.h"
 
 
@@ -152,131 +150,6 @@ CSG_String CSG_Tool_Library::Get_Info(int Type) const
 	}
 
 	return( "" );
-}
-
-//---------------------------------------------------------
-#define SUMMARY_ADD_STR(label, value)	CSG_String::Format("<tr><td valign=\"top\"><b>%s</b></td><td valign=\"top\">%s</td></tr>", label, value)
-#define SUMMARY_ADD_INT(label, value)	CSG_String::Format("<tr><td valign=\"top\"><b>%s</b></td><td valign=\"top\">%d</td></tr>", label, value)
-
-//---------------------------------------------------------
-CSG_String CSG_Tool_Library::Get_Summary(int Format, bool bInteractive) const
-{
-	int			i;
-	CSG_String	s;
-
-	switch( Format )
-	{
-	//-----------------------------------------------------
-	case SG_SUMMARY_FMT_FLAT:
-
-		s	+= CSG_String::Format("\n%s:\t", _TL("Library" )) + Get_Info(TLB_INFO_Name    );
-		s	+= CSG_String::Format("\n%s:\t", _TL("Category")) + Get_Info(TLB_INFO_Category);
-
-		if( !Get_File_Name().is_Empty() )
-		{
-			s	+= CSG_String::Format("\n%s:\t", _TL("File")) + Get_File_Name();
-		}
-
-		s	+= CSG_String::Format("\n%s:\n", _TL("Description")) + Get_Info(TLB_INFO_Description);
-
-		s	+= CSG_String::Format("\n\n%s:\n", _TL("Tools"));
-
-		for(i=0; i<Get_Count(); i++)
-		{
-			if( Get_Tool(i) && (bInteractive || !Get_Tool(i)->is_Interactive()) )
-			{
-				s	+= " " + Get_Tool(i)->Get_ID() + "\t" + Get_Tool(i)->Get_Name() + "\n";
-			}
-		}
-
-		break;
-
-	//-----------------------------------------------------
-	case SG_SUMMARY_FMT_HTML: default:
-
-		s	+= CSG_String::Format("<h4>%s</h4>", _TL("Tool Library"));
-
-		s	+= "<table border=\"0\">";
-
-		s	+= SUMMARY_ADD_STR(_TL("Name"   ), Get_Info(TLB_INFO_Name   ).c_str());
-		s	+= SUMMARY_ADD_STR(_TL("Author" ), Get_Info(TLB_INFO_Author ).c_str());
-		s	+= SUMMARY_ADD_STR(_TL("Version"), Get_Info(TLB_INFO_Version).c_str());
-		s	+= SUMMARY_ADD_STR(_TL("File"   ), Get_File_Name()           .c_str());
-
-		s	+= "</table>";
-
-		//-------------------------------------------------
-		s	+= CSG_String::Format("<hr><h4>%s</h4>", _TL("Description"));
-
-		s	+= Get_Info(TLB_INFO_Description);
-
-		//-------------------------------------------------
-		s	+= CSG_String::Format("<hr><h4>%s</h4>", _TL("Tools"));
-
-		s	+= "<table border=\"0\">";
-
-		s	+= CSG_String::Format("<tr align=\"left\"><th>%s</th><th>%s</th></tr>", _TL("ID"), _TL("Name"));
-
-		for(i=0; i<Get_Count(); i++)
-		{
-			if( Get_Tool(i) && (bInteractive || !Get_Tool(i)->is_Interactive()) )
-			{
-				s	+= SUMMARY_ADD_STR(Get_Tool(i)->Get_ID().c_str(), Get_Tool(i)->Get_Name().c_str());
-			}
-		}
-
-		s	+= "</table>";
-
-		s.Replace("\n", "<br>");
-
-		break;
-
-	//-----------------------------------------------------
-	case SG_SUMMARY_FMT_XML:
-
-		s	+= "<?xml version='1.0' encoding='UTF-8' standalone='yes' ?>\n";
-		s	+= CSG_String::Format("<%s>\n"         , SG_XML_LIBRARY);
-		s	+= CSG_String::Format("\t<%s>%s</%s>\n", SG_XML_LIBRARY_PATH, Get_File_Name().c_str(), SG_XML_LIBRARY_PATH);
-		s	+= CSG_String::Format("\t<%s>%s</%s>\n", SG_XML_LIBRARY_NAME, Get_Name     ().c_str(), SG_XML_LIBRARY_NAME);
-
-		for(i=0; i<Get_Count(); i++)
-		{
-			if( Get_Tool(i) && (bInteractive || !Get_Tool(i)->is_Interactive()) )
-			{
-				s	+= CSG_String::Format("\t<%s %s=\"%s\" %s=\"%s\">\n", SG_XML_TOOL,
-					SG_XML_TOOL_ATT_ID  , Get_Tool(i)->Get_ID  ().c_str(),
-					SG_XML_TOOL_ATT_NAME, Get_Tool(i)->Get_Name().c_str()
-				);
-			}
-		}
-
-		s	+= CSG_String::Format("</%s>\n", SG_XML_LIBRARY);
-
-		break;
-	}
-
-	return( s );
-}
-
-//---------------------------------------------------------
-bool CSG_Tool_Library::Get_Summary(const CSG_String &Path)	const
-{
-	CSG_File	f;
-
-	if( f.Open(SG_File_Make_Path(Path, Get_Library_Name(), SG_T("html")), SG_FILE_W) )
-	{
-		f.Write(Get_Summary());
-	}
-
-	for(int j=0; j<Get_Count(); j++)
-	{
-		if( Get_Tool(j) && f.Open(SG_File_Make_Path(Path, Get_Library_Name() + "_" + Get_Tool(j)->Get_ID(), SG_T("html")), SG_FILE_W) )
-		{
-			f.Write(Get_Tool(j)->Get_Summary());
-		}
-	}
-
-	return( true );
 }
 
 
@@ -654,7 +527,7 @@ CSG_Tool_Library * CSG_Tool_Library_Manager::Get_Library(const SG_Char *Name, bo
 	{
 		CSG_Tool_Library	*pLibrary	= Get_Library(i);
 
-		if( pLibrary && !SG_STR_CMP(Name, bLibrary ? pLibrary->Get_Library_Name() : pLibrary->Get_Name()) )
+		if( !SG_STR_CMP(Name, bLibrary ? pLibrary->Get_Library_Name() : pLibrary->Get_Name()) )
 		{
 			return( pLibrary );
 		}
@@ -685,143 +558,28 @@ bool CSG_Tool_Library_Manager::is_Loaded(CSG_Tool_Library *pLibrary) const
 //---------------------------------------------------------
 CSG_Tool * CSG_Tool_Library_Manager::Get_Tool(const CSG_String &Library, int ID)	const
 {
-	CSG_Tool_Library	*pLibrary	= Get_Library(Library, true);
-
-	return( pLibrary ? pLibrary->Get_Tool(CSG_String::Format("%d", ID)) : NULL );
+	return( Get_Tool(Library, CSG_String::Format("%d", ID)) );
 }
 
 //---------------------------------------------------------
 CSG_Tool * CSG_Tool_Library_Manager::Get_Tool(const CSG_String &Library, const CSG_String &Tool)	const
 {
-	CSG_Tool_Library	*pLibrary	= Get_Library(Library, true);
-
-	return( pLibrary ? pLibrary->Get_Tool(Tool) : NULL );
-}
-
-
-///////////////////////////////////////////////////////////
-//														 //
-///////////////////////////////////////////////////////////
-
-//---------------------------------------------------------
-CSG_String CSG_Tool_Library_Manager::Get_Summary(int Format)	const
-{
-	//-----------------------------------------------------
-	int			i, nTools;
-
-	CSG_Table	Libraries;
-
-	Libraries.Add_Field("LIB"  , SG_DATATYPE_String);
-	Libraries.Add_Field("TOOLS", SG_DATATYPE_Int   );
-	Libraries.Add_Field("NAME" , SG_DATATYPE_String);
-	Libraries.Add_Field("PATH" , SG_DATATYPE_String);
-
-	for(i=0, nTools=0; i<Get_Count(); i++)
-	{
-		if( Get_Library(i)->Get_Count() > 0 )
-		{
-			nTools	+= Get_Library(i)->Get_Count();
-
-			Libraries.Add_Record();
-
-			Libraries[i].Set_Value(0, Get_Library(i)->Get_Library_Name());
-			Libraries[i].Set_Value(1, Get_Library(i)->Get_Count());
-			Libraries[i].Set_Value(2, Get_Library(i)->Get_Name());
-			Libraries[i].Set_Value(3, SG_File_Get_Path(Get_Library(i)->Get_File_Name()));
-		}
-	}
-
-	Libraries.Set_Index(0, TABLE_INDEX_Ascending);
-
-	//-----------------------------------------------------
-	CSG_String	s;
-
-	switch( Format )
-	{
-	//-----------------------------------------------------
-	case SG_SUMMARY_FMT_FLAT:
-
-		s	+= CSG_String::Format("\n%d %s (%d %s):\n", Libraries.Get_Count(), _TL("loaded tool libraries"), nTools, _TL("tools"));
-
-		for(i=0; i<Libraries.Get_Count(); i++)
-		{
-			s	+= CSG_String::Format(" - %s\n", Libraries[i].asString(0));
-		}
-
-		break;
-
-	//-----------------------------------------------------
-	case SG_SUMMARY_FMT_HTML: default:
-
-		s	+= CSG_String::Format("<h4>%s</h4>", _TL("Tool Libraries"));
-
-		s	+= "<table border=\"0\">";
-
-		s	+= SUMMARY_ADD_INT(_TL("Libraries"), Libraries.Get_Count());
-		s	+= SUMMARY_ADD_INT(_TL("Tools"    ), nTools);
-
-		s	+= "</table>";
-
-		s	+= CSG_String::Format("<hr><h4>%s</h4><table border=\"1\">", _TL("Libraries"));
-
-		s	+= CSG_String::Format("<tr align=\"left\"><th>%s</th><th>%s</th><th>%s</th><th>%s</th></tr>",
-				_TL("Library" ),
-				_TL("Tools"   ),
-				_TL("Name"    ),
-				_TL("Location")
-			);
-
-		for(i=0; i<Libraries.Get_Count(); i++)
-		{
-			s	+= CSG_String::Format("<tr><td>%s</td><td>%d</td><td>%s</td><td>%s</td></tr>",
-					Libraries[i].asString(0),
-					Libraries[i].asInt   (1),
-					Libraries[i].asString(2),
-					Libraries[i].asString(3)
-				);
-		}
-
-		s	+= "</table>";
-
-		break;
-
-	//-----------------------------------------------------
-	case SG_SUMMARY_FMT_XML:
-
-		s	+= "<?xml version='1.0' encoding='UTF-8' standalone='yes' ?>\n";
-		s	+= CSG_String::Format("\n<%s>", SG_XML_SYSTEM);
-		s	+= CSG_String::Format("\n<%s>%s</%s>", SG_XML_SYSTEM_VER, SAGA_VERSION, SG_XML_SYSTEM_VER);
-
-		for(int i=0; i<Libraries.Get_Count(); i++)
-		{
-			s	+= CSG_String::Format("\n\t<%s %s=\"%s\"/>", SG_XML_LIBRARY, SG_XML_LIBRARY_NAME, Libraries[i].asString(0));
-		}
-
-		s	+= CSG_String::Format("\n</%s>", SG_XML_SYSTEM);
-
-		break;
-	}
-
-	//-----------------------------------------------------
-	return( s );
-}
-
-//---------------------------------------------------------
-bool CSG_Tool_Library_Manager::Get_Summary(const CSG_String &Path)	const
-{
 	for(int i=0; i<Get_Count(); i++)
 	{
 		CSG_Tool_Library	*pLibrary	= Get_Library(i);
 
-		CSG_String	Directory	= SG_File_Make_Path(Path, pLibrary->Get_Library_Name());
-
-		if( SG_Dir_Create(Directory) )
+		if( pLibrary->Get_Library_Name().Cmp(Library) == 0 )
 		{
-			pLibrary->Get_Summary(Directory);
+			CSG_Tool	*pTool	= pLibrary->Get_Tool(Tool);
+
+			if( pTool )
+			{
+				return( pTool );
+			}
 		}
 	}
-
-	return( true );
+	
+	return( NULL );
 }
 
 

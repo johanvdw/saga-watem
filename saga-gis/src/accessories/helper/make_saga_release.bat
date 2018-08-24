@@ -2,7 +2,7 @@
 
 REM ___________________________________
 SET SAGA_VER_MAJOR=6
-SET SAGA_VER_MINOR=0
+SET SAGA_VER_MINOR=4
 SET SAGA_VER_RELEASE=0
 SET SAGA_VER_TEXT=%SAGA_VER_MAJOR%.%SAGA_VER_MINOR%.%SAGA_VER_RELEASE%
 SET SAGA_VERSION=saga-%SAGA_VER_TEXT%
@@ -54,8 +54,8 @@ REM win32 Binaries
 SET SAGA_CONFIG=win32
 MKDIR "%SAGA_VERSION%_%SAGA_CONFIG%"
 PUSHD "%SAGA_VERSION%_%SAGA_CONFIG%"
-XCOPY /C/S/Q/Y "%SAGA_ROOT%\bin\saga_vc_%SAGA_CONFIG%"
-DEL /F saga_gui.cfg *.ini *.exp tools\*.exp tools\*.lib tools\dev_tools.*
+XCOPY /C/S/Q/Y/H "%SAGA_ROOT%\bin\saga_vc_%SAGA_CONFIG%"
+DEL /F saga_gui.cfg *.ini *.exp *.pdb tools\*.exp tools\*.pdb tools\*.lib tools\dev_tools.*
 RMDIR /S/Q _private
 POPD
 %ZIPEXE% "%SAGA_VERSION%_%SAGA_CONFIG%.zip" "%SAGA_VERSION%_%SAGA_CONFIG%"
@@ -72,8 +72,8 @@ REM x64 Binaries
 SET SAGA_CONFIG=x64
 MKDIR "%SAGA_VERSION%_%SAGA_CONFIG%"
 PUSHD "%SAGA_VERSION%_%SAGA_CONFIG%"
-XCOPY /C/S/Q/Y "%SAGA_ROOT%\bin\saga_vc_%SAGA_CONFIG%"
-DEL /F saga_gui.cfg *.ini *.exp tools\*.exp tools\*.lib tools\dev_tools.*
+XCOPY /C/S/Q/Y/H "%SAGA_ROOT%\bin\saga_vc_%SAGA_CONFIG%"
+DEL /F saga_gui.cfg *.ini *.exp *.pdb tools\*.exp tools\*.pdb tools\*.lib tools\dev_tools.*
 RMDIR /S/Q _private
 POPD
 %ZIPEXE% "%SAGA_VERSION%_%SAGA_CONFIG%.zip" "%SAGA_VERSION%_%SAGA_CONFIG%"
@@ -116,9 +116,9 @@ DEL /F saga_api_wrap.cxx
 RMDIR /S/Q build
 POPD
 SET PYTHONOUT=Python%PYTHONVER%
-XCOPY /C/Q/Y "%PYTHONDIR%\Lib\site-packages\*saga*.*" "%PYTHONOUT%\Lib\site-packages\"
+XCOPY /C/Q/Y/H "%PYTHONDIR%\Lib\site-packages\*saga*.*" "%PYTHONOUT%\Lib\site-packages\"
 COPY "%SAGA_ROOT%\src\accessories\python\saga_python_api.txt" "%PYTHONOUT%\Lib\site-packages\"
-XCOPY /C/Q/Y "%SAGA_ROOT%\src\accessories\python\examples" "%PYTHONOUT%\Lib\site-packages\saga_api_examples\"
+XCOPY /C/Q/Y/H "%SAGA_ROOT%\src\accessories\python\examples" "%PYTHONOUT%\Lib\site-packages\saga_api_examples\"
 %ZIPEXE% %SAGA_VERSION%_win32_python%PYTHONVER%.zip "%PYTHONOUT%"
 RMDIR /S/Q "%PYTHONOUT%"
 

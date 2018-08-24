@@ -1762,7 +1762,7 @@ bool CSG_Grids::_Load_PGSQL(const CSG_String &FileName)
 				pTool->Settings_Pop();
 
 				//-----------------------------------------
-				if( Grids.Grid_System_Count() > 0 && Grids.Get_Grid_System(0)->Get(0) )
+				if( Grids.Grid_System_Count() > 0 && Grids.Get_Grid_System(0)->Get(0) && Grids.Get_Grid_System(0)->Get(0)->is_Valid() )
 				{
 					CSG_Grids	*pGrids	= (CSG_Grids *)Grids.Get_Grid_System(0)->Get(0);
 
@@ -2195,7 +2195,7 @@ bool CSG_Grids::_Load_Attributes(CSG_File &Stream)
 
 	while( Stream.Read_Line(sLine) && !sLine.is_Empty() )
 	{
-		CSG_String_Tokenizer	Values(sLine, "\t");
+		CSG_String_Tokenizer	Values(sLine, "\t", SG_TOKEN_RET_EMPTY_ALL);
 
 		if( Values.Get_Tokens_Count() == (size_t)Attributes.Get_Field_Count() )
 		{

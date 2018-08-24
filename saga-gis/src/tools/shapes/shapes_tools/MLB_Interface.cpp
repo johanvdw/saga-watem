@@ -128,6 +128,8 @@ CSG_String Get_Info(int i)
 
 #include "shapes_clean.h"
 
+#include "beachball.h"
+
 
 //---------------------------------------------------------
 // 4. Allow your tools to be created here...
@@ -137,6 +139,7 @@ CSG_Tool *		Create_Tool(int i)
 	switch( i )
 	{
 	case  0:	return( new CShapes_Create_Empty );
+	case 28:	return( new CShapes_Create_Copy );
 	case  2:	return( new CShapes_Merge );
 	case 24:	return( new CTables_Merge );
 
@@ -170,6 +173,8 @@ CSG_Tool *		Create_Tool(int i)
 	case 26:	return( new CSelect_Shapes_From_List );
 
 	case 27:	return( new CShapes_Clean );
+
+	case 29:	return( new CBeachball );
 
 	case 30:	return( NULL );
 	default:	return( TLB_INTERFACE_SKIP_TOOL );

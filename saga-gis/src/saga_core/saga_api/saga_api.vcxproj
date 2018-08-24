@@ -1,5 +1,5 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
-<Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+<Project DefaultTargets="Build" ToolsVersion="14.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="Debug|Win32">
       <Configuration>Debug</Configuration>
@@ -26,21 +26,25 @@
     <ConfigurationType>DynamicLibrary</ConfigurationType>
     <UseOfMfc>false</UseOfMfc>
     <CharacterSet>Unicode</CharacterSet>
+    <PlatformToolset>v140</PlatformToolset>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
     <ConfigurationType>DynamicLibrary</ConfigurationType>
     <UseOfMfc>false</UseOfMfc>
     <CharacterSet>Unicode</CharacterSet>
+    <PlatformToolset>v140</PlatformToolset>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
     <ConfigurationType>DynamicLibrary</ConfigurationType>
     <UseOfMfc>false</UseOfMfc>
     <CharacterSet>Unicode</CharacterSet>
+    <PlatformToolset>v140</PlatformToolset>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
     <ConfigurationType>DynamicLibrary</ConfigurationType>
     <UseOfMfc>false</UseOfMfc>
     <CharacterSet>Unicode</CharacterSet>
+    <PlatformToolset>v140</PlatformToolset>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
   <ImportGroup Label="ExtensionSettings">
@@ -149,6 +153,7 @@ copy datetime.h $(OutDir)include\saga_api
 copy geo_tools.h $(OutDir)include\saga_api
 copy grid.h $(OutDir)include\saga_api
 copy grid_pyramid.h $(OutDir)include\saga_api
+copy grids.h $(OutDir)include\saga_api
 copy mat_tools.h $(OutDir)include\saga_api
 copy metadata.h $(OutDir)include\saga_api
 copy tool.h $(OutDir)include\saga_api
@@ -202,12 +207,14 @@ copy tin.h $(OutDir)include\saga_api
       <OutputFile>$(OutDir)$(ProjectName).dll</OutputFile>
       <SuppressStartupBanner>true</SuppressStartupBanner>
       <AdditionalLibraryDirectories>$(WXWIN_32)/lib/vc_dll;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <ProgramDatabaseFile>$(OutDir)$(ProjectName).pdb</ProgramDatabaseFile>
+      <ProgramDatabaseFile>
+      </ProgramDatabaseFile>
       <RandomizedBaseAddress>false</RandomizedBaseAddress>
       <DataExecutionPrevention>
       </DataExecutionPrevention>
       <ImportLibrary>$(OutDir)$(ProjectName).lib</ImportLibrary>
       <TargetMachine>MachineX86</TargetMachine>
+      <GenerateDebugInformation>No</GenerateDebugInformation>
     </Link>
     <Bscmake>
       <SuppressStartupBanner>true</SuppressStartupBanner>
@@ -223,6 +230,7 @@ copy datetime.h $(OutDir)include\saga_api
 copy geo_tools.h $(OutDir)include\saga_api
 copy grid.h $(OutDir)include\saga_api
 copy grid_pyramid.h $(OutDir)include\saga_api
+copy grids.h $(OutDir)include\saga_api
 copy mat_tools.h $(OutDir)include\saga_api
 copy metadata.h $(OutDir)include\saga_api
 copy tool.h $(OutDir)include\saga_api
@@ -261,7 +269,7 @@ copy tin.h $(OutDir)include\saga_api
       <ProgramDataBaseFileName>$(IntDir)</ProgramDataBaseFileName>
       <WarningLevel>Level3</WarningLevel>
       <SuppressStartupBanner>true</SuppressStartupBanner>
-      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+      <DebugInformationFormat>EditAndContinue</DebugInformationFormat>
       <OpenMPSupport>true</OpenMPSupport>
       <MultiProcessorCompilation>false</MultiProcessorCompilation>
     </ClCompile>
@@ -296,6 +304,7 @@ copy datetime.h $(OutDir)include\saga_api
 copy geo_tools.h $(OutDir)include\saga_api
 copy grid.h $(OutDir)include\saga_api
 copy grid_pyramid.h $(OutDir)include\saga_api
+copy grids.h $(OutDir)include\saga_api
 copy mat_tools.h $(OutDir)include\saga_api
 copy metadata.h $(OutDir)include\saga_api
 copy tool.h $(OutDir)include\saga_api
@@ -349,12 +358,14 @@ copy tin.h $(OutDir)include\saga_api
       <OutputFile>$(OutDir)$(ProjectName).dll</OutputFile>
       <SuppressStartupBanner>true</SuppressStartupBanner>
       <AdditionalLibraryDirectories>$(WXWIN)/lib/vc_x64_dll;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <ProgramDatabaseFile>$(OutDir)$(ProjectName).pdb</ProgramDatabaseFile>
+      <ProgramDatabaseFile>
+      </ProgramDatabaseFile>
       <RandomizedBaseAddress>false</RandomizedBaseAddress>
       <DataExecutionPrevention>
       </DataExecutionPrevention>
       <ImportLibrary>$(OutDir)$(ProjectName).lib</ImportLibrary>
       <TargetMachine>MachineX64</TargetMachine>
+      <GenerateDebugInformation>No</GenerateDebugInformation>
     </Link>
     <Bscmake>
       <SuppressStartupBanner>true</SuppressStartupBanner>
@@ -370,6 +381,7 @@ copy datetime.h $(OutDir)include\saga_api
 copy geo_tools.h $(OutDir)include\saga_api
 copy grid.h $(OutDir)include\saga_api
 copy grid_pyramid.h $(OutDir)include\saga_api
+copy grids.h $(OutDir)include\saga_api
 copy mat_tools.h $(OutDir)include\saga_api
 copy metadata.h $(OutDir)include\saga_api
 copy tool.h $(OutDir)include\saga_api
@@ -857,6 +869,7 @@ copy tin.h $(OutDir)include\saga_api
     <ClCompile Include="tool_interactive_base.cpp" />
     <ClCompile Include="tool_library.cpp" />
     <ClCompile Include="tool_library_interface.cpp" />
+    <ClCompile Include="tool_summary.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="api_core.h" />

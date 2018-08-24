@@ -76,13 +76,12 @@
 //---------------------------------------------------------
 CCMD_Tool::CCMD_Tool(void)
 {
-	m_pLibrary	= NULL;
 	m_pTool	= NULL;
 }
 
-CCMD_Tool::CCMD_Tool(CSG_Tool_Library *pLibrary, CSG_Tool *pTool)
+CCMD_Tool::CCMD_Tool(CSG_Tool *pTool)
 {
-	Create(pLibrary, pTool);
+	Create(pTool);
 }
 
 //---------------------------------------------------------
@@ -99,11 +98,11 @@ CCMD_Tool::~CCMD_Tool(void)
 ///////////////////////////////////////////////////////////
 
 //---------------------------------------------------------
-bool CCMD_Tool::Create(CSG_Tool_Library *pLibrary, CSG_Tool *pTool)
+bool CCMD_Tool::Create(CSG_Tool *pTool)
 {
 	Destroy();
 
-	if( (m_pLibrary = pLibrary) != NULL && (m_pTool = pTool) != NULL )
+	if( (m_pTool = pTool) != NULL )
 	{
 		_Set_Parameters(m_pTool->Get_Parameters());
 
@@ -121,7 +120,6 @@ bool CCMD_Tool::Create(CSG_Tool_Library *pLibrary, CSG_Tool *pTool)
 //---------------------------------------------------------
 void CCMD_Tool::Destroy(void)
 {
-	m_pLibrary	= NULL;
 	m_pTool	= NULL;
 
 	m_CMD.Reset();
@@ -131,13 +129,13 @@ void CCMD_Tool::Destroy(void)
 //---------------------------------------------------------
 void CCMD_Tool::Usage(void)
 {
-	if( m_pLibrary && m_pTool )
+	if( m_pTool )
 	{
 		CMD_Print("");
 
 		wxString	sUsage = wxString::Format("Usage: saga_cmd %s %s %s",
-			m_pLibrary->Get_Library_Name().c_str(),
-			m_pTool   ->Get_ID          ().c_str(),
+			m_pTool->Get_Library().c_str(),
+			m_pTool->Get_ID     ().c_str(),
 			m_CMD.GetUsageString().AfterFirst(' ').AfterFirst(' ')
 		);
 
@@ -156,7 +154,7 @@ void CCMD_Tool::Usage(void)
 bool CCMD_Tool::Execute(int argc, char *argv[])
 {
 	//-----------------------------------------------------
-	if( !m_pLibrary || !m_pTool )
+	if( !m_pTool )
 	{
 		return( false );
 	}
@@ -746,7 +744,7 @@ bool CCMD_Tool::_Save_Output(CSG_Parameters *pParameters)
 {
 	for(int j=0; j<pParameters->Get_Count(); j++)
 	{
-		wxString		FileName;
+		wxString	FileName;
 
 		CSG_Parameter	*pParameter	= pParameters->Get_Parameter(j);
 
@@ -759,7 +757,7 @@ bool CCMD_Tool::_Save_Output(CSG_Parameters *pParameters)
 
 				if( pObject && pObject->is_Modified() && SG_File_Exists(pObject->Get_File_Name()) )
 				{
-					pObject->Save(pObject->Get_File_Name());
+					_Save_Output(pObject, pObject->Get_File_Name());
 				}
 			}
 
@@ -771,7 +769,7 @@ bool CCMD_Tool::_Save_Output(CSG_Parameters *pParameters)
 
 					if( pObject->is_Modified() && SG_File_Exists(pObject->Get_File_Name()) )
 					{
-						pObject->Save(pObject->Get_File_Name());
+						_Save_Output(pObject, pObject->Get_File_Name());
 					}
 				}
 			}
@@ -784,7 +782,7 @@ bool CCMD_Tool::_Save_Output(CSG_Parameters *pParameters)
 			{
 				if( pParameter->asDataObject() )
 				{
-					pParameter->asDataObject()->Save(&FileName);
+					_Save_Output(pParameter->asDataObject(), &FileName);
 				}
 			}
 
@@ -812,11 +810,11 @@ bool CCMD_Tool::_Save_Output(CSG_Parameters *pParameters)
 					{
 						if( i < nFileNames )
 						{
-							pParameter->asList()->Get_Item(i)->Save(FileNames[i]);
+							_Save_Output(pParameter->asList()->Get_Item(i), FileNames[i]);
 						}
 						else
 						{
-							pParameter->asList()->Get_Item(i)->Save(CSG_String::Format("%s_%0*d",
+							_Save_Output(pParameter->asList()->Get_Item(i), CSG_String::Format("%s_%0*d",
 								FileNames[nFileNames].c_str(),
 								SG_Get_Digit_Count(pParameter->asList()->Get_Item_Count()),
 								1 + i - nFileNames
@@ -829,6 +827,14 @@ bool CCMD_Tool::_Save_Output(CSG_Parameters *pParameters)
 	}
 
 	return( true );
+}
+
+//---------------------------------------------------------
+bool CCMD_Tool::_Save_Output(CSG_Data_Object *pObject, const CSG_String &FileName)
+{
+	pObject->Set_Name(SG_File_Get_Name(FileName, false));
+
+	return( pObject->Save(FileName) );
 }
 
 

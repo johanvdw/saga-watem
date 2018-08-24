@@ -1413,10 +1413,26 @@ bool CSG_PG_Connection::_Raster_Open(CSG_Table &Info, const CSG_String &Table, c
 		return( false );
 	}
 
-	CSG_String	Field	= Info[0].asString("r_raster_column");
+	CSG_String	Fields, Field	= Info[0].asString("r_raster_column");
 
 	//-----------------------------------------------------
-	if( !Table_Load(Info, Table, "rid, name", Where, "", "", Order) )
+	Info	= Get_Field_Desc(Table);
+
+	for(int i=0; i<Info.Get_Count(); i++)
+	{
+		if( SG_STR_CMP(Info[i].asString(1), "raster") )
+		{
+			if( !Fields.is_Empty() )
+			{
+				Fields	+= ",";
+			}
+
+			Fields	+= Info[i].asString(0);
+		}
+	}
+
+	//-----------------------------------------------------
+	if( !Table_Load(Info, Table, Fields, Where, "", "", Order) )
 	{
 		SG_UI_Msg_Add_Error(CSG_String::Format("[PostGIS] %s (%s)", _TL("could not access raster table"), Table.c_str()));
 
@@ -1483,7 +1499,7 @@ bool CSG_PG_Connection::_Raster_Load(CSG_Grid *pGrid, bool bFirst, bool bBinary)
 }
 
 //---------------------------------------------------------
-bool CSG_PG_Connection::Raster_Load(CSG_Data_Manager &Grids, const CSG_String &Table, const CSG_String &Where, const CSG_String &Order)
+bool CSG_PG_Connection::Raster_Load(CSG_Data_Manager &Grids, const CSG_String &Table, const CSG_String &Where, const CSG_String &Order, CSG_Table *pInfo)
 {
 	//-----------------------------------------------------
 	bool		bBinary	= true;
@@ -1507,14 +1523,19 @@ bool CSG_PG_Connection::Raster_Load(CSG_Data_Manager &Grids, const CSG_String &T
 			return( false );
 		}
 
-		pGrid->Set_Name(Table + " [" + Info[iBand].asString(1) + "]");
+		pGrid->Set_Name(Table + " [" + Info[iBand].asString("name") + "]");
 
-		Add_MetaData(*pGrid, Table + CSG_String::Format(":rid=%d", Info[iBand].asInt(0))).Add_Child("ID", Info[iBand].asInt(0));
+		Add_MetaData(*pGrid, Table + CSG_String::Format(":rid=%d", Info[iBand].asInt("rid"))).Add_Child("ID", Info[iBand].asInt("rid"));
 
 		Grids.Add(pGrid);
 	}
 
 	//-----------------------------------------------------
+	if( pInfo )
+	{
+		pInfo->Create(Info);
+	}
+
 	return( true );
 }
 
@@ -1524,7 +1545,9 @@ bool CSG_PG_Connection::Raster_Load(CSG_Parameter_Grid_List *pGrids, const CSG_S
 	//-----------------------------------------------------
 	CSG_Data_Manager	Grids;
 
-	if( !Raster_Load(Grids, Table, Where, Order) )
+	CSG_Table	Info;
+
+	if( !Raster_Load(Grids, Table, Where, Order, &Info) )
 	{
 		return( false );
 	}
@@ -1545,10 +1568,9 @@ bool CSG_PG_Connection::Raster_Load(CSG_Parameter_Grid_List *pGrids, const CSG_S
 		{
 			CSG_Grids	*pCollection	= SG_Create_Grids();
 
-			pCollection->Add_Attribute( "ID", SG_DATATYPE_Int   );
-			pCollection->Add_Attribute("RID", SG_DATATYPE_String);
-			pCollection->Set_Z_Attribute(1);
-			pCollection->Del_Attribute(0);
+			pCollection->Get_Attributes_Ptr()->Create(&Info);
+
+			pCollection->Set_Z_Attribute(0);
 
 			CSG_String	rids;
 
@@ -1560,7 +1582,7 @@ bool CSG_PG_Connection::Raster_Load(CSG_Parameter_Grid_List *pGrids, const CSG_S
 
 				if( !rid.is_Empty() )
 				{
-					pCollection->Get_Attributes(iGrid).Set_Value(1, rid);
+					pCollection->Get_Attributes(iGrid).Assign(Info.Find_Record(0, rid));
 
 					if( !rids.is_Empty() )
 					{
@@ -1671,6 +1693,105 @@ bool CSG_PG_Connection::Raster_Save(CSG_Grid *pGrid, int SRID, const CSG_String 
 	}
 
 	Add_MetaData(*pGrid, Table + CSG_String::Format(":rid=%d", rid));
+
+	return( true );
+}
+
+//---------------------------------------------------------
+bool CSG_PG_Connection::Rasters_Save(CSG_Grids *pGrids, int SRID, const CSG_String &_Table)
+{
+	const CSG_String	Geometry	= "raster";
+
+	CSG_String	Table(_Table);	Table.Make_Lower();
+
+	if( !pGrids || Table_Exists(Table) )
+	{
+		return( false );
+	}
+
+	//-----------------------------------------------------
+	{
+		CSG_String	SQL;
+
+		for(int iField=0; iField<pGrids->Get_Attributes().Get_Field_Count(); iField++)
+		{
+			SQL	+= CSG_String::Format(", %s ", pGrids->Get_Attributes().Get_Field_Name(iField));
+			SQL	+= Get_Type_To_SQL(pGrids->Get_Attributes().Get_Field_Type(iField), pGrids->Get_Attributes().Get_Field_Length(iField));
+		}
+
+		if( !Execute("CREATE TABLE \"" + Table + "\" (\"rid\" serial PRIMARY KEY, \"" + Geometry + "\" raster" + SQL + ")") )
+		{
+			return( false );
+		}
+	}
+
+	//-----------------------------------------------------
+	bool	bBinary	= false;	// binary raster export not (yet??!!) supported
+
+	CSG_String	Copy	= "COPY \"" + Table + "\" (\"" + Geometry + "\") FROM STDIN";	if( bBinary )	Copy	+= " WITH (FORMAT 'binary')";
+
+	//-----------------------------------------------------
+	for(int i=0; i<pGrids->Get_Grid_Count(); i++)
+	{
+		SG_UI_Process_Set_Text(CSG_String::Format("%s: [%d/%d]", _TL("export grid"), i + 1, pGrids->Get_Grid_Count()));
+
+		PGresult	*pResult	= PQexec(m_pgConnection, Copy);
+
+		if( PQresultStatus(pResult) != PGRES_COPY_IN )
+		{
+			PQclear(pResult);
+
+			_Error_Message(_TL("Raster band export"), m_pgConnection);
+
+			return( false );
+		}
+
+		PQclear(pResult);
+
+		//-------------------------------------------------
+		CSG_Bytes	Grid;
+
+		if( CSG_Grid_OGIS_Converter::to_WKBinary(Grid, pGrids->Get_Grid_Ptr(i), SRID) )
+		{
+			if( bBinary )
+			{
+				PQputCopyData(m_pgConnection, (const char *)Grid.Get_Bytes(), Grid.Get_Count());
+			}
+			else
+			{
+				CSG_String	hex(Grid.toHexString());
+
+				PQputCopyData(m_pgConnection, hex, (int)hex.Length());
+			}
+
+			PQputCopyEnd (m_pgConnection, NULL);
+		}
+
+		//-------------------------------------------------
+		CSG_Table	Info;	Table_Load(Info, Table, "rid");	// CSG_String::Format("SELECT currval('%s_rid_seq')", Table.c_str()));
+
+		int	rid	= Info.Get_Count() > 0 ? Info[Info.Get_Count() - 1].asInt(0) : i + 1;
+
+		CSG_String	SQL;
+
+		for(int iField=0; iField<pGrids->Get_Attributes().Get_Field_Count(); iField++)
+		{
+			if( iField > 0 )
+			{
+				SQL	+= ", ";
+			}
+
+			SQL	+= CSG_String::Format("%s='%s'",
+				pGrids->Get_Attributes().Get_Field_Name(iField),
+				pGrids->Get_Attributes(i).asString(iField)
+			);
+		}
+
+		Execute(CSG_String::Format("UPDATE %s SET %s WHERE rid=%d", Table.c_str(), SQL.c_str(), rid));
+	}
+
+	//-----------------------------------------------------
+	Add_MetaData(*pGrids, Table);
 
 	return( true );
 }

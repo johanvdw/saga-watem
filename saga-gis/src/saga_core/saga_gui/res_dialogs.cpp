@@ -87,6 +87,8 @@
 #include "wksp_map_manager.h"
 #include "wksp_map.h"
 
+#include "wksp_data_manager.h"
+
 
 ///////////////////////////////////////////////////////////
 //														 //
@@ -224,14 +226,16 @@ bool DLG_Get_FILE_Filter_GDAL_Read(int Type, wxString &Filter)
 
 	if( Type == 2 || Type == 1 )	// vector
 	{
-		ADD_FILTER("shp");
+		ADD_FILTER("shp"     );
+		ADD_FILTER("json"    );
+		ADD_FILTER("geojson" );
 	}
 
-	if( Type == 2 )	// all recognized
+	if( Type == 2 )					// all recognized
 	{
 		ADD_FILTER("sprj"    );
-		ADD_FILTER("sg-pts-z");
 		ADD_FILTER("sg-pts"  );
+		ADD_FILTER("sg-pts-z");
 		ADD_FILTER("spc"     );
 		ADD_FILTER("las"     );
 		ADD_FILTER("txt"     );
@@ -311,14 +315,44 @@ wxString DLG_Get_FILE_Filter(int ID_DLG)
 		));
 
 	case ID_DLG_GRID_SAVE:
-		return( wxString::Format(
-			"%s (*.sgrd)|*.sgrd|"
-			"%s (*.sg-grd-z)|*.sg-grd-z|"
-			"%s|*.*",
-			_TL("SAGA Grid Files"),
-			_TL("SAGA Compressed Grid Files"),
-			_TL("All Files")
-		));
+		switch( SG_Grid_Get_File_Format_Default() )
+		{
+		default:	// SAGA Compressed Grid File (*.sg-grd-z)
+			return( wxString::Format(
+				"%s (*.sg-grd-z)|*.sg-grd-z|"
+				"%s (*.sg-grd)|*.sg-grd|"
+				"%s (*.sgrd)|*.sgrd|"
+				"%s|*.*",
+				_TL("SAGA Compressed Grid Files"),
+				_TL("SAGA Grid Files"),
+				_TL("SAGA Grid Files (old extension)"),
+				_TL("All Files")
+			));
+
+		case GRID_FILE_FORMAT_Binary:	// SAGA Grid File (*.sg-grd)
+			return( wxString::Format(
+				"%s (*.sg-grd)|*.sg-grd|"
+				"%s (*.sg-grd-z)|*.sg-grd-z|"
+				"%s (*.sgrd)|*.sgrd|"
+				"%s|*.*",
+				_TL("SAGA Grid Files"),
+				_TL("SAGA Compressed Grid Files"),
+				_TL("SAGA Grid Files (old extension)"),
+				_TL("All Files")
+			));
+
+		case GRID_FILE_FORMAT_Binary_old:	// SAGA Grid File (*.sgrd)
+			return( wxString::Format(
+				"%s (*.sgrd)|*.sgrd|"
+				"%s (*.sg-grd-z)|*.sg-grd-z|"
+				"%s (*.sg-grd)|*.sg-grd|"
+				"%s|*.*",
+				_TL("SAGA Grid Files (old extension)"),
+				_TL("SAGA Compressed Grid Files"),
+				_TL("SAGA Grid Files"),
+				_TL("All Files")
+			));
+		}
 
 	//-----------------------------------------------------
 	case ID_DLG_GRIDS_OPEN:
@@ -357,12 +391,44 @@ wxString DLG_Get_FILE_Filter(int ID_DLG)
 		));
 
 	case ID_DLG_SHAPES_SAVE:
-		return( wxString::Format(
-			"%s (*.shp)|*.shp|"
-			"%s|*.*",
-			_TL("ESRI Shape Files"),
-			_TL("All Files")
-		));
+		switch( SG_Shapes_Get_File_Format_Default() )
+		{
+		default:	// ESRI Shape File (*.shp)
+			return( wxString::Format(
+				"%s (*.shp)|*.shp|"
+				"%s (*.gpkg)|*.gpkg|"
+				"%s (*.geojson)|*.geojson|"
+				"%s|*.*",
+				_TL("ESRI Shape Files"),
+				_TL("GeoPackage Files"),
+				_TL("GeoJSON Files"),
+				_TL("All Files")
+			));
+
+		case SHAPE_FILE_FORMAT_GeoPackage:	// GeoPackage (*.gpkg)
+			return( wxString::Format(
+				"%s (*.gpkg)|*.gpkg|"
+				"%s (*.shp)|*.shp|"
+				"%s (*.geojson)|*.geojson|"
+				"%s|*.*",
+				_TL("GeoPackage Files"),
+				_TL("ESRI Shape Files"),
+				_TL("GeoJSON Files"),
+				_TL("All Files")
+			));
+
+		case SHAPE_FILE_FORMAT_GeoJSON   :	// GeoJSON (*.geojson)
+			return( wxString::Format(
+				"%s (*.geojson)|*.geojson|"
+				"%s (*.shp)|*.shp|"
+				"%s (*.gpkg)|*.gpkg|"
+				"%s|*.*",
+				_TL("GeoJSON Files"),
+				_TL("ESRI Shape Files"),
+				_TL("GeoPackage Files"),
+				_TL("All Files")
+			));
+		}
 
 	//-----------------------------------------------------
 	case ID_DLG_TABLE_OPEN:

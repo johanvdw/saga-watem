@@ -98,6 +98,7 @@ CSG_String Get_Info(int i)
 #include "gdal_export_geotiff.h"
 #include "gdal_import_netcdf.h"
 #include "gdal_import_wms.h"
+#include "gdal_import_aster.h"
 #include "gdal_catalogue.h"
 
 #include "ogr_import.h"
@@ -131,12 +132,13 @@ CSG_Tool *		Create_Tool(int i)
 	case  6:	return( SG_Get_GDAL_Drivers().Get_Driver("netCDF") ? new CGDAL_Import_NetCDF : TLB_INTERFACE_SKIP_TOOL );
 
 	case  9:	return( new CGDAL_Import_WMS );
+	case 11:	return( new CGDAL_Import_ASTER );
 
 	case 10:	return( new CGDAL_Formats );
 
 
 	//-----------------------------------------------------
-	case 11:	// initializations
+	case 12:	// initializations
 
 		CPLSetErrorHandler(CPLQuietErrorHandler);
 

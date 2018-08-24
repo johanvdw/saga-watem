@@ -71,69 +71,133 @@
 //---------------------------------------------------------
 CPC_Thinning_Simple::CPC_Thinning_Simple(void)
 {
+	Set_Name		(_TL("Point Cloud Thinning (Simple)"));
 
-	Set_Name(_TL("Point Cloud Thinning (simple)"));
-
-	Set_Author(SG_T("Volker Wichmann (c) 2010, LASERDATA GmbH"));
+	Set_Author		("Volker Wichmann (c) 2010, LASERDATA GmbH");
 
 	Set_Description	(_TW(
-		"The tool can be used to remove every i-th point from a point cloud. This thinning "
-		"method is most suited for data in chronological order.\n\n")
-	);
-
+		"This simple thinning tool reduces the number of points in a point cloud "
+		"by sequential point removal. It is therefore most suited for points "
+		"stored in chronological order. "
+	));
 
 	//-----------------------------------------------------
 	Parameters.Add_PointCloud(
-		NULL	, "INPUT"		,_TL("Input"),
-		_TL("Point Cloud to drop attribute from."),
+		"", "INPUT"		,_TL("Points"),
+		_TL(""),
 		PARAMETER_INPUT
 	);
 
 	Parameters.Add_PointCloud(
-		NULL	, "RESULT"		, _TL("Result"),
-		_TL("Resulting Point Cloud."),
-		PARAMETER_OUTPUT
+		"", "RESULT"	, _TL("Thinned Points"),
+		_TL(""),
+		PARAMETER_OUTPUT_OPTIONAL
 	);
 
-	Parameters.Add_Value(
-		NULL	, "STEP"		, _TL("Stepwidth"),
-		_TL("Remove every i-th point."),
-		PARAMETER_TYPE_Int, 2, 2, true
+	Parameters.Add_Double(
+		"", "PERCENT"	, _TL("Percent"),
+		_TL("Reduce the number of points to this percentage."),
+		50, 0, true, 100, true
 	);
 
+	Parameters.Add_Int(
+		"", "NUMBER"	, _TL("Number of Points"),
+		_TL(""),
+		0, 0, true
+	)->Set_UseInCMD(false);
 }
-
-//---------------------------------------------------------
-CPC_Thinning_Simple::~CPC_Thinning_Simple(void)
-{}
 
 
 ///////////////////////////////////////////////////////////
 //														 //
-//														 //
+///////////////////////////////////////////////////////////
+
+//---------------------------------------------------------
+int CPC_Thinning_Simple::On_Parameter_Changed(CSG_Parameters *pParameters, CSG_Parameter *pParameter)
+{
+	CSG_PointCloud	*pPoints	= pParameters->Get("INPUT")->asPointCloud();
+
+	pParameters->Set_Enabled("NUMBER", pPoints != NULL);
+
+	if( pPoints )
+	{
+		if( SG_STR_CMP(pParameter->Get_Identifier(), "NUMBER" ) )
+		{
+			pParameters->Set_Parameter("NUMBER", (int)(pPoints->Get_Point_Count() * pParameters->Get("PERCENT")->asDouble() / 100.0));
+		}
+		else if( pParameter->asInt() < pPoints->Get_Point_Count() )
+		{
+			pParameters->Set_Parameter("PERCENT", 100.0 * pParameter->asInt() / pPoints->Get_Point_Count());
+		}
+		else
+		{
+			pParameters->Set_Parameter("PERCENT", 100.0);
+			pParameters->Set_Parameter("NUMBER" , pPoints->Get_Point_Count());
+		}
+	}
+
+	return( CSG_Tool::On_Parameter_Changed(pParameters, pParameter) );
+}
+
+
+///////////////////////////////////////////////////////////
 //														 //
 ///////////////////////////////////////////////////////////
 
 //---------------------------------------------------------
 bool CPC_Thinning_Simple::On_Execute(void)
 {
-	CSG_PointCloud		*pInput, *pResult;
-	int					step;
+	CSG_PointCloud	*pPoints	= Parameters("INPUT")->asPointCloud();
 
-	pInput				= Parameters("INPUT")->asPointCloud();
-	pResult				= Parameters("RESULT")->asPointCloud();
-	step				= Parameters("STEP")->asInt() - 1;
+	double	d	= pPoints->Get_Point_Count() * Parameters("PERCENT")->asDouble() / 100.0;
 
+	int n	= (int)d;
 
-	pResult->Create(pInput);
-	pResult->Assign(pInput);
-	pResult->Set_Name(CSG_String::Format(SG_T("%s_thinned"), pInput->Get_Name()));
-
-	for (int i=step; i<pInput->Get_Point_Count() && Set_Progress(i, pInput->Get_Point_Count()); i+=step)
+	if( n < 1 )
 	{
-		pResult->Del_Point(i);
+		Error_Set(_TL("Execution stopped, because this would delete all points."));
+
+		return( false );
+	}
+	else if( n >= pPoints->Get_Point_Count() - 1 )
+	{
+		Error_Set(_TL("Execution stopped, because this would delete no point at all."));
+
+		return( false );
 	}
 
+	d	= pPoints->Get_Point_Count() / (double)n;
+
+	//-----------------------------------------------------
+	if( Parameters("RESULT")->asPointCloud() && Parameters("RESULT")->asPointCloud() != pPoints )
+	{
+		CSG_PointCloud	*pResult	= Parameters("RESULT")->asPointCloud();
+
+		pResult->Create(pPoints);
+
+		pResult->Set_Name(CSG_String::Format("%s [%.1f%%]", pPoints->Get_Name(), Parameters("PERCENT")->asDouble()));
+
+		for(int i=0; i<n && Set_Progress(i, n); i++)
+		{
+			pResult->Add_Record(pPoints->Get_Record((int)(i * d)));
+		}
+	}
+
+	//-----------------------------------------------------
+	else
+	{
+		pPoints->Select();
+
+		for(int i=0; i<n && Set_Progress(i, n); i++)
+		{
+			pPoints->Select((int)(i * d), true);
+		}
+
+		pPoints->Inv_Selection();
+		pPoints->Del_Selection();
+
+		DataObject_Update(pPoints);
+	}
 
 	//-----------------------------------------------------
 	return( true );

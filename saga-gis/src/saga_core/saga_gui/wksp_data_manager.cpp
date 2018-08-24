@@ -161,7 +161,7 @@ CWKSP_Data_Manager::CWKSP_Data_Manager(void)
 
 	m_Parameters.Add_Choice("NODE_GENERAL",
 		"PROJECT_DB_REOPEN"		, _TL("Reopen Database Connections"),
-		_TL("Reopen PostgreSQL database connections. Warning: if set to true account information including unencrypted paswords for automatic connection will be stored."),
+		_TL("Reopen PostgreSQL database connections. Warning: if set to true account information including unencrypted passwords for automatic connection will be stored."),
 		CSG_String::Format("%s|%s|",
 			_TL("no"),
 			_TL("yes")
@@ -178,6 +178,12 @@ CWKSP_Data_Manager::CWKSP_Data_Manager(void)
 		"NUMBERING"				, _TL("Numbering of Data Sets"),
 		_TL("Leading zeros for data set numbering. Set to -1 for not using numbers at all."),
 		m_Numbering = 2, -1, true
+	);
+
+	m_Parameters.Add_Bool("NODE_GENERAL",
+		"NAME_BY_FILE"			, _TL("Use File Name for Naming"),
+		_TL("Use file name to name a data set, when it has been loaded from file."),
+		false
 	);
 
 	m_Parameters.Add_Colors("NODE_GENERAL",
@@ -245,6 +251,16 @@ CWKSP_Data_Manager::CWKSP_Data_Manager(void)
 	m_Parameters.Add_Node("",
 		"NODE_GRID"				, _TL("Grids"),
 		_TL("")
+	);
+
+	m_Parameters.Add_Choice("NODE_GRID",
+		"GRID_FMT_DEFAULT"		, _TL("Default Output Format"),
+		_TL(""),
+		CSG_String::Format("%s|%s|%s|",
+			_TL("SAGA Compressed Grid File (*.sg-grd-z)"),
+			_TL("SAGA Grid File (*.sg-grd)"),
+			_TL("SAGA Grid File (*.sgrd)")
+		), 2
 	);
 
 	m_Parameters.Add_Int("NODE_GRID",
@@ -316,18 +332,48 @@ CWKSP_Data_Manager::CWKSP_Data_Manager(void)
 	);
 
 	//-----------------------------------------------------
+	m_Parameters.Add_Node("",
+		"NODE_SHAPES"			, _TL("Shapes"),
+		_TL("")
+	);
+
+	m_Parameters.Add_Choice("NODE_SHAPES",
+		"SHAPES_FMT_DEFAULT"	, _TL("Default Output Format"),
+		_TL(""),
+		CSG_String::Format("%s|%s|%s|",
+			_TL("ESRI Shape File (*.shp)"),
+			_TL("GeoPackage (*.gpkg)"),
+			_TL("GeoJSON (*.geojson)")
+		), 0
+	);
+
+	//-----------------------------------------------------
 	CONFIG_Read("/DATA", &m_Parameters);
 
-	SG_DataObject_Set_Max_Samples (m_Parameters("DATA_SAMPLE_MAX"     )->asInt   ());
+	SG_DataObject_Set_Max_Samples    (m_Parameters("DATA_SAMPLE_MAX"     )->asInt   ());
 
-	SG_Grid_Cache_Set_Mode        (m_Parameters("GRID_CACHE_MODE"     )->asInt   ());
-	SG_Grid_Cache_Set_Threshold_MB(m_Parameters("GRID_CACHE_THRSHLD"  )->asDouble());
-	SG_Grid_Cache_Set_Directory   (m_Parameters("GRID_CACHE_TMPDIR"   )->asString());
+	SG_Grid_Cache_Set_Mode           (m_Parameters("GRID_CACHE_MODE"     )->asInt   ());
+	SG_Grid_Cache_Set_Threshold_MB   (m_Parameters("GRID_CACHE_THRSHLD"  )->asDouble());
+	SG_Grid_Cache_Set_Directory      (m_Parameters("GRID_CACHE_TMPDIR"   )->asString());
 
-	CSG_Grid_System::Set_Precision(m_Parameters("GRID_COORD_PRECISION")->asInt   ());
+	CSG_Grid_System::Set_Precision   (m_Parameters("GRID_COORD_PRECISION")->asInt   ());
 
-	SG_Set_History_Depth          (m_Parameters("HISTORY_DEPTH"       )->asInt   ());
-	SG_Set_History_Ignore_Lists   (m_Parameters("HISTORY_LISTS"       )->asInt   ());
+	SG_Set_History_Depth             (m_Parameters("HISTORY_DEPTH"       )->asInt   ());
+	SG_Set_History_Ignore_Lists      (m_Parameters("HISTORY_LISTS"       )->asInt   ());
+
+	switch( m_Parameters("GRID_FMT_DEFAULT")->asInt() )
+	{
+	default: SG_Grid_Set_File_Format_Default(GRID_FILE_FORMAT_Compressed); break;
+	case  1: SG_Grid_Set_File_Format_Default(GRID_FILE_FORMAT_Binary    ); break;
+	case  2: SG_Grid_Set_File_Format_Default(GRID_FILE_FORMAT_Binary_old); break;
+	}
+
+	switch( m_Parameters("SHAPES_FMT_DEFAULT")->asInt() )
+	{
+	default: SG_Shapes_Set_File_Format_Default(SHAPE_FILE_FORMAT_ESRI      ); break;
+	case  1: SG_Shapes_Set_File_Format_Default(SHAPE_FILE_FORMAT_GeoPackage); break;
+	case  2: SG_Shapes_Set_File_Format_Default(SHAPE_FILE_FORMAT_GeoJSON   ); break;
+	}
 
 	m_Numbering	= m_Parameters("NUMBERING")->asInt();
 }
@@ -663,16 +709,30 @@ void CWKSP_Data_Manager::Parameters_Changed(void)
 		return;
 	}
 
-	SG_DataObject_Set_Max_Samples (m_Parameters("DATA_SAMPLE_MAX"     )->asInt   ());
+	SG_DataObject_Set_Max_Samples    (m_Parameters("DATA_SAMPLE_MAX"     )->asInt   ());
 
-	SG_Grid_Cache_Set_Mode        (m_Parameters("GRID_CACHE_MODE"     )->asInt   ());
-	SG_Grid_Cache_Set_Threshold_MB(m_Parameters("GRID_CACHE_THRSHLD"  )->asDouble());
-	SG_Grid_Cache_Set_Directory   (m_Parameters("GRID_CACHE_TMPDIR"   )->asString());
+	SG_Grid_Cache_Set_Mode           (m_Parameters("GRID_CACHE_MODE"     )->asInt   ());
+	SG_Grid_Cache_Set_Threshold_MB   (m_Parameters("GRID_CACHE_THRSHLD"  )->asDouble());
+	SG_Grid_Cache_Set_Directory      (m_Parameters("GRID_CACHE_TMPDIR"   )->asString());
 
-	CSG_Grid_System::Set_Precision(m_Parameters("GRID_COORD_PRECISION")->asInt   ());
+	CSG_Grid_System::Set_Precision   (m_Parameters("GRID_COORD_PRECISION")->asInt   ());
 
-	SG_Set_History_Depth          (m_Parameters("HISTORY_DEPTH"       )->asInt   ());
-	SG_Set_History_Ignore_Lists   (m_Parameters("HISTORY_LISTS"       )->asInt   ());
+	SG_Set_History_Depth             (m_Parameters("HISTORY_DEPTH"       )->asInt   ());
+	SG_Set_History_Ignore_Lists      (m_Parameters("HISTORY_LISTS"       )->asInt   ());
+
+	switch( m_Parameters("GRID_FMT_DEFAULT")->asInt() )
+	{
+	default: SG_Grid_Set_File_Format_Default(GRID_FILE_FORMAT_Compressed); break;
+	case  1: SG_Grid_Set_File_Format_Default(GRID_FILE_FORMAT_Binary    ); break;
+	case  2: SG_Grid_Set_File_Format_Default(GRID_FILE_FORMAT_Binary_old); break;
+	}
+
+	switch( m_Parameters("SHAPES_FMT_DEFAULT")->asInt() )
+	{
+	default: SG_Shapes_Set_File_Format_Default(SHAPE_FILE_FORMAT_ESRI      ); break;
+	case  1: SG_Shapes_Set_File_Format_Default(SHAPE_FILE_FORMAT_GeoPackage); break;
+	case  2: SG_Shapes_Set_File_Format_Default(SHAPE_FILE_FORMAT_GeoJSON   ); break;
+	}
 
 	m_Numbering	= m_Parameters("NUMBERING")->asInt();
 
@@ -1068,12 +1128,12 @@ bool CWKSP_Data_Manager::_Modified_Get(CSG_Parameters *pParameters, CWKSP_Base_I
 
 	switch( pItem->Get_Type() )
 	{
-	case WKSP_ITEM_Table     : Extension = "txt"     ; Filter = DLG_Get_FILE_Filter(ID_DLG_TABLE_SAVE     ); break;
-	case WKSP_ITEM_Shapes    : Extension = "shp"     ; Filter = DLG_Get_FILE_Filter(ID_DLG_SHAPES_SAVE    ); break;
-	case WKSP_ITEM_TIN       : Extension = "shp"     ; Filter = DLG_Get_FILE_Filter(ID_DLG_TIN_SAVE       ); break;
-	case WKSP_ITEM_PointCloud: Extension = "sg-pts-z"; Filter = DLG_Get_FILE_Filter(ID_DLG_POINTCLOUD_SAVE); break;
-	case WKSP_ITEM_Grid      : Extension = "sgrd"    ; Filter = DLG_Get_FILE_Filter(ID_DLG_GRID_SAVE      ); break;
-	case WKSP_ITEM_Grids     : Extension = "sg-gds-z"; Filter = DLG_Get_FILE_Filter(ID_DLG_GRIDS_SAVE     ); break;
+	case WKSP_ITEM_Table     : Filter = DLG_Get_FILE_Filter(ID_DLG_TABLE_SAVE     ); Extension = "txt"     ; break;
+	case WKSP_ITEM_Shapes    : Filter = DLG_Get_FILE_Filter(ID_DLG_SHAPES_SAVE    ); Extension = SG_Shapes_Get_File_Extension_Default().c_str(); break;
+	case WKSP_ITEM_TIN       : Filter = DLG_Get_FILE_Filter(ID_DLG_TIN_SAVE       ); Extension = SG_Shapes_Get_File_Extension_Default().c_str(); break;
+	case WKSP_ITEM_PointCloud: Filter = DLG_Get_FILE_Filter(ID_DLG_POINTCLOUD_SAVE); Extension = "sg-pts-z"; break;
+	case WKSP_ITEM_Grid      : Filter = DLG_Get_FILE_Filter(ID_DLG_GRID_SAVE      ); Extension = SG_Grid_Get_File_Extension_Default().c_str(); break;
+	case WKSP_ITEM_Grids     : Filter = DLG_Get_FILE_Filter(ID_DLG_GRIDS_SAVE     ); Extension = "sg-gds-z"; break;
 	default:	return( false );
 	}
 
@@ -1116,22 +1176,19 @@ bool CWKSP_Data_Manager::_Modified_Get(CSG_Parameters *pParameters, CWKSP_Base_I
 	}
 
 	//-----------------------------------------------------
-	CSG_Parameter	*pNode;
+	CSG_String	Manager, Object;
 
-	if( (pNode = pParameters->Get_Parameter(CSG_String::Format("%d", (long)pItem->Get_Manager()))) == NULL )
+	Manager.Printf("%p", pItem->Get_Manager());
+
+	if( pParameters->Get_Parameter(Manager) == NULL )
 	{
-		pNode	= pParameters->Add_Node(NULL, CSG_String::Format("%d", (long)pItem->Get_Manager()), pItem->Get_Manager()->Get_Name().wx_str(), SG_T(""));
+		pParameters->Add_Node("", Manager, pItem->Get_Manager()->Get_Name().wx_str(), "");
 	}			
 
-	pNode	= pParameters->Add_Bool(
-		pNode, CSG_String::Format("%d"     , (long)pObject), pItem->Get_Name().wx_str(),
-		"", false
-	);
+	Object.Printf("%p", pObject);
 
-	pParameters->Add_FilePath(
-		pNode, CSG_String::Format("%d FILE", (long)pObject), _TL("File"),
-		"", Filter, Path.GetFullPath(), true
-	);
+	pParameters->Add_Bool(Manager, Object, pItem->Get_Name().wx_str(), "", false);
+	pParameters->Add_FilePath(Object, Object + "FILE", _TL("File"), "", Filter, Path.GetFullPath(), true);
 
 	return( true );
 }
@@ -1141,15 +1198,15 @@ bool CWKSP_Data_Manager::_Modified_Save(CSG_Parameters *pParameters)
 {
 	for(int i=0; i<pParameters->Get_Count(); i++)
 	{
-		long long		Pointer;
+		void			*Pointer;
 		CSG_Data_Object	*pObject;
 		CSG_Parameter	*pParameter	= pParameters->Get_Parameter(i);
 
 		if(	pParameter->Get_Type() == PARAMETER_TYPE_Bool && pParameter->asBool()
-		&&  SG_SSCANF(pParameter->Get_Identifier(), SG_T("%lld"), (&Pointer)) == 1
+		&&  SG_SSCANF(pParameter->Get_Identifier(), SG_T("%p"), &Pointer) == 1
 		&&  SG_Get_Data_Manager().Exists(pObject = (CSG_Data_Object *)Pointer) )
 		{
-			pParameter	= pParameters->Get_Parameter(CSG_String::Format(SG_T("%d FILE"), (long)pObject));
+			pParameter	= pParameters->Get_Parameter(CSG_String::Format("%pFILE", pObject));
 
 			if(	pParameter && pParameter->asString() && pParameter->asString()[0] )
 			{

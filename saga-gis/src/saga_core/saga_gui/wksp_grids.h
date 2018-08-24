@@ -99,7 +99,7 @@ public:
 	virtual bool				On_Command				(int Cmd_ID);
 	virtual bool				On_Command_UI			(wxUpdateUIEvent &event);
 
-	virtual wxString			Get_Value				(CSG_Point ptWorld, double Epsilon)	{	return( "" );	}
+	virtual wxString			Get_Value				(CSG_Point ptWorld, double Epsilon);
 	virtual double				Get_Value_Minimum		(void);
 	virtual double				Get_Value_Maximum		(void);
 	virtual double				Get_Value_Range			(void);
@@ -147,9 +147,9 @@ private:
 
 	void						_Save_Image				(void);
 
-	void						_Draw_Grid_Points		(CWKSP_Map_DC &dc_Map, CSG_Grid *pBands[3], TSG_Grid_Resampling Resampling);
-	void						_Draw_Grid_Line			(CWKSP_Map_DC &dc_Map, CSG_Grid *pBands[3], TSG_Grid_Resampling Resampling, int Mode, int yDC, int axDC, int bxDC);
-	void						_Draw_Grid_Cells		(CWKSP_Map_DC &dc_Map, CSG_Grid *pBands[3]);
+	void						_Draw_Grid_Nodes		(CWKSP_Map_DC &dc_Map, TSG_Grid_Resampling Resampling);
+	void						_Draw_Grid_Nodes		(CWKSP_Map_DC &dc_Map, TSG_Grid_Resampling Resampling, CSG_Grid *pBands[3], bool bBandWise, int yDC, int axDC, int bxDC);
+	void						_Draw_Grid_Cells		(CWKSP_Map_DC &dc_Map);
 
 };
 

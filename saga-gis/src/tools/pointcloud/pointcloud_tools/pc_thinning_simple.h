@@ -84,17 +84,15 @@ class CPC_Thinning_Simple : public CSG_Tool
 {
 public:
 	CPC_Thinning_Simple(void);
-	virtual ~CPC_Thinning_Simple(void);
 
 	virtual CSG_String			Get_MenuPath			(void)	{	return( _TL("Tools") );	}
 
 
 protected:
 
+	virtual int					On_Parameter_Changed	(CSG_Parameters *pParameters, CSG_Parameter *pParameter);
+
 	virtual bool				On_Execute				(void);
-
-
-private:
 
 };
 

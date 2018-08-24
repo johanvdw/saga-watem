@@ -141,9 +141,11 @@ public:
 
 protected:
 
-	bool						m_bVertices, m_bNoData;
+	bool						m_bNoData;
 
-	int							m_fValue, m_fNormal, m_fLabel, m_Label_Prec, m_Label_Eff, m_Edit_Mode, m_Edit_iPart, m_Edit_iPoint, m_Label_Eff_Size;
+	int							m_fValue, m_fNormal, m_bVertices,
+								m_fLabel, m_Label_Prec, m_Label_Eff, m_Label_Eff_Size,
+								m_Edit_Mode, m_Edit_iPart, m_Edit_iPoint;
 
 	wxColour					m_Edit_Color, m_Sel_Color, m_Label_Eff_Color;
 
@@ -168,16 +170,16 @@ protected:
 
 	bool						Get_Class_Color			(CSG_Shape *pShape, int &Color);
 
-	CSG_Parameter *				AttributeList_Add		(CSG_Parameter *pNode, const CSG_String &Identifier, const CSG_String &Name, const CSG_String &Description);
+	CSG_Parameter *				AttributeList_Add		(const CSG_String &ParentID, const CSG_String &Identifier, const CSG_String &Name, const CSG_String &Description);
 	void						AttributeList_Set		(CSG_Parameter *pFields, bool bAddNoField);
 
-	CSG_Parameter *				BrushList_Add			(CSG_Parameter *pNode, const CSG_String &Identifier, const CSG_String &Name, const CSG_String &Description);
-	wxBrushStyle				BrushList_Get_Style		(int Index);
+	CSG_Parameter *				BrushList_Add			(const CSG_String &ParentID, const CSG_String &Identifier, const CSG_String &Name, const CSG_String &Description);
+	wxBrushStyle				BrushList_Get_Style		(const CSG_String &Identifier);
 
-	CSG_Parameter *				PenList_Add				(CSG_Parameter *pNode, const CSG_String &Identifier, const CSG_String &Name, const CSG_String &Description);
-	int							PenList_Get_Style		(int Index);
+	CSG_Parameter *				PenList_Add				(const CSG_String &ParentID, const CSG_String &Identifier, const CSG_String &Name, const CSG_String &Description);
+	int							PenList_Get_Style		(const CSG_String &Identifier);
 
-	virtual void				Draw_Initialize			(CWKSP_Map_DC &dc_Map)												= 0;
+	virtual void				Draw_Initialize			(CWKSP_Map_DC &dc_Map, int Flags)												= 0;
 	virtual void				Draw_Shape				(CWKSP_Map_DC &dc_Map, CSG_Shape *pShape, int Selection)			= 0;
 	virtual void				Draw_Label				(CWKSP_Map_DC &dc_Map, CSG_Shape *pShape, const wxString &Label)	= 0;
 

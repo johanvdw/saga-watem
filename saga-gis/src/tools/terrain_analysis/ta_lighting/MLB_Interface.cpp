@@ -91,6 +91,7 @@ CSG_String Get_Info(int i)
 #include "HillShade.h"
 #include "Visibility_Point.h"
 #include "SolarRadiation.h"
+#include "SolarRadiationYear.h"
 #include "view_shed.h"
 #include "topographic_correction.h"
 #include "topographic_openness.h"
@@ -104,10 +105,14 @@ CSG_Tool * Create_Tool(int i)
 	case  0:	return( new CHillShade );
 	case  1:	return( new CVisibility_Point );
 	case  2:	return( new CSolarRadiation );
+	case  7:	return( new CSolarRadiationYear );
 	case  3:	return( new CView_Shed );
 	case  4:	return( new CTopographic_Correction );
 	case  5:	return( new CTopographic_Openness );
 	case  6:	return( new CVisibility_Points );
+		 
+	case  8:	return( NULL );
+	default:	return( TLB_INTERFACE_SKIP_TOOL );
 	}
 
 	return( NULL );

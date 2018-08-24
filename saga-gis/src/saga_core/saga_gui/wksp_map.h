@@ -133,13 +133,18 @@ public:
 	virtual void				Parameters_Changed		(void);
 
 	const CSG_Rect &			Get_Extent				(void)		{	return( m_Extents.Get_Extent() );	}
-	void						Set_Extent				(const CSG_Rect &Extent, bool bReset = false);
-	void						Set_Extent				(void);
-	void						Set_Extent_Full			(void);
-	void						Set_Extent_Active		(void);
-	void						Set_Extent_Selection	(void);
+	bool						Set_Extent				(const CSG_Rect &Extent, bool bReset = false);
+	bool						Set_Extent				(const CSG_Rect &Extent, const CSG_Projection &Projection);
+	bool						Set_Extent				(void);
+	bool						Set_Extent_Full			(void);
+	bool						Set_Extent_Active		(void);
+	bool						Set_Extent_Selection	(void);
 	bool						Set_Extent_Back			(bool bCheck_Only = false);
 	bool						Set_Extent_Forward		(bool bCheck_Only = false);
+
+	bool						is_Synchronising		(void);
+	void						Set_Synchronising		(bool bOn);
+	void						Lock_Synchronising		(bool bOn);
 
 	bool						is_North_Arrow			(void);
 	void						Set_North_Arrow			(bool bOn);
@@ -147,10 +152,11 @@ public:
 	bool						is_ScaleBar				(void);
 	void						Set_ScaleBar			(bool bOn);
 
-	bool						is_Synchronising		(void);
-	void						Set_Synchronising		(bool bOn);
-
 	bool						is_Image_Save_Mode		(void)	{	return( m_Img_bSave );		}
+
+	void						Set_Mouse_Position		(const TSG_Point &Point);
+	void						Set_CrossHair			(const TSG_Point &Point, const CSG_Projection &Projection);
+	void						Set_CrossHair_Off		(void);
 
 	bool						Update					(class CWKSP_Layer *pLayer, bool bMapOnly);
 	int							Get_Layer				(class CWKSP_Layer *pLayer);
@@ -217,7 +223,7 @@ protected:
 
 private:
 
-	bool						m_Img_bSave;
+	bool						m_Img_bSave, m_Sync_bLock;
 
 	int							m_Img_Type, m_Img_Count;
 
@@ -240,8 +246,7 @@ private:
 	class CVIEW_Layout_Info		*m_pLayout_Info;
 
 
-	void						_Set_Extent				(const CSG_Rect &Extent);
-	void						_Synchronise_Extents	(void);
+	bool						_Set_Extent				(const CSG_Rect &Extent);
 
 	void						_Img_Save				(wxString file, int type);
 	void						_Img_Save_On_Change		(void);
