@@ -4,7 +4,7 @@ CCalculate_Uparea::CCalculate_Uparea()
 {
 	Set_Name(_TL("3.1. Uparea berekening"));
 
-	Set_Version("1.7.3");
+	Set_Version("1.7.1");
 
 	Set_Author(_TL("Copyright (c) 2006 - 2016 by KULeuven. Converted to SAGA/C++ by Johan Van de Wauw"));
 
@@ -71,7 +71,7 @@ CCalculate_Uparea::CCalculate_Uparea()
 	Parameters.Add_Value(
 		NULL, "PIT_FLOW", "Flow from pits into closeby cells (within radius)", 
 		"Geeft aan of in de buurt van pits gezocht moet worden naar lagergelegen cellen waar dan nog water naar kan stromen. Gebruikt de maximale zoekstraal die hieronder bepaald wordt. ",
-		PARAMETER_TYPE_Bool, true
+		PARAMETER_TYPE_Bool, false
 	);
 
 	Parameters.Add_Value(

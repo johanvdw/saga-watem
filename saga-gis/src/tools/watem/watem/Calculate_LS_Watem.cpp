@@ -41,9 +41,9 @@ CCalculate_LS_Watem::CCalculate_LS_Watem(void)
 
 	Set_Name	(_TL("3.2. LS berekening"));
 
-	Set_Author	(_TL("Copyright (c) 2003 Olaf Conrad. Modified by Johan Van de Wauw (2016-2018) to make model identical to Watem"));
+	Set_Author	(_TL("Copyright (c) 2003 Olaf Conrad. Modified by Johan Van de Wauw (2016) to make model identical to Watem"));
 
-	Set_Version("1.7.2");
+	Set_Version("1.7.1");
 
 	Set_Description	(_TW(
 		"Berekening van de LS factor analoog aan de bereking in Watem/sedem."
@@ -269,7 +269,7 @@ double CCalculate_LS_Watem::Get_LS(int x, int y)
 				//opm: dit staat zo in oorspronkelijke pascal code - niet volgens documentatie
 				//Sfactor: = 3.0*(power(SIN(slope[i, j]), 0.8)) + 0.56
 
-				// op overleg met KUL werd vermeld dat we hier eventueel minimum van de twee zouden kunnen nemen. Werd aangepast
+				// op overleg met KUL werd vermeld dat we hier eventueel minimum van de twee zouden kunnen nemen. Nog niet aangepast
 				S = std::min(3.0 * pow(sin_Slope, 0.8) + 0.56, S);
 			}
 
