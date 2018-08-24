@@ -101,6 +101,7 @@ CSG_String Get_Info(int i)
 #include "thermal_belts.h"
 #include "snow_cover.h"
 #include "growing_degree_days.h"
+#include "climate_classification.h"
 
 
 //---------------------------------------------------------
@@ -126,6 +127,7 @@ CSG_Tool *		Create_Tool(int i)
 
 	case 10:	return( new CBioclimatic_Vars );
 	case 11:	return( new CTree_Growth );
+	case 20:	return( new CWater_Balance );
 	case 12:	return( new CWater_Balance_Interactive );
 
 	case 13:	return( new CWindeffect_Correction );
@@ -137,8 +139,10 @@ CSG_Tool *		Create_Tool(int i)
 	case 17:	return( new CSnow_Cover );
 	case 18:	return( new CGrowing_Degree_Days );
 
+	case 19:	return( new CClimate_Classification );
+
 	//-----------------------------------------------------
-	case 19:	return( NULL );
+	case 21:	return( NULL );
 	default:	return( TLB_INTERFACE_SKIP_TOOL );
 	}
 }

@@ -1,5 +1,5 @@
 /**********************************************************
- * Version $Id$
+ * Version $Id: climate_classification.h 1380 2012-04-26 12:02:19Z reklov_w $
  *********************************************************/
 
 ///////////////////////////////////////////////////////////
@@ -9,13 +9,13 @@
 //      System for Automated Geoscientific Analyses      //
 //                                                       //
 //                     Tool Library                      //
-//                       TIN_Tools                       //
+//                     climate_tools                     //
 //                                                       //
 //-------------------------------------------------------//
 //                                                       //
-//                    TIN_To_Shapes.h                    //
+//                climate_classification.h               //
 //                                                       //
-//                 Copyright (C) 2003 by                 //
+//                 Copyright (C) 2018 by                 //
 //                      Olaf Conrad                      //
 //                                                       //
 //-------------------------------------------------------//
@@ -43,9 +43,7 @@
 //                                                       //
 //    contact:    Olaf Conrad                            //
 //                Institute of Geography                 //
-//                University of Goettingen               //
-//                Goldschmidtstr. 5                      //
-//                37077 Goettingen                       //
+//                University of Hamburg                  //
 //                Germany                                //
 //                                                       //
 ///////////////////////////////////////////////////////////
@@ -60,8 +58,8 @@
 ///////////////////////////////////////////////////////////
 
 //---------------------------------------------------------
-#ifndef HEADER_INCLUDED__TIN_To_Shapes_H
-#define HEADER_INCLUDED__TIN_To_Shapes_H
+#ifndef HEADER_INCLUDED__climate_classification_H
+#define HEADER_INCLUDED__climate_classification_H
 
 
 ///////////////////////////////////////////////////////////
@@ -81,17 +79,38 @@
 ///////////////////////////////////////////////////////////
 
 //---------------------------------------------------------
-class CTIN_To_Shapes : public CSG_Tool
+class CClimate_Classification : public CSG_Tool_Grid
 {
 public:
-	CTIN_To_Shapes(void);
+	CClimate_Classification(void);
 
-	virtual CSG_String			Get_MenuPath	(void)	{	return( _TL("Conversion") );	}
+	virtual CSG_String			Get_MenuPath			(void)	{	return( _TL("Bioclimatology") );	}
+
+	typedef struct SClassInfo
+	{
+		int	ID, Color;	CSG_String	Name, Description;
+	}
+	TClassInfo;
 
 
 protected:
 
-	virtual bool				On_Execute		(void);
+	virtual int					On_Parameters_Enable	(CSG_Parameters *pParameters, CSG_Parameter *pParameter);
+
+	virtual bool				On_Execute				(void);
+
+
+private:
+
+	bool						Set_Classified			(CSG_Grid *pClasses, const TClassInfo Info[], int nClasses);
+
+	bool						Get_Values				(int x, int y, CSG_Parameter_Grid_List *pValues, CSG_Simple_Statistics &Values);
+
+	bool						is_North				(double T[]);
+
+	bool						Get_PSeasonal			(bool bNorth, double P[], CSG_Simple_Statistics &PWinter, CSG_Simple_Statistics &PSummer);
+
+	int 						Get_KoppenGeiger		(int Method, CSG_Simple_Statistics &T, CSG_Simple_Statistics &P);
 
 };
 
@@ -103,4 +122,4 @@ protected:
 ///////////////////////////////////////////////////////////
 
 //---------------------------------------------------------
-#endif // #ifndef HEADER_INCLUDED__TIN_To_Shapes_H
+#endif // #ifndef HEADER_INCLUDED__climate_classification_H
