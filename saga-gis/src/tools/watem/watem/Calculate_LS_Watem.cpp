@@ -178,14 +178,14 @@ double CCalculate_LS_Watem::Get_LS(int x, int y)
 		{
 			if (is_InGrid(
 				ix = system->Get_xTo(iDir, x),
-				iy = system->Get_yTo(iDir, y)) && (current_parcel == PRC->asInt(ix, iy)))
+				iy = system->Get_yTo(iDir, y)) && (current_parcel == PRC->asInt(ix, iy)) && !m_pDEM->is_NoData(ix,iy))
 			{
 				dz[i] = m_pDEM->asDouble(ix, iy) - z;
 				in_parcel[i] = true;
 			}
 			else if (is_InGrid(
 				ix = system->Get_xFrom(iDir, x),
-				iy = system->Get_yFrom(iDir, y)) && (current_parcel == PRC->asInt(ix, iy)))
+				iy = system->Get_yFrom(iDir, y)) && (current_parcel == PRC->asInt(ix, iy)) && !m_pDEM->is_NoData(ix, iy))
 			{
 				dz[i] = z - m_pDEM->asDouble(ix, iy);
 				in_parcel[i] = true;
