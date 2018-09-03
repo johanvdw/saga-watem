@@ -31,8 +31,6 @@ Create_Parcel_Grid::Create_Parcel_Grid()
 	Parameters.Add_Shapes(NULL, "GBA", "GRB Gba (gebouwaanhorigheid)", "GRB Gba (gebouwaanhorigheid)", PARAMETER_INPUT, SHAPE_TYPE_Polygon);
 	Parameters.Add_Shapes(NULL, "TRN", "GRB Trn (terrein)", "GRB Trn (Terrein) - enkel bepaalde klassen worden gebruikt", PARAMETER_INPUT, SHAPE_TYPE_Polygon);
 	Parameters.Add_Shapes(NULL, "KNW", "GRB Knw (Kunstwerk)", "GRB Knw (Kunstwerk)", PARAMETER_INPUT, SHAPE_TYPE_Polygon);
-
-
 	
 }
 
@@ -45,7 +43,8 @@ Create_Parcel_Grid::~Create_Parcel_Grid()
 CSG_Grid * BinaryShapetoGrid(CSG_Parameter* shape, const CSG_Grid_System &system, const int poly_type)
 {
 	CSG_Grid *  grid = new CSG_Grid(system, SG_DATATYPE_Bit);
-	SG_RUN_TOOL_ExitOnError("grid_gridding", 0,
+    bool result;
+	SG_RUN_TOOL(result, "grid_gridding", 0,
 		SG_TOOL_PARAMETER_SET("INPUT", shape)
 		&& SG_TOOL_PARAMETER_SET("TARGET_DEFINITION", 1)	// grid or grid system
 		&& SG_TOOL_PARAMETER_SET("GRID", grid)
