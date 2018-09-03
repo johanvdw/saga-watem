@@ -17,7 +17,7 @@ TLB_Interface.cpp\
 Tillage_Erosion.cpp\
 Water_Erosion.cpp\
 Create_Parcel_Grid.cpp\
-Parcel_filter.cpp\
+Parcel_Filter.cpp\
 Complete.cpp\
 MLB_Interface.h\
 Calculate_LS_Watem.h\
@@ -25,7 +25,7 @@ Calculate_Uparea.h\
 Tillage_Erosion.h\
 Complete.h\
 Create_Parcel_Grid.h\
-Parcel_filter.h\
+Parcel_Filter.h\
 Water_Erosion.h
 
 libwatem_la_LIBADD = $(top_srcdir)/src/saga_core/saga_api/libsaga_api.la
