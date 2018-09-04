@@ -12,6 +12,7 @@ AM_LDFLAGS         = -fPIC -shared -avoid-version
 pkglib_LTLIBRARIES = libwatem.la
 libwatem_la_SOURCES =\
 Calculate_LS_Watem.cpp\
+Calculate_C_Grid.cpp\
 Calculate_Uparea.cpp\
 TLB_Interface.cpp\
 Tillage_Erosion.cpp\
@@ -21,6 +22,7 @@ Parcel_Filter.cpp\
 Complete.cpp\
 MLB_Interface.h\
 Calculate_LS_Watem.h\
+Calculate_C_Grid.h\
 Calculate_Uparea.h\
 Tillage_Erosion.h\
 Complete.h\
