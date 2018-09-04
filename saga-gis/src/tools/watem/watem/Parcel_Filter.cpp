@@ -72,8 +72,8 @@ bool Parcel_Filter::On_Execute()
 			{
 				int ix = Get_xTo(i, x);
 				int iy = Get_yTo(i, y);
-				// all surrounding cells are added if they conatain data and are in the grid and in the same parcel
-				if (is_InGrid(ix, iy) && !(DEM->is_NoData(x,y)) && PRC->asInt(ix, iy) == current_prc)
+				// all surrounding cells are added if they contain data and are in the grid and in the same parcel
+				if (is_InGrid(ix, iy) && !(DEM->is_NoData(ix,iy)) && PRC->asInt(ix, iy) == current_prc)
 				{
 					sum += DEM->asDouble(ix, iy);
 					n++;
