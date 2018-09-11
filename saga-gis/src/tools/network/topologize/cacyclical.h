@@ -20,6 +20,8 @@ struct node
 {
     std::vector<int> from;
     std::vector<int> to;
+    std::vector<int> to_edge;
+
     std::map<int,double> upstream;
     std::vector<bool> finished;
     int order;
