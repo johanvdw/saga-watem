@@ -31,6 +31,8 @@ CAcyclical::CAcyclical(void)
         "",
         PARAMETER_OUTPUT);
 
+
+
 }
 
 CAcyclical::~CAcyclical(void)
@@ -41,12 +43,15 @@ bool CAcyclical::On_Execute(void)
     std::map<int, node> node_links;
     auto pInLines	= Parameters("INPUTLINES")->asShapes();
     auto pUpstream_Nodes	= Parameters("UPSTREAM_NODES")->asTable();
+    auto pUpstream_Edges	= Parameters("UPSTREAM_EDGES")->asTable();
 
     pUpstream_Nodes->Add_Field("node", SG_DATATYPE_Int);
     pUpstream_Nodes->Add_Field("upstream_nodes", SG_DATATYPE_Int);
     pUpstream_Nodes->Add_Field("proportion", SG_DATATYPE_Double);
 
-    pUpstreamEdges = Parameters("UPSTREAM_EDGES")->asTable();
+    pUpstream_Edges->Add_Field("edge", SG_DATATYPE_Int);
+    pUpstream_Edges->Add_Field("upstream_edges", SG_DATATYPE_Int);
+    pUpstream_Edges->Add_Field("proportion", SG_DATATYPE_Double);
 
     int start_field = pInLines->Get_Field("start_id");
     int end_field = pInLines->Get_Field("end_id");
@@ -57,6 +62,8 @@ bool CAcyclical::On_Execute(void)
         int start_id = pLine->Get_Value(start_field)->asInt();
         int end_id = pLine->Get_Value(end_field)->asInt();
         node_links[start_id].to.push_back(end_id);
+        node_links[start_id].to_edge.push_back(iLine);
+
         node_links[end_id].from.push_back(start_id);
         node_links[end_id].finished.push_back(false);
     }
@@ -142,6 +149,38 @@ bool CAcyclical::On_Execute(void)
         }
 
     }
+
+    // also write output per edge
+    // the output per edge is equal to the upstream node
+    for (auto it=node_links.begin(); it != node_links.end(); it++)
+    {
+        for (auto up=it->second.upstream.begin(); up != it->second.upstream.end(); up++)
+        {
+            auto to_edges = it->second.to_edge;
+
+            // we may have more than one edge from a node
+            for (auto to_edge = to_edges.begin(); to_edge!=to_edges.end(); to_edge++ )
+            {
+
+                auto up_edges = node_links[up->first].to_edge;
+
+                for (auto up_edge = up_edges.begin(); up_edge != up_edges.end(); up_edge++)
+                {
+                    auto *pRecord = pUpstream_Edges->Add_Record();
+                    pRecord->Set_Value("edge", *to_edge);
+                    pRecord->Set_Value("upstream_edges", *up_edge); //nog om te zetten.
+
+                    pRecord->Set_Value("proportion", up->second /( to_edges.size() * up_edges.size())  );
+                }
+
+            }
+
+
+        }
+
+    }
+
+
 
     return true;
 }
