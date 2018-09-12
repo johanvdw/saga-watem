@@ -30,11 +30,10 @@ CSG_String Get_Info(int i)
 }
 
 #include "topologize.h"
-#include "cacyclical.h"
+#include "upstream_edges.h"
 
 CSG_Tool *		Create_Tool(int i)
 {
-
 
 	CSG_Tool	*pModule;
 	
@@ -44,7 +43,7 @@ CSG_Tool *		Create_Tool(int i)
 		pModule = new CTopologize;
 		break;
     case 1:
-        pModule = new CAcyclical;
+        pModule = new Upstream_Edges;
         break;
     default:
 		pModule	= NULL;
