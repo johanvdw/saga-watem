@@ -1,7 +1,6 @@
 #include "upstream_edges.h"
 #include <queue>
 #include <algorithm>
-#include <iostream>
 
 Upstream_Edges::Upstream_Edges(void)
 {
@@ -15,10 +14,10 @@ Upstream_Edges::Upstream_Edges(void)
 
     //----------------------------------------------------
 
-    Parameters.Add_Shapes(
+    Parameters.Add_Table(
         NULL, "INPUTLINES"	, _TL("Input Topology"),
         _TL(""),
-        PARAMETER_INPUT,SHAPE_TYPE_Line
+        PARAMETER_INPUT
     );
 
     Parameters.Add_Table(
@@ -32,33 +31,34 @@ Upstream_Edges::~Upstream_Edges(void)
 {}
 
 
-void Upstream_Edges::break_cycles(int edge_id, std::vector<int> upstream, int depth)
+bool Upstream_Edges::break_cycles(int edge_id, std::vector<int> upstream, int depth)
 {
     // check if any upstream nodes from this node are in upstream
-    bool contains = false;
-    for (auto up_edge_it = edges[edge_id].from.begin(); up_edge_it !=edges[edge_id].from.end(); up_edge_it++ )
+    for (auto up_edge_it = edges[edge_id].from.begin(); up_edge_it !=edges[edge_id].from.end();  )
     {
-        int edge_id = *up_edge_it;
-        auto found = std::find(upstream.begin(), upstream.end(), edge_id);
+        int up_edge_id = * up_edge_it;
+        auto found = std::find(upstream.begin(), upstream.end(), up_edge_id);
         if (found != upstream.end())
         {
-            std::cout << *found;
             // We have found a place where we should break:
             up_edge_it=edges[edge_id].from.erase(up_edge_it);
-            //upstream.push_back(edge_id);
             // we could adjust the nodes as well - but since we don't use them anyway I didn't do that
+            return true;
         }
         else
         {
             upstream.push_back(edge_id);
 
-            if (depth <5)
+            if (depth <4)
             {
-                break_cycles(edge_id, upstream, depth +1);
+                if (break_cycles(edge_id, upstream, depth +1))
+                    return true;
             }
+            up_edge_it++;
         }
 
     }
+    return false;
 }
 
 bool Upstream_Edges::On_Execute(void)
@@ -107,7 +107,7 @@ bool Upstream_Edges::On_Execute(void)
    {
        int edge_id = it.first;
        std::vector<int> upstream;
-       this->break_cycles(edge_id, upstream, 1);
+       while (this->break_cycles(edge_id, upstream, 1));
    }
 
 
@@ -133,45 +133,38 @@ bool Upstream_Edges::On_Execute(void)
         if (edge.finished)
             continue;
 
-        // check from is empty or finished
-
-        bool finished = true;
+        // add the edges and their upstream_edges
         for (auto const& from_id : edge.from)
         {
             const Edge from_edge = edges[from_id];
-            finished = from_edge.finished && finished; // if one is not finished -> we will not continue
+
+            edge.proportion[from_id] += 1.0 / (from_edge.to.size());
+
+            // copy above proportions
+            for (auto const& prop : from_edge.proportion)
+            {
+                edge.proportion[prop.first] += prop.second /(from_edge.to.size());
+            }
         }
-        if (finished)
+        edge.finished = true;
+
+        // add nodes below to todo if all their upstream edges are finished
+
+        for (auto const& to_id : edge.to)
         {
-            edge.finished = true;
-            // all nodes above are finished
-            // add the edges and their upstream_edges
-            for (auto const& from_id : edge.from)
+            // only add to todo
+
+            bool finished = true;
+            for (auto const& from_id : edges[to_id].from)
             {
                 const Edge from_edge = edges[from_id];
-
-                edge.proportion[from_id] += 1 / (from_edge.to.size());
-
-                // copy above proportions
-                for (auto const& prop : from_edge.proportion)
-                {
-                    edge.proportion[prop.first] += prop.second /(from_edge.to.size());
-                }
+                finished = from_edge.finished && finished; // if one is not finished -> we will not continue
             }
-            edge.finished = true;
 
-            // add nodes below to todo
-
-            for (auto const& to_id : edge.to)
-            {
+            if (finished)
                 todo.push(to_id);
-            }
+        }
 
-        }
-        else
-        {
-            todo.push(edge_id);
-        }
 
     }
 
