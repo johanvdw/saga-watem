@@ -1,5 +1,7 @@
 #include "upstream_edges.h"
 #include <queue>
+#include <algorithm>
+#include <iostream>
 
 Upstream_Edges::Upstream_Edges(void)
 {
@@ -30,6 +32,35 @@ Upstream_Edges::~Upstream_Edges(void)
 {}
 
 
+void Upstream_Edges::break_cycles(int edge_id, std::vector<int> upstream, int depth)
+{
+    // check if any upstream nodes from this node are in upstream
+    bool contains = false;
+    for (auto up_edge_it = edges[edge_id].from.begin(); up_edge_it !=edges[edge_id].from.end(); up_edge_it++ )
+    {
+        int edge_id = *up_edge_it;
+        auto found = std::find(upstream.begin(), upstream.end(), edge_id);
+        if (found != upstream.end())
+        {
+            std::cout << *found;
+            // We have found a place where we should break:
+            up_edge_it=edges[edge_id].from.erase(up_edge_it);
+            //upstream.push_back(edge_id);
+            // we could adjust the nodes as well - but since we don't use them anyway I didn't do that
+        }
+        else
+        {
+            upstream.push_back(edge_id);
+
+            if (depth <5)
+            {
+                break_cycles(edge_id, upstream, depth +1);
+            }
+        }
+
+    }
+}
+
 bool Upstream_Edges::On_Execute(void)
 {
     auto pInLines	= Parameters("INPUTLINES")->asShapes();
@@ -41,10 +72,6 @@ bool Upstream_Edges::On_Execute(void)
 
     int start_field = pInLines->Get_Field("start_id");
     int end_field = pInLines->Get_Field("end_id");
-
-
-
-
 
     for (int iLine = 0; iLine < pInLines->Get_Count() && SG_UI_Process_Set_Progress(iLine, pInLines->Get_Count()); iLine++)
     {
@@ -79,13 +106,8 @@ bool Upstream_Edges::On_Execute(void)
    for (auto const& it : edges)
    {
        int edge_id = it.first;
-       const Edge edge = it.second;
-
-       // recurse up - if we meet a higher point we break the node
-       bool *visited = new bool(edges.size());
-       bool *restack = new bool(edges.size());
-
-
+       std::vector<int> upstream;
+       this->break_cycles(edge_id, upstream, 1);
    }
 
 

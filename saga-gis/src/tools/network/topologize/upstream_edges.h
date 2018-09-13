@@ -33,12 +33,14 @@ public:
     Upstream_Edges(void);
     virtual ~Upstream_Edges(void);
 
+
 protected:
     virtual bool			On_Execute(void);
 
 private:
     std::map<int, Node> nodes;
     std::map<int, Edge> edges;
+    void break_cycles(int edge_id, std::vector<int> upstream, int depth);
 };
 
 
