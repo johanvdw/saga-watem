@@ -31,7 +31,7 @@ Upstream_Edges::~Upstream_Edges(void)
 {}
 
 
-bool Upstream_Edges::break_cycles(int edge_id, std::vector<int> upstream, int depth)
+void Upstream_Edges::break_cycles(int edge_id, std::vector<int> upstream, int depth)
 {
     // check if any upstream nodes from this node are in upstream
     for (auto up_edge_it = edges[edge_id].from.begin(); up_edge_it !=edges[edge_id].from.end();  )
@@ -40,25 +40,31 @@ bool Upstream_Edges::break_cycles(int edge_id, std::vector<int> upstream, int de
         auto found = std::find(upstream.begin(), upstream.end(), up_edge_id);
         if (found != upstream.end())
         {
-            // We have found a place where we should break:
+            // We have found a place where we should break: remove from to
             up_edge_it=edges[edge_id].from.erase(up_edge_it);
+
+            // and remove in the corresponding other from
+            auto &to = edges[up_edge_id].to;;
+
+            auto found_to =  std::find(to.begin(), to.end(), edge_id);
+            if (found_to != to.end())
+            {
+                to.erase(found_to);
+            }
             // we could adjust the nodes as well - but since we don't use them anyway I didn't do that
-            return true;
         }
         else
         {
             upstream.push_back(edge_id);
 
-            if (depth <4)
+            if (depth < 5)
             {
-                if (break_cycles(edge_id, upstream, depth +1))
-                    return true;
+                break_cycles(up_edge_id, upstream, depth +1);
             }
             up_edge_it++;
         }
 
     }
-    return false;
 }
 
 bool Upstream_Edges::On_Execute(void)
@@ -102,12 +108,15 @@ bool Upstream_Edges::On_Execute(void)
         }
     }
 
+    nodes.clear();
+
     // search for and break circular edges
    for (auto const& it : edges)
    {
        int edge_id = it.first;
        std::vector<int> upstream;
-       while (this->break_cycles(edge_id, upstream, 1));
+       upstream.push_back(edge_id);
+       this->break_cycles(edge_id, upstream, 1);
    }
 
 
@@ -183,5 +192,8 @@ bool Upstream_Edges::On_Execute(void)
             pRecord->Set_Value("proportion", prop.second);
         }
     }
+
+    edges.clear();
+
     return true;
 }

@@ -40,7 +40,7 @@ protected:
 private:
     std::map<int, Node> nodes;
     std::map<int, Edge> edges;
-    bool break_cycles(int edge_id, std::vector<int> upstream, int depth);
+    void break_cycles(int edge_id, std::vector<int> upstream, int depth);
 };
 
 
