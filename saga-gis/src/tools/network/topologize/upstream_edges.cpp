@@ -21,6 +21,11 @@ Upstream_Edges::Upstream_Edges(void)
     );
 
     Parameters.Add_Table(
+        NULL, "ADJECTANT_EDGES", _TL("adjectant edges"),
+        "",
+        PARAMETER_OUTPUT);
+
+    Parameters.Add_Table(
         NULL, "UPSTREAM_EDGES", _TL("upstream edges"),
         "",
         PARAMETER_OUTPUT);
@@ -71,6 +76,7 @@ bool Upstream_Edges::On_Execute(void)
 {
     auto pInLines	= Parameters("INPUTLINES")->asShapes();
     auto pUpstreamEdges = Parameters("UPSTREAM_EDGES")->asTable();
+    auto pAdjectantEdges = Parameters("ADJECTANT_EDGES")->asTable();
 
     pUpstreamEdges->Add_Field("edge", SG_DATATYPE_Int);
     pUpstreamEdges->Add_Field("upstream_edge", SG_DATATYPE_Int);
@@ -210,6 +216,26 @@ bool Upstream_Edges::On_Execute(void)
     {
         pInLines->Set_Value(iLine, shreve_field, edges[iLine].shreve_order);
         pInLines->Set_Value(iLine, sort_field, edges[iLine].sort_order);
+    }
+
+    if (pAdjectantEdges->Get_Field("from")==-1)
+        pAdjectantEdges->Add_Field("from", SG_DATATYPE_Int);
+    int from_field = pAdjectantEdges->Get_Field("from");
+    if (pAdjectantEdges->Get_Field("to")==-1)
+        pAdjectantEdges->Add_Field("to", SG_DATATYPE_Int);
+    int to_field = pAdjectantEdges->Get_Field("to");
+
+
+    for (auto const& it : edges)
+    {
+        const auto edge_id = it.first;
+        const auto &edge = it.second;
+        for (auto const & to: edge.to)
+        {
+            auto *pRecord = pAdjectantEdges->Add_Record();
+            pRecord->Set_Value(from_field, edge_id);
+            pRecord->Set_Value(to_field, to);
+        }
     }
 
     edges.clear();
