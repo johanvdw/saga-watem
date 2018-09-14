@@ -24,6 +24,7 @@ struct Edge
     std::vector<int> to;
     bool finished;
     std::map<int, double> proportion;
+    int shreve_order;
 };
 
 

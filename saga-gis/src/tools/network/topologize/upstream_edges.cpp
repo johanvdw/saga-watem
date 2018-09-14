@@ -123,12 +123,14 @@ bool Upstream_Edges::On_Execute(void)
     // all edges without upper edges to todo
 
     std::queue<int> todo;
-    for (auto const& it : edges)
+    for (auto & it : edges)
     {
         int edge_id = it.first;
-        const Edge edge = it.second;
+        Edge &edge = it.second;
         if (edge.from.size() == 0)
         {
+            edge.strahler_order = 1;
+            edge.shreve_order = 1;
             todo.push(edge_id);
         }
     }
@@ -148,6 +150,7 @@ bool Upstream_Edges::On_Execute(void)
             const Edge from_edge = edges[from_id];
 
             edge.proportion[from_id] += 1.0 / (from_edge.to.size());
+            edge.shreve_order += from_edge.shreve_order;
 
             // copy above proportions
             for (auto const& prop : from_edge.proportion)
@@ -191,6 +194,17 @@ bool Upstream_Edges::On_Execute(void)
             pRecord->Set_Value("upstream_edge", prop.first);
             pRecord->Set_Value("proportion", prop.second);
         }
+    }
+
+    // add shreve order to input table
+    if (pInLines->Get_Field("shreve_order")==-1)
+        pInLines->Add_Field("shreve_order", SG_DATATYPE_Int);
+
+    int shreve_field  = pInLines->Get_Field("shreve_order");
+
+    for (int iLine = 0; iLine < pInLines->Get_Count() && SG_UI_Process_Set_Progress(iLine, pInLines->Get_Count()); iLine++)
+    {
+        pInLines->Set_Value(iLine, shreve_field, edges[iLine].shreve_order);
     }
 
     edges.clear();
