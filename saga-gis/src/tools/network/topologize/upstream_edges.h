@@ -25,6 +25,7 @@ struct Edge
     bool finished;
     std::map<int, double> proportion;
     int shreve_order;
+    int sort_order;
 };
 
 
