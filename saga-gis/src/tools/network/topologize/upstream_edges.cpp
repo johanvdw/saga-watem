@@ -75,15 +75,34 @@ void Upstream_Edges::break_cycles(int edge_id, std::vector<int> upstream, int de
 bool Upstream_Edges::On_Execute(void)
 {
     auto pInLines	= Parameters("INPUTLINES")->asShapes();
-    auto pUpstreamEdges = Parameters("UPSTREAM_EDGES")->asTable();
-    auto pAdjectantEdges = Parameters("ADJECTANT_EDGES")->asTable();
-
-    pUpstreamEdges->Add_Field("edge", SG_DATATYPE_Int);
-    pUpstreamEdges->Add_Field("upstream_edge", SG_DATATYPE_Int);
-    pUpstreamEdges->Add_Field("proportion", SG_DATATYPE_Double);
+    CSG_Table * pUpstreamEdges = Parameters("UPSTREAM_EDGES")->asTable();
+    CSG_Table * pAdjectantEdges = Parameters("ADJECTANT_EDGES")->asTable();
 
     int start_field = pInLines->Get_Field("start_id");
     int end_field = pInLines->Get_Field("end_id");
+
+    // if source does not contain start_id or end_id
+    if ((start_field == -1)||(end_field == -1))
+    {
+        return false;
+    }
+
+    pUpstreamEdges->Del_Records();
+    pAdjectantEdges->Del_Records();
+
+    if (pUpstreamEdges->Get_Field("edge")==-1)
+        pUpstreamEdges->Add_Field("edge", SG_DATATYPE_Int);
+    if (pUpstreamEdges->Get_Field("upstream_edge")==-1)
+        pUpstreamEdges->Add_Field("upstream_edge", SG_DATATYPE_Int);
+    if (pUpstreamEdges->Get_Field("proportion")==-1)
+        pUpstreamEdges->Add_Field("proportion", SG_DATATYPE_Double);
+
+    if (pAdjectantEdges->Get_Field("from")==-1)
+        pAdjectantEdges->Add_Field("from", SG_DATATYPE_Int);
+    int from_field = pAdjectantEdges->Get_Field("from");
+    if (pAdjectantEdges->Get_Field("to")==-1)
+        pAdjectantEdges->Add_Field("to", SG_DATATYPE_Int);
+    int to_field = pAdjectantEdges->Get_Field("to");
 
     for (int iLine = 0; iLine < pInLines->Get_Count() && SG_UI_Process_Set_Progress(iLine, pInLines->Get_Count()); iLine++)
     {
@@ -217,14 +236,6 @@ bool Upstream_Edges::On_Execute(void)
         pInLines->Set_Value(iLine, shreve_field, edges[iLine].shreve_order);
         pInLines->Set_Value(iLine, sort_field, edges[iLine].sort_order);
     }
-
-    if (pAdjectantEdges->Get_Field("from")==-1)
-        pAdjectantEdges->Add_Field("from", SG_DATATYPE_Int);
-    int from_field = pAdjectantEdges->Get_Field("from");
-    if (pAdjectantEdges->Get_Field("to")==-1)
-        pAdjectantEdges->Add_Field("to", SG_DATATYPE_Int);
-    int to_field = pAdjectantEdges->Get_Field("to");
-
 
     for (auto const& it : edges)
     {

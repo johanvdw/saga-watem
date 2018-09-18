@@ -66,6 +66,7 @@ bool CTopologize::On_Execute(void)
 	}
 
 
+    pOutLines->Del_Records();
 
     for (int iLine = 0; iLine < pInLines->Get_Count() && SG_UI_Process_Set_Progress(iLine, pInLines->Get_Count()); iLine++)
     {
