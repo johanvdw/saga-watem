@@ -30,6 +30,9 @@ Upstream_Edges::Upstream_Edges(void)
         "",
         PARAMETER_OUTPUT);
 
+    Parameters.Add_Bool(
+        NULL, "ZERO_BASED", _TL("Zero based index"), _TL(""), true);
+
 }
 
 Upstream_Edges::~Upstream_Edges(void)
@@ -80,6 +83,8 @@ bool Upstream_Edges::On_Execute(void)
 
     int start_field = pInLines->Get_Field("start_id");
     int end_field = pInLines->Get_Field("end_id");
+
+    bool zero_based = Parameters("ZERO_BASED")->asBool();
 
     // if source does not contain start_id or end_id
     if ((start_field == -1)||(end_field == -1))
@@ -207,6 +212,8 @@ bool Upstream_Edges::On_Execute(void)
     }
 
 
+
+    int add_one = !zero_based;
     // convert results to a nice table
 
     for (auto const& it : edges)
@@ -216,8 +223,8 @@ bool Upstream_Edges::On_Execute(void)
         for (auto const& prop : edge.proportion)
         {
             auto *pRecord = pUpstreamEdges->Add_Record();
-            pRecord->Set_Value("edge", edge_id);
-            pRecord->Set_Value("upstream_edge", prop.first);
+            pRecord->Set_Value("edge", edge_id + add_one);
+            pRecord->Set_Value("upstream_edge", prop.first + add_one);
             pRecord->Set_Value("proportion", prop.second);
         }
     }
@@ -244,8 +251,8 @@ bool Upstream_Edges::On_Execute(void)
         for (auto const & to: edge.to)
         {
             auto *pRecord = pAdjectantEdges->Add_Record();
-            pRecord->Set_Value(from_field, edge_id);
-            pRecord->Set_Value(to_field, to);
+            pRecord->Set_Value(from_field, edge_id + add_one);
+            pRecord->Set_Value(to_field, to + add_one);
         }
     }
 
