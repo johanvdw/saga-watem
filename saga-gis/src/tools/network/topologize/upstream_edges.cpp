@@ -114,6 +114,10 @@ bool Upstream_Edges::On_Execute(void)
         CSG_Shape * pLine = pInLines->Get_Shape(iLine);
         int start_id = pLine->Get_Value(start_field)->asInt();
         int end_id = pLine->Get_Value(end_field)->asInt();
+
+        // skip lines which connect to themselve (eg when using a large tolerance)
+        if (start_id == end_id) continue;
+
         edges[iLine].start_node = start_id;
         edges[iLine].end_node = end_id;
 
