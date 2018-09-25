@@ -86,9 +86,9 @@ bool Upstream_Edges::On_Execute(void)
 
     bool zero_based = Parameters("ZERO_BASED")->asBool();
 
-    // if source does not contain start_id or end_id
     if ((start_field == -1)||(end_field == -1))
     {
+        SG_UI_Msg_Add("Source does not contain start_id and end_id columns", SG_UI_MSG_STYLE_FAILURE);
         return false;
     }
 

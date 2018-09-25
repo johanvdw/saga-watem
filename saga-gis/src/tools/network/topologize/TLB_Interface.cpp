@@ -15,7 +15,7 @@ CSG_String Get_Info(int i)
         return( _TL("Topologize") );
 
     case TLB_INFO_Author:
-        return( _TL("Sun Zhuo (c) 2009; Johan Van de Wauw (c) 2018") );
+        return( _TL("Johan Van de Wauw (c) 2018") );
 
     case TLB_INFO_Description:
         return( _TL("Generate a network from a line shapefile; Based on Microcity") );
@@ -31,6 +31,7 @@ CSG_String Get_Info(int i)
 
 #include "topologize.h"
 #include "upstream_edges.h"
+#include "routing_shape.h"
 
 CSG_Tool *		Create_Tool(int i)
 {
@@ -44,6 +45,9 @@ CSG_Tool *		Create_Tool(int i)
 		break;
     case 1:
         pModule = new Upstream_Edges;
+        break;
+    case 2:
+        pModule = new routing_shape;
         break;
     default:
 		pModule	= NULL;
