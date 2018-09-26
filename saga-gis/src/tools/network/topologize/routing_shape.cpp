@@ -80,7 +80,6 @@ bool routing_shape::On_Execute(void)
     for (int i=0; i<lines->Get_Field_Count(); i++)
         lines->Del_Field(i);
 
-    // add all fields from original table
     lines->Add_Field("col", SG_DATATYPE_Int);
     lines->Add_Field("row", SG_DATATYPE_Int);
     lines->Add_Field("target1col", SG_DATATYPE_Int);
@@ -109,13 +108,12 @@ bool routing_shape::On_Execute(void)
         CSG_Table_Record * row = routing->Get_Record(i);
 
 
-        if (row->asInt(2)<=0 ) continue;
+        if (row->asInt(t1col)>0 )
+            Add_Line(row->asInt(col_field), row->asInt(row_field), row->asInt(t1col), row->asInt(t1row), row->asDouble("distance1"), row->asDouble("part1"));
 
-        Add_Line(row->asInt(col_field), row->asInt(row_field), row->asInt(t1col), row->asInt(t1row), row->asDouble("distance1"), row->asDouble("part1"));
 
-
-        if (row->asInt(6)<=0) continue;
-        Add_Line(row->asInt(col_field), row->asInt(row_field), row->asInt(t2col), row->asInt(t2row), row->asDouble("distance2"), row->asDouble("part2"));
+        if (row->asInt(t2col)>0)
+            Add_Line(row->asInt(col_field), row->asInt(row_field), row->asInt(t2col), row->asInt(t2row), row->asDouble("distance2"), row->asDouble("part2"));
 
     }
 
