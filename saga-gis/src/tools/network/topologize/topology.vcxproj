@@ -19,12 +19,16 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="routing_shape.cpp" />
     <ClCompile Include="TLB_Interface.cpp" />
     <ClCompile Include="topologize.cpp" />
+    <ClCompile Include="upstream_edges.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="routing_shape.h" />
     <ClInclude Include="TLB_Interface.h" />
     <ClInclude Include="topologize.h" />
+    <ClInclude Include="upstream_edges.h" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{AE5D61DA-0F44-4CDD-974A-77160903B834}</ProjectGuid>
