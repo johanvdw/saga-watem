@@ -32,6 +32,7 @@ CSG_String Get_Info(int i)
 #include "topologize.h"
 #include "upstream_edges.h"
 #include "routing_shape.h"
+#include "segment_catchment.h"
 
 CSG_Tool *		Create_Tool(int i)
 {
@@ -48,6 +49,9 @@ CSG_Tool *		Create_Tool(int i)
         break;
     case 2:
         pModule = new routing_shape;
+        break;
+    case 3:
+        pModule = new segment_catchment;
         break;
     default:
 		pModule	= NULL;
