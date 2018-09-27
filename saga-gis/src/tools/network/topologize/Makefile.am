@@ -13,7 +13,9 @@ TLB_Interface.h\
 upstream_edges.cpp\
 upstream_edges.h\
 routing_shape.cpp\
-routing_shape.h
+routing_shape.h\
+segment_catchment.h\
+segment_catchment.cpp
 
 libnetwork_topologize_la_LIBADD = $(top_srcdir)/src/saga_core/saga_api/libsaga_api.la
 
