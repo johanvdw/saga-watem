@@ -49,7 +49,7 @@ bool segment_catchment::On_Execute(void)
     CSG_Grid * segments = Parameters("SEGMENTS")->asGrid();
     CSG_Table * routing = Parameters("ROUTING")->asTable();
 
-    segments->Assign_NoData();
+    subcatch->Assign_NoData();
 
     // routing will be stored as a map cell -> upstream cells[]
     std::map<int, std::vector<int>> upstream;
