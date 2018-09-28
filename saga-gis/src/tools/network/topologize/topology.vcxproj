@@ -20,12 +20,14 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="routing_shape.cpp" />
+    <ClCompile Include="segment_catchment.cpp" />
     <ClCompile Include="TLB_Interface.cpp" />
     <ClCompile Include="topologize.cpp" />
     <ClCompile Include="upstream_edges.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="routing_shape.h" />
+    <ClInclude Include="segment_catchment.h" />
     <ClInclude Include="TLB_Interface.h" />
     <ClInclude Include="topologize.h" />
     <ClInclude Include="upstream_edges.h" />
