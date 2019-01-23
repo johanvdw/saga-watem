@@ -35,6 +35,11 @@ CTopologize::CTopologize(void)
         PARAMETER_TYPE_Double,
         0.01
     );
+    Parameters.Add_Value(
+        NULL, "SIMPLIFY", _TL("Simplify"),
+        _TL(""),
+        PARAMETER_TYPE_Bool,
+        0);
 
 }
 
@@ -53,6 +58,7 @@ bool CTopologize::On_Execute(void)
     pOutLines = Parameters("OUTPUTLINES")->asShapes();
     pOutPoints = Parameters("OUTPUTPOINTS")->asShapes();
     tolerance = Parameters("TOLERANCE")->asDouble();
+    bool simplify = true;
 
     pOutLines->Set_Name(CSG_String::Format(_TL("Topology of %s"),pInLines->Get_Name()));
 
@@ -76,11 +82,18 @@ bool CTopologize::On_Execute(void)
 		{
 			// Copy the shape
 			CSG_Shape *pOut = pOutLines->Add_Shape();
-
-			for (int iPoint = 0; iPoint < pInLine->Get_Point_Count(iPart); iPoint++)
-			{
-				pOut->Add_Point(pInLine->Get_Point(iPoint, iPart));
-			}
+            if (simplify)
+            {
+                pOut->Add_Point(pInLine->Get_Point(0, iPart));
+                pOut->Add_Point(pInLine->Get_Point(pInLine->Get_Point_Count(iPart)-1, iPart));
+            }
+            else
+            {
+                for (int iPoint = 0; iPoint < pInLine->Get_Point_Count(iPart); iPoint++)
+                {
+                    pOut->Add_Point(pInLine->Get_Point(iPoint, iPart));
+                }
+            }
 
 			// Starting point of the line
 			Vertex start, end;
