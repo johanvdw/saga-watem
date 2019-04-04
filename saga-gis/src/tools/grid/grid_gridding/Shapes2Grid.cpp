@@ -530,7 +530,7 @@ void CShapes2Grid::Set_Line_Thin(TSG_Point a, TSG_Point b, double Value)
 	}
 	else
 	{
-        if (bLineDirection) Value = 0;
+        if (!bLineDirection)
 		Set_Value(A.x, A.y, Value);
 	}
 }
