@@ -508,7 +508,7 @@ void CShapes2Grid::Set_Line_Thin(TSG_Point a, TSG_Point b, double Value)
 			for(int ix=0; ix<=dx; ix++, a.x+=sig, a.y+=dy)
 			{
                 if (bLineDirection){
-                    if (ix+1>dx)
+                    if ((ix+2>dx)&&(ix+1<=dx))
                         Value = (int)(10-4*atan2((int)(B.y)-(int)a.y, (int)(B.x)-(int)a.x)/M_PI)%8;
                     else
                         Value = (int)(10-4*atan2((int)(a.y+dy)-(int)a.y, (int)(a.x+sig)-(int)a.x)/M_PI)%8;
@@ -526,7 +526,7 @@ void CShapes2Grid::Set_Line_Thin(TSG_Point a, TSG_Point b, double Value)
 			for(int iy=0; iy<=dy; iy++, a.x+=dx, a.y+=sig)
 			{
                 if (bLineDirection){
-                    if (iy+1 >dy)
+                    if ((iy+2 >dy) && (iy+1<=dx))
                     {
                         Value = (int)(10-4*atan2((int)(B.y)-(int)a.y, (int)(B.x)-(int)a.x)/M_PI) %8;
                     }
