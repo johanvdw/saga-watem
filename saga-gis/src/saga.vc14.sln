@@ -405,6 +405,8 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "sim_landscape_evolution", "
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "topology", "tools\network\topologize\topology.vcxproj", "{AE5D61DA-0F44-4CDD-974A-77160903B834}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "line_direction", "tools\network\line_direction\line_direction.vcxproj", "{8C3FD2D4-77D1-4280-9E84-F9A885A7EA9D}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Win32 = Debug|Win32
