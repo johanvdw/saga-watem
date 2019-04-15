@@ -391,6 +391,15 @@ bool CShapes2Grid::On_Execute(void)
 //---------------------------------------------------------
 inline void CShapes2Grid::Set_Value(int x, int y, double Value)
 {
+	if (bLineDirection)
+	{
+		TSG_Point_Int p = prev;
+		prev.x = x;
+		prev.y = y;
+		x = p.x;
+		y = p.y;
+	}
+
 	if( m_pGrid->is_InGrid(x, y, false) )
 	{
 		if( m_pCount->asInt(x, y) == 0 )
@@ -509,7 +518,6 @@ void CShapes2Grid::Set_Line_Thin(TSG_Point a, TSG_Point b, double Value)
 			{
                 if (bLineDirection){
                         Value = (int)(10-4*atan2((int)(a.y+dy*std::min(1.0, dx - ix))-(int)a.y, (int)(a.x+sig*std::min(1.0, dx-ix))-(int)a.x)/M_PI)%8;
-						Value = ix;
                 }
 
 				Set_Value((int)a.x, (int)a.y, Value);
@@ -525,7 +533,7 @@ void CShapes2Grid::Set_Line_Thin(TSG_Point a, TSG_Point b, double Value)
 			{
 				if (bLineDirection) {
 					Value = (int)(10 - 4 * atan2((int)(a.y + sig*std::min(1.0, dy - iy)) - (int)a.y, (int)(a.x + dx*std::min(1.0, dy - iy)) - (int)a.x) / M_PI) % 8;
-					Value = iy;
+
 				}
 				Set_Value((int)a.x, (int)a.y, Value);
 			}
@@ -546,9 +554,10 @@ void CShapes2Grid::Set_Line_Fat(TSG_Point a, TSG_Point b, double Value)
 {
 	TSG_Point_Int	A;	A.x	= (int)(a.x	+= 0.5);	A.y	= (int)(a.y	+= 0.5);
 	TSG_Point_Int	B;	B.x	= (int)(b.x	+= 0.5);	B.y	= (int)(b.y	+= 0.5);
-
-	Set_Value(A.x, A.y, Value);
-
+	if (!bLineDirection)
+		Set_Value(A.x, A.y, Value);
+	else
+		prev = A;
 	//-----------------------------------------------------
 	if( A.x != B.x || A.y != B.y )
 	{
@@ -573,17 +582,20 @@ void CShapes2Grid::Set_Line_Fat(TSG_Point a, TSG_Point b, double Value)
 
 			while( e > 1. )
 			{
+				Value = iy>0? 0 : 4;
 				Set_Value(A.x, A.y += iy, Value);	e--;
 			}
 
 			while( A.x != B.x )
 			{
+				Value = ix>0 ? 2 : 6;
 				Set_Value(A.x += ix, A.y, Value);	e += d;
 
 				if( A.x != B.x )
 				{
 					while( e > 1. )
 					{
+						Value = iy>0 ? 0 : 4;
 						Set_Value(A.x, A.y += iy, Value);	e--;
 					}
 				}
@@ -595,6 +607,7 @@ void CShapes2Grid::Set_Line_Fat(TSG_Point a, TSG_Point b, double Value)
 
 				while( A.y != B.y )
 				{
+					Value = iy>0 ? 0 : 4;
 					Set_Value(A.x, A.y += iy, Value);
 				}
 			}
@@ -615,17 +628,20 @@ void CShapes2Grid::Set_Line_Fat(TSG_Point a, TSG_Point b, double Value)
 
 			while( e > 1. )
 			{
+				Value = ix>0 ? 2 : 6;
 				Set_Value(A.x += ix, A.y, Value);	e--;
 			}
 
 			while( A.y != B.y )
 			{
+				Value = iy>0 ? 0 : 4;
 				Set_Value(A.x, A.y += iy, Value);	e += d;
 
 				if( A.y != B.y )
 				{
 					while( e > 1. )
 					{
+						Value = ix>0 ? 2 : 6;
 						Set_Value(A.x += ix, A.y, Value);	e--;
 					}
 				}
@@ -637,6 +653,7 @@ void CShapes2Grid::Set_Line_Fat(TSG_Point a, TSG_Point b, double Value)
 
 				while( A.x != B.x )
 				{
+					Value = ix>0 ? 2 : 6;
 					Set_Value(A.x += ix, A.y, Value);
 				}
 			}
