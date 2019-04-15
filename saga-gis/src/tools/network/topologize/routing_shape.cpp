@@ -64,9 +64,10 @@ void routing_shape::Add_Line(int col, int row, int t_col, int t_row, double dist
     t_row = system.Get_NY() - t_row;
     col = col -1;
     t_col = t_col - 1;
-
-    line->Set_Value("lnduSource", landuse->asDouble(col, row));
-    line->Set_Value("lnduTarg", landuse->asDouble(t_col, t_row));
+	if (landuse->is_InGrid(col, row))
+		line->Set_Value("lnduSource", landuse->asDouble(col, row));
+	if (landuse->is_InGrid(t_col, t_row))
+		line->Set_Value("lnduTarg", landuse->asDouble(t_col, t_row));
 }
 
 
@@ -106,7 +107,6 @@ bool routing_shape::On_Execute(void)
     for (int i=0; i< routing->Get_Count(); i++)
     {
         CSG_Table_Record * row = routing->Get_Record(i);
-
 
         if (row->asInt(t1col)>0 )
             Add_Line(row->asInt(col_field), row->asInt(row_field), row->asInt(t1col), row->asInt(t1row), row->asDouble("distance1"), row->asDouble("part1"));
