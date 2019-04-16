@@ -110,13 +110,13 @@ private:
 
 	void						Set_Points				(CSG_Shape *pShape, double Value);
 
-    void						Set_Line				(CSG_Shape *pShape, bool bFat, double Value);
+	void						Set_Line				(CSG_Shape *pShape, bool bFat, double Value);
 	void						Set_Line_Thin			(TSG_Point a, TSG_Point b, double Value);
 	void						Set_Line_Fat			(TSG_Point a, TSG_Point b, double Value);
 
 	void						Set_Polygon				(CSG_Shape *pShape, bool bFat, double Value);
 	void						Set_Polygon				(CSG_Shape_Polygon *pPolygon, double Value);
-    bool                        bLineDirection;
+
 };
 
 

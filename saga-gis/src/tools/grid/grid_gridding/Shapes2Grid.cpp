@@ -165,8 +165,6 @@ CShapes2Grid::CShapes2Grid(void)
 		), 9
 	);
 
-    Parameters.Add_Bool("", "LINE_DIRECTION", _TL("Line Direction"), _TL("Line direction in degree"), false);
-
 	//-----------------------------------------------------
 	m_Grid_Target.Create(&Parameters, false, NULL, "TARGET_");
 
@@ -271,8 +269,6 @@ bool CShapes2Grid::On_Execute(void)
 	//-----------------------------------------------------
 	bool	bFat;
 
-    bLineDirection = Parameters("LINE_DIRECTION")->asBool();
-
 	switch( pShapes->Get_Type() )
 	{
 	default                :	bFat	= false;	break;
@@ -352,7 +348,7 @@ bool CShapes2Grid::On_Execute(void)
 						break;
 
 					case SHAPE_TYPE_Line:
-                        Set_Line	(pShape, bFat, Value);
+						Set_Line	(pShape, bFat, Value);
 						break;
 
 					case SHAPE_TYPE_Polygon:
@@ -477,11 +473,11 @@ void CShapes2Grid::Set_Line(CSG_Shape *pShape, bool bFat, double Value)
 
 			if( bFat )
 			{
-                Set_Line_Fat(a, b, Value);
+				Set_Line_Fat(a, b, Value);
 			}
 			else
 			{
-                Set_Line_Thin(a, b, Value);
+				Set_Line_Thin(a, b, Value);
 			}
 		}
 	}
@@ -507,10 +503,6 @@ void CShapes2Grid::Set_Line_Thin(TSG_Point a, TSG_Point b, double Value)
 
 			for(int ix=0; ix<=dx; ix++, a.x+=sig, a.y+=dy)
 			{
-                if (bLineDirection){
-                    Value = 4+4*atan2((int)(a.y+dy)-(int)a.y, (int)(a.x+sig)-(int)a.x)/M_PI;
-                }
-
 				Set_Value((int)a.x, (int)a.y, Value);
 			}
 		}
@@ -522,15 +514,12 @@ void CShapes2Grid::Set_Line_Thin(TSG_Point a, TSG_Point b, double Value)
 
 			for(int iy=0; iy<=dy; iy++, a.x+=dx, a.y+=sig)
 			{
-                if (bLineDirection)
-                    Value = 4+4*atan2((int)(a.y+sig)-(int)a.y, (int)(a.x+dx)-(int)a.x)/M_PI;
 				Set_Value((int)a.x, (int)a.y, Value);
 			}
 		}
 	}
 	else
 	{
-        if (bLineDirection) Value = 0;
 		Set_Value(A.x, A.y, Value);
 	}
 }
