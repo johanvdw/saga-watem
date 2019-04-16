@@ -98,7 +98,6 @@ protected:
 private:
 
 	int							m_Multiple;
-	TSG_Point_Int                   prev;
 
 	CSG_Parameters_Grid_Target	m_Grid_Target;
 
