@@ -58,7 +58,7 @@ bool CTopologize::On_Execute(void)
     pOutLines = Parameters("OUTPUTLINES")->asShapes();
     pOutPoints = Parameters("OUTPUTPOINTS")->asShapes();
     tolerance = Parameters("TOLERANCE")->asDouble();
-    bool simplify = true;
+    bool simplify = Parameters("SIMPLIFY")->asBool();
 
     pOutLines->Set_Name(CSG_String::Format(_TL("Topology of %s"),pInLines->Get_Name()));
 
