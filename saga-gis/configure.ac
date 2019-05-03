@@ -386,4 +386,5 @@ AC_OUTPUT(Makefile \
 	src/tools/watem/watem/Makefile 
 	src/tools/network/Makefile \
 	src/tools/network/topologize/Makefile \
+	src/tools/network/line_direction/Makefile \
 )
