@@ -1,2 +1,2 @@
-SUBDIRS = topologize
+SUBDIRS = topologize line_direction
 
