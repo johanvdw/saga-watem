@@ -154,7 +154,7 @@ bool CCalculate_Uparea::On_Execute(void)
 			row->Add_Value("Number", pit.aantal);
 			row->Add_Value("C", pit.c + 1);
 			row->Add_Value("R", Get_NY() - pit.r);
-			TSG_Point xy = Get_System()->Get_Grid_to_World(pit.outr, pit.outc);
+			TSG_Point xy = Get_System().Get_Grid_to_World(pit.outr, pit.outc);
 			row->Add_Value("OutX", xy.x);
 			row->Add_Value("OutY", xy.y);
 			row->Add_Value("input", pit.input);
@@ -188,7 +188,7 @@ void CCalculate_Uparea::CalculateUparea()
 	int ncol = Get_NX();
 	double res = Get_Cellsize();
 
-	FINISH = new CSG_Grid(*Get_System(), SG_DATATYPE_Bit);
+	FINISH = new CSG_Grid(Get_System(), SG_DATATYPE_Bit);
 
 	SG_UI_Process_Set_Text(_TL("Calculating Uparea"));
 	//eerst sorteren, dan van hoogste naar laagste pixel gaan.
