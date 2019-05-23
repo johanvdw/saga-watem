@@ -46,15 +46,6 @@
 ///////////////////////////////////////////////////////////
 
 //---------------------------------------------------------
-
-
-///////////////////////////////////////////////////////////
-//														 //
-//														 //
-//														 //
-///////////////////////////////////////////////////////////
-
-//---------------------------------------------------------
 #include <saga_api/saga_api.h>
 
 
@@ -70,7 +61,7 @@ class CGrid_PCA_Focal : public CSG_Tool_Grid
 public:
 	CGrid_PCA_Focal(void);
 
-	virtual CSG_String			Get_MenuPath	(void)	{	return( _TL("Principle Components") );	}
+	virtual CSG_String			Get_MenuPath	(void)	{	return( _TL("Principal Components") );	}
 
 
 protected:
@@ -78,9 +69,6 @@ protected:
 	virtual int					On_Parameters_Enable	(CSG_Parameters *pParameters, CSG_Parameter *pParameter);
 
 	virtual bool				On_Execute				(void);
-
-
-private:
 
 };
 

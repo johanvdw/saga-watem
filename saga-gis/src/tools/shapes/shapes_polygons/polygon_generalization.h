@@ -1,6 +1,3 @@
-/**********************************************************
- * Version $Id: TLB_Interface.h 1921 2014-01-09 10:24:11Z oconrad $
- *********************************************************/
 
 ///////////////////////////////////////////////////////////
 //                                                       //
@@ -9,13 +6,13 @@
 //      System for Automated Geoscientific Analyses      //
 //                                                       //
 //                     Tool Library                      //
-//                    statistics_grid                    //
+//                    shapes_polygon                     //
 //                                                       //
 //-------------------------------------------------------//
 //                                                       //
-//                    TLB_Interface.h                    //
+//                polygon_generalization.h               //
 //                                                       //
-//                 Copyright (C) 2003 by                 //
+//                 Copyright (C) 2019 by                 //
 //                      Olaf Conrad                      //
 //                                                       //
 //-------------------------------------------------------//
@@ -43,25 +40,21 @@
 //                                                       //
 //    contact:    Olaf Conrad                            //
 //                Institute of Geography                 //
-//                University of Goettingen               //
-//                Goldschmidtstr. 5                      //
-//                37077 Goettingen                       //
+//                University of Hamburg                  //
 //                Germany                                //
 //                                                       //
 ///////////////////////////////////////////////////////////
 
 //---------------------------------------------------------
+#ifndef HEADER_INCLUDED__polygon_generalization_H
+#define HEADER_INCLUDED__polygon_generalization_H
 
 
 ///////////////////////////////////////////////////////////
 //														 //
-//				Include the SAGA-API here				 //
+//														 //
 //														 //
 ///////////////////////////////////////////////////////////
-
-//---------------------------------------------------------
-#ifndef HEADER_INCLUDED__statistics_grid_H
-#define HEADER_INCLUDED__statistics_grid_H
 
 //---------------------------------------------------------
 #include <saga_api/saga_api.h>
@@ -74,4 +67,33 @@
 ///////////////////////////////////////////////////////////
 
 //---------------------------------------------------------
-#endif // #ifndef HEADER_INCLUDED__statistics_grid_H
+class CPolygon_Generalization : public CSG_Tool
+{
+public:
+	CPolygon_Generalization(void);
+
+
+protected:
+
+	virtual int				On_Parameters_Enable	(CSG_Parameters *pParameters, CSG_Parameter *pParameter);
+
+	virtual bool			On_Execute				(void);
+
+
+private:
+
+	bool					Set_JoinTos				(CSG_Shapes *pPolygons);
+
+	bool					Get_JoinTos				(CSG_Shapes *pPolygons, CSG_Array_Int &JoinTo);
+
+};
+
+
+///////////////////////////////////////////////////////////
+//														 //
+//														 //
+//														 //
+///////////////////////////////////////////////////////////
+
+//---------------------------------------------------------
+#endif // #ifndef HEADER_INCLUDED__polygon_generalization_H

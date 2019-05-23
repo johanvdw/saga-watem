@@ -1,6 +1,3 @@
-/**********************************************************
- * Version $Id$
- *********************************************************/
 
 ///////////////////////////////////////////////////////////
 //                                                       //
@@ -46,15 +43,6 @@
 //                                                       //
 //    e-mail:     oconrad@saga-gis.org                   //
 //                                                       //
-///////////////////////////////////////////////////////////
-
-//---------------------------------------------------------
-
-
-///////////////////////////////////////////////////////////
-//														 //
-//														 //
-//														 //
 ///////////////////////////////////////////////////////////
 
 //---------------------------------------------------------
@@ -115,8 +103,6 @@ CWKSP_PointCloud::~CWKSP_PointCloud(void)
 
 
 ///////////////////////////////////////////////////////////
-//														 //
-//														 //
 //														 //
 ///////////////////////////////////////////////////////////
 
@@ -213,8 +199,6 @@ wxMenu * CWKSP_PointCloud::Get_Menu(void)
 
 
 ///////////////////////////////////////////////////////////
-//														 //
-//														 //
 //														 //
 ///////////////////////////////////////////////////////////
 
@@ -315,8 +299,6 @@ bool CWKSP_PointCloud::On_Command_UI(wxUpdateUIEvent &event)
 
 ///////////////////////////////////////////////////////////
 //														 //
-//														 //
-//														 //
 ///////////////////////////////////////////////////////////
 
 //---------------------------------------------------------
@@ -325,65 +307,59 @@ void CWKSP_PointCloud::On_Create_Parameters(void)
 	CWKSP_Layer::On_Create_Parameters();
 
 	//-----------------------------------------------------
-	m_Parameters.Add_Value(
-		"NODE_DISPLAY"	, "DISPLAY_SIZE"			, _TL("Point Size"),
+	m_Parameters.Add_Int("NODE_DISPLAY",
+		"DISPLAY_SIZE"	, _TL("Point Size"),
 		_TL(""),
-		PARAMETER_TYPE_Int, 0, 0, true
+		0, 0, true
 	);
 
-	m_Parameters.Add_Choice(
-		"NODE_DISPLAY"	, "DISPLAY_VALUE_AGGREGATE"		, _TL("Value Aggregation"),
+	m_Parameters.Add_Choice("NODE_DISPLAY",
+		"DISPLAY_VALUE_AGGREGATE", _TL("Value Aggregation"),
 		_TL(""),
-		CSG_String::Format("%s|%s|%s|%s|",
+		CSG_String::Format("%s|%s|%s|%s",
 			_TL("first value"),
-			_TL("last value"),
-			_TL("lowest z"),
-			_TL("highest z")
+			_TL("last value" ),
+			_TL("lowest z"   ),
+			_TL("highest z"  )
 		), 3
 	);
 
 	//-----------------------------------------------------
-	m_Parameters.Add_Node("", "NODE_TABLE", _TL("Attributes Table"), _TL(""));
-	m_Parameters.Add_Parameter(g_pData->Get_Parameter("TABLE_FLT_STYLE"   ));
-	m_Parameters.Add_Parameter(g_pData->Get_Parameter("TABLE_FLT_DECIMALS"));
-
-	//-----------------------------------------------------
-	// Classification...
-
-	((CSG_Parameter_Choice *)m_Parameters("COLORS_TYPE")->Get_Data())->Set_Items(
-		CSG_String::Format("%s|%s|%s|%s|%s|",
-			_TL("Single Symbol"   ),	// CLASSIFY_UNIQUE
-			_TL("Classified"      ),	// CLASSIFY_LUT
-			_TL("Discrete Colors" ),	// CLASSIFY_METRIC
-			_TL("Graduated Colors"),	// CLASSIFY_GRADUATED
-		//	_TL("Shade"           ),	// CLASSIFY_SHADE
-		//	_TL("RGB Overlay"     ),	// CLASSIFY_OVERLAY
-			_TL("RGB"             )		// CLASSIFY_RGB
-		)
-	);
-
 	m_Parameters.Add_Node("NODE_COLORS", "NODE_RGB", _TL("RGB"), _TL(""));
 
-	_AttributeList_Add(m_Parameters("NODE_LUT"   ), "LUT_ATTRIB"   , _TL("Attribute"), _TL(""));
-	_AttributeList_Add(m_Parameters("NODE_METRIC"), "METRIC_ATTRIB", _TL("Attribute"), _TL(""));
-	_AttributeList_Add(m_Parameters("NODE_RGB"   ), "RGB_ATTRIB"   , _TL("Attribute"), _TL(""));
+	m_Parameters.Add_Choice("NODE_RGB",
+		"RGB_ATTRIB"	, _TL("Attribute"),
+		_TL(""),
+		_TL("<default>")
+	);
 }
 
 
 ///////////////////////////////////////////////////////////
-//														 //
-//														 //
 //														 //
 ///////////////////////////////////////////////////////////
 
 //---------------------------------------------------------
 void CWKSP_PointCloud::On_DataObject_Changed(void)
 {
-	CWKSP_Layer::On_DataObject_Changed();
+	{
+		if( m_fValue >= Get_PointCloud()->Get_Field_Count() )
+		{
+			m_fValue	= Get_PointCloud()->Get_Field_Count() - 1;
+		}
+
+		double	m	= Get_PointCloud()->Get_Mean  (m_fValue);
+		double	s	= Get_PointCloud()->Get_StdDev(m_fValue) * 2.0;
+
+		m_Parameters("METRIC_ZRANGE")->asRange()->Set_Range(m - s, m + s);
+	}
 
 	_AttributeList_Set(m_Parameters("LUT_ATTRIB"   ), false);
 	_AttributeList_Set(m_Parameters("METRIC_ATTRIB"), false);
 	_AttributeList_Set(m_Parameters("RGB_ATTRIB"   ), false);
+
+	//-----------------------------------------------------
+	CWKSP_Layer::On_DataObject_Changed();
 
 	m_pTable->DataObject_Changed();
 }
@@ -396,12 +372,11 @@ void CWKSP_PointCloud::On_Parameters_Changed(void)
 	//-----------------------------------------------------
 	switch( m_Parameters("COLORS_TYPE")->asInt() )
 	{
-	default:
-	case 0:	m_fValue	= -1;										break;	// CLASSIFY_UNIQUE
-	case 1:	m_fValue	= m_Parameters("LUT_ATTRIB"   )->asInt();	break;	// CLASSIFY_LUT
-	case 2:	m_fValue	= m_Parameters("METRIC_ATTRIB")->asInt();	break;	// CLASSIFY_METRIC
-	case 3:	m_fValue	= m_Parameters("METRIC_ATTRIB")->asInt();	break;	// CLASSIFY_GRADUATED
-	case 4:	m_fValue	= m_Parameters("RGB_ATTRIB"   )->asInt();	break;	// CLASSIFY_RGB
+	default: m_fValue = -1                                    ; break;	// CLASSIFY_UNIQUE
+	case  1: m_fValue = m_Parameters("LUT_ATTRIB"   )->asInt(); break;	// CLASSIFY_LUT
+	case  2: m_fValue = m_Parameters("METRIC_ATTRIB")->asInt(); break;	// CLASSIFY_METRIC
+	case  3: m_fValue = m_Parameters("METRIC_ATTRIB")->asInt(); break;	// CLASSIFY_GRADUATED
+	case  4: m_fValue = m_Parameters("RGB_ATTRIB"   )->asInt(); break;	// CLASSIFY_RGB
 	}
 
 	if( m_fValue < 0 || m_fValue >= Get_PointCloud()->Get_Field_Count() )
@@ -410,7 +385,7 @@ void CWKSP_PointCloud::On_Parameters_Changed(void)
 
 		m_pClassify->Set_Mode(CLASSIFY_UNIQUE);
 	}
-	else if( m_Parameters("COLORS_TYPE")->asInt() == 4 )
+	else if( m_Parameters("COLORS_TYPE")->asInt() == CLASSIFY_OVERLAY )
 	{
 		m_pClassify->Set_Mode(CLASSIFY_RGB);
 	}
@@ -419,13 +394,17 @@ void CWKSP_PointCloud::On_Parameters_Changed(void)
 	long	DefColor	= m_Parameters("UNISYMBOL_COLOR")->asColor();
 	m_Color_Pen			= wxColour(SG_GET_R(DefColor), SG_GET_G(DefColor), SG_GET_B(DefColor));
 
-	m_PointSize			= m_Parameters("DISPLAY_SIZE")	->asInt();
+	m_PointSize			= m_Parameters("DISPLAY_SIZE")->asInt();
+}
+
+//---------------------------------------------------------
+void CWKSP_PointCloud::On_Update_Views(void)
+{
+	m_pTable->Update_Views();
 }
 
 
 ///////////////////////////////////////////////////////////
-//														 //
-//														 //
 //														 //
 ///////////////////////////////////////////////////////////
 
@@ -435,7 +414,7 @@ int CWKSP_PointCloud::On_Parameter_Changed(CSG_Parameters *pParameters, CSG_Para
 	//-----------------------------------------------------
 	if( Flags & PARAMETER_CHECK_VALUES )
 	{
-		if(	!SG_STR_CMP(pParameter->Get_Identifier(), "METRIC_ATTRIB") )
+		if(	pParameter->Cmp_Identifier("METRIC_ATTRIB") )
 		{
 			int		zField	= pParameter->asInt();
 
@@ -451,7 +430,7 @@ int CWKSP_PointCloud::On_Parameter_Changed(CSG_Parameters *pParameters, CSG_Para
 	//-----------------------------------------------------
 	if( Flags & PARAMETER_CHECK_ENABLE )
 	{
-		if(	!SG_STR_CMP(pParameter->Get_Identifier(), "COLORS_TYPE") )
+		if(	pParameter->Cmp_Identifier("COLORS_TYPE") )
 		{
 			int	Value	= pParameter->asInt();
 
@@ -468,32 +447,8 @@ int CWKSP_PointCloud::On_Parameter_Changed(CSG_Parameters *pParameters, CSG_Para
 	return( CWKSP_Layer::On_Parameter_Changed(pParameters, pParameter, Flags) );
 }
 
-//---------------------------------------------------------
-void CWKSP_PointCloud::On_Update_Views(void)
-{
-	m_pTable->Update_Views();
-}
-
-//---------------------------------------------------------
-bool CWKSP_PointCloud::Fit_Colors(void)
-{
-	if( m_fValue >= Get_PointCloud()->Get_Field_Count() )
-	{
-		m_fValue	= Get_PointCloud()->Get_Field_Count() - 1;
-	}
-
-	double	m	= Get_PointCloud()->Get_Mean  (m_fValue);
-	double	s	= Get_PointCloud()->Get_StdDev(m_fValue) * 2.0;
-
-	m_Parameters("METRIC_ZRANGE")->asRange()->Set_Range(m - s, m + s);
-
-	return( true );
-}
-
 
 ///////////////////////////////////////////////////////////
-//														 //
-//														 //
 //														 //
 ///////////////////////////////////////////////////////////
 
@@ -504,48 +459,34 @@ wxString CWKSP_PointCloud::Get_Name_Attribute(void)
 }
 
 //---------------------------------------------------------
-CSG_Parameter * CWKSP_PointCloud::_AttributeList_Add(CSG_Parameter *pNode, const CSG_String &Identifier, const CSG_String &Name, const CSG_String &Description)
-{
-	CSG_Parameter *pParameter;
-
-	pParameter	= m_Parameters.Add_Choice(
-		pNode, Identifier, Name, Description,
-		CSG_String::Format(SG_T("%s|"), _TL("<default>")), 0
-	);
-
-	return( pParameter );
-}
-
-//---------------------------------------------------------
 void CWKSP_PointCloud::_AttributeList_Set(CSG_Parameter *pFields, bool bAddNoField)
 {
 	if( pFields && pFields->Get_Type() == PARAMETER_TYPE_Choice )
 	{
-		wxString	s;
+		CSG_String	s;
 
 		for(int i=0; i<Get_PointCloud()->Get_Field_Count(); i++)
 		{
-			s.Append(wxString::Format("%s|", Get_PointCloud()->Get_Field_Name(i)));
+			s	+= Get_PointCloud()->Get_Field_Name(i); s += "|";
 		}
 
 		if( bAddNoField )
 		{
-			s.Append(wxString::Format("%s|", _TL("<none>")));
-		}
+			s	+= _TL("<none>");
 
-		pFields->asChoice()->Set_Items(s);
+			pFields->asChoice()->Set_Items(s);
 
-		if( bAddNoField )
-		{
 			pFields->Set_Value(Get_PointCloud()->Get_Field_Count());
+		}
+		else
+		{
+			pFields->asChoice()->Set_Items(s);
 		}
 	}
 }
 
 
 ///////////////////////////////////////////////////////////
-//														 //
-//														 //
 //														 //
 ///////////////////////////////////////////////////////////
 
@@ -569,7 +510,7 @@ void CWKSP_PointCloud::_LUT_Create(void)
 		Parameters.Add_Choice("", "FIELD" , _TL("Attribute"     ), _TL(""), "");
 		Parameters.Add_Colors("", "COLOR" , _TL("Colors"        ), _TL(""))->asColors()->Set_Count(11);
 		Parameters.Add_Choice("", "METHOD", _TL("Classification"), _TL(""),
-			CSG_String::Format("%s|%s|%s|%s|",
+			CSG_String::Format("%s|%s|%s|%s",
 				_TL("unique values"),
 				_TL("equal intervals"),
 				_TL("quantiles"),
@@ -756,8 +697,6 @@ void CWKSP_PointCloud::_LUT_Create(void)
 
 ///////////////////////////////////////////////////////////
 //														 //
-//														 //
-//														 //
 ///////////////////////////////////////////////////////////
 
 //---------------------------------------------------------
@@ -794,8 +733,6 @@ wxString CWKSP_PointCloud::Get_Value(CSG_Point ptWorld, double Epsilon)
 
 ///////////////////////////////////////////////////////////
 //														 //
-//														 //
-//														 //
 ///////////////////////////////////////////////////////////
 
 //---------------------------------------------------------
@@ -808,8 +745,6 @@ double CWKSP_PointCloud::Get_Value_StdDev (void)	{	return( m_fValue < 0 ? 0.0 : 
 
 ///////////////////////////////////////////////////////////
 //														 //
-//														 //
-//														 //
 ///////////////////////////////////////////////////////////
 
 //---------------------------------------------------------
@@ -820,8 +755,6 @@ bool CWKSP_PointCloud::asImage(CSG_Grid *pImage)
 
 
 ///////////////////////////////////////////////////////////
-//														 //
-//														 //
 //														 //
 ///////////////////////////////////////////////////////////
 
@@ -864,7 +797,7 @@ bool CWKSP_PointCloud::Edit_On_Mouse_Up(CSG_Point Point, double ClientToWorld, i
 			rWorld.Inflate(2.0 * ClientToWorld, false);
 		}
 
-		g_pACTIVE->Get_Attributes()->Set_Attributes();
+		g_pActive->Update_Attributes();
 
 		Get_PointCloud()->Select(rWorld, (Key & TOOL_INTERACTIVE_KEY_CTRL) != 0);
 
@@ -885,7 +818,7 @@ bool CWKSP_PointCloud::Edit_On_Mouse_Up(CSG_Point Point, double ClientToWorld, i
 		}
 
 		//-----------------------------------------------------
-		g_pACTIVE->Get_Attributes()->Set_Attributes();
+		g_pActive->Update_Attributes();
 
 		if( m_pTable->Get_View() )
 		{
@@ -953,8 +886,6 @@ bool CWKSP_PointCloud::Edit_Set_Attributes(void)
 
 ///////////////////////////////////////////////////////////
 //														 //
-//														 //
-//														 //
 ///////////////////////////////////////////////////////////
 
 //---------------------------------------------------------
@@ -977,8 +908,6 @@ void CWKSP_PointCloud::On_Draw(CWKSP_Map_DC &dc_Map, int Flags)
 
 
 ///////////////////////////////////////////////////////////
-//														 //
-//														 //
 //														 //
 ///////////////////////////////////////////////////////////
 

@@ -556,7 +556,7 @@ public:
 	virtual ~CSG_Distance_Weighting(void);
 
 	bool					Create_Parameters	(class CSG_Parameters *pParameters, bool bDialog = true);
-	int						Enable_Parameters	(class CSG_Parameters *pParameters);
+	static bool				Enable_Parameters	(class CSG_Parameters *pParameters);
 	bool					Set_Parameters		(class CSG_Parameters *pParameters);
 	class CSG_Parameters *	Get_Parameters		(void)	const		{	return( m_pParameters );	}
 
@@ -719,6 +719,7 @@ public:
 	bool							operator !=				(const CSG_Projection &Projection)	const	{	return( is_Equal(Projection) == false );	}
 
 	bool							Set_GCS_WGS84			(void);
+	bool							Set_UTM_WGS84			(int Zone, bool bSouth = false);
 
 	bool							Load					(const CSG_String &FileName, TSG_Projection_Format Format = SG_PROJ_FMT_WKT);
 	bool							Save					(const CSG_String &FileName, TSG_Projection_Format Format = SG_PROJ_FMT_WKT)	const;

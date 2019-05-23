@@ -1,6 +1,3 @@
-/**********************************************************
- * Version $Id$
- *********************************************************/
 
 ///////////////////////////////////////////////////////////
 //                                                       //
@@ -108,7 +105,6 @@ CSG_PointCloud * SG_Create_PointCloud(CSG_PointCloud *pStructure)
 	return( new CSG_PointCloud(pStructure) );
 }
 
-
 ///////////////////////////////////////////////////////////
 //														 //
 //														 //
@@ -144,14 +140,7 @@ CSG_PointCloud::CSG_PointCloud(const CSG_PointCloud &PointCloud)
 
 bool CSG_PointCloud::Create(const CSG_PointCloud &PointCloud)
 {
-	if( Assign((CSG_Data_Object *)&PointCloud) )
-	{
-		Set_Name(PointCloud.Get_Name());
-
-		return( true );
-	}
-
-	return( false );
+	return( Assign((CSG_Data_Object *)&PointCloud) );
 }
 
 //---------------------------------------------------------
@@ -363,6 +352,11 @@ bool CSG_PointCloud::Save(const CSG_String &_FileName, int Format)
 
 			if( Stream.Add_File(Name + "sg-pts") && _Save(Stream) )
 			{
+				if( Stream.Add_File(Name + "sg-pts-hdr") )
+				{
+					CSG_MetaData	Header = _Create_Header();		Header.Save(Stream);
+				}
+
 				if( Stream.Add_File(Name + "sg-info") )
 				{
 					Save_MetaData(Stream);
@@ -389,6 +383,8 @@ bool CSG_PointCloud::Save(const CSG_String &_FileName, int Format)
 
 			if( _Save(Stream) )
 			{
+				CSG_MetaData	Header = _Create_Header();		Header.Save(SG_File_Make_Path("", FileName, "sg-pts-hdr"));
+
 				Save_MetaData(FileName);
 
 				if( Get_Projection().is_Okay() )
@@ -421,6 +417,29 @@ bool CSG_PointCloud::Save(const CSG_String &_FileName, int Format)
 	return( false );
 }
 
+//---------------------------------------------------------
+bool CSG_PointCloud::Get_Header_Content(const CSG_String &FileName, CSG_MetaData &Header)
+{
+	bool	bResult	= false;
+
+	if( SG_File_Cmp_Extension(FileName, "sg-pts-z") ) // POINTCLOUD_FILE_FORMAT_Compressed
+	{
+		CSG_File_Zip	Stream(FileName, SG_FILE_R);
+
+		CSG_String	_FileName(SG_File_Get_Name(FileName, false) + ".");
+
+		if( Stream.Get_File(_FileName + "sg-pts-hdr") )
+		{
+			bResult = Header.Load(Stream);
+		}
+	}
+	else // if( SG_File_Cmp_Extension(FileName, "sg-pts"/"spc") ) // POINTCLOUD_FILE_FORMAT_Normal
+	{
+		bResult = Header.Load(FileName, SG_T("sg-pts-hdr"));
+	}
+
+	return( bResult );
+}
 
 ///////////////////////////////////////////////////////////
 //														 //
@@ -492,16 +511,13 @@ bool CSG_PointCloud::_Load(CSG_File &Stream)
 		}
 	}
 
-	if( m_nPointBytes != nPointBytes + 1 )
-	{
-		return( false );
-	}
-
 	//-----------------------------------------------------
 	sLong	fLength	= Stream.Length();
 
 	while( _Inc_Array() && Stream.Read(m_Cursor + 1, nPointBytes) && SG_UI_Process_Set_Progress((double)Stream.Tell(), (double)fLength) )
-	{}
+	{
+		// nop
+	}
 
 	_Dec_Array();
 
@@ -542,6 +558,39 @@ bool CSG_PointCloud::_Save(CSG_File &Stream)
 	return( true );
 }
 
+//---------------------------------------------------------
+CSG_MetaData CSG_PointCloud::_Create_Header(void) const
+{
+	CSG_MetaData	Header;
+
+	Header.Set_Name("PointCloudHeaderFile");
+	Header.Add_Property("Version", "1.0");
+
+	CSG_MetaData	*pPoints	= Header.Add_Child("Points");
+	CSG_MetaData	*pBBox		= Header.Add_Child("BBox");
+	CSG_MetaData	*pNoData	= Header.Add_Child("NoData");
+	CSG_MetaData	*pAttr		= Header.Add_Child("Attributes");
+
+	pPoints	->Add_Property("Value"	, CSG_String::Format("%d", Get_Point_Count()));
+	pBBox	->Add_Property("XMin"	, Get_Minimum(0));
+	pBBox	->Add_Property("YMin"	, Get_Minimum(1));
+	pBBox	->Add_Property("ZMin"	, Get_Minimum(2));
+	pBBox	->Add_Property("XMax"	, Get_Maximum(0));
+	pBBox	->Add_Property("YMax"	, Get_Maximum(1));
+	pBBox	->Add_Property("ZMax"	, Get_Maximum(2));
+	pNoData	->Add_Property("Value"	, Get_NoData_Value());
+	pAttr	->Add_Property("Count"	, Get_Field_Count());
+
+	for(int iField=0; iField<Get_Field_Count(); iField++)
+	{
+		CSG_MetaData	*pField = pAttr->Add_Child(CSG_String::Format("Field_%d", iField + 1));
+
+		pField->Add_Property("Name", Get_Field_Name(iField));
+		pField->Add_Property("Type", gSG_Data_Type_Identifier[Get_Field_Type(iField)]);
+	}
+
+	return (Header);
+}
 
 ///////////////////////////////////////////////////////////
 //														 //
@@ -558,7 +607,11 @@ bool CSG_PointCloud::Assign(CSG_Data_Object *pObject)
 
 		CSG_PointCloud	*pPointCloud	= (CSG_PointCloud *)pObject;
 
+		Set_Name(pPointCloud->Get_Name());
+
 		Get_History()	= pPointCloud->Get_History();
+
+		Get_Projection().Create(pPointCloud->Get_Projection());
 
 		for(int iField=0; iField<pPointCloud->m_nFields; iField++)
 		{
@@ -743,6 +796,13 @@ bool CSG_PointCloud::_Set_Field_Value(char *pPoint, int iField, double Value)
 
 		m_Field_Stats[iField]->Invalidate();
 
+		Set_Modified();
+
+		if( iField < 3 )
+		{
+			Set_Update_Flag();	// extent might have changed
+		}
+
 		return( true );
 	}
 
@@ -879,21 +939,33 @@ TSG_Point_Z CSG_PointCloud::Get_Point(int iPoint)	const
 	}
 	else
 	{
-		p.x	= p.y	= p.z	= 0.0;
+		p.x = p.y = p.z = 0.0;
 	}
 
 	return( p );
 }
 
 //---------------------------------------------------------
-bool CSG_PointCloud::On_NoData_Changed(void)
+bool CSG_PointCloud::Set_Point(const TSG_Point_Z &Point)
 {
-	for(int i=3; i<m_nFields; i++)
+	return( _Set_Field_Value(m_Cursor, 0, Point.x)
+		&&  _Set_Field_Value(m_Cursor, 1, Point.y)
+		&&  _Set_Field_Value(m_Cursor, 2, Point.z)
+	);
+}
+
+//---------------------------------------------------------
+bool CSG_PointCloud::Set_Point(int iPoint, const TSG_Point_Z &Point)
+{
+	if( iPoint >= 0 && iPoint < m_nRecords )
 	{
-		m_Field_Stats[i]->Invalidate();
+		return( _Set_Field_Value(m_Points[iPoint], 0, Point.x)
+			&&  _Set_Field_Value(m_Points[iPoint], 1, Point.y)
+			&&  _Set_Field_Value(m_Points[iPoint], 2, Point.z)
+		);
 	}
 
-	return( true );
+	return( false );
 }
 
 
@@ -1046,7 +1118,9 @@ bool CSG_PointCloud::_Stats_Update(int iField) const
 {
 	if( iField >= 0 && iField < m_nFields && Get_Count() > 0 )
 	{
-		if( !m_Field_Stats[iField]->is_Evaluated() )
+		CSG_Simple_Statistics	*pStatistics	= m_Field_Stats[iField];
+
+		if( !pStatistics->is_Evaluated() )
 		{
 			char	**pPoint	= m_Points;
 
@@ -1056,9 +1130,11 @@ bool CSG_PointCloud::_Stats_Update(int iField) const
 
 				if( iField < 3 || is_NoData_Value(Value) == false )
 				{
-					m_Field_Stats[iField]->Add_Value(Value);
+					pStatistics->Add_Value(Value);
 				}
 			}
+
+			pStatistics->Get_Mean();	// evaluate! prevent values to be added more than once!
 		}
 
 		return( true );

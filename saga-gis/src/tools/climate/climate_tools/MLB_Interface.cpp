@@ -67,7 +67,7 @@ CSG_String Get_Info(int i)
 	switch( i )
 	{
 	case TLB_INFO_Name:	default:
-		return( _TL("Tools") );
+		return( _TL("Climate Tools") );
 
 	case TLB_INFO_Category:
 		return( _TL("Climate") );
@@ -102,6 +102,7 @@ CSG_String Get_Info(int i)
 #include "snow_cover.h"
 #include "growing_degree_days.h"
 #include "climate_classification.h"
+#include "phenips.h"
 
 
 //---------------------------------------------------------
@@ -141,8 +142,11 @@ CSG_Tool *		Create_Tool(int i)
 
 	case 19:	return( new CClimate_Classification );
 
+	case 21:	return( new CPhenIps_Table );
+	case 22:	return( new CPhenIps_Grids );
+
 	//-----------------------------------------------------
-	case 21:	return( NULL );
+	case 23:	return( NULL );
 	default:	return( TLB_INTERFACE_SKIP_TOOL );
 	}
 }

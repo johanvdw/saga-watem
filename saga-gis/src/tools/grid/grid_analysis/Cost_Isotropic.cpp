@@ -127,13 +127,13 @@ CCost_Accumulated::CCost_Accumulated(void)
 //---------------------------------------------------------
 int CCost_Accumulated::On_Parameters_Enable(CSG_Parameters *pParameters, CSG_Parameter *pParameter)
 {
-	if( !SG_STR_CMP(pParameter->Get_Identifier(), "DIR_MAXCOST") )
+	if( pParameter->Cmp_Identifier("DIR_MAXCOST") )
 	{
 		pParameters->Set_Enabled("DIR_UNIT", pParameter->asPointer() != NULL);
 		pParameters->Set_Enabled("DIR_K"   , pParameter->asPointer() != NULL);
 	}
 
-	if( !SG_STR_CMP(pParameter->Get_Identifier(), "DEST_TYPE") )
+	if( pParameter->Cmp_Identifier("DEST_TYPE") )
 	{
 		pParameters->Set_Enabled("DEST_POINTS", pParameter->asInt() == 0);
 		pParameters->Set_Enabled("DEST_GRID"  , pParameter->asInt() == 1);
@@ -196,7 +196,7 @@ bool CCost_Accumulated::Get_Destinations(CPoints &Points)
 
 		for(int i=0, x, y; i<pDestinations->Get_Count(); i++)
 		{
-			if( Get_System()->Get_World_to_Grid(x, y, pDestinations->Get_Shape(i)->Get_Point(0)) && !m_pCost->is_NoData(x, y) )
+			if( Get_System().Get_World_to_Grid(x, y, pDestinations->Get_Shape(i)->Get_Point(0)) && !m_pCost->is_NoData(x, y) )
 			{
 				Points.Add(x, y); m_pAllocation->Set_Value(x, y, Points.Get_Count()); m_pAccumulated->Set_Value(x, y, 0.0);
 			}
@@ -226,7 +226,7 @@ bool CCost_Accumulated::Get_Destinations(CPoints &Points)
 //---------------------------------------------------------
 bool CCost_Accumulated::Get_Cost(CPoints &Points)
 {
-	CPoints	Next;	CSG_Grid	Next_Index(*Get_System(), SG_DATATYPE_Int);
+	CPoints	Next;	CSG_Grid	Next_Index(Get_System(), SG_DATATYPE_Int);
 
 	double	Threshold	= Parameters("THRESHOLD")->asDouble();
 
@@ -234,7 +234,7 @@ bool CCost_Accumulated::Get_Cost(CPoints &Points)
 
 	while( Points.Get_Count() > 0 && Set_Progress_NCells(nProcessed) )
 	{
-		Process_Set_Text(CSG_String::Format("%s: %d", _TL("cells in process"), Points.Get_Count()));
+		Process_Set_Text("%s: %d", _TL("cells in process"), Points.Get_Count());
 
 		int		iPoint;
 

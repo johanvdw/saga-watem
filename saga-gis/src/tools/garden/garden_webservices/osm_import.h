@@ -1,6 +1,3 @@
-/**********************************************************
- * Version $Id: table.cpp 911 2011-02-14 16:38:15Z reklov_w $
- *********************************************************/
 
 ///////////////////////////////////////////////////////////
 //                                                       //
@@ -9,7 +6,7 @@
 //      System for Automated Geoscientific Analyses      //
 //                                                       //
 //                     Tool Library                      //
-//                   garden_webservices                  //
+//                  garden_webservices                   //
 //                                                       //
 //-------------------------------------------------------//
 //                                                       //
@@ -49,15 +46,6 @@
 ///////////////////////////////////////////////////////////
 
 //---------------------------------------------------------
-
-
-///////////////////////////////////////////////////////////
-//														 //
-//														 //
-//														 //
-///////////////////////////////////////////////////////////
-
-//---------------------------------------------------------
 #ifndef HEADER_INCLUDED__OSM_Import_H
 #define HEADER_INCLUDED__OSM_Import_H
 
@@ -69,7 +57,7 @@
 ///////////////////////////////////////////////////////////
 
 //---------------------------------------------------------
-#include "MLB_Interface.h"
+#include "sg_curl.h"
 
 
 ///////////////////////////////////////////////////////////
@@ -96,6 +84,8 @@ private:
 
 	bool				m_bDown;
 
+	CWebClient			m_Connection;
+
 	CSG_Point			m_ptDown;
 
 	CSG_Table			m_Nodes;
@@ -103,11 +93,8 @@ private:
 	CSG_Shapes			*m_pPoints, *m_pWays, *m_pAreas;
 
 
-	bool				Load_Nodes			(class wxXmlNode *pRoot);
-	bool				Find_Node			(long id, double &lon, double &lat);
-	CSG_Table_Record *	Find_Node			(long id);
-
-	bool				Load_Ways			(class wxXmlNode *pRoot);
+	bool				Load_Nodes			(const CSG_MetaData &Root);
+	bool				Load_Ways			(const CSG_MetaData &Root);
 
 };
 

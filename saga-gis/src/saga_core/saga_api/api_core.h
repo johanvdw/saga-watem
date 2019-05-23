@@ -200,10 +200,75 @@ SAGA_API_DLL_EXPORT void			SG_Free				(void *memblock);
 //---------------------------------------------------------
 SAGA_API_DLL_EXPORT void			SG_Swap_Bytes		(void *Buffer, int nBytes);
 
-SAGA_API_DLL_EXPORT int				SG_Mem_Get_Int		(const char *Buffer			, bool bSwapBytes);
-SAGA_API_DLL_EXPORT void			SG_Mem_Set_Int		(char *Buffer, int Value	, bool bSwapBytes);
-SAGA_API_DLL_EXPORT double			SG_Mem_Get_Double	(const char *Buffer			, bool bSwapBytes);
-SAGA_API_DLL_EXPORT void			SG_Mem_Set_Double	(char *Buffer, double Value	, bool bSwapBytes);
+SAGA_API_DLL_EXPORT int				SG_Mem_Get_Int		(const char *Buffer        , bool bSwapBytes);
+SAGA_API_DLL_EXPORT void			SG_Mem_Set_Int		(char *Buffer, int Value   , bool bSwapBytes);
+SAGA_API_DLL_EXPORT double			SG_Mem_Get_Double	(const char *Buffer        , bool bSwapBytes);
+SAGA_API_DLL_EXPORT void			SG_Mem_Set_Double	(char *Buffer, double Value, bool bSwapBytes);
+
+
+///////////////////////////////////////////////////////////
+//														 //
+///////////////////////////////////////////////////////////
+
+//---------------------------------------------------------
+class SAGA_API_DLL_EXPORT CSG_Buffer
+{
+public:
+
+						CSG_Buffer		(void);
+	bool				Create			(void);
+
+						CSG_Buffer		(const CSG_Buffer &Buffer);
+	bool				Create			(const CSG_Buffer &Buffer);
+
+						CSG_Buffer		(size_t Size);
+	bool				Create			(size_t Size);
+
+	virtual				~CSG_Buffer		(void);
+	void				Destroy			(void);
+
+	bool				Set_Size		(size_t Size, bool bShrink = true);
+	bool				Inc_Size		(size_t Size)				{	return( Set_Size(m_Size + Size) );	}
+	size_t				Get_Size		(void)				const	{	return( m_Size );	}
+
+	bool				Set_Data		(const char *Data, size_t Size, bool bShrink = true);
+	char *				Get_Data		(int Offset = 0)	const	{	return( m_Data + Offset );		}
+
+	CSG_Buffer &		operator =		(const CSG_Buffer &Buffer)	{	Create(Buffer);	return( *this );	}
+	char &				operator []		(int Position)				{	return( m_Data[Position] );	}
+	char				operator []		(int Position)		const	{	return( m_Data[Position] );	}
+
+	void				Add_Value		(char   Value, bool bBigEndian = false)	{	if( Inc_Size(sizeof(Value)) ) Set_Value((int)m_Size - sizeof(Value), Value, bBigEndian);	}
+	void				Add_Value		(short  Value, bool bBigEndian = false)	{	if( Inc_Size(sizeof(Value)) ) Set_Value((int)m_Size - sizeof(Value), Value, bBigEndian);	}
+	void				Add_Value		(int    Value, bool bBigEndian = false)	{	if( Inc_Size(sizeof(Value)) ) Set_Value((int)m_Size - sizeof(Value), Value, bBigEndian);	}
+	void				Add_Value		(float  Value, bool bBigEndian = false)	{	if( Inc_Size(sizeof(Value)) ) Set_Value((int)m_Size - sizeof(Value), Value, bBigEndian);	}
+	void				Add_Value		(double Value, bool bBigEndian = false)	{	if( Inc_Size(sizeof(Value)) ) Set_Value((int)m_Size - sizeof(Value), Value, bBigEndian);	}
+
+	CSG_Buffer &		operator +=		(char   Value)				{	Add_Value(Value);	return( *this );	}
+	CSG_Buffer &		operator +=		(short  Value)				{	Add_Value(Value);	return( *this );	}
+	CSG_Buffer &		operator +=		(int    Value)				{	Add_Value(Value);	return( *this );	}
+	CSG_Buffer &		operator +=		(float  Value)				{	Add_Value(Value);	return( *this );	}
+	CSG_Buffer &		operator +=		(double Value)				{	Add_Value(Value);	return( *this );	}
+
+	void				Set_Value		(int Offset, char   Value, bool bBigEndian = false)	{	m_Data[Offset]	= Value;	}
+	void				Set_Value		(int Offset, short  Value, bool bBigEndian = false)	{	if( bBigEndian ) SG_Swap_Bytes(&Value, sizeof(Value)); *(short  *)(m_Data + Offset) = Value;	}
+	void				Set_Value		(int Offset, int    Value, bool bBigEndian = false)	{	if( bBigEndian ) SG_Swap_Bytes(&Value, sizeof(Value)); *(int    *)(m_Data + Offset) = Value;	}
+	void				Set_Value		(int Offset, float  Value, bool bBigEndian = false)	{	if( bBigEndian ) SG_Swap_Bytes(&Value, sizeof(Value)); *(float  *)(m_Data + Offset) = Value;	}
+	void				Set_Value		(int Offset, double Value, bool bBigEndian = false)	{	if( bBigEndian ) SG_Swap_Bytes(&Value, sizeof(Value)); *(double *)(m_Data + Offset) = Value;	}
+
+	short				asShort			(int Offset, bool bBigEndian = false) const	{	short  Value = *(short  *)(m_Data + Offset); if( bBigEndian ) SG_Swap_Bytes(&Value, sizeof(Value)); return( Value );	}
+	int					asInt			(int Offset, bool bBigEndian = false) const	{	int    Value = *(int    *)(m_Data + Offset); if( bBigEndian ) SG_Swap_Bytes(&Value, sizeof(Value)); return( Value );	}
+	float				asFloat			(int Offset, bool bBigEndian = false) const	{	float  Value = *(float  *)(m_Data + Offset); if( bBigEndian ) SG_Swap_Bytes(&Value, sizeof(Value)); return( Value );	}
+	double				asDouble		(int Offset, bool bBigEndian = false) const	{	double Value = *(double *)(m_Data + Offset); if( bBigEndian ) SG_Swap_Bytes(&Value, sizeof(Value)); return( Value );	}
+
+
+private:
+
+	char				*m_Data;
+
+	size_t				m_Size;
+
+};
 
 
 ///////////////////////////////////////////////////////////
@@ -213,29 +278,29 @@ SAGA_API_DLL_EXPORT void			SG_Mem_Set_Double	(char *Buffer, double Value	, bool 
 ///////////////////////////////////////////////////////////
 
 //---------------------------------------------------------
-#define SG_STR_CMP(s1, s2)		CSG_String(s1).Cmp(s2)
+#define SG_Char				wchar_t
+#define SG_T(s)				L ## s
+#define SG_PRINTF			SG_Printf
+#define SG_FPRINTF			SG_FPrintf
+#define SG_SSCANF			swscanf
+#define SG_STR_CPY			wcscpy
+#define SG_STR_LEN			wcslen
+#define SG_STR_TOD			wcstod
+#define SG_STR_CMP(s1, s2)	CSG_String(s1).Cmp(s2)
+#define SG_STR_MBTOSG(s)	CSG_String(s).w_str()
 
-#if !defined(_SAGA_UNICODE)
-	#define SG_Char				char
-	#define SG_T(s)				s
-	#define SG_PRINTF			printf
-	#define SG_FPRINTF			fprintf
-	#define SG_SSCANF			sscanf
-	#define SG_STR_CPY			strcpy
-	#define SG_STR_LEN			strlen
-	#define SG_STR_TOD			strtod
-	#define SG_STR_MBTOSG(s)	s
-#else
-	#define SG_Char				wchar_t
-	#define SG_T(s)				L ## s
-	#define SG_PRINTF			SG_Printf
-	#define SG_FPRINTF			SG_FPrintf
-	#define SG_SSCANF			swscanf
-	#define SG_STR_CPY			wcscpy
-	#define SG_STR_LEN			wcslen
-	#define SG_STR_TOD			wcstod
-	#define SG_STR_MBTOSG(s)	CSG_String(s).w_str()
-#endif
+//---------------------------------------------------------
+enum ESG_File_Flags_Encoding
+{
+	SG_FILE_ENCODING_ANSI,
+	SG_FILE_ENCODING_UTF7,
+	SG_FILE_ENCODING_UTF8,
+	SG_FILE_ENCODING_UTF16LE,
+	SG_FILE_ENCODING_UTF16BE,
+	SG_FILE_ENCODING_UTF32LE,
+	SG_FILE_ENCODING_UTF32BE,
+	SG_FILE_ENCODING_UNDEFINED
+};
 
 //---------------------------------------------------------
 class SAGA_API_DLL_EXPORT CSG_String
@@ -247,7 +312,9 @@ public:
 	CSG_String(const wchar_t    *String);
 	CSG_String(char    Character, size_t nRepeat = 1);
 	CSG_String(wchar_t Character, size_t nRepeat = 1);
-	CSG_String(const class wxString *pString);
+
+									CSG_String			(const class wxString *pString);
+	bool							Create				(const class wxString *pString);
 
 	virtual ~CSG_String(void);
 
@@ -318,34 +385,42 @@ public:
 	CSG_String &					Remove				(size_t pos, size_t len);
 
 	int								Trim				(bool fromRight = false);
+	int								Trim_Both			(void);
 
 	int								Find				(char    Character, bool fromEnd = false)	const;
 	int								Find				(wchar_t Character, bool fromEnd = false)	const;
-	int								Find				(const CSG_String &String)			const;
-	bool							Contains			(const CSG_String &String)			const;
+	int								Find				(const CSG_String &String)				const;
+	bool							Contains			(const CSG_String &String)				const;
 
-	CSG_String						AfterFirst			(char    Character)					const;
-	CSG_String						AfterFirst			(wchar_t Character)					const;
-	CSG_String						AfterLast			(char    Character)					const;
-	CSG_String						AfterLast			(wchar_t Character)					const;
-	CSG_String						BeforeFirst			(char    Character)					const;
-	CSG_String						BeforeFirst			(wchar_t Character)					const;
-	CSG_String						BeforeLast			(char    Character)					const;
-	CSG_String						BeforeLast			(wchar_t Character)					const;
+	CSG_String						AfterFirst			(char    Character)						const;
+	CSG_String						AfterFirst			(wchar_t Character)						const;
+	CSG_String						AfterLast			(char    Character)						const;
+	CSG_String						AfterLast			(wchar_t Character)						const;
+	CSG_String						BeforeFirst			(char    Character)						const;
+	CSG_String						BeforeFirst			(wchar_t Character)						const;
+	CSG_String						BeforeLast			(char    Character)						const;
+	CSG_String						BeforeLast			(wchar_t Character)						const;
 
-	CSG_String						Right				(size_t count)						const;
-	CSG_String						Mid					(size_t first, size_t count = 0)	const;
-	CSG_String						Left				(size_t count)						const;
+	CSG_String						Right				(size_t count)							const;
+	CSG_String						Mid					(size_t first, size_t count = 0)		const;
+	CSG_String						Left				(size_t count)							const;
 
 	bool							is_Number			(void)	const;
 
-	int								asInt				(void)								const;
-	bool							asInt				(int    &Value)						const;
+	int								asInt				(void)									const;
+	bool							asInt				(int    &Value)							const;
 
-	double							asDouble			(void)								const;
-	bool							asDouble			(double &Value)						const;
+	double							asDouble			(void)									const;
+	bool							asDouble			(double &Value)							const;
 
-	bool							to_ASCII			(char **pString)					const;
+	static CSG_String				from_UTF8			(const char *String, size_t Length = 0);
+
+	size_t							to_UTF8				(char **pString)						const;
+	CSG_Buffer						to_UTF8				(void)									const;
+	size_t							to_MBChar			(char **pString, int Encoding)			const;
+	CSG_Buffer						to_MBChar			(                int Encoding)			const;
+	bool							to_ASCII			(char **pString, char Replace = '_')	const;
+	CSG_Buffer						to_ASCII			(                char Replace = '_')	const;
 
 
 protected:
@@ -414,7 +489,7 @@ class SAGA_API_DLL_EXPORT CSG_String_Tokenizer
 {
 public:
 	CSG_String_Tokenizer(void);
-	CSG_String_Tokenizer(const CSG_String &String, const CSG_String &Delimiters=SG_DEFAULT_DELIMITERS, TSG_String_Tokenizer_Mode Mode=SG_TOKEN_DEFAULT);
+	CSG_String_Tokenizer(const CSG_String &String, const CSG_String &Delimiters = SG_DEFAULT_DELIMITERS, TSG_String_Tokenizer_Mode Mode = SG_TOKEN_DEFAULT);
 
 	~CSG_String_Tokenizer(void);
 
@@ -425,7 +500,7 @@ public:
 	size_t							Get_Position		(void)	const;
 	CSG_String						Get_String			(void)	const;
 	bool							Has_More_Tokens		(void)	const;
-	void							Set_String			(const CSG_String &String, const CSG_String &Delimiters=SG_DEFAULT_DELIMITERS, TSG_String_Tokenizer_Mode Mode=SG_TOKEN_DEFAULT);
+	void							Set_String			(const CSG_String &String, const CSG_String &Delimiters = SG_DEFAULT_DELIMITERS, TSG_String_Tokenizer_Mode Mode = SG_TOKEN_DEFAULT);
 
 
 private:
@@ -435,10 +510,18 @@ private:
 };
 
 //---------------------------------------------------------
+SAGA_API_DLL_EXPORT CSG_Strings		SG_String_Tokenize				(const CSG_String &String, const CSG_String &Delimiters = SG_DEFAULT_DELIMITERS, TSG_String_Tokenizer_Mode Mode = SG_TOKEN_DEFAULT);
+
+//---------------------------------------------------------
 SAGA_API_DLL_EXPORT bool			SG_is_Character_Numeric			(int Character);
 
-SAGA_API_DLL_EXPORT int				SG_Printf						(const SG_Char *Format, ...);
-SAGA_API_DLL_EXPORT int				SG_FPrintf						(FILE* stream, const SG_Char *Format, ...);
+SAGA_API_DLL_EXPORT int				SG_Printf						(const CSG_String &String);
+SAGA_API_DLL_EXPORT int				SG_Printf						(const  char   *Format, ...);
+SAGA_API_DLL_EXPORT int				SG_Printf						(const wchar_t *Format, ...);
+
+SAGA_API_DLL_EXPORT int				SG_FPrintf						(FILE *Stream, const CSG_String &String);
+SAGA_API_DLL_EXPORT int				SG_FPrintf						(FILE *Stream, const  char   *Format, ...);
+SAGA_API_DLL_EXPORT int				SG_FPrintf						(FILE *Stream, const wchar_t *Format, ...);
 
 SAGA_API_DLL_EXPORT CSG_String		SG_Get_CurrentTimeStr			(bool bWithDate = true);
 
@@ -449,11 +532,13 @@ SAGA_API_DLL_EXPORT int				SG_Get_Significant_Decimals		(double Value, int maxDe
 
 SAGA_API_DLL_EXPORT void			SG_Flip_Decimal_Separators		(CSG_String &String);
 
-SAGA_API_DLL_EXPORT CSG_String		SG_Get_String					(double Value, int Precision = 0, bool bScientific = false);
+SAGA_API_DLL_EXPORT CSG_String		SG_Get_String					(double Value, int Precision = -99);
 SAGA_API_DLL_EXPORT CSG_String		SG_Get_String					(int    Value, int Precision = 0);
 
 
 ///////////////////////////////////////////////////////////
+//														 //
+//														 //
 //														 //
 ///////////////////////////////////////////////////////////
 
@@ -622,7 +707,10 @@ public:
 	int &				Get				(int    Index)							{	return( *((int *)m_Array.Get_Entry(Index)) );	}
 	int	 				Get				(int    Index)	const					{	return( *((int *)m_Array.Get_Entry(Index)) );	}
 
+	bool				Assign			(int Value);
+
 	CSG_Array_Int &		operator =		(const CSG_Array_Int &Array)			{	Create(Array);	return( *this );	}
+	CSG_Array_Int &		operator =		(int Value)								{	Assign(Value);	return( *this );	}
 
 	int &				operator []		(size_t Index)							{	return( Get(Index) );	}
 	int  				operator []		(size_t Index)	const					{	return( Get(Index) );	}
@@ -642,67 +730,7 @@ private:
 
 ///////////////////////////////////////////////////////////
 //														 //
-///////////////////////////////////////////////////////////
-
-//---------------------------------------------------------
-class SAGA_API_DLL_EXPORT CSG_Buffer
-{
-public:
-
-						CSG_Buffer		(void);
-	bool				Create			(void);
-
-						CSG_Buffer		(const CSG_Buffer &Buffer);
-	bool				Create			(const CSG_Buffer &Buffer);
-
-						CSG_Buffer		(size_t Size);
-	bool				Create			(size_t Size);
-
-	virtual				~CSG_Buffer		(void);
-	void				Destroy			(void);
-
-	bool				Set_Size		(size_t Size, bool bShrink = true);
-	bool				Inc_Size		(size_t Size)				{	return( Set_Size(m_Size + Size) );	}
-	size_t				Get_Size		(void)				const	{	return( m_Size );	}
-
-	bool				Set_Data		(const char *Buffer, size_t Size, bool bShrink = true);
-	char *				Get_Data		(int Offset = 0)	const	{	return( m_pData + Offset );		}
-	char				operator []		(int Position)		const	{	return( m_pData[Position] );	}
-
-	void				Add_Value		(char   Value, bool bBigEndian = false)	{	if( Inc_Size(sizeof(Value)) ) Set_Value((int)m_Size - sizeof(Value), Value, bBigEndian);	}
-	void				Add_Value		(short  Value, bool bBigEndian = false)	{	if( Inc_Size(sizeof(Value)) ) Set_Value((int)m_Size - sizeof(Value), Value, bBigEndian);	}
-	void				Add_Value		(int    Value, bool bBigEndian = false)	{	if( Inc_Size(sizeof(Value)) ) Set_Value((int)m_Size - sizeof(Value), Value, bBigEndian);	}
-	void				Add_Value		(float  Value, bool bBigEndian = false)	{	if( Inc_Size(sizeof(Value)) ) Set_Value((int)m_Size - sizeof(Value), Value, bBigEndian);	}
-	void				Add_Value		(double Value, bool bBigEndian = false)	{	if( Inc_Size(sizeof(Value)) ) Set_Value((int)m_Size - sizeof(Value), Value, bBigEndian);	}
-
-	CSG_Buffer &		operator +=		(char   Value)				{	Add_Value(Value);	return( *this );	}
-	CSG_Buffer &		operator +=		(short  Value)				{	Add_Value(Value);	return( *this );	}
-	CSG_Buffer &		operator +=		(int    Value)				{	Add_Value(Value);	return( *this );	}
-	CSG_Buffer &		operator +=		(float  Value)				{	Add_Value(Value);	return( *this );	}
-	CSG_Buffer &		operator +=		(double Value)				{	Add_Value(Value);	return( *this );	}
-
-	void				Set_Value		(int Offset, char   Value, bool bBigEndian = false)	{	m_pData[Offset]	= Value;	}
-	void				Set_Value		(int Offset, short  Value, bool bBigEndian = false)	{	if( bBigEndian ) SG_Swap_Bytes(&Value, sizeof(Value)); *(short  *)(m_pData + Offset) = Value;	}
-	void				Set_Value		(int Offset, int    Value, bool bBigEndian = false)	{	if( bBigEndian ) SG_Swap_Bytes(&Value, sizeof(Value)); *(int    *)(m_pData + Offset) = Value;	}
-	void				Set_Value		(int Offset, float  Value, bool bBigEndian = false)	{	if( bBigEndian ) SG_Swap_Bytes(&Value, sizeof(Value)); *(float  *)(m_pData + Offset) = Value;	}
-	void				Set_Value		(int Offset, double Value, bool bBigEndian = false)	{	if( bBigEndian ) SG_Swap_Bytes(&Value, sizeof(Value)); *(double *)(m_pData + Offset) = Value;	}
-
-	short				asShort			(int Offset, bool bBigEndian = false) const	{	short  Value = *(short  *)(m_pData + Offset); if( bBigEndian ) SG_Swap_Bytes(&Value, sizeof(Value)); return( Value );	}
-	int					asInt			(int Offset, bool bBigEndian = false) const	{	int    Value = *(int    *)(m_pData + Offset); if( bBigEndian ) SG_Swap_Bytes(&Value, sizeof(Value)); return( Value );	}
-	float				asFloat			(int Offset, bool bBigEndian = false) const	{	float  Value = *(float  *)(m_pData + Offset); if( bBigEndian ) SG_Swap_Bytes(&Value, sizeof(Value)); return( Value );	}
-	double				asDouble		(int Offset, bool bBigEndian = false) const	{	double Value = *(double *)(m_pData + Offset); if( bBigEndian ) SG_Swap_Bytes(&Value, sizeof(Value)); return( Value );	}
-
-
-private:
-
-	char				*m_pData;
-
-	size_t				m_Size;
-
-};
-
-
-///////////////////////////////////////////////////////////
+//														 //
 //														 //
 ///////////////////////////////////////////////////////////
 
@@ -820,6 +848,8 @@ private:
 
 
 ///////////////////////////////////////////////////////////
+//														 //
+//														 //
 //														 //
 ///////////////////////////////////////////////////////////
 
@@ -1003,15 +1033,6 @@ enum ESG_File_Flags_Open
 };
 
 //---------------------------------------------------------
-enum ESG_File_Flags_Encoding
-{
-	SG_FILE_ENCODING_CHAR,
-	SG_FILE_ENCODING_UNICODE,
-	SG_FILE_ENCODING_UTF8,
-	SG_FILE_ENCODING_UTF16
-};
-
-//---------------------------------------------------------
 enum ESG_File_Flags_Seek
 {
 	SG_FILE_START,
@@ -1027,8 +1048,8 @@ public:
 	CSG_File(void);
 	virtual ~CSG_File(void);
 
-									CSG_File			(const CSG_String &FileName, int Mode = SG_FILE_R, bool bBinary = true, int Encoding = SG_FILE_ENCODING_CHAR);
-	virtual bool					Open				(const CSG_String &FileName, int Mode = SG_FILE_R, bool bBinary = true, int Encoding = SG_FILE_ENCODING_CHAR);
+									CSG_File			(const CSG_String &FileName, int Mode = SG_FILE_R, bool bBinary = true, int Encoding = SG_FILE_ENCODING_ANSI);
+	virtual bool					Open				(const CSG_String &FileName, int Mode = SG_FILE_R, bool bBinary = true, int Encoding = SG_FILE_ENCODING_ANSI);
 
 	virtual bool					Close				(void);
 
@@ -1037,6 +1058,7 @@ public:
 
 	class wxStreamBase *			Get_Stream			(void)	const	{	return( (class wxStreamBase *)m_pStream );	}
 
+	bool							Set_Encoding		(int Encoding);
 	int								Get_Encoding		(void)	const	{	return( m_Encoding );	}
 
 	bool							is_Open				(void)	const	{	return( m_pStream != NULL );	}
@@ -1083,7 +1105,10 @@ protected:
 
 	CSG_String						m_FileName;
 
-	void							*m_pStream;
+	void							*m_pStream, *m_pConvert;
+
+
+	void							On_Construction		(void);
 
 };
 
@@ -1095,8 +1120,8 @@ public:
 	CSG_File_Zip(void);
 	virtual ~CSG_File_Zip(void);
 
-									CSG_File_Zip		(const CSG_String &FileName, int Mode = SG_FILE_R);
-	virtual bool					Open				(const CSG_String &FileName, int Mode = SG_FILE_R);
+									CSG_File_Zip		(const CSG_String &FileName, int Mode = SG_FILE_R, int Encoding = SG_FILE_ENCODING_ANSI);
+	virtual bool					Open				(const CSG_String &FileName, int Mode = SG_FILE_R, int Encoding = SG_FILE_ENCODING_ANSI);
 
 	virtual bool					Close				(void);
 
@@ -1153,7 +1178,7 @@ SAGA_API_DLL_EXPORT bool			SG_Set_Environment			(const CSG_String &Variable, con
 ///////////////////////////////////////////////////////////
 
 //---------------------------------------------------------
-#define SG_GET_RGB(r, g, b)		((DWORD) (((BYTE)(r) | ((WORD)(g) << 8)) | (((DWORD)(BYTE)(b)) << 16)))
+#define SG_GET_RGB( r, g, b   )	((DWORD) (((BYTE)(r) | ((WORD)(g) << 8)) | (((DWORD)(BYTE)(b)) << 16)))
 #define SG_GET_RGBA(r, g, b, a)	((DWORD) (((BYTE)(r) | ((WORD)(g) << 8)) | (((DWORD)(BYTE)(b)) << 16) | (((DWORD)(BYTE)(a)) << 24)))
 
 #define SG_GET_R(rgb)			((BYTE) ((rgb)      ))
@@ -1209,6 +1234,9 @@ enum ESG_Colors
 	SG_COLORS_RAINBOW,
 	SG_COLORS_NEON,
 	SG_COLORS_TOPOGRAPHY,
+	SG_COLORS_TOPOGRAPHY_2,
+	SG_COLORS_TOPOGRAPHY_3,
+	SG_COLORS_PRECIPITATION,
 	SG_COLORS_ASPECT_1,
 	SG_COLORS_ASPECT_2,
 	SG_COLORS_ASPECT_3,
@@ -1216,17 +1244,25 @@ enum ESG_Colors
 };
 
 //---------------------------------------------------------
+SAGA_API_DLL_EXPORT CSG_String		SG_Colors_Get_Name	(int Index);
+
 SAGA_API_DLL_EXPORT long			SG_Color_Get_Random	(void);
 
-SAGA_API_DLL_EXPORT CSG_String		SG_Colors_Get_Name	(int Identifier);
+SAGA_API_DLL_EXPORT bool			SG_Color_From_Text	(const CSG_String &Text, long &Color);
 
 //---------------------------------------------------------
 class SAGA_API_DLL_EXPORT CSG_Colors
 {
 public:
-	CSG_Colors(void);
-	CSG_Colors(const CSG_Colors &Colors);
-	CSG_Colors(int nColors, int Palette = SG_COLORS_DEFAULT, bool bRevert = false);
+									CSG_Colors			(void);
+	bool							Create				(void);
+
+									CSG_Colors			(const CSG_Colors &Colors);
+	bool							Create				(const CSG_Colors &Colors);
+
+									CSG_Colors			(int nColors, int Palette = SG_COLORS_DEFAULT, bool bRevert = false);
+	bool							Create				(int nColors, int Palette = SG_COLORS_DEFAULT, bool bRevert = false);
+
 	virtual ~CSG_Colors(void);
 
 	void							Destroy				(void);
@@ -1265,8 +1301,11 @@ public:
 		);
 	}
 
+	static int						Get_Predefined_Count(void);
+	static const SG_Char *			Get_Predefined_Name	(int Identifier);
+	bool							Set_Predefined		(int Index, bool bRevert = false, int nColors = 11);
+	bool							Set_Palette			(int Index, bool bRevert = false, int nColors = 11)	{	return( Set_Predefined(Index, bRevert, nColors) );	}
 	bool							Set_Default			(int nColors = 11);
-	bool							Set_Palette			(int Index, bool bRevert = false, int nColors = 11);
 	bool							Set_Ramp			(long Color_A, long Color_B);
 	bool							Set_Ramp			(long Color_A, long Color_B, int iColor_A, int iColor_B);
 	bool							Set_Ramp_Brighness	(int Brightness_A, int Brightness_B);
@@ -1275,6 +1314,7 @@ public:
 	bool							Random				(void);
 	bool							Invert				(void);
 	bool							Revert				(void);
+	bool							Greyscale			(void);
 
 	bool							Assign				(const CSG_Colors &Colors);
 	bool							Assign				(CSG_Colors *pSource);
@@ -1445,15 +1485,15 @@ TSG_UI_Callback_ID;
 class SAGA_API_DLL_EXPORT CSG_UI_Parameter
 {
 public:
-	CSG_UI_Parameter(void)						: True(false), Number( 0.0 ), Pointer(NULL)		{}
-	CSG_UI_Parameter(bool              Value)	: True(Value), Number( 0.0 ), Pointer(NULL)		{}
-	CSG_UI_Parameter(int               Value)	: True(false), Number(Value), Pointer(NULL)		{}
-	CSG_UI_Parameter(double            Value)	: True(false), Number(Value), Pointer(NULL)		{}
-	CSG_UI_Parameter(const CSG_String &Value)	: True(false), Number( 0.0 ), Pointer(NULL), String(Value)	{}
-	CSG_UI_Parameter(void             *Value)	: True(false), Number( 0.0 ), Pointer(Value)	{}
+	CSG_UI_Parameter(void)						: Boolean(false), Number( 0.0 ), Pointer(NULL)		{}
+	CSG_UI_Parameter(bool              Value)	: Boolean(Value), Number( 0.0 ), Pointer(NULL)		{}
+	CSG_UI_Parameter(int               Value)	: Boolean(false), Number(Value), Pointer(NULL)		{}
+	CSG_UI_Parameter(double            Value)	: Boolean(false), Number(Value), Pointer(NULL)		{}
+	CSG_UI_Parameter(const CSG_String &Value)	: Boolean(false), Number( 0.0 ), Pointer(NULL), String(Value)	{}
+	CSG_UI_Parameter(void             *Value)	: Boolean(false), Number( 0.0 ), Pointer(Value)	{}
 	CSG_UI_Parameter(const CSG_UI_Parameter &Copy);
 
-	bool		True;
+	bool		Boolean;
 
 	double		Number;
 

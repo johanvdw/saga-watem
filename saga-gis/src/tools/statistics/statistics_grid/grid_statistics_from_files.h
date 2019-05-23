@@ -1,6 +1,3 @@
-/**********************************************************
- * Version $Id$
- *********************************************************/
 
 ///////////////////////////////////////////////////////////
 //                                                       //
@@ -9,13 +6,13 @@
 //      System for Automated Geoscientific Analyses      //
 //                                                       //
 //                     Tool Library                      //
-//                     grid_spline                       //
+//                    statistics_grid                    //
 //                                                       //
 //-------------------------------------------------------//
 //                                                       //
-//                    TLB_Interface.h                    //
+//              grid_statistics_from_files.h             //
 //                                                       //
-//                 Copyright (C) 2006 by                 //
+//                Copyrights (C) 2018 by                 //
 //                      Olaf Conrad                      //
 //                                                       //
 //-------------------------------------------------------//
@@ -43,33 +40,48 @@
 //                                                       //
 //    contact:    Olaf Conrad                            //
 //                Institute of Geography                 //
-//                University of Goettingen               //
-//                Goldschmidtstr. 5                      //
-//                37077 Goettingen                       //
+//                University of Hamburg                  //
 //                Germany                                //
 //                                                       //
 ///////////////////////////////////////////////////////////
 
-
-///////////////////////////////////////////////////////////
-//														 //
-//														 //
-//														 //
-///////////////////////////////////////////////////////////
-
 //---------------------------------------------------------
-#ifndef HEADER_INCLUDED__grid_spline_H
-#define HEADER_INCLUDED__grid_spline_H
+#ifndef HEADER_INCLUDED__grid_statistics_from_files_H
+#define HEADER_INCLUDED__grid_statistics_from_files_H
 
 //---------------------------------------------------------
 #include <saga_api/saga_api.h>
 
+
+///////////////////////////////////////////////////////////
+//														 //
+//														 //
+//														 //
+///////////////////////////////////////////////////////////
+
 //---------------------------------------------------------
-#ifdef grid_spline_EXPORTS
-	#define	grid_spline_EXPORT	_SAGA_DLL_EXPORT
-#else
-	#define	grid_spline_EXPORT	_SAGA_DLL_IMPORT
-#endif
+class CGrid_Statistics_from_Files : public CSG_Tool
+{
+public:
+	CGrid_Statistics_from_Files(void);
+
+	virtual CSG_String		Get_MenuPath			(void)	{	return( _TL("Massive Data Analysis") );	}
+
+
+protected:
+
+	virtual int				On_Parameters_Enable	(CSG_Parameters *pParameters, CSG_Parameter *pParameter);
+
+	virtual bool			On_Execute				(void);
+
+
+private:
+
+	double					Get_Quantile			(double Quantile, const CSG_Vector &Cumulative, double Min, double Max);
+
+	CSG_Grids *				Get_Histogram			(const CSG_Strings &Files, const CSG_Grid_System &System);
+
+};
 
 
 ///////////////////////////////////////////////////////////
@@ -79,4 +91,4 @@
 ///////////////////////////////////////////////////////////
 
 //---------------------------------------------------------
-#endif // #ifndef HEADER_INCLUDED__grid_spline_H
+#endif // #ifndef HEADER_INCLUDED__grid_statistics_from_files_H

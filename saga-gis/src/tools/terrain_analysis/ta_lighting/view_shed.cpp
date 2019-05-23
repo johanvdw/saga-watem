@@ -170,7 +170,7 @@ CView_Shed::CView_Shed(void)
 //---------------------------------------------------------
 int CView_Shed::On_Parameters_Enable(CSG_Parameters *pParameters, CSG_Parameter *pParameter)
 {
-	if( !SG_STR_CMP(pParameter->Get_Identifier(), "METHOD") )
+	if( pParameter->Cmp_Identifier("METHOD") )
 	{
 		pParameters->Set_Enabled("DLEVEL", pParameter->asInt() == 1);
 	}
@@ -339,7 +339,7 @@ bool CView_Shed::Get_Angles_Multi_Scale(int x, int y, CSG_Vector &Angles, CSG_Ve
 {
 	double	d, z	= m_pDEM->asDouble(x, y);
 
-	TSG_Point	q, p	= Get_System()->Get_Grid_to_World(x, y);
+	TSG_Point	q, p	= Get_System().Get_Grid_to_World(x, y);
 
 	Distances	= 0.0;
 

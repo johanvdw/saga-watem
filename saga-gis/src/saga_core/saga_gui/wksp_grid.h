@@ -127,19 +127,15 @@ protected:
 	virtual void				On_Parameters_Changed	(void);
 	virtual int					On_Parameter_Changed	(CSG_Parameters *pParameters, CSG_Parameter *pParameter, int Flags);
 
-	virtual bool				Fit_Colors				(void);
-
 	virtual void				On_Draw					(CWKSP_Map_DC &dc_Map, int Flags);
 
 
 private:
 
-	int							m_Shade_Mode, m_xSel, m_ySel;
+	int							m_Fit_Colors, m_Shade_Mode, m_xSel, m_ySel;
 
 	double						m_Shade_Parms[6];
 
-
-	bool						_Fit_Colors				(CSG_Parameters &Parameters, double &Minimum, double &Maximum);
 
 	void						_LUT_Create				(void);
 
@@ -149,8 +145,10 @@ private:
 	bool						_Save_Image				(void);
 	bool						_Save_Image_Clipboard	(void);
 
+	void						_Get_Overlay			(CSG_Grid *pOverlay[2], CSG_Scaler Scaler[2]);
+
 	void						_Draw_Grid_Nodes		(CWKSP_Map_DC &dc_Map, TSG_Grid_Resampling Resampling);
-	void						_Draw_Grid_Nodes		(CWKSP_Map_DC &dc_Map, TSG_Grid_Resampling Resampling, int yDC, int axDC, int bxDC);
+	void						_Draw_Grid_Nodes		(CWKSP_Map_DC &dc_Map, TSG_Grid_Resampling Resampling, int yDC, int axDC, int bxDC, CSG_Grid *pOverlay[2], CSG_Scaler Scaler[2]);
 	void						_Draw_Grid_Cells		(CWKSP_Map_DC &dc_Map);
 
 	void						_Set_Shading			(double Shade, int &Color);

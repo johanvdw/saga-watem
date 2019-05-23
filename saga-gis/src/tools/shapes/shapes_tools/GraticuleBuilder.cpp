@@ -127,13 +127,13 @@ int CGraticuleBuilder::On_Parameter_Changed(CSG_Parameters *pParameters, CSG_Par
 //---------------------------------------------------------
 int CGraticuleBuilder::On_Parameters_Enable(CSG_Parameters *pParameters, CSG_Parameter *pParameter)
 {
-	if( !SG_STR_CMP(pParameter->Get_Identifier(), "TYPE") )
+	if( pParameter->Cmp_Identifier("TYPE") )
 	{
 		pParameters->Set_Enabled("GRATICULE_LINE", pParameter->asInt() == 0);
 		pParameters->Set_Enabled("GRATICULE_RECT", pParameter->asInt() != 0);
 	}
 
-	if( !SG_STR_CMP(pParameter->Get_Identifier(), "EXTENT") )
+	if( pParameter->Cmp_Identifier("EXTENT") )
 	{
 		pParameters->Set_Enabled("EXTENT_X", pParameter->asShapes() == NULL);
 		pParameters->Set_Enabled("EXTENT_Y", pParameter->asShapes() == NULL);
@@ -159,10 +159,10 @@ bool CGraticuleBuilder::On_Execute(void)
 	}
 	else
 	{
-		Extent.xMin	= Parameters("EXTENT_X")->asRange()->Get_LoVal();
-		Extent.yMin	= Parameters("EXTENT_Y")->asRange()->Get_LoVal();
-		Extent.xMax	= Parameters("EXTENT_X")->asRange()->Get_HiVal();
-		Extent.yMax	= Parameters("EXTENT_Y")->asRange()->Get_HiVal();
+		Extent.xMin	= Parameters("EXTENT_X")->asRange()->Get_Min();
+		Extent.yMin	= Parameters("EXTENT_Y")->asRange()->Get_Min();
+		Extent.xMax	= Parameters("EXTENT_X")->asRange()->Get_Max();
+		Extent.yMax	= Parameters("EXTENT_Y")->asRange()->Get_Max();
 	}
 
 	if( Extent.xMin >= Extent.xMax || Extent.yMin >= Extent.yMax )

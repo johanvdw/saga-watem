@@ -129,12 +129,21 @@ bool CRaster_Load::On_Execute(void)
 {
 	Parameters("GRIDS")->asGridList()->Del_Items();
 
-	return( Get_Connection()->Raster_Load(
+	if( !Get_Connection()->Raster_Load(
 		Parameters("GRIDS"   )->asGridList(),
 		Parameters("TABLES"  )->asString  (),
 		Parameters("WHERE"   )->asString  (), "",
-		Parameters("MULTIPLE")->asInt     ()
-	));
+		Parameters("MULTIPLE")->asInt     ()) )
+	{
+		Error_Fmt("%s:\n%s\n%s", _TL("unable to load raster data from PostGIS database"),
+			Get_Connection()->Get_Connection().c_str(),
+			Parameters("TABLES")->asString()
+		);
+
+		return( false );
+	}
+
+	return( true );
 }
 
 
@@ -205,7 +214,7 @@ void CRaster_Load_Band::On_Connection_Changed(CSG_Parameters *pParameters)
 //---------------------------------------------------------
 int CRaster_Load_Band::On_Parameter_Changed(CSG_Parameters *pParameters, CSG_Parameter *pParameter)
 {
-	if( !SG_STR_CMP(pParameter->Get_Identifier(), "TABLES") )
+	if( pParameter->Cmp_Identifier("TABLES") )
 	{
 		CSG_String	s;
 		CSG_Table	t;
@@ -344,7 +353,12 @@ void CRaster_Save::On_Connection_Changed(CSG_Parameters *pParameters)
 //---------------------------------------------------------
 int CRaster_Save::On_Parameter_Changed(CSG_Parameters *pParameters, CSG_Parameter *pParameter)
 {
-	if( !SG_STR_CMP(pParameter->Get_Identifier(), "TABLE") )
+	if( pParameter->Cmp_Identifier("NAME") )
+	{
+		pParameter->Set_Value(CSG_PG_Connection::Make_Table_Name(pParameter->asString()));
+	}
+
+	if( pParameter->Cmp_Identifier("TABLE") )
 	{
 		bool	bCreate	= pParameter->asInt() >= pParameter->asChoice()->Get_Count() - 1;
 
@@ -352,7 +366,7 @@ int CRaster_Save::On_Parameter_Changed(CSG_Parameters *pParameters, CSG_Paramete
 		pParameters->Set_Enabled("GRID_NAME", bCreate);
 	}
 
-	if( !SG_STR_CMP(pParameter->Get_Identifier(), "GRIDS") )
+	if( pParameter->Cmp_Identifier("GRIDS") )
 	{
 		for(int i=0; i<pParameter->asGridList()->Get_Grid_Count(); i++)
 		{
@@ -416,7 +430,7 @@ bool CRaster_Save::On_Execute(void)
 	//-----------------------------------------------------
 	for(int i=0; i<pGrids->Get_Grid_Count(); i++)
 	{
-		Process_Set_Text(CSG_String::Format("%s: %s [%d/%d]", _TL("export grid"), pGrids->Get_Grid(i)->Get_Name(), i + 1, pGrids->Get_Grid_Count()));
+		Process_Set_Text("%s: %s [%d/%d]", _TL("export grid"), pGrids->Get_Grid(i)->Get_Name(), i + 1, pGrids->Get_Grid_Count());
 
 		if( !Get_Connection()->Raster_Save(pGrids->Get_Grid(i), Get_SRID(), Table, pGrids->Get_Grid(i)->Get_Name()) )
 		{
@@ -511,7 +525,7 @@ void CRaster_Collection_Save::On_Connection_Changed(CSG_Parameters *pParameters)
 //---------------------------------------------------------
 int CRaster_Collection_Save::On_Parameter_Changed(CSG_Parameters *pParameters, CSG_Parameter *pParameter)
 {
-	if( !SG_STR_CMP(pParameter->Get_Identifier(), "GRIDS") )
+	if( pParameter->Cmp_Identifier("GRIDS") )
 	{
 		CSG_Grids	*pGrids	= pParameter->asGrids();
 			

@@ -175,7 +175,7 @@ CGDAL_Export::CGDAL_Export(void)
 //---------------------------------------------------------
 int CGDAL_Export::On_Parameters_Enable(CSG_Parameters *pParameters, CSG_Parameter *pParameter)
 {
-	if( !SG_STR_CMP(pParameter->Get_Identifier(), "SET_NODATA") )
+	if( pParameter->Cmp_Identifier("SET_NODATA") )
 	{
 		pParameters->Set_Enabled("NODATA", pParameter->asBool());
 	}
@@ -226,7 +226,7 @@ bool CGDAL_Export::On_Execute(void)
 	//-----------------------------------------------------
 	CSG_GDAL_DataSet	DataSet;
 
-	if( !DataSet.Open_Write(Parameters("FILE")->asString(), Driver, Parameters("OPTIONS")->asString(), Type, pGrids->Get_Grid_Count(), *Get_System(), Projection) )
+	if( !DataSet.Open_Write(Parameters("FILE")->asString(), Driver, Parameters("OPTIONS")->asString(), Type, pGrids->Get_Grid_Count(), Get_System(), Projection) )
 	{
 		return( false );
 	}
@@ -234,7 +234,7 @@ bool CGDAL_Export::On_Execute(void)
 	//-----------------------------------------------------
 	for(int i=0; i<pGrids->Get_Grid_Count(); i++)
 	{
-		Process_Set_Text(CSG_String::Format("%s %d", _TL("Band"), i + 1));
+		Process_Set_Text("%s %d", _TL("Band"), i + 1);
 
 		if ( Parameters("SET_NODATA")->asBool() )
 		{

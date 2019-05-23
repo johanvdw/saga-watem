@@ -129,8 +129,8 @@ bool CGrid_Colors_Fit::On_Execute(void)
 		break;
 
 	case  1:
-		zMin	= Parameters("RANGE")->asRange()->Get_LoVal();
-		zRange	= Parameters("RANGE")->asRange()->Get_HiVal() - zMin;
+		zMin	= Parameters("RANGE")->asRange()->Get_Min();
+		zRange	= Parameters("RANGE")->asRange()->Get_Max() - zMin;
 		break;
 	}
 
@@ -152,8 +152,6 @@ bool CGrid_Colors_Fit::On_Execute(void)
 	}
 
 	//-----------------------------------------------------
-	double	dColor	= 100.0 / Colors_Old.Get_Count();
-
 	double	bZ, aZ	= 0.0;
 	long	bC, aC	= Colors_Old.Get_Color(0);
 
@@ -161,7 +159,7 @@ bool CGrid_Colors_Fit::On_Execute(void)
 	{
 		bZ	= aZ;
 		bC	= aC;
-		aZ	= (pGrid->Get_Quantile(iColor * dColor) - zMin) / zRange;
+		aZ	= (pGrid->Get_Quantile(iColor / Colors_Old.Get_Count()) - zMin) / zRange;
 		aC	= Colors_Old.Get_Color(iColor);
 		_Set_Colors(Colors_New, bZ, bC, aZ, aC);
 	}

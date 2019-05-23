@@ -165,7 +165,7 @@ CGW_Multi_Regression_Grid::CGW_Multi_Regression_Grid(void)
 //---------------------------------------------------------
 int CGW_Multi_Regression_Grid::On_Parameter_Changed(CSG_Parameters *pParameters, CSG_Parameter *pParameter)
 {
-	if( !SG_STR_CMP(pParameter->Get_Identifier(), "POINTS") && pParameter->asShapes() )
+	if( pParameter->Cmp_Identifier("POINTS") && pParameter->asShapes() )
 	{
 		m_Search.On_Parameter_Changed(pParameters, pParameter);
 
@@ -179,7 +179,7 @@ int CGW_Multi_Regression_Grid::On_Parameter_Changed(CSG_Parameters *pParameters,
 //---------------------------------------------------------
 int CGW_Multi_Regression_Grid::On_Parameters_Enable(CSG_Parameters *pParameters, CSG_Parameter *pParameter)
 {
-	if(	!SG_STR_CMP(pParameter->Get_Identifier(), SG_T("RESOLUTION")) )
+	if(	pParameter->Cmp_Identifier(SG_T("RESOLUTION")) )
 	{
 		pParameters->Get_Parameter("RESOLUTION_VAL")->Set_Enabled(pParameter->asInt() == 1);
 	}
@@ -214,11 +214,11 @@ bool CGW_Multi_Regression_Grid::On_Execute(void)
 	//-----------------------------------------------------
 	CSG_Grid	Quality;
 
-	m_dimModel	= *Get_System();
+	m_dimModel	= Get_System();
 
 	if( Parameters("RESOLUTION")->asInt() == 1 && Parameters("RESOLUTION_VAL")->asDouble() > Get_Cellsize() )
 	{
-		CSG_Rect	r(Get_System()->Get_Extent()); r.Inflate(0.5 * Parameters("RESOLUTION_VAL")->asDouble(), false);
+		CSG_Rect	r(Get_System().Get_Extent()); r.Inflate(0.5 * Parameters("RESOLUTION_VAL")->asDouble(), false);
 
 		m_dimModel.Assign(Parameters("RESOLUTION_VAL")->asDouble(), r);
 
@@ -249,7 +249,7 @@ bool CGW_Multi_Regression_Grid::On_Execute(void)
 		}
 
 		m_pModel     [i]	= SG_Create_Grid(m_dimModel);
-		m_pModel     [i]	->Set_Name(CSG_String::Format(SG_T("%s [%s]"), pPredictors->Get_Grid(i)->Get_Name(), _TL("Factor")));
+		m_pModel     [i]	->Fmt_Name("%s [%s]", pPredictors->Get_Grid(i)->Get_Name(), _TL("Factor"));
 	}
 
 	m_pModel[m_nPredictors]	= SG_Create_Grid(m_dimModel);
@@ -322,7 +322,7 @@ bool CGW_Multi_Regression_Grid::Initialize(CSG_Shapes *pPoints, int iDependent, 
 		return( false );
 	}
 
-	if( !pPoints->Get_Extent().Intersects(Get_System()->Get_Extent()) )
+	if( !pPoints->Get_Extent().Intersects(Get_System().Get_Extent()) )
 	{
 		return( false );
 	}
@@ -473,8 +473,8 @@ bool CGW_Multi_Regression_Grid::Set_Model(void)
 	CSG_Grid	*pRegression	= Parameters("REGRESSION")->asGrid();
 	CSG_Grid	*pQuality		= Parameters("QUALITY"   )->asGrid();
 
-	pRegression->Set_Name(CSG_String::Format(SG_T("%s [%s]"    ), m_Points.Get_Name(), _TL("GWR")));
-	pQuality   ->Set_Name(CSG_String::Format(SG_T("%s [%s, %s]"), m_Points.Get_Name(), _TL("GWR"), _TL("Quality")));
+	pRegression->Fmt_Name("%s [%s]"    , m_Points.Get_Name(), _TL("GWR"));
+	pQuality   ->Fmt_Name("%s [%s, %s]", m_Points.Get_Name(), _TL("GWR"), _TL("Quality"));
 
 	if( m_pQuality == Parameters("QUALITY")->asGrid() )
 	{

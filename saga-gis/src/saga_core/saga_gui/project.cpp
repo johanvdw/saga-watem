@@ -121,8 +121,6 @@ CWKSP_Project::~CWKSP_Project(void)
 
 ///////////////////////////////////////////////////////////
 //														 //
-//														 //
-//														 //
 ///////////////////////////////////////////////////////////
 
 //---------------------------------------------------------
@@ -148,7 +146,7 @@ bool CWKSP_Project::_Set_Project_Name(void)
 	{
 		wxFileName	fn(m_File_Name);
 
-		if( fn.GetFullName().CmpNoCase(wxT("saga_gui.cfg")) )
+		if( fn.GetFullName().CmpNoCase("saga_gui.cfg") )
 		{
 			g_pSAGA_Frame->Set_Project_Name(m_File_Name);
 
@@ -163,8 +161,6 @@ bool CWKSP_Project::_Set_Project_Name(void)
 
 
 ///////////////////////////////////////////////////////////
-//														 //
-//														 //
 //														 //
 ///////////////////////////////////////////////////////////
 
@@ -209,8 +205,6 @@ bool CWKSP_Project::Save(const wxString &FileName, bool bSaveModified)
 
 
 ///////////////////////////////////////////////////////////
-//														 //
-//														 //
 //														 //
 ///////////////////////////////////////////////////////////
 
@@ -320,8 +314,6 @@ bool CWKSP_Project::_Copy_To_Database(CWKSP_Data_Item *pItem, const wxString &Co
 
 ///////////////////////////////////////////////////////////
 //														 //
-//														 //
-//														 //
 ///////////////////////////////////////////////////////////
 
 //---------------------------------------------------------
@@ -343,7 +335,7 @@ bool CWKSP_Project::_Load(const wxString &FileName, bool bAdd, bool bUpdateMenu)
 
 	//-------------------------------------------------
 	MSG_General_Add_Line();
-	MSG_General_Add(wxString::Format(wxT("%s: %s"), _TL("Load project"), FileName), true, true);
+	MSG_General_Add(wxString::Format("%s: %s", _TL("Load project"), FileName), true, true);
 
 	//-------------------------------------------------
 	bool			bSuccess	= false;
@@ -362,11 +354,11 @@ bool CWKSP_Project::_Load(const wxString &FileName, bool bAdd, bool bUpdateMenu)
 	{
 		MSG_Error_Add(_TL("could not read project file."    ), true, true, SG_UI_MSG_STYLE_FAILURE);
 	}
-	else if( Project.Get_Name().Cmp(SG_T("SAGA_PROJECT")) )
+	else if( Project.Get_Name().CmpNoCase("SAGA_PROJECT") )
 	{
 		MSG_Error_Add(_TL("invalid project file."           ), true, true, SG_UI_MSG_STYLE_FAILURE);
 	}
-	else if( (pNode = Project.Get_Child(SG_T("DATA"))) == NULL || pNode->Get_Children_Count() <= 0 )
+	else if( (pNode = Project.Get_Child("DATA")) == NULL || pNode->Get_Children_Count() <= 0 )
 	{
 		MSG_Error_Add(_TL("no data entries in project file."), true, true, SG_UI_MSG_STYLE_FAILURE);
 	}
@@ -579,8 +571,6 @@ bool CWKSP_Project::_Save(const wxString &FileName, bool bSaveModified, bool bUp
 
 ///////////////////////////////////////////////////////////
 //														 //
-//														 //
-//														 //
 ///////////////////////////////////////////////////////////
 
 //---------------------------------------------------------
@@ -593,7 +583,7 @@ bool CWKSP_Project::_Load_DBConnections(CSG_MetaData &Data)
 	{
 		CSG_String	Connection(Data[i].Get_Child("FILE") ? Data[i].Get_Child("FILE")->Get_Content() : "");
 
-		if( !Connection.BeforeFirst(':').Cmp("PGSQL") )
+		if( !Connection.BeforeFirst(':').CmpNoCase("PGSQL") )
 		{
 			Connection	= Connection.AfterFirst(':');	CSG_String	Host  (Connection.BeforeFirst(':'));
 			Connection	= Connection.AfterFirst(':');	CSG_String	Port  (Connection.BeforeFirst(':'));
@@ -635,8 +625,6 @@ bool CWKSP_Project::_Load_DBConnections(CSG_MetaData &Data)
 
 
 ///////////////////////////////////////////////////////////
-//														 //
-//														 //
 //														 //
 ///////////////////////////////////////////////////////////
 
@@ -710,7 +698,7 @@ bool CWKSP_Project::_Load_Data(CSG_MetaData &Entry, const wxString &ProjectDir, 
 
 	for(int i=0; i<pEntry->Get_Children_Count(); i++)
 	{
-		if( !pEntry->Get_Child(i)->Get_Name().CmpNoCase("DATA") && !pEntry->Get_Child(i)->Get_Content().is_Empty() && pEntry->Get_Child(i)->Get_Content().BeforeFirst(':').Cmp("PGSQL") )
+		if( !pEntry->Get_Child(i)->Get_Name().CmpNoCase("DATA") && !pEntry->Get_Child(i)->Get_Content().is_Empty() && pEntry->Get_Child(i)->Get_Content().BeforeFirst(':').CmpNoCase("PGSQL") )
 		{
 			wxString	File(Get_FilePath_Absolute(ProjectDir, pEntry->Get_Child(i)->Get_Content().w_str()));
 
@@ -733,6 +721,20 @@ bool CWKSP_Project::_Load_Data(CSG_MetaData &Entry, const wxString &ProjectDir, 
 
 	pItem->Get_Parameters()->Serialize(*Entry.Get_Child("PARAMETERS"), false);
 
+	//-----------------------------------------------------
+	if( SG_Compare_Version(Version, "7.0.0") < 0 )	// inter-version-compatibility
+	{
+		CSG_Parameter	*pParameter	= pItem->Get_Parameter("COLORS_TYPE");
+
+		if( pParameter && Type == SG_DATAOBJECT_TYPE_Grid )
+		{
+			if( pParameter->asInt() == 4 ) { pParameter->Set_Value(6); }	// Shade
+			if( pParameter->asInt() == 5 ) { pParameter->Set_Value(4); }	// RGB Overlay
+			if( pParameter->asInt() == 6 ) { pParameter->Set_Value(5); }	// RGB Composite
+		}
+	}
+
+	//-----------------------------------------------------
 	if( Type == SG_DATAOBJECT_TYPE_Grid )
 	{
 		pItem->Get_Parameter("FILE_CACHE")->Set_Value(((CWKSP_Grid *)pItem)->Get_Grid()->is_Cached());
@@ -792,7 +794,7 @@ bool CWKSP_Project::_Save_Data(CSG_MetaData &Entry, const wxString &ProjectDir, 
 			{
 				CSG_String	File	= pEntry->Get_Child(i)->Get_Content();
 
-				if( File.BeforeFirst(':').Cmp("PGSQL") && SG_File_Exists(File) )
+				if( File.BeforeFirst(':').CmpNoCase("PGSQL") && SG_File_Exists(File) )
 				{
 					pEntry->Get_Child(i)->Set_Content(SG_File_Get_Path_Relative(&ProjectDir, File.w_str()));
 				}
@@ -806,8 +808,6 @@ bool CWKSP_Project::_Save_Data(CSG_MetaData &Entry, const wxString &ProjectDir, 
 
 ///////////////////////////////////////////////////////////
 //														 //
-//														 //
-//														 //
 ///////////////////////////////////////////////////////////
 
 //---------------------------------------------------------
@@ -815,7 +815,7 @@ bool CWKSP_Project::_Load_Map(CSG_MetaData &Entry, const wxString &ProjectDir)
 {
 	TSG_Rect	Extent;
 
-	if(  Entry.Get_Name().Cmp("MAP")
+	if( !Entry.Cmp_Name("MAP")
 	||	!Entry.Get_Child("XMIN") || !Entry.Get_Child("XMIN")->Get_Content().asDouble(Extent.xMin)
 	||	!Entry.Get_Child("XMAX") || !Entry.Get_Child("XMAX")->Get_Content().asDouble(Extent.xMax)
 	||	!Entry.Get_Child("YMIN") || !Entry.Get_Child("YMIN")->Get_Content().asDouble(Extent.yMin)
@@ -837,7 +837,7 @@ bool CWKSP_Project::_Load_Map(CSG_MetaData &Entry, const wxString &ProjectDir)
 
 	for(i=0, n=0; i<pNode->Get_Children_Count(); i++)
 	{
-		if( !pNode->Get_Child(i)->Get_Name().Cmp("FILE") )
+		if( pNode->Get_Child(i)->Cmp_Name("FILE") )
 		{
 			wxString	FileName(pNode->Get_Child(i)->Get_Content().w_str());
 
@@ -868,9 +868,11 @@ bool CWKSP_Project::_Load_Map(CSG_MetaData &Entry, const wxString &ProjectDir)
 	//-----------------------------------------------------
 	CWKSP_Map	*pMap	= new CWKSP_Map;
 
+	pMap->Get_Parameter("CRS_CHECK")->Set_Value(false);
+
 	for(int i=0; i<pNode->Get_Children_Count(); i++)
 	{
-		if( !pNode->Get_Child(i)->Get_Name().Cmp("FILE") )
+		if( pNode->Get_Child(i)->Cmp_Name("FILE") )
 		{
 			wxString	FileName(pNode->Get_Child(i)->Get_Content().w_str());
 
@@ -891,7 +893,7 @@ bool CWKSP_Project::_Load_Map(CSG_MetaData &Entry, const wxString &ProjectDir)
 				g_pMaps->Add((CWKSP_Layer *)pItem, pMap);
 			}
 		}
-		else if( !pNode->Get_Child(i)->Get_Name().Cmp("PARAMETERS") )
+		else if( pNode->Get_Child(i)->Cmp_Name("PARAMETERS") )
 		{
 			if( pNode->Get_Child(i)->Cmp_Property("name", "GRATICULE") )
 			{
@@ -904,6 +906,8 @@ bool CWKSP_Project::_Load_Map(CSG_MetaData &Entry, const wxString &ProjectDir)
 			}
 		}
 	}
+
+	pMap->Get_Parameter("CRS_CHECK")->Set_Value(true);
 
 	//-----------------------------------------------------
 	if( Entry.Get_Child("PARAMETERS") && pMap->Get_Parameters()->Serialize(*Entry.Get_Child("PARAMETERS"), false) )
@@ -926,7 +930,7 @@ bool CWKSP_Project::_Save_Map(CSG_MetaData &Entry, const wxString &ProjectDir, C
 		return( false );
 	}
 
-	CSG_MetaData	*pEntry	= Entry.Add_Child(SG_T("MAP"));
+	CSG_MetaData	*pEntry	= Entry.Add_Child("MAP");
 
 	pEntry->Add_Child("XMIN", pMap->Get_Extent().Get_XMin());
 	pEntry->Add_Child("XMAX", pMap->Get_Extent().Get_XMax());
@@ -975,8 +979,6 @@ bool CWKSP_Project::_Save_Map(CSG_MetaData &Entry, const wxString &ProjectDir, C
 
 ///////////////////////////////////////////////////////////
 //														 //
-//														 //
-//														 //
 ///////////////////////////////////////////////////////////
 
 //---------------------------------------------------------
@@ -1015,8 +1017,8 @@ bool CWKSP_Project::_Compatibility_Data(TSG_Data_Type Type, CSG_Parameters *pPar
 			if( (pParameter = pParameters->Get_Parameter("COLORS_TYPE")) != NULL )
 			{
 				if( pParameter->asInt() == 3 )
-				{	// 0:Single >> 1:LUT >> 2:Discrete >> 3:Graduated >> 4:Shade >> 5:Overlay >> 6:RGB
-					pParameter->Set_Value(6);	// RGB moved to position 6
+				{	// 0:Single >> 1:LUT >> 2:Discrete >> 3:Graduated >> 4:RGB Overlay >> 5:RGB Composite >> 6:Shade
+					pParameter->Set_Value(5);	// RGB moved to position 5
 				}
 			}
 		}

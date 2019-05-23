@@ -175,7 +175,7 @@ bool CFill_Sinks::On_Execute(void)
 	m_dzFill	= Parameters("DZFILL")->asDouble();
 
 	m_pDEM->Assign(pDEM);
-	m_pDEM->Set_Name(CSG_String::Format("%s [%s]", pDEM->Get_Name(), _TL("No Sinks")));
+	m_pDEM->Fmt_Name("%s [%s]", pDEM->Get_Name(), _TL("No Sinks"));
 
 	if( !Fill_Sinks() )
 	{
@@ -195,7 +195,7 @@ bool CFill_Sinks::On_Execute(void)
 //---------------------------------------------------------
 bool CFill_Sinks::Fill_Sinks(CSG_Grid *pDEM, CSG_Grid *pFilled, double dzFill)
 {
-	if( is_Executing() || !pDEM || (pFilled && !pDEM->is_Compatible(pFilled)) || !Get_System()->Assign(pDEM->Get_System()) )
+	if( is_Executing() || !pDEM || (pFilled && !pDEM->is_Compatible(pFilled)) || !Set_System(pDEM->Get_System()) )
 	{
 		return( false );
 	}

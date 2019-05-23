@@ -1,6 +1,3 @@
-/**********************************************************
- * Version $Id$
- *********************************************************/
 
 ///////////////////////////////////////////////////////////
 //                                                       //
@@ -48,15 +45,6 @@
 //                                                       //
 //    e-mail:     oconrad@saga-gis.org                   //
 //                                                       //
-///////////////////////////////////////////////////////////
-
-//---------------------------------------------------------
-
-
-///////////////////////////////////////////////////////////
-//														 //
-//														 //
-//														 //
 ///////////////////////////////////////////////////////////
 
 //---------------------------------------------------------
@@ -152,7 +140,10 @@ void CParameters_PG_Choice::_Create(void)
 			RecreateEditor();
 		}
 
-		SetChoiceSelection(iSelection);
+		if( iSelection >= 0 )
+		{
+			SetChoiceSelection(iSelection);
+		}
 	}
 }
 
@@ -275,7 +266,7 @@ int CParameters_PG_Choice::_Set_Shapes(void)
 
 	if( (pManager = g_pData->Get_Shapes()) != NULL )
 	{
-		int		Shape_Type	= ((CSG_Parameter_Shapes *)m_pParameter->Get_Data())->Get_Shape_Type();
+		int		Shape_Type	= ((CSG_Parameter_Shapes *)m_pParameter)->Get_Shape_Type();
 
 		for(int i=0; i<pManager->Get_Count(); i++)
 		{
@@ -292,8 +283,8 @@ int CParameters_PG_Choice::_Set_Shapes(void)
 	}
 
 	if(	m_pParameter->is_Input()
-	&&	(	((CSG_Parameter_Shapes *)m_pParameter->Get_Data())->Get_Shape_Type() == SHAPE_TYPE_Point
-		||	((CSG_Parameter_Shapes *)m_pParameter->Get_Data())->Get_Shape_Type() == SHAPE_TYPE_Undefined ) )
+	&&	(	((CSG_Parameter_Shapes *)m_pParameter)->Get_Shape_Type() == SHAPE_TYPE_Point
+		||	((CSG_Parameter_Shapes *)m_pParameter)->Get_Shape_Type() == SHAPE_TYPE_Undefined ) )
 	{
 		return( _Set_PointCloud() );
 	}
@@ -537,6 +528,8 @@ bool CParameters_PG_Choice::OnEvent(wxPropertyGrid *pPG, wxWindow *pPGCtrl, wxEv
 			SetChoiceSelection(iChoice);
 
 			SetValueInEvent(iChoice);
+
+			return( true );
 		}
 	}
 
@@ -553,9 +546,7 @@ bool CParameters_PG_Choice::OnEvent(wxPropertyGrid *pPG, wxWindow *pPGCtrl, wxEv
 	}
 
 	//-----------------------------------------------------
-	event.Skip();
-
-	return( true );
+	return( wxEnumProperty::OnEvent(pPG, pPGCtrl, event) );
 }
 
 //---------------------------------------------------------
@@ -798,8 +789,8 @@ CParameters_PG_Range::CParameters_PG_Range(const wxString &label, const wxString
 	{
 		m_value	= WXVARIANT(CPG_Parameter_Value(pParameter));
 
-		AddPrivateChild( new wxFloatProperty("Minimum", wxPG_LABEL, pParameter->asRange()->Get_LoVal()) );
-		AddPrivateChild( new wxFloatProperty("Maximum", wxPG_LABEL, pParameter->asRange()->Get_HiVal()) );
+		AddPrivateChild( new wxFloatProperty("Minimum", wxPG_LABEL, pParameter->asRange()->Get_Min()) );
+		AddPrivateChild( new wxFloatProperty("Maximum", wxPG_LABEL, pParameter->asRange()->Get_Max()) );
 	}
 }
 
@@ -812,8 +803,8 @@ wxVariant CParameters_PG_Range::ChildChanged(wxVariant &thisValue, int childInde
 	{
 		switch( childIndex )
 		{
-		case 0:	value.m_pParameter->asRange()->Set_LoVal(childValue.GetDouble());	break;
-		case 1:	value.m_pParameter->asRange()->Set_HiVal(childValue.GetDouble());	break;
+		case 0:	value.m_pParameter->asRange()->Set_Min(childValue.GetDouble());	break;
+		case 1:	value.m_pParameter->asRange()->Set_Max(childValue.GetDouble());	break;
 		}
 	}
 
@@ -827,8 +818,8 @@ void CParameters_PG_Range::RefreshChildren(void)
 
 	if( GetChildCount() == 2 && value.m_pParameter && value.m_pParameter->Get_Type() == PARAMETER_TYPE_Range )
 	{
-		Item(0)->SetValue(value.m_pParameter->asRange()->Get_LoVal());
-		Item(1)->SetValue(value.m_pParameter->asRange()->Get_HiVal());
+		Item(0)->SetValue(value.m_pParameter->asRange()->Get_Min());
+		Item(1)->SetValue(value.m_pParameter->asRange()->Get_Max());
 	}
 }
 

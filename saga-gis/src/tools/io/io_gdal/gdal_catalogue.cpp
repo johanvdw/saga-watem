@@ -166,7 +166,7 @@ bool CGDAL_Catalogue::On_Execute(void)
 	{
 		CSG_String	Name	= SG_File_Get_Name(Files[i], true);
 
-		Process_Set_Text(CSG_String::Format("\n%s: %s", _TL("analyzing"), Name.c_str()));
+		Process_Set_Text("%s: %s", _TL("analyzing"), Name.c_str());
 
 		CSG_GDAL_DataSet	DataSet;
 
@@ -305,7 +305,7 @@ CGDAL_Catalogues::CGDAL_Catalogues(void)
 //---------------------------------------------------------
 int CGDAL_Catalogues::On_Parameters_Enable(CSG_Parameters *pParameters, CSG_Parameter *pParameter)
 {
-	if( !SG_STR_CMP(pParameter->Get_Identifier(), "OUTPUT") )
+	if( pParameter->Cmp_Identifier("OUTPUT") )
 	{
 		pParameters->Set_Enabled("CATALOGUES"   , pParameter->asInt() == 0);
 		pParameters->Set_Enabled("CATALOGUE_GCS", pParameter->asInt() == 1);
@@ -365,12 +365,12 @@ bool CGDAL_Catalogues::On_Execute(void)
 
 	if( n <= 0 )
 	{
-		Message_Add(CSG_String::Format("\n%s\n", _TL("No raster files have been found in directory.")));
+		Message_Fmt("\n%s", _TL("No raster files have been found in directory."));
 
 		return( false );
 	}
 
-	Message_Add(CSG_String::Format("\n%s: %d\n", _TL("Number of raster files found in directory"), n), false);
+	Message_Fmt("\n%s: %d", _TL("Number of raster files found in directory"), n);
 
 	//-----------------------------------------------------
 	if( Parameters("OUTPUT")->asInt() == 1 )	// one catalogue using geographic coordinates
@@ -482,7 +482,7 @@ int CGDAL_Catalogues::Add_File(const CSG_String &File)
 {
 	CSG_String	Name	= SG_File_Get_Name(File, true);
 
-	Process_Set_Text(CSG_String::Format("\n%s: %s", _TL("analyzing"), Name.c_str()));
+	Process_Set_Text("%s: %s", _TL("analyzing"), Name.c_str());
 
 	//-----------------------------------------------------
 	CSG_GDAL_DataSet	DataSet;

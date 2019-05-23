@@ -104,9 +104,15 @@ double			SG_Get_Rounded(double Value, int Decimals)
 		return( floor(0.5 + Value) );
 	}
 
-	double	Precision	= pow(10.0, Decimals);
+	double	d	= pow(10., Decimals);
+	double	v	= Value * d;
 
-	return( floor(0.5 + Value * Precision) / Precision );
+	if( fabs(v - floor(v)) > 0.0 )
+	{
+		return( floor(0.5 + v) / d );
+	}
+
+	return( Value );
 }
 
 //---------------------------------------------------------
@@ -121,7 +127,7 @@ double			SG_Get_Rounded_To_SignificantFigures(double Value, int Decimals)
 
 	if( Decimals > 0 )
 	{
-		double	d	= pow(10.0, Decimals);
+		double	d	= pow(10., Decimals);
 
 		return( Value < 0.0
 			? -((int)(0.5 - Value * d)) / d
@@ -130,7 +136,7 @@ double			SG_Get_Rounded_To_SignificantFigures(double Value, int Decimals)
 	}
 	else
 	{
-		double	d	= pow(10.0, -Decimals);
+		double	d	= pow(10., -Decimals);
 
 		return( Value < 0.0
 			? -((int)(0.5 - Value / d)) * d
@@ -473,6 +479,14 @@ void CSG_Simple_Statistics::Invalidate(void)
 
 	m_bSorted		= false;
 	m_Values		.Destroy();
+}
+
+//---------------------------------------------------------
+bool CSG_Simple_Statistics::Evaluate(void)
+{
+	_Evaluate();
+
+	return( is_Evaluated() > 0 );
 }
 
 //---------------------------------------------------------
@@ -1164,7 +1178,7 @@ CSG_Histogram::CSG_Histogram(void)
 }
 
 //---------------------------------------------------------
-CSG_Histogram::CSG_Histogram(int nClasses, double Minimum, double Maximum)
+CSG_Histogram::CSG_Histogram(size_t nClasses, double Minimum, double Maximum)
 {
 	_On_Construction();
 
@@ -1172,7 +1186,7 @@ CSG_Histogram::CSG_Histogram(int nClasses, double Minimum, double Maximum)
 }
 
 //---------------------------------------------------------
-CSG_Histogram::CSG_Histogram(int nClasses, double Minimum, double Maximum, const CSG_Vector &Values, unsigned int maxSamples)
+CSG_Histogram::CSG_Histogram(size_t nClasses, double Minimum, double Maximum, const CSG_Vector &Values, size_t maxSamples)
 {
 	_On_Construction();
 
@@ -1180,7 +1194,7 @@ CSG_Histogram::CSG_Histogram(int nClasses, double Minimum, double Maximum, const
 }
 
 //---------------------------------------------------------
-CSG_Histogram::CSG_Histogram(int nClasses, double Minimum, double Maximum, CSG_Table *pTable, int Field, unsigned int maxSamples)
+CSG_Histogram::CSG_Histogram(size_t nClasses, double Minimum, double Maximum, CSG_Table *pTable, int Field, size_t maxSamples)
 {
 	_On_Construction();
 
@@ -1188,7 +1202,7 @@ CSG_Histogram::CSG_Histogram(int nClasses, double Minimum, double Maximum, CSG_T
 }
 
 //---------------------------------------------------------
-CSG_Histogram::CSG_Histogram(int nClasses, double Minimum, double Maximum, class CSG_Grid *pGrid, unsigned int maxSamples)
+CSG_Histogram::CSG_Histogram(size_t nClasses, double Minimum, double Maximum, class CSG_Grid *pGrid, size_t maxSamples)
 {
 	_On_Construction();
 
@@ -1196,7 +1210,7 @@ CSG_Histogram::CSG_Histogram(int nClasses, double Minimum, double Maximum, class
 }
 
 //---------------------------------------------------------
-CSG_Histogram::CSG_Histogram(int nClasses, double Minimum, double Maximum, CSG_Grids *pGrids, unsigned int maxSamples)
+CSG_Histogram::CSG_Histogram(size_t nClasses, double Minimum, double Maximum, CSG_Grids *pGrids, size_t maxSamples)
 {
 	_On_Construction();
 
@@ -1235,23 +1249,25 @@ void CSG_Histogram::_On_Construction(void)
 	m_Cumulative	= NULL;
 	m_Minimum		= 0.0;
 	m_Maximum		= 0.0;
+	m_ClassWidth	= 1.0;
 }
 
 //---------------------------------------------------------
-bool CSG_Histogram::_Create(int nClasses, double Minimum, double Maximum)
+bool CSG_Histogram::_Create(size_t nClasses, double Minimum, double Maximum)
 {
 	if( nClasses > 0 && Minimum < Maximum )
 	{
 		Destroy();
 
-		m_Elements		= (unsigned int *)SG_Calloc(nClasses, sizeof(unsigned int));
-		m_Cumulative	= (unsigned int *)SG_Calloc(nClasses, sizeof(unsigned int));
+		m_Elements		= (size_t *)SG_Calloc(nClasses, sizeof(size_t));
+		m_Cumulative	= (size_t *)SG_Calloc(nClasses, sizeof(size_t));
 
 		if( m_Elements && m_Cumulative )
 		{
-			m_nClasses	= nClasses;
-			m_Minimum	= Minimum;
-			m_Maximum	= Maximum;
+			m_nClasses		= nClasses;
+			m_Minimum		= Minimum;
+			m_Maximum		= Maximum;
+			m_ClassWidth	= (Maximum - Minimum) / (double)m_nClasses;
 
 			return( true );
 		}
@@ -1269,13 +1285,9 @@ void CSG_Histogram::Add_Value(double Value)
 
 	if( m_Minimum <= Value && Value <= m_Maximum )
 	{
-		int	Class	= (int)(m_nClasses * (Value - m_Minimum) / (m_Maximum - m_Minimum));
+		size_t	Class	= (size_t)((Value - m_Minimum) / m_ClassWidth);
 
-		if( Class < 0 )
-		{
-			Class	= 0;
-		}
-		else if( Class >= (int)m_nClasses )
+		if( Class >= m_nClasses )
 		{
 			Class	= m_nClasses - 1;
 		}
@@ -1293,7 +1305,7 @@ bool CSG_Histogram::Scale_Element_Count(double Scale)
 
 		for(size_t i=0; i<m_nClasses; i++)
 		{
-			m_Elements[i]	= (unsigned int)(Scale * m_Elements[i]);
+			m_Elements[i]	= (size_t)(Scale * m_Elements[i]);
 		}
 
 		return( Update() );
@@ -1321,7 +1333,7 @@ bool CSG_Histogram::Update(void)
 			}
 		}
 
-		return( m_Cumulative[m_nClasses - 1] > 0 );
+		return( Get_Element_Count() > 0 );
 	}
 
 	return( false );
@@ -1338,7 +1350,7 @@ bool CSG_Histogram::_Update(sLong nElements)
 
 		for(size_t i=1; i<m_nClasses; i++)
 		{
-			m_Elements[i]	= (unsigned int)(0.5 + Scale * m_Elements[i]);
+			m_Elements[i]	= (size_t)(0.5 + Scale * m_Elements[i]);
 		}
 	}
 
@@ -1346,27 +1358,87 @@ bool CSG_Histogram::_Update(sLong nElements)
 }
 
 //---------------------------------------------------------
-double CSG_Histogram::Get_Percentile(double Percentile)	const
+/**
+  * Returns the correspondend value for the requested quantile.
+*/
+double CSG_Histogram::Get_Quantile(double Quantile)	const
 {
-	if( m_nClasses > 1 )
+	if( m_nClasses < 2 ) { return( 0. ); }
+
+	if( Quantile <= 0. ) { return( m_Minimum ); }
+	if( Quantile >= 1. ) { return( m_Maximum ); }
+
+	size_t	n = (size_t)(Quantile * Get_Element_Count());	// number of elements
+
+	for(size_t i=0, n0=0; i<m_nClasses; n0=m_Cumulative[i++])
 	{
-		if( Percentile <=   0. ) { return( m_Minimum ); }
-		if( Percentile >= 100. ) { return( m_Maximum ); }
-
-		unsigned int	n	= (unsigned int)(0.5 + Percentile * m_Cumulative[m_nClasses - 1]);	// number of elements
-
-		for(size_t i=0; i<m_nClasses-1; i++)
+		if( n < m_Cumulative[i] )
 		{
-			if( n <= m_Cumulative[i] )
+			if( m_Cumulative[i] >= n0 )
 			{
-				return( (Get_Center(i) + Get_Center(i + 1)) / 2. );
+				return( Get_Center(i) );
 			}
-		}
 
-		return( m_Maximum );
+			double	d	= (n - n0) / (double)(m_Cumulative[i] - n0);
+
+			return( Get_Break(i) + d * m_ClassWidth );
+		}
+		else if( n == m_Cumulative[i] )
+		{
+			return( Get_Break(i + 1) );
+		}
 	}
 
-	return( 0.0 );
+	return( m_Maximum );
+}
+
+//---------------------------------------------------------
+/**
+  * Returns the correspondend value for the requested percentile.
+*/
+double CSG_Histogram::Get_Percentile(double Percentile) const
+{
+	return( Get_Quantile(Percentile / 100.) );
+}
+
+//---------------------------------------------------------
+/**
+  * Returns the correspondend quantile for the requested value.
+*/
+double CSG_Histogram::Get_Quantile_Value(double Value) const
+{
+	if( m_nClasses < 2 ) { return( 0. ); }
+
+	if( Value <= m_Minimum ) { return( 0. ); }
+	if( Value >= m_Maximum ) { return( 1. ); }
+
+	size_t	Class	= (size_t)(m_nClasses * (Value - m_Minimum) / (m_Maximum - m_Minimum));
+
+	if( Class >= m_nClasses )
+	{
+		return( 1. );
+	}
+
+	if( Class < 1 )
+	{
+		double	dq	= m_Cumulative[Class] / (double)Get_Element_Count();
+
+		return( dq * (Value - m_Minimum) / m_ClassWidth );
+	}
+
+	double	q0	=  m_Cumulative[Class - 1] / (double)Get_Element_Count();
+	double	dq	= (m_Cumulative[Class    ] / (double)Get_Element_Count()) - q0;
+
+	return( q0 + dq * (Value - Get_Break(Class)) / m_ClassWidth );
+}
+
+//---------------------------------------------------------
+/**
+  * Returns the correspondend percentile for the requested value.
+*/
+double CSG_Histogram::Get_Percentile_Value(double Value) const
+{
+	return( Get_Quantile_Value(Value) * 100. );
 }
 
 
@@ -1375,13 +1447,13 @@ double CSG_Histogram::Get_Percentile(double Percentile)	const
 ///////////////////////////////////////////////////////////
 
 //---------------------------------------------------------
-bool CSG_Histogram::Create(int nClasses, double Minimum, double Maximum)
+bool CSG_Histogram::Create(size_t nClasses, double Minimum, double Maximum)
 {
 	return( _Create(nClasses, Minimum, Maximum) );
 }
 
 //---------------------------------------------------------
-bool CSG_Histogram::Create(int nClasses, double Minimum, double Maximum, const CSG_Vector &Values, unsigned int maxSamples)
+bool CSG_Histogram::Create(size_t nClasses, double Minimum, double Maximum, const CSG_Vector &Values, size_t maxSamples)
 {
 	if( Minimum >= Maximum )
 	{
@@ -1397,7 +1469,7 @@ bool CSG_Histogram::Create(int nClasses, double Minimum, double Maximum, const C
 	}
 
 	//-----------------------------------------------------
-	if( maxSamples > 0 && maxSamples < (unsigned int)Values.Get_N() )
+	if( maxSamples > 0 && maxSamples < (size_t)Values.Get_N() )
 	{
 		double	d	= (double)Values.Get_N() / (double)maxSamples;
 
@@ -1421,7 +1493,7 @@ bool CSG_Histogram::Create(int nClasses, double Minimum, double Maximum, const C
 }
 
 //---------------------------------------------------------
-bool CSG_Histogram::Create(int nClasses, double Minimum, double Maximum, CSG_Table *pTable, int Field, unsigned int maxSamples)
+bool CSG_Histogram::Create(size_t nClasses, double Minimum, double Maximum, CSG_Table *pTable, int Field, size_t maxSamples)
 {
 	if( !pTable || Field < 0 || Field >= pTable->Get_Field_Count() || !_Create(nClasses,
 		Minimum < Maximum ? Minimum : pTable->Get_Minimum(Field),
@@ -1431,7 +1503,7 @@ bool CSG_Histogram::Create(int nClasses, double Minimum, double Maximum, CSG_Tab
 	}
 
 	//-----------------------------------------------------
-	if( maxSamples > 0 && maxSamples < (unsigned int)pTable->Get_Count() )
+	if( maxSamples > 0 && maxSamples < (size_t)pTable->Get_Count() )
 	{
 		double	d	= (double)pTable->Get_Count() / (double)maxSamples;
 
@@ -1465,7 +1537,7 @@ bool CSG_Histogram::Create(int nClasses, double Minimum, double Maximum, CSG_Tab
 }
 
 //---------------------------------------------------------
-bool CSG_Histogram::Create(int nClasses, double Minimum, double Maximum, CSG_Grid *pGrid, unsigned int maxSamples)
+bool CSG_Histogram::Create(size_t nClasses, double Minimum, double Maximum, CSG_Grid *pGrid, size_t maxSamples)
 {
 	if( !pGrid || !_Create(nClasses,
 		Minimum < Maximum ? Minimum : pGrid->Get_Min(),
@@ -1475,7 +1547,7 @@ bool CSG_Histogram::Create(int nClasses, double Minimum, double Maximum, CSG_Gri
 	}
 
 	//-----------------------------------------------------
-	if( maxSamples > 0 && maxSamples < pGrid->Get_NCells() )
+	if( maxSamples > 0 && (sLong)maxSamples < pGrid->Get_NCells() )
 	{
 		double	d	= (double)pGrid->Get_NCells() / (double)maxSamples;
 
@@ -1507,7 +1579,7 @@ bool CSG_Histogram::Create(int nClasses, double Minimum, double Maximum, CSG_Gri
 }
 
 //---------------------------------------------------------
-bool CSG_Histogram::Create(int nClasses, double Minimum, double Maximum, CSG_Grids *pGrids, unsigned int maxSamples)
+bool CSG_Histogram::Create(size_t nClasses, double Minimum, double Maximum, CSG_Grids *pGrids, size_t maxSamples)
 {
 	if( !pGrids || !_Create(nClasses,
 		Minimum < Maximum ? Minimum : pGrids->Get_Min(),
@@ -1517,7 +1589,7 @@ bool CSG_Histogram::Create(int nClasses, double Minimum, double Maximum, CSG_Gri
 	}
 
 	//-----------------------------------------------------
-	if( maxSamples > 0 && maxSamples < pGrids->Get_NCells() )
+	if( maxSamples > 0 && (sLong)maxSamples < pGrids->Get_NCells() )
 	{
 		double	d	= (double)pGrids->Get_NCells() / (double)maxSamples;
 
@@ -1730,7 +1802,7 @@ inline double CSG_Natural_Breaks::_Get_Value(int i)
 {
 	if( m_Histogram.Get_Class_Count() > 0 )
 	{
-		return( m_Histogram.Get_Cumulative(i) );
+		return( (double)m_Histogram.Get_Cumulative(i) );
 	}
 
 	return( m_Values[i] );
@@ -1744,7 +1816,7 @@ bool CSG_Natural_Breaks::_Calculate(int nClasses)
 		return( false );
 	}
 
-	int		nValues	= m_Histogram.Get_Class_Count() > 0 ? m_Histogram.Get_Class_Count() : m_Values.Get_N();
+	int		nValues	= m_Histogram.Get_Class_Count() > 0 ? (int)m_Histogram.Get_Class_Count() : m_Values.Get_N();
 
 	CSG_Matrix	mv(nClasses, nValues); mv.Assign(FLT_MAX);
 
@@ -1829,12 +1901,7 @@ bool CSG_Natural_Breaks::_Calculate(int nClasses)
 //---------------------------------------------------------
 CSG_Cluster_Analysis::CSG_Cluster_Analysis(void)
 {
-	m_Centroid	= NULL;
-	m_Variance	= NULL;
-	m_nMembers	= NULL;
-	m_Cluster	= NULL;
 	m_nFeatures	= 0;
-	m_nClusters	= 0;
 	m_Iteration	= 0;
 }
 
@@ -1847,21 +1914,12 @@ CSG_Cluster_Analysis::~CSG_Cluster_Analysis(void)
 //---------------------------------------------------------
 bool CSG_Cluster_Analysis::Destroy(void)
 {
-	for(int i=0; i<m_nClusters; i++)
-	{
-		SG_Free(m_Centroid[i]);
-	}
-
-	SG_FREE_SAFE(m_Centroid);
-	SG_FREE_SAFE(m_Variance);
-	SG_FREE_SAFE(m_nMembers);
-	SG_FREE_SAFE(m_Cluster);
-
+	m_Centroid.Destroy();
+	m_Variance.Destroy();
+	m_nMembers.Destroy();
+	m_Clusters.Destroy();
 	m_Features.Destroy();
-
 	m_nFeatures	= 0;
-	m_nClusters	= 0;
-
 	m_Iteration	= 0;
 
 	return( true );
@@ -1904,46 +1962,76 @@ bool CSG_Cluster_Analysis::Set_Feature(int iElement, int iFeature, double Value)
 }
 
 //---------------------------------------------------------
-bool CSG_Cluster_Analysis::Execute(int Method, int nClusters, int nMaxIterations)
+/**
+  * Performs the cluster analysis using the features added prior
+  * to this step. Method is minimum distance (= default), hill
+  * climbing (= 1), or both methods in combination. If nMaxIterations
+  * is set to zero, the analysis is iterated until it converges.
+  * Initilization is done randomely (= default), periodically (= 1),
+  * or skipped (= 2). The latter case allows to start the clustering
+  * with user supplied start partitions.
+*/
+//---------------------------------------------------------
+bool CSG_Cluster_Analysis::Execute(int Method, int nClusters, int nMaxIterations, int Initialization)
 {
-	if( Get_nElements() <= 1 || nClusters <= 1 )
+	if( Get_nElements() < 2 || nClusters < 2 )
 	{
 		return( false );
 	}
 
 	//-----------------------------------------------------
-	bool	bResult;
-	int		iCluster;
+	m_nMembers.Create(nClusters);
+	m_Variance.Create(nClusters);
+	m_Centroid.Create(m_nFeatures, nClusters);
 
-	m_Iteration	= 0;
+	//-----------------------------------------------------
+	m_Clusters.Create(Get_nElements());
 
-	m_nClusters	= nClusters;
-
-	m_Cluster	= (int     *)SG_Calloc(Get_nElements()	, sizeof(int));
-
-	m_nMembers	= (int     *)SG_Calloc(m_nClusters		, sizeof(int));
-	m_Variance	= (double  *)SG_Calloc(m_nClusters		, sizeof(double));
-	m_Centroid	= (double **)SG_Calloc(m_nClusters		, sizeof(double *));
-
-	for(iCluster=0; iCluster<m_nClusters; iCluster++)
+	for(int iElement=0; iElement<Get_nElements(); iElement++)
 	{
-		m_Centroid[iCluster]	= (double *)SG_Calloc(m_nFeatures, sizeof(double));
+		switch( Initialization )
+		{
+		default:	// random
+			if( (m_Clusters[iElement] = (int)CSG_Random::Get_Uniform(0, nClusters)) >= nClusters )
+			{
+				m_Clusters[iElement]	= nClusters - 1;
+			}
+			break;
+
+		case  1:	// periodic
+			{
+				m_Clusters[iElement]	= iElement % nClusters;
+			}
+			break;
+
+		case  2:	// keep as is, but check for valid cluster ids
+			if( 0 > m_Clusters[iElement] || m_Clusters[iElement] >= nClusters )
+			{
+				m_Clusters[iElement]	= iElement % nClusters;
+			}
+			break;
+		}
 	}
 
 	//-----------------------------------------------------
+	bool	bResult;
+
+	m_Iteration	= 0;
+
 	switch( Method )
 	{
-	default:	bResult	= Minimum_Distance(true , nMaxIterations);	break;
-	case  1:	bResult	= Hill_Climbing   (true , nMaxIterations);	break;
-	case  2:	bResult	= Minimum_Distance(true , nMaxIterations)
-					   && Hill_Climbing   (false, nMaxIterations);	break;
+	default: bResult = _Minimum_Distance(true , nMaxIterations);	break;
+	case  1: bResult = _Hill_Climbing   (true , nMaxIterations);	break;
+	case  2: bResult = _Minimum_Distance(true , nMaxIterations)
+				&&     _Hill_Climbing   (false, nMaxIterations);	break;
 	}
 
+	//-----------------------------------------------------
 	if( bResult )
 	{
-		for(iCluster=0; iCluster<m_nClusters; iCluster++)
+		for(int iCluster=0; iCluster<nClusters; iCluster++)
 		{
-			m_Variance[iCluster]	= m_nMembers[iCluster] ? m_Variance[iCluster] / m_nMembers[iCluster] : 0.0;
+			m_Variance[iCluster]	= m_nMembers[iCluster] <= 0 ? 0.0 : m_Variance[iCluster] / m_nMembers[iCluster];
 		}
 	}
 
@@ -1951,86 +2039,75 @@ bool CSG_Cluster_Analysis::Execute(int Method, int nClusters, int nMaxIterations
 }
 
 //---------------------------------------------------------
-bool CSG_Cluster_Analysis::Minimum_Distance(bool bInitialize, int nMaxIterations)
+bool CSG_Cluster_Analysis::_Minimum_Distance(bool bInitialize, int nMaxIterations)
 {
-	int		iElement, iFeature, iCluster, nShifts;
-	double	*Feature, SP_Last	= -1.0;
+	int		iElement, iCluster, nClusters	= m_Variance.Get_N();
 
-	//-----------------------------------------------------
-	for(iElement=0; iElement<Get_nElements(); iElement++)
-	{
-		iCluster	= m_Cluster[iElement];
-
-		if( bInitialize || iCluster < 0 || iCluster >= m_nClusters )
-		{
-			m_Cluster[iElement]	= iCluster = iElement % m_nClusters;
-		}
-	}
+	double	SP_Last	= -1.0;
 
 	//-----------------------------------------------------
 	for(m_Iteration=1; SG_UI_Process_Get_Okay(); m_Iteration++)
 	{
-		for(iCluster=0; iCluster<m_nClusters; iCluster++)
-		{
-			m_Variance[iCluster]	= 0.0;
-			m_nMembers[iCluster]	= 0;
+		m_Variance	= 0.0;
+		m_Centroid	= 0.0;
+		m_nMembers	= 0;
 
-			for(iFeature=0; iFeature<m_nFeatures; iFeature++)
+		//-------------------------------------------------
+		for(iElement=0; iElement<Get_nElements(); iElement++)
+		{
+			m_nMembers[iCluster = m_Clusters[iElement]]++;
+
+			double	*Feature	= (double *)m_Features.Get_Entry(iElement);
+
+			for(int iFeature=0; iFeature<m_nFeatures; iFeature++)
 			{
-				m_Centroid[iCluster][iFeature]	= 0.0;
+				m_Centroid[iCluster][iFeature]	+= Feature[iFeature];
 			}
 		}
 
 		//-------------------------------------------------
-		for(iElement=0, Feature=(double *)m_Features.Get_Array(); iElement<Get_nElements(); iElement++, Feature+=m_nFeatures)
-		{
-			if( (iCluster = m_Cluster[iElement]) >= 0 )
-			{
-				m_nMembers[iCluster]++;
-
-				for(iFeature=0; iFeature<m_nFeatures; iFeature++)
-				{
-					m_Centroid[iCluster][iFeature]	+= Feature[iFeature];
-				}
-			}
-		}
-
-		//-------------------------------------------------
-		for(iCluster=0; iCluster<m_nClusters; iCluster++)
+		for(iCluster=0; iCluster<nClusters; iCluster++)
 		{
 			double	d	= m_nMembers[iCluster] > 0 ? 1.0 / m_nMembers[iCluster] : 0.0;
 
-			for(iFeature=0; iFeature<m_nFeatures; iFeature++)
+			for(int iFeature=0; iFeature<m_nFeatures; iFeature++)
 			{
 				m_Centroid[iCluster][iFeature]	*= d;
 			}
 		}
 
 		//-------------------------------------------------
-		for(iElement=0, Feature=(double *)m_Features.Get_Array(), m_SP=0.0, nShifts=0; iElement<Get_nElements(); iElement++, Feature+=m_nFeatures)
+		int	nShifts	= 0;
+
+		m_SP	= 0.0;
+
+		for(iElement=0; iElement<Get_nElements(); iElement++)
 		{
+			double	*Feature	= (double *)m_Features.Get_Entry(iElement);
+
 			double	minVariance	= -1.0;
 			int		minCluster	= -1;
 
-			for(iCluster=0; iCluster<m_nClusters; iCluster++)
+			for(iCluster=0; iCluster<nClusters; iCluster++)
 			{
-				double	iVariance	= 0.0;
+				double	Variance	= 0.0;
 
-				for(iFeature=0; iFeature<m_nFeatures; iFeature++)
+				for(int iFeature=0; iFeature<m_nFeatures; iFeature++)
 				{
-					iVariance	+= SG_Get_Square(m_Centroid[iCluster][iFeature] - Feature[iFeature]);
+					Variance	+= SG_Get_Square(m_Centroid[iCluster][iFeature] - Feature[iFeature]);
 				}
 
-				if( minVariance < 0.0 || iVariance < minVariance )
+				if( minVariance < 0.0 || Variance < minVariance )
 				{
-					minVariance	= iVariance;
+					minVariance	= Variance;
 					minCluster	= iCluster;
 				}
 			}
 
-			if( m_Cluster[iElement] != minCluster )
+			if( m_Clusters[iElement] != minCluster )
 			{
-				m_Cluster[iElement]	= minCluster;
+				m_Clusters[iElement]	= minCluster;
+
 				nShifts++;
 			}
 
@@ -2041,16 +2118,16 @@ bool CSG_Cluster_Analysis::Minimum_Distance(bool bInitialize, int nMaxIterations
 		//-------------------------------------------------
 		m_SP	/= Get_nElements();
 
-		SG_UI_Process_Set_Text(CSG_String::Format(SG_T("%s: %d >> %s %f"),
-			_TL("pass")		, m_Iteration,
-			_TL("change")	, m_Iteration <= 1 ? m_SP : SP_Last - m_SP
+		SG_UI_Process_Set_Text(CSG_String::Format("%s: %d >> %s %f",
+			_TL("pass"  ), m_Iteration,
+			_TL("change"), m_Iteration < 2 ? m_SP : SP_Last - m_SP
 		));
 
 		SP_Last	 = m_SP;
 
 		if( nShifts == 0 || (nMaxIterations > 0 && nMaxIterations <= m_Iteration) )
 		{
-			break;
+			return( true );
 		}
 	}
 
@@ -2058,87 +2135,82 @@ bool CSG_Cluster_Analysis::Minimum_Distance(bool bInitialize, int nMaxIterations
 }
 
 //---------------------------------------------------------
-bool CSG_Cluster_Analysis::Hill_Climbing(bool bInitialize, int nMaxIterations)
+bool CSG_Cluster_Analysis::_Hill_Climbing(bool bInitialize, int nMaxIterations)
 {
-	int		iElement, iFeature, iCluster, noShift;
-	double	*Feature, Variance, SP_Last	= -1.0;
+	int		iElement, iCluster, nClusters	= m_Variance.Get_N();
 
 	//-----------------------------------------------------
-	memset(m_Variance, 0, m_nClusters * sizeof(double));
-	memset(m_nMembers, 0, m_nClusters * sizeof(int));
+	m_Variance	= 0.0;
+	m_Centroid	= 0.0;
+	m_nMembers	= 0;
 
-	for(iCluster=0; iCluster<m_nClusters; iCluster++)
+	for(iElement=0; iElement<Get_nElements(); iElement++)
 	{
-		memset(m_Centroid[iCluster], 0, m_nFeatures * sizeof(double));
-	}
+		m_nMembers[iCluster = m_Clusters[iElement]]++;
 
-	//-----------------------------------------------------
-	for(iElement=0, Feature=(double *)m_Features.Get_Array(); iElement<Get_nElements(); iElement++, Feature+=m_nFeatures)
-	{
-		iCluster	= m_Cluster[iElement];
+		double	*Feature	= (double *)m_Features.Get_Entry(iElement);
 
-		if( bInitialize || iCluster < 0 || iCluster >= m_nClusters )
-		{
-			m_Cluster[iElement]	= iCluster = iElement % m_nClusters;
-		}
-
-		m_nMembers[iCluster]++;
-
-		for(iFeature=0, Variance=0.0; iFeature<m_nFeatures; iFeature++)
+		for(int iFeature=0; iFeature<m_nFeatures; iFeature++)
 		{
 			double	d	 = Feature[iFeature];
-			m_Centroid[iCluster][iFeature]	+= d;
-			Variance						+= d*d;
-		}
 
-		m_Variance[iCluster]	+= Variance;
+			m_Centroid[iCluster][iFeature]	+= d;
+			m_Variance[iCluster]          	+= d*d;
+		}
 	}
 
 	//-----------------------------------------------------
-	for(iCluster=0; iCluster<m_nClusters; iCluster++)
+	for(iCluster=0; iCluster<nClusters; iCluster++)
 	{
-		double	d	= m_nMembers[iCluster] != 0 ? 1.0 / (double)m_nMembers[iCluster] : 0;
+		double	v	= 0.0, d	= m_nMembers[iCluster] <= 0 ? 0.0 : 1. / (double)m_nMembers[iCluster];
 
-		for(iFeature=0, Variance=0.0; iFeature<m_nFeatures; iFeature++)
+		for(int iFeature=0; iFeature<m_nFeatures; iFeature++)
 		{
 			m_Centroid[iCluster][iFeature]	*= d;
-			Variance						+= SG_Get_Square(m_Centroid[iCluster][iFeature]);
+			v	+= SG_Get_Square(m_Centroid[iCluster][iFeature]);
 		}
 
-		m_Variance[iCluster]	-= m_nMembers[iCluster] * Variance;
+		m_Variance[iCluster]	-= v * m_nMembers[iCluster];
 	}
 
 	//-----------------------------------------------------
-	for(m_Iteration=1, noShift=0; SG_UI_Process_Get_Okay(false); m_Iteration++)
-	{
-		for(iElement=0, Feature=(double *)m_Features.Get_Array(); iElement<Get_nElements(); iElement++, Feature+=m_nFeatures)
-		{
-			if( (iCluster = m_Cluster[iElement]) >= 0 && noShift++ < Get_nElements() && m_nMembers[iCluster] > 1 )
-			{
-				int		jCluster, kCluster;
-				double	VMin, V1, V2;
+	double	SP_Last	= -1.0;	int		noShift	= 0;
 
-				for(iFeature=0, Variance=0.0; iFeature<m_nFeatures; iFeature++)
+	for(m_Iteration=1; SG_UI_Process_Get_Okay(false); m_Iteration++)
+	{
+		for(iElement=0; iElement<Get_nElements(); iElement++)
+		{
+			iCluster	= m_Clusters[iElement];
+
+			if( noShift++ < Get_nElements() && m_nMembers[iCluster] > 1 )
+			{
+				int	iFeature; double *Feature	= (double *)m_Features.Get_Entry(iElement);
+
+				double	V1, V2, Variance	= 0.0;
+
+				for(iFeature=0; iFeature<m_nFeatures; iFeature++)
 				{
 					Variance	+= SG_Get_Square(m_Centroid[iCluster][iFeature] - Feature[iFeature]);
 				}
 
 				V1		= Variance * m_nMembers[iCluster] / (m_nMembers[iCluster] - 1.0);
-				VMin	= -1.0;
 
 				//-----------------------------------------
-				// Bestimme Gruppe iCluster mit evtl. groesster Verbesserung...
+				int		kCluster	= 0;
+				double	VMin		= -1.0;
 
-				for(jCluster=0, kCluster=0; jCluster<m_nClusters; jCluster++)
+				for(int jCluster=0; jCluster<nClusters; jCluster++)
 				{
 					if( jCluster != iCluster )
 					{
-						for(iFeature=0, Variance=0.0; iFeature<m_nFeatures; iFeature++)
+						Variance	= 0.0; 
+
+						for(iFeature=0; iFeature<m_nFeatures; iFeature++)
 						{
 							Variance	+= SG_Get_Square(m_Centroid[jCluster][iFeature] - Feature[iFeature]);
 						}
 
-						V2		= Variance * m_nMembers[jCluster] / (m_nMembers[jCluster] + 1.0);
+						V2	= Variance * m_nMembers[jCluster] / (m_nMembers[jCluster] + 1.0);
 
 						if( VMin < 0.0 || V2 < VMin )
 						{
@@ -2149,8 +2221,6 @@ bool CSG_Cluster_Analysis::Hill_Climbing(bool bInitialize, int nMaxIterations)
 				}
 
 				//-----------------------------------------
-				// Gruppenwechsel und Neuberechnung der Gruppencentroide...
-
 				if( VMin >= 0 && VMin < V1 )
 				{
 					noShift					 = 0;
@@ -2167,7 +2237,7 @@ bool CSG_Cluster_Analysis::Hill_Climbing(bool bInitialize, int nMaxIterations)
 						m_Centroid[kCluster][iFeature]	= (m_nMembers[kCluster] * m_Centroid[kCluster][iFeature] + d) * V2;
 					}
 
-					m_Cluster[iElement]	= kCluster;
+					m_Clusters[iElement]	= kCluster;
 
 					m_nMembers[iCluster]--;
 					m_nMembers[kCluster]++;
@@ -2176,14 +2246,14 @@ bool CSG_Cluster_Analysis::Hill_Climbing(bool bInitialize, int nMaxIterations)
 		}
 
 		//-------------------------------------------------
-		for(iCluster=0, m_SP=0.0; iCluster<m_nClusters; iCluster++)
+		for(iCluster=0, m_SP=0.0; iCluster<nClusters; iCluster++)
 		{
 			m_SP	+= m_Variance[iCluster];
 		}
 
 		m_SP	/= Get_nElements();
 
-		SG_UI_Process_Set_Text(CSG_String::Format(SG_T("%s: %d >> %s %f"),
+		SG_UI_Process_Set_Text(CSG_String::Format("%s: %d >> %s %f",
 			_TL("pass"  ), m_Iteration,
 			_TL("change"), m_Iteration <= 1 ? m_SP : SP_Last - m_SP
 		));
@@ -2192,7 +2262,7 @@ bool CSG_Cluster_Analysis::Hill_Climbing(bool bInitialize, int nMaxIterations)
 
 		if( noShift >= Get_nElements() || (nMaxIterations > 0 && nMaxIterations <= m_Iteration) )
 		{
-			break;
+			return( true );
 		}
 	}
 

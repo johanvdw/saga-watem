@@ -1,6 +1,3 @@
-/**********************************************************
- * Version $Id: wksp_data_item.cpp 1493 2012-10-19 11:31:13Z oconrad $
- *********************************************************/
 
 ///////////////////////////////////////////////////////////
 //                                                       //
@@ -49,23 +46,15 @@
 ///////////////////////////////////////////////////////////
 
 //---------------------------------------------------------
-
-
-///////////////////////////////////////////////////////////
-//														 //
-//														 //
-//														 //
-///////////////////////////////////////////////////////////
-
-//---------------------------------------------------------
 #include "res_commands.h"
 #include "res_dialogs.h"
+
+#include "saga_frame.h"
 
 #include "helper.h"
 
 #include "active.h"
 #include "active_parameters.h"
-#include "active_attributes.h"
 
 #include "wksp_base_control.h"
 
@@ -76,8 +65,8 @@
 #include "wksp_map.h"
 #include "wksp_map_layer.h"
 
+#include "wksp_data_manager.h"
 #include "wksp_data_layers.h"
-
 #include "wksp_data_item.h"
 
 #include "view_histogram.h"
@@ -103,17 +92,24 @@ CWKSP_Data_Item::CWKSP_Data_Item(CSG_Data_Object *pObject)
 //---------------------------------------------------------
 CWKSP_Data_Item::~CWKSP_Data_Item(void)
 {
+	CSG_Data_Object	*pObject = m_pObject; m_pObject = NULL;
+
+	//-----------------------------------------------------
+	g_pSAGA_Frame->Freeze();
+
 	for(int i=m_Views.GetCount()-1; i>=0; i--)
 	{
 		((CVIEW_Base *)m_Views[i])->Do_Destroy();
 	}
 
-	//-----------------------------------------------------
-	if( m_pObject )
-	{
-		CSG_Data_Object	*pObject	= m_pObject;	m_pObject	= NULL;
+	g_pSAGA_Frame->Thaw();
 
+	//-----------------------------------------------------
+	if( pObject )
+	{
 		MSG_General_Add(wxString::Format("%s: %s...", _TL("Close"), pObject->Get_Name()), true, true);
+
+		g_pData->On_Data_Deletion(pObject);
 
 		SG_Get_Data_Manager().Delete(pObject);
 
@@ -121,10 +117,14 @@ CWKSP_Data_Item::~CWKSP_Data_Item(void)
 	}
 }
 
+//---------------------------------------------------------
+bool CWKSP_Data_Item::On_Data_Deletion(CSG_Data_Object *pObject)
+{
+	return( m_pObject && m_pObject != pObject ? CWKSP_Base_Item::On_Data_Deletion(pObject) : false );
+}
+
 
 ///////////////////////////////////////////////////////////
-//														 //
-//														 //
 //														 //
 ///////////////////////////////////////////////////////////
 
@@ -137,12 +137,18 @@ void Add_Metadata2Parameters(const CSG_MetaData &M, CSG_Parameters &P, CSG_Param
 
 		for(int j=0; j<M[i].Get_Property_Count(); j++)
 		{
-			Properties	+= "\n" + M[i].Get_Property_Name(j) + ": " + M[i].Get_Property(i);
+			if( j > 0 )	Properties	+= "\n";
+
+			Properties	+= M[i].Get_Property_Name(j) + ": " + M[i].Get_Property(j);
 		}
 
 		if( M[i].Get_Children_Count() > 0 )
 		{
 			Add_Metadata2Parameters(M[i], P, P.Add_Node(pParent, SG_Get_String(P.Get_Count()), M[i].Get_Name(), Properties));
+		}
+		else if( M[i].Get_Content().is_Empty() )
+		{
+			P.Add_Info_String(pParent, SG_Get_String(P.Get_Count()), M[i].Get_Name(), Properties, Properties);
 		}
 		else
 		{
@@ -189,7 +195,7 @@ bool CWKSP_Data_Item::On_Command(int Cmd_ID)
 	case ID_CMD_DATA_DEL_FILES:
 		if( m_pObject->Delete() )
 		{
-			g_pACTIVE->Update_Description();
+			g_pActive->Update_Description();
 		}
 		break;
 
@@ -239,8 +245,6 @@ bool CWKSP_Data_Item::On_Command_UI(wxUpdateUIEvent &event)
 
 ///////////////////////////////////////////////////////////
 //														 //
-//														 //
-//														 //
 ///////////////////////////////////////////////////////////
 
 //---------------------------------------------------------
@@ -263,8 +267,6 @@ wxString CWKSP_Data_Item::Get_Name(void)
 
 
 ///////////////////////////////////////////////////////////
-//														 //
-//														 //
 //														 //
 ///////////////////////////////////////////////////////////
 
@@ -299,8 +301,6 @@ void CWKSP_Data_Item::On_Create_Parameters(void)
 
 
 ///////////////////////////////////////////////////////////
-//														 //
-//														 //
 //														 //
 ///////////////////////////////////////////////////////////
 
@@ -355,8 +355,6 @@ bool CWKSP_Data_Item::Save(const wxString &File_Name)
 
 ///////////////////////////////////////////////////////////
 //														 //
-//														 //
-//														 //
 ///////////////////////////////////////////////////////////
 
 //---------------------------------------------------------
@@ -382,17 +380,25 @@ void CWKSP_Data_Item::On_Parameters_Changed(void)
 	m_pObject->Set_Name       (m_Parameters("OBJECT_NAME")->asString());
 	m_pObject->Set_Description(m_Parameters("OBJECT_DESC")->asString());
 	m_pObject->Set_NoData_Value_Range(
-		m_Parameters("OBJECT_NODATA")->asRange()->Get_LoVal(),
-		m_Parameters("OBJECT_NODATA")->asRange()->Get_HiVal()
+		m_Parameters("OBJECT_NODATA")->asRange()->Get_Min(),
+		m_Parameters("OBJECT_NODATA")->asRange()->Get_Max()
 	);
 }
 
 //---------------------------------------------------------
 bool CWKSP_Data_Item::DataObject_Changed(void)
 {
+	m_Parameters.Set_Name(CSG_String::Format("%02d. %s", 1 + Get_ID(), m_pObject->Get_Name()));
+
+	m_Parameters.Set_Parameter("OBJECT_NAME"      , m_pObject->Get_Name          ());
+	m_Parameters.Set_Parameter("OBJECT_DESC"      , m_pObject->Get_Description   ());
+	m_Parameters.Set_Parameter("OBJECT_NODATA.MIN", m_pObject->Get_NoData_Value  ());
+	m_Parameters.Set_Parameter("OBJECT_NODATA.MAX", m_pObject->Get_NoData_hiValue());
+
+	//-----------------------------------------------------
 	On_DataObject_Changed();
 
-	g_pACTIVE->Update(this, false);
+	g_pActive->Update(this, false);
 
 	Parameters_Changed();
 
@@ -400,35 +406,13 @@ bool CWKSP_Data_Item::DataObject_Changed(void)
 }
 
 //---------------------------------------------------------
-bool CWKSP_Data_Item::DataObject_Changed(CSG_Parameters *pParameters)
-{
-	if( !pParameters )
-	{
-		Fit_Colors();
-	}
-
-	m_Parameters.Assign_Values(pParameters);
-
-	return( DataObject_Changed() );
-}
-
-//---------------------------------------------------------
 void CWKSP_Data_Item::On_DataObject_Changed(void)
 {
-	m_Parameters.Set_Name(CSG_String::Format("%02d. %s", 1 + Get_ID(), m_pObject->Get_Name()));
-
-	m_Parameters("OBJECT_NAME"  )->Set_Value(m_pObject->Get_Name());
-	m_Parameters("OBJECT_DESC"  )->Set_Value(m_pObject->Get_Description());
-	m_Parameters("OBJECT_NODATA")->asRange()->Set_Range(
-		m_pObject->Get_NoData_Value  (),
-		m_pObject->Get_NoData_hiValue()
-	);
+	// nop
 }
 
 
 ///////////////////////////////////////////////////////////
-//														 //
-//														 //
 //														 //
 ///////////////////////////////////////////////////////////
 
@@ -442,8 +426,6 @@ bool CWKSP_Data_Item::Add_ScatterPlot(void)
 
 
 ///////////////////////////////////////////////////////////
-//														 //
-//														 //
 //														 //
 ///////////////////////////////////////////////////////////
 
@@ -490,10 +472,11 @@ bool CWKSP_Data_Item::Update_Views(bool bAll)
 			}
 		}
 
-		if( g_pACTIVE->Get_Active_Data_Item() == this )
+		if( g_pActive->Get_Active_Data_Item() == this )
 		{
-			g_pACTIVE->Update_Description();
-			g_pACTIVE->Get_Attributes()->Set_Attributes();
+			g_pActive->Update_Description();
+			g_pActive->Update_Attributes();
+			g_pActive->Update_Info();
 		}
 
 		m_bUpdating	= false;

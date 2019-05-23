@@ -183,7 +183,7 @@ CGWR_Grid_Downscaling::CGWR_Grid_Downscaling(void)
 //---------------------------------------------------------
 int CGWR_Grid_Downscaling::On_Parameters_Enable(CSG_Parameters *pParameters, CSG_Parameter *pParameter)
 {
-	if(	!SG_STR_CMP(pParameter->Get_Identifier(), "SEARCH_RANGE") )
+	if(	pParameter->Cmp_Identifier("SEARCH_RANGE") )
 	{
 		pParameters->Set_Enabled("SEARCH_RADIUS", pParameter->asInt() == 0);	// local
 	}
@@ -211,7 +211,7 @@ bool CGWR_Grid_Downscaling::On_Execute(void)
 
 	m_pDependent	= Parameters("DEPENDENT")->asGrid();
 
-	if( !m_pDependent->Get_Extent().Intersects(Get_System()->Get_Extent()) )
+	if( !m_pDependent->Get_Extent().Intersects(Get_System().Get_Extent()) )
 	{
 		return( false );
 	}
@@ -230,7 +230,7 @@ bool CGWR_Grid_Downscaling::On_Execute(void)
 		m_pPredictors[i]	->Assign(pPredictors->Get_Grid(i), GRID_RESAMPLING_NearestNeighbour);	// GRID_RESAMPLING_Mean_Cells
 
 		m_pModel     [i]	= SG_Create_Grid(m_pDependent->Get_System());
-		m_pModel     [i]	->Set_Name(CSG_String::Format("%s [%s]", pPredictors->Get_Grid(i)->Get_Name(), _TL("Factor")));
+		m_pModel     [i]	->Fmt_Name("%s [%s]", pPredictors->Get_Grid(i)->Get_Name(), _TL("Factor"));
 	}
 
 	m_pModel[m_nPredictors]	= SG_Create_Grid(m_pDependent->Get_System());
@@ -324,11 +324,11 @@ bool CGWR_Grid_Downscaling::Set_Model(void)
 	CSG_Grid	*pRegression	= Parameters("REGRESSION" )->asGrid();
 	CSG_Grid	*pReg_ResCorr	= Parameters("REG_RESCORR")->asGrid();
 
-	pRegression->Set_Name(CSG_String::Format("%s [%s]", m_pDependent->Get_Name(), _TL("GWR")));
+	pRegression->Fmt_Name("%s [%s]", m_pDependent->Get_Name(), _TL("GWR"));
 
 	if( pReg_ResCorr )
 	{
-		pReg_ResCorr->Set_Name(CSG_String::Format("%s [%s, %s]", m_pDependent->Get_Name(), _TL("GWR"), _TL("Residual Correction")));
+		pReg_ResCorr->Fmt_Name("%s [%s, %s]", m_pDependent->Get_Name(), _TL("GWR"), _TL("Residual Correction"));
 	}
 
 	for(int y=0; y<Get_NY() && Set_Progress(y); y++)
@@ -374,10 +374,10 @@ bool CGWR_Grid_Downscaling::Get_Model(void)
 {
 	//-----------------------------------------------------
 	m_pQuality		= Parameters("QUALITY"  )->asGrid();
-	m_pQuality		->Set_Name(CSG_String::Format("%s [%s, %s]", m_pDependent->Get_Name(), _TL("GWR"), _TL("Quality")));
+	m_pQuality		->Fmt_Name("%s [%s, %s]", m_pDependent->Get_Name(), _TL("GWR"), _TL("Quality"));
 
 	m_pResiduals	= Parameters("RESIDUALS")->asGrid();
-	m_pResiduals	->Set_Name(CSG_String::Format("%s [%s, %s]", m_pDependent->Get_Name(), _TL("GWR"), _TL("Residuals")));
+	m_pResiduals	->Fmt_Name("%s [%s, %s]", m_pDependent->Get_Name(), _TL("GWR"), _TL("Residuals"));
 
 	//-----------------------------------------------------
 	m_Search.Get_Weighting().Set_Parameters(&Parameters);

@@ -131,6 +131,8 @@ TSG_Data_Object_Type;
 #define DATAOBJECT_NOTSET		((void *)NULL)
 #define DATAOBJECT_CREATE		((void *)1)
 
+SAGA_API_DLL_EXPORT void *		SG_Get_Create_Pointer			(void);
+
 //---------------------------------------------------------
 SAGA_API_DLL_EXPORT CSG_String	SG_Get_DataObject_Identifier	(TSG_Data_Object_Type Type);
 SAGA_API_DLL_EXPORT CSG_String	SG_Get_DataObject_Name			(TSG_Data_Object_Type Type);
@@ -188,7 +190,9 @@ public:
 
 	virtual bool					is_Valid		(void)	const	= 0;
 
-	virtual bool					Save			(const CSG_String &FileName, int Format = 0)	= 0;
+	virtual bool					Save			(const CSG_String &File, int Format = 0)	= 0;
+	virtual bool					Save			(const char       *File, int Format = 0)	= 0;
+	virtual bool					Save			(const wchar_t    *File, int Format = 0)	= 0;
 
 	/// If there is an associated file data can be reloaded with this command.
 	bool							Reload			(void);
@@ -205,6 +209,8 @@ public:
 	virtual bool					Assign			(CSG_Data_Object *pObject);
 
 	void							Set_Name		(const CSG_String &Name);
+	void							Fmt_Name		(const char    *Format, ...);
+	void							Fmt_Name		(const wchar_t *Format, ...);
 	const SG_Char *					Get_Name		(void)	const;
 
 	void							Set_Description	(const CSG_String &Description);
@@ -267,7 +273,7 @@ protected:
 	void							Set_Update_Flag		(bool bOn = true)	{	m_bUpdate	= bOn;			}
 	bool							Get_Update_Flag		(void)				{	return( m_bUpdate );		}
 	virtual bool					On_Update			(void)				{	return( true );				}
-	virtual bool					On_NoData_Changed	(void)				{	return( true );				}
+	virtual bool					On_NoData_Changed	(void);
 
 
 private:

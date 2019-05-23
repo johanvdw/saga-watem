@@ -197,13 +197,13 @@ CGrid_Classify_Supervised::CGrid_Classify_Supervised(void)
 //---------------------------------------------------------
 int CGrid_Classify_Supervised::On_Parameters_Enable(CSG_Parameters *pParameters, CSG_Parameter *pParameter)
 {
-	if(	!SG_STR_CMP(pParameter->Get_Identifier(), "TRAINING") )
+	if(	pParameter->Cmp_Identifier("TRAINING") )
 	{
 		pParameters->Set_Enabled("FILE_LOAD", pParameter->asShapes() == NULL);
 		pParameters->Set_Enabled("FILE_SAVE", pParameter->asShapes() != NULL);
 	}
 
-	if(	!SG_STR_CMP(pParameter->Get_Identifier(), "METHOD") )
+	if(	pParameter->Cmp_Identifier("METHOD") )
 	{
 		pParameters->Set_Enabled("THRESHOLD_DIST" , pParameter->asInt() == SG_CLASSIFY_SUPERVISED_MinimumDistance
 			||                                      pParameter->asInt() == SG_CLASSIFY_SUPERVISED_Mahalonobis      );
@@ -213,7 +213,7 @@ int CGrid_Classify_Supervised::On_Parameters_Enable(CSG_Parameters *pParameters,
 		pParameters->Set_Enabled("WTA"            , pParameter->asInt() == SG_CLASSIFY_SUPERVISED_WTA              );
 	}
 
-	if( !SG_STR_CMP(pParameter->Get_Identifier(), "GRIDS") )
+	if( pParameter->Cmp_Identifier("GRIDS") )
 	{
 		pParameters->Set_Enabled("RGB_COLORS", pParameter->asGridList()->Get_Grid_Count() >= 3);
 	}
@@ -298,7 +298,7 @@ bool CGrid_Classify_Supervised::Get_Features(void)
 	{
 		if( m_pFeatures->Get_Grid(i)->Get_Range() <= 0.0 )
 		{
-			Message_Add(CSG_String::Format("%s: %s", _TL("feature has been dropped"), m_pFeatures->Get_Grid(i)->Get_Name()));
+			Message_Fmt("\n%s: %s", _TL("feature has been dropped"), m_pFeatures->Get_Grid(i)->Get_Name());
 
 			m_pFeatures->Del_Item(i);
 		}
@@ -465,7 +465,7 @@ bool CGrid_Classify_Supervised::Set_Classification(CSG_Classifier_Supervised &Cl
 		DataObject_Set_Parameter(pClasses, "COLORS_TYPE", 1);	// Color Classification Type: Lookup Table
 	}
 
-	pClasses->Set_Name(CSG_String::Format("%s [%s]", _TL("Classification"), CSG_Classifier_Supervised::Get_Name_of_Method(Parameters("METHOD")->asInt()).c_str()));
+	pClasses->Fmt_Name("%s [%s]", _TL("Classification"), CSG_Classifier_Supervised::Get_Name_of_Method(Parameters("METHOD")->asInt()).c_str());
 
 	//-----------------------------------------------------
 	CSG_Grid	*pQuality	= Parameters("QUALITY")->asGrid();
@@ -474,7 +474,7 @@ bool CGrid_Classify_Supervised::Set_Classification(CSG_Classifier_Supervised &Cl
 	{
 		DataObject_Set_Colors(pQuality, 11, SG_COLORS_YELLOW_GREEN);
 
-		pQuality->Set_Name(CSG_String::Format("%s [%s]", _TL("Classification Quality"), CSG_Classifier_Supervised::Get_Name_of_Quality(Parameters("METHOD")->asInt()).c_str()));
+		pQuality->Fmt_Name("%s [%s]", _TL("Classification Quality"), CSG_Classifier_Supervised::Get_Name_of_Quality(Parameters("METHOD")->asInt()).c_str());
 	}
 
 	//-----------------------------------------------------

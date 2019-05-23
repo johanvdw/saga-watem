@@ -69,6 +69,7 @@
 #include <wx/tokenzr.h>
 #include <wx/wxcrt.h>
 #include <wx/wxcrtvararg.h>
+#include <wx/convauto.h>
 
 #include "api_core.h"
 
@@ -110,12 +111,23 @@ CSG_String::CSG_String(wchar_t Character, size_t nRepeat)
 	m_pString	= new wxString(Character, nRepeat);
 }
 
+//---------------------------------------------------------
 CSG_String::CSG_String(const class wxString *pString)
 {
 	if( pString )
 		m_pString	= new wxString(*pString);
 	else
 		m_pString	= new wxString;
+}
+
+bool CSG_String::Create(const class wxString *pString)
+{
+	if( pString )
+		*m_pString	= *pString;
+	else
+		m_pString->Clear();
+
+	return( true );
 }
 
 //---------------------------------------------------------
@@ -262,6 +274,11 @@ void CSG_String::Clear(void)
 {
 	m_pString->Clear();
 }
+
+
+///////////////////////////////////////////////////////////
+//														 //
+///////////////////////////////////////////////////////////
 
 //---------------------------------------------------------
 CSG_String CSG_String::Format(const char *Format, ...)
@@ -593,6 +610,17 @@ int CSG_String::Trim(bool fromRight)
 	return( (int)(n - m_pString->Length()) );
 }
 
+//---------------------------------------------------------
+int CSG_String::Trim_Both(void)
+{
+	size_t	n	= m_pString->Length();
+
+	m_pString->Trim( true);
+	m_pString->Trim(false);
+
+	return( (int)(n - m_pString->Length()) );
+}
+
 
 ///////////////////////////////////////////////////////////
 //														 //
@@ -750,6 +778,129 @@ bool CSG_String::asDouble(double &Value) const
 ///////////////////////////////////////////////////////////
 
 //---------------------------------------------------------
+CSG_String CSG_String::from_UTF8(const char *String, size_t Length)
+{
+	CSG_String	s;
+
+	if( String )
+	{
+		if( !Length )
+		{
+			Length	= strlen(String);
+		}
+
+		*s.m_pString	= wxString::FromUTF8(String, Length);
+	}
+
+	return( s );
+}
+
+//---------------------------------------------------------
+/**
+* This function creates a single char array and fills it
+* with the UTF-8 representation of this string object.
+* If successful pString will point to the address of the
+* allocated memory. Freeing memory is in response of the
+* calling function.
+*/
+//---------------------------------------------------------
+size_t CSG_String::to_UTF8(char **pString) const
+{
+	if( !is_Empty() )
+	{
+		const wxScopedCharBuffer	Buffer	= m_pString->utf8_str();
+
+		if( (*pString = (char *)SG_Malloc(Buffer.length())) != NULL )
+		{
+			memcpy(*pString, Buffer.data(), Buffer.length());
+
+			return( Buffer.length() );
+		}
+	}
+
+	*pString	= NULL;
+
+	return( 0 );
+}
+
+//---------------------------------------------------------
+CSG_Buffer CSG_String::to_UTF8(void) const
+{
+	CSG_Buffer	String;
+
+	if( !is_Empty() )
+	{
+		const wxScopedCharBuffer	Buffer	= m_pString->utf8_str();
+
+		String.Set_Data(Buffer.data(), Buffer.length());
+	}
+
+	return( String );
+}
+
+
+///////////////////////////////////////////////////////////
+//														 //
+///////////////////////////////////////////////////////////
+
+//---------------------------------------------------------
+/**
+* This function creates a single char array and fills it
+* with the multibyte representation of this string object.
+* If successful pString will point to the address of the
+* allocated memory. Freeing memory is in response of the
+* calling function.
+*/
+//---------------------------------------------------------
+size_t CSG_String::to_MBChar(char **pString, int Encoding) const
+{
+	CSG_Buffer	String(to_MBChar(Encoding));
+
+	if( String.Get_Size() && (*pString = (char *)SG_Malloc(String.Get_Size())) != NULL )
+	{
+		memcpy(*pString, String.Get_Data(), String.Get_Size());
+
+		return( String.Get_Size() );
+	}
+
+	*pString	= NULL;
+
+	return( 0 );
+}
+
+//---------------------------------------------------------
+CSG_Buffer CSG_String::to_MBChar(int Encoding) const
+{
+	CSG_Buffer	String;
+
+	if( !is_Empty() )
+	{
+		wxScopedCharBuffer	Buffer;
+
+		switch( Encoding )	// selecting the appropriate wxMBConv class
+		{
+		case SG_FILE_ENCODING_ANSI   : Buffer = m_pString->mb_str(wxConvLibc       ); break;
+		case SG_FILE_ENCODING_UTF7   : Buffer = m_pString->mb_str(wxConvUTF7       ); break;
+		case SG_FILE_ENCODING_UTF8   : Buffer = m_pString->mb_str(wxConvUTF8       ); break;
+		case SG_FILE_ENCODING_UTF16LE: Buffer = m_pString->mb_str(wxMBConvUTF16LE()); break;
+		case SG_FILE_ENCODING_UTF16BE: Buffer = m_pString->mb_str(wxMBConvUTF16BE()); break;
+		case SG_FILE_ENCODING_UTF32LE: Buffer = m_pString->mb_str(wxMBConvUTF32LE()); break;
+		case SG_FILE_ENCODING_UTF32BE: Buffer = m_pString->mb_str(wxMBConvUTF32BE()); break;
+		default                      : Buffer = m_pString->mb_str(wxConvAuto     ()); break;
+		}
+
+		String.Set_Data(Buffer.data(), Buffer.length());
+	}
+
+	return( String );
+}
+
+
+///////////////////////////////////////////////////////////
+//														 //
+///////////////////////////////////////////////////////////
+
+//---------------------------------------------------------
 /**
   * This function creates a single char array and fills it
   * with the ASCII representation of this string object.
@@ -758,25 +909,44 @@ bool CSG_String::asDouble(double &Value) const
   * calling function.
 */
 //---------------------------------------------------------
-bool CSG_String::to_ASCII(char **pString)	const
+bool CSG_String::to_ASCII(char **pString, char Replace)	const
 {
-	if( is_Empty() )
+	if( !is_Empty() )
 	{
-		return( false );
+		#if wxCHECK_VERSION(3, 1, 0)
+			const wxScopedCharBuffer	Buffer	= m_pString->ToAscii(Replace);
+		#else
+			const wxScopedCharBuffer	Buffer	= m_pString->ToAscii();
+		#endif
+
+		if( (*pString = (char *)SG_Malloc(Buffer.length())) != NULL )
+		{
+			memcpy(*pString, Buffer.data(), Buffer.length());
+
+			return( true );
+		}
 	}
 
-	*pString	= (char *)SG_Malloc((1 + Length()) * sizeof(char));
+	return( false );
+}
 
-	if( *pString == NULL )
+//---------------------------------------------------------
+CSG_Buffer CSG_String::to_ASCII(char Replace) const
+{
+	CSG_Buffer	String;
+
+	if( !is_Empty() )
 	{
-		return( false );
+		#if wxCHECK_VERSION(3, 1, 0)
+			const wxScopedCharBuffer	Buffer	= m_pString->ToAscii(Replace);
+		#else
+			const wxScopedCharBuffer	Buffer	= m_pString->ToAscii();
+		#endif
+
+		String.Set_Data(Buffer.data(), Buffer.length());
 	}
 
-	memcpy(*pString, m_pString->ToAscii(), Length() * sizeof(char));
-
-	(*pString)[Length()]	= '\0';
-
-	return( true );
+	return( String );
 }
 
 
@@ -952,31 +1122,55 @@ bool SG_is_Character_Numeric(int Character)
 ///////////////////////////////////////////////////////////
 
 //---------------------------------------------------------
-int				SG_Printf(const SG_Char *Format, ...)
+int				SG_Printf(const CSG_String &Format)
 {
-	va_list	argptr;
+	return( SG_Printf(Format.c_str()) );
+}
 
-	va_start(argptr, Format);
+int				SG_Printf(const char *Format, ...)
+{
+#ifdef _SAGA_LINUX
+	wxString _Format(Format); _Format.Replace("%s", "%ls");	// workaround as we only use wide characters since wx 2.9.4 so interpret strings as multibyte
+	va_list	argptr; va_start(argptr, _Format); int ret = wxVprintf(_Format, argptr); va_end(argptr); return( ret );
+#else
+	va_list	argptr; va_start(argptr,  Format); int ret = wxVprintf( Format, argptr); va_end(argptr); return( ret );
+#endif
+}
 
-	int		ret	= wxVprintf(Format, argptr);
-
-	va_end(argptr);
-
-	return( ret );
+int				SG_Printf(const wchar_t *Format, ...)
+{
+#ifdef _SAGA_LINUX
+	wxString _Format(Format); _Format.Replace("%s", "%ls");	// workaround as we only use wide characters since wx 2.9.4 so interpret strings as multibyte
+	va_list	argptr; va_start(argptr, _Format); int ret = wxVprintf(_Format, argptr); va_end(argptr); return( ret );
+#else
+	va_list	argptr; va_start(argptr,  Format); int ret = wxVprintf( Format, argptr); va_end(argptr); return( ret );
+#endif
 }
 
 //---------------------------------------------------------
-int				SG_FPrintf(FILE* stream, const SG_Char *Format, ...)
+int				SG_FPrintf(FILE *Stream, const CSG_String &String)
 {
-	va_list	argptr;
+	return( SG_FPrintf(Stream, String.c_str()) );
+}
 
-	va_start(argptr, Format);
+int				SG_FPrintf(FILE *Stream, const char *Format, ...)
+{
+#ifdef _SAGA_LINUX
+	wxString _Format(Format); _Format.Replace("%s", "%ls");	// workaround as we only use wide characters since wx 2.9.4 so interpret strings as multibyte
+	va_list	argptr; va_start(argptr, _Format); int ret = wxVfprintf(Stream, _Format, argptr); va_end(argptr); return( ret );
+#else
+	va_list	argptr; va_start(argptr,  Format); int ret = wxVfprintf(Stream,  Format, argptr); va_end(argptr); return( ret );
+#endif
+}
 
-	int		ret	= wxVfprintf(stream, Format, argptr);
-
-	va_end(argptr);
-
-	return( ret );
+int				SG_FPrintf(FILE *Stream, const wchar_t *Format, ...)
+{
+#ifdef _SAGA_LINUX
+	wxString _Format(Format); _Format.Replace("%s", "%ls");	// workaround as we only use wide characters since wx 2.9.4 so interpret strings as multibyte
+	va_list	argptr; va_start(argptr, _Format); int ret = wxVfprintf(Stream, _Format, argptr); va_end(argptr); return( ret );
+#else
+	va_list	argptr; va_start(argptr,  Format); int ret = wxVfprintf(Stream,  Format, argptr); va_end(argptr); return( ret );
+#endif
 }
 
 
@@ -1129,28 +1323,34 @@ void			SG_Flip_Decimal_Separators(CSG_String &String)
 //---------------------------------------------------------
 /**
   * Returns floating point number 'Value' as formatted string.
-  * If 'bScientific' is true the string will always be formatted
-  * with the %e format specification (i.e.: d.dddd e dd). Else the
-  * format depends on the 'Precision' value. If Precision is 0
-  * it will simply use %f format. If Precision is positive (> 0)
-  * it specifies the fix number of decimals ("%.*f", Precision, Value),
+  * The format depends on the 'Precision' value. 
+  * If Precision is -99 (the default) it will simply use %f format.
+  * If 'Precision' is -98 the string will always be formatted
+  * with the %e format specification (i.e. scientific: d.dddd e dd).
+  * If Precision is zero (= 0) no decimals will be printed
+  * If Precision is positive (> 0) it specifies the fix number
+  * of decimals ("%.*f", Precision, Value),
   * if negative only significant decimals will be plotted up to a
   * maximum of the absolute value of 'Precision' digits.
 */
 //---------------------------------------------------------
-CSG_String		SG_Get_String(double Value, int Precision, bool bScientific)
+CSG_String		SG_Get_String(double Value, int Precision)
 {
 	CSG_String	s;
 
-	if( bScientific )
-	{
-		s.Printf("%e", Value);
-	}
-	else if( Precision == 0 )
+	if     ( Precision == -99 )
 	{
 		s.Printf("%f", Value);
 	}
-	else if( Precision > 0 )
+	else if( Precision == -98 )
+	{
+		s.Printf("%e", Value);
+	}
+	else if( Precision ==   0 )
+	{
+		s.Printf("%d", (int)Value);
+	}
+	else if( Precision  >   0 )
 	{
 		s.Printf("%.*f", Precision, Value);
 	}
@@ -1186,6 +1386,16 @@ CSG_String		SG_Get_String(double Value, int Precision, bool bScientific)
 //---------------------------------------------------------
 CSG_String		SG_Get_String(int Value, int Precision)
 {
+	if( Precision > 0 )
+	{
+		return( SG_Get_String((double)Value, Precision) );
+	}
+
+	if( Precision < 0 )
+	{
+		return( CSG_String::Format("%0*d", Precision, Value) );
+	}
+
 	return( CSG_String::Format("%d", Value) );
 }
 
@@ -1272,6 +1482,26 @@ void CSG_String_Tokenizer::Set_String(const CSG_String &String, const CSG_String
 	}
 
 	m_pTokenizer->SetString(String.c_str(), Delimiters.c_str(), _Mode);
+}
+
+
+///////////////////////////////////////////////////////////
+//														 //
+///////////////////////////////////////////////////////////
+
+//---------------------------------------------------------
+CSG_Strings SG_String_Tokenize(const CSG_String &String, const CSG_String &Delimiters, TSG_String_Tokenizer_Mode Mode)
+{
+	CSG_Strings	Strings;
+
+	CSG_String_Tokenizer	Tokenizer(String, Delimiters, Mode);
+
+	while( Tokenizer.Has_More_Tokens() )
+	{
+		Strings	+= Tokenizer.Get_Next_Token();
+	}
+
+	return( Strings );
 }
 
 

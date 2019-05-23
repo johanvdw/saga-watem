@@ -1,6 +1,3 @@
-/**********************************************************
- * Version $Id: table_change_date_format.cpp 911 2011-11-11 11:11:11Z oconrad $
- *********************************************************/
 
 ///////////////////////////////////////////////////////////
 //                                                       //
@@ -46,15 +43,6 @@
 //                University of Hamburg                  //
 //                Germany                                //
 //                                                       //
-///////////////////////////////////////////////////////////
-
-//---------------------------------------------------------
-
-
-///////////////////////////////////////////////////////////
-//														 //
-//														 //
-//														 //
 ///////////////////////////////////////////////////////////
 
 //---------------------------------------------------------
@@ -146,18 +134,18 @@ CTable_Change_Date_Format::CTable_Change_Date_Format(void)
 //---------------------------------------------------------
 int CTable_Change_Date_Format::On_Parameters_Enable(CSG_Parameters *pParameters, CSG_Parameter *pParameter)
 {
-	if( !SG_STR_CMP(pParameter->Get_Identifier(), "FMT_IN" ) )
+	if( pParameter->Cmp_Identifier("FMT_IN" ) )
 	{
 		pParameters->Set_Enabled("SEP_IN" , pParameter->asInt() == 0 || pParameter->asInt() == 1);
 	}
 
-	if( !SG_STR_CMP(pParameter->Get_Identifier(), "FMT_OUT") )
+	if( pParameter->Cmp_Identifier("FMT_OUT") )
 	{
 		pParameters->Set_Enabled("SEP_OUT", pParameter->asInt() < 4);
 	}
 
-	if( !SG_STR_CMP(pParameter->Get_Identifier(), "TABLE")
-	||  !SG_STR_CMP(pParameter->Get_Identifier(), "FIELD") )
+	if( pParameter->Cmp_Identifier("TABLE")
+	||  pParameter->Cmp_Identifier("FIELD") )
 	{
 		CSG_Table	*pTable	= pParameters->Get_Parameter("TABLE")->asTable();
 
@@ -221,7 +209,7 @@ bool CTable_Change_Date_Format::On_Execute(void)
 	{
 		CSG_DateTime	Date;
 
-		CSG_String	s(pTable->Get_Record(iRecord)->asString(Field));
+		CSG_String	s(pTable->Get_Record(iRecord)->asString(Field));	s.Trim_Both();
 
 		switch( fmt_In )
 		{
@@ -458,7 +446,7 @@ bool CTable_Change_Time_Format::On_Execute(void)
 	{
 		CSG_Table_Record	*pRecord	= pTable->Get_Record(iRecord);
 
-		CSG_String	sTime	= pRecord->asString(fTime);
+		CSG_String	sTime	= pRecord->asString(fTime);	sTime.Trim_Both();
 
 		double	s;
 

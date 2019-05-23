@@ -77,31 +77,31 @@ CSimulateVariableWind::CSimulateVariableWind(void){
 	Parameters.Add_Grid(NULL, 
 						"M1H", 
 						_TL("Humedad del combustible muerto en 1-hora"), 
-						_TL(""), 
+						_TL("Fraction (weight of water in sample / dry weight of sample)"), 
 						PARAMETER_INPUT);
 
 	Parameters.Add_Grid(NULL, 
 						"M10H", 
 						_TL("Humedad del combustible muerto en 10-horas"), 
-						_TL(""), 
+						_TL("Fraction (weight of water in sample / dry weight of sample)"), 
 						PARAMETER_INPUT);
 
 	Parameters.Add_Grid(NULL, 
 						"M100H", 
 						_TL("Humedad del combustible muerto en 100-horas"), 
-						_TL(""), 
+						_TL("Fraction (weight of water in sample / dry weight of sample)"), 
 						PARAMETER_INPUT);
 
 	Parameters.Add_Grid(NULL, 
 						"MHERB", 
 						_TL("Humedad del combustible herbáceo vivo"), 
-						_TL(""), 
+						_TL("Fraction (weight of water in sample / dry weight of sample)"), 
 						PARAMETER_INPUT);
 
 	Parameters.Add_Grid(NULL, 
 						"MWOOD", 
 						_TL("Humedad del combustible leñoso vivo"), 
-						_TL(""), 
+						_TL("Fraction (weight of water in sample / dry weight of sample)"), 
 						PARAMETER_INPUT);
 	
 	Parameters.Add_Grid(NULL, 

@@ -1,69 +1,68 @@
 #! /usr/bin/env python
 
-import saga_api, sys, os
+import saga_api, saga_helper, sys, os
 
-##########################################
-def xyz2shp(fTable):
-    table   = saga_api.SG_Get_Data_Manager().Add_Table()
-    if table.Create(saga_api.CSG_String(fTable)) == 0:
-        table.Add_Field(saga_api.CSG_String('X'), saga_api.SG_DATATYPE_Double)
-        table.Add_Field(saga_api.CSG_String('Y'), saga_api.SG_DATATYPE_Double)
-        table.Add_Field(saga_api.CSG_String('Z'), saga_api.SG_DATATYPE_Double)
-        rec = table.Add_Record()
-        rec.Set_Value(0,0)
-        rec.Set_Value(1,0)
-        rec.Set_Value(2,2)
-        rec = table.Add_Record()
-        rec.Set_Value(0,0)
-        rec.Set_Value(1,1)
-        rec.Set_Value(2,2)
-        rec = table.Add_Record()
-        rec.Set_Value(0,1)
-        rec.Set_Value(1,1)
-        rec.Set_Value(2,1)
-        rec = table.Add_Record()
-        rec.Set_Value(0,1)
-        rec.Set_Value(1,0)
-        rec.Set_Value(2,1)
 
-    points = saga_api.SG_Get_Data_Manager().Add_Shapes(saga_api.SHAPE_TYPE_Point)
+#########################################
+def run_xyz2shp(File):
 
-    # ------------------------------------
-    if os.name == 'nt':    # Windows
-        saga_api.SG_Get_Tool_Library_Manager().Add_Library(os.environ['SAGA_32' ] + '/tools/shapes_points.dll')
-    else:                  # Linux
-        saga_api.SG_Get_Tool_Library_Manager().Add_Library(os.environ['SAGA_MLB'] + '/libshapes_points.so')
+    # -----------------------------------
+    Table = saga_api.SG_Get_Data_Manager().Add_Table(File)
 
-    m      = saga_api.SG_Get_Tool_Library_Manager().Get_Tool(saga_api.CSG_String('shapes_points'), 0) # 'Convert Table to Points'
-    p      = m.Get_Parameters()
-    p(saga_api.CSG_String('TABLE' )).Set_Value(table)
-    p(saga_api.CSG_String('POINTS')).Set_Value(points)
-    p(saga_api.CSG_String('X'     )).Set_Value(0)
-    p(saga_api.CSG_String('Y'     )).Set_Value(1)
+    if Table != None and Table.is_Valid() == True and Table.Get_Count() > 0:
+        print 'Table loaded: ' + File
+
+    else:
+        Table = saga_api.SG_Get_Data_Manager().Add_Table()
+
+        Table.Add_Field(saga_api.CSG_String('X'), saga_api.SG_DATATYPE_Double)
+        Table.Add_Field(saga_api.CSG_String('Y'), saga_api.SG_DATATYPE_Double)
+        Table.Add_Field(saga_api.CSG_String('Z'), saga_api.SG_DATATYPE_Double)
+
+        Random = saga_api.CSG_Random()
+
+        for i in range(0, 100):
+            Record = Table.Add_Record()
+            Record.Set_Value(0, Random.Get_Gaussian(0, 100))
+            Record.Set_Value(1, Random.Get_Gaussian(0, 100))
+            Record.Set_Value(2, Random.Get_Gaussian(0, 100))
+
+    print 'Number of records: ' + str(Table.Get_Count())
+
+    # -----------------------------------
+    # 'Convert Table to Points'
+
+    Tool = saga_api.SG_Get_Tool_Library_Manager().Get_Tool('shapes_points', 0)
+    Parm = Tool.Get_Parameters()
+    Parm('TABLE').Set_Value(Table)
+    Parm('X').Set_Value(0)
+    Parm('Y').Set_Value(1)
+    Parm('Z').Set_Value(2)
     
-    if m.Execute() == 0:
-        print 'ERROR: executing tool [' + m.Get_Name().c_str() + ']'
-        return 0
+    if Tool.Execute() == False:
+        print 'Error: executing tool [' + Tool.Get_Name().c_str() + ']'
+        return False
+
+    if Parm('POINTS').asShapes().Save(os.path.split(File)[0] + '/points.geojson') == False:
+        print 'Error: saving points'
+        return False
 
     # ------------------------------------
-    points.Save(saga_api.CSG_String(fTable + '.shp'))
+    print 'Success'
+    return True
 
-    print 'success'
-    return 1
 
-##########################################
+#########################################
 if __name__ == '__main__':
-    print 'Python - Version ' + sys.version
-    print saga_api.SAGA_API_Get_Version()
-    print
 
-    if len( sys.argv ) != 2:
+    saga_helper.Load_Tool_Libraries(True)
+
+    # -----------------------------------
+    if len(sys.argv) == 2:
+        File = sys.argv[1]
+    else:
+        File = './dem.xyz'
         print 'Usage: xyz2shp.py <in: x/y/z-data as text or dbase table>'
         print '... trying to run with test_data'
-        fTable = './dem_contours.xyz'
-    else:
-        fTable = sys.argv[ 1 ]
-        if os.path.split(fTable)[0] == '':
-            fTable = './' + fTable
 
-    xyz2shp(fTable)
+    run_xyz2shp(File)

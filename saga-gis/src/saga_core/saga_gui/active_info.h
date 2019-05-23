@@ -1,6 +1,3 @@
-/**********************************************************
- * Version $Id$
- *********************************************************/
 
 ///////////////////////////////////////////////////////////
 //                                                       //
@@ -8,15 +5,15 @@
 //                                                       //
 //      System for Automated Geoscientific Analyses      //
 //                                                       //
-//                     Tool Library                      //
-//                      dev_tools                        //
+//                    User Interface                     //
+//                                                       //
+//                    Program: SAGA                      //
 //                                                       //
 //-------------------------------------------------------//
 //                                                       //
-//                    TLB_Interface.h                    //
+//                    active_info.h                      //
 //                                                       //
-//                 Copyright (C) 2010 by                 //
-//                     Olaf Conrad                       //
+//          Copyright (C) 2019 by Olaf Conrad            //
 //                                                       //
 //-------------------------------------------------------//
 //                                                       //
@@ -24,7 +21,8 @@
 // Geoscientific Analyses'. SAGA is free software; you   //
 // can redistribute it and/or modify it under the terms  //
 // of the GNU General Public License as published by the //
-// Free Software Foundation; version 2 of the License.   //
+// Free Software Foundation, either version 2 of the     //
+// License, or (at your option) any later version.       //
 //                                                       //
 // SAGA is distributed in the hope that it will be       //
 // useful, but WITHOUT ANY WARRANTY; without even the    //
@@ -33,44 +31,23 @@
 // License for more details.                             //
 //                                                       //
 // You should have received a copy of the GNU General    //
-// Public License along with this program; if not,       //
-// write to the Free Software Foundation, Inc.,          //
-// 51 Franklin Street, 5th Floor, Boston, MA 02110-1301, //
-// USA.                                                  //
+// Public License along with this program; if not, see   //
+// <http://www.gnu.org/licenses/>.                       //
 //                                                       //
 //-------------------------------------------------------//
 //                                                       //
-//    e-mail:     oconrad@saga-gis.org                   //
-//                                                       //
 //    contact:    Olaf Conrad                            //
-//                Institute for Geography                //
+//                Institute of Geography                 //
 //                University of Hamburg                  //
 //                Germany                                //
 //                                                       //
+//    e-mail:     oconrad@saga-gis.org                   //
+//                                                       //
 ///////////////////////////////////////////////////////////
 
 //---------------------------------------------------------
-
-
-///////////////////////////////////////////////////////////
-//														 //
-//														 //
-//														 //
-///////////////////////////////////////////////////////////
-
-//---------------------------------------------------------
-#ifndef HEADER_INCLUDED__dev_tools_TLB_Interface_H
-#define HEADER_INCLUDED__dev_tools_TLB_Interface_H
-
-//---------------------------------------------------------
-#include <saga_api/saga_api.h>
-
-//---------------------------------------------------------
-#ifdef dev_tools_EXPORTS
-	#define	dev_tools_EXPORT	_SAGA_DLL_EXPORT
-#else
-	#define	dev_tools_EXPORT	_SAGA_DLL_IMPORT
-#endif
+#ifndef _HEADER_INCLUDED__SAGA_GUI__active_info_H
+#define _HEADER_INCLUDED__SAGA_GUI__active_info_H
 
 
 ///////////////////////////////////////////////////////////
@@ -80,4 +57,54 @@
 ///////////////////////////////////////////////////////////
 
 //---------------------------------------------------------
-#endif // #ifndef HEADER_INCLUDED__dev_tools_TLB_Interface_H
+#include <wx/panel.h>
+
+
+///////////////////////////////////////////////////////////
+//														 //
+//														 //
+//														 //
+///////////////////////////////////////////////////////////
+
+//---------------------------------------------------------
+class CActive_Info : public wxPanel
+{
+	DECLARE_CLASS(CActive_Info)
+
+public:
+	CActive_Info(wxWindow *pParent);
+
+	void								On_Choice			(wxCommandEvent  &event);
+
+	void								Set_Item			(class CWKSP_Shapes *pItem);
+
+	void								Set_Info			(void);
+
+
+private:
+
+	class CWKSP_Shapes					*m_pItem;
+
+	class wxChoice						*m_pSelections;
+
+	class CActive_Info_Control			*m_pControl;
+
+
+	CSG_Shapes *						_Get_Shapes			(void);
+
+	void								_Set_Info			(void);
+
+
+	DECLARE_EVENT_TABLE()
+
+};
+
+
+///////////////////////////////////////////////////////////
+//														 //
+//														 //
+//														 //
+///////////////////////////////////////////////////////////
+
+//---------------------------------------------------------
+#endif // #ifndef _HEADER_INCLUDED__SAGA_GUI__active_info_H

@@ -1,6 +1,3 @@
-/**********************************************************
- * Version $Id: opencv_ml.h 0001 2016-05-24
- *********************************************************/
 
 ///////////////////////////////////////////////////////////
 //                                                       //
@@ -44,15 +41,6 @@
 //                University of Hamburg                  //
 //                Germany                                //
 //                                                       //
-///////////////////////////////////////////////////////////
-
-//---------------------------------------------------------
-
-
-///////////////////////////////////////////////////////////
-//														 //
-//														 //
-//														 //
 ///////////////////////////////////////////////////////////
 
 //---------------------------------------------------------
@@ -105,7 +93,12 @@ protected:
 	int							Get_Feature_Count		(void)	{	return( m_pFeatures->Get_Grid_Count() );	}
 	int							Get_Class_Count			(void)	{	return( m_Classes   .Get_Count     () );	}
 
-	virtual Ptr<StatModel>		Get_Model				(void)	= 0;
+	bool						Check_Model_File		(const CSG_String &File);
+
+	virtual const char *		Get_Model_ID			(void)	const	= 0;
+
+	virtual Ptr<StatModel>		Get_Model				(const CSG_String &File)	= 0;
+	virtual Ptr<StatModel>		Get_Model				(void)						= 0;
 	virtual Ptr<TrainData>		Get_Training			(const CSG_Matrix &Data);
 
 	virtual double				Get_Probability			(const Ptr<StatModel> &Model, const Mat &Sample)	{	return( 0.0 );	}
@@ -148,6 +141,9 @@ public:
 
 protected:
 
+	virtual const char *		Get_Model_ID			(void)	const	{	return( "nbayes" );	}
+
+	virtual Ptr<StatModel>		Get_Model				(const CSG_String &File);
 	virtual Ptr<StatModel>		Get_Model				(void);
 
 	virtual double				Get_Probability			(const Ptr<StatModel> &Model, const Mat &Sample);
@@ -170,6 +166,9 @@ protected:
 
 	virtual int					On_Parameters_Enable	(CSG_Parameters *pParameters, CSG_Parameter *pParameter);
 
+	virtual const char *		Get_Model_ID			(void)	const	{	return( "knn" );	}
+
+	virtual Ptr<StatModel>		Get_Model				(const CSG_String &File);
 	virtual Ptr<StatModel>		Get_Model				(void);
 
 };
@@ -190,6 +189,9 @@ protected:
 
 	virtual int					On_Parameters_Enable	(CSG_Parameters *pParameters, CSG_Parameter *pParameter);
 
+	virtual const char *		Get_Model_ID			(void)	const	{	return( "svm" );	}
+
+	virtual Ptr<StatModel>		Get_Model				(const CSG_String &File);
 	virtual Ptr<StatModel>		Get_Model				(void);
 
 };
@@ -208,8 +210,12 @@ public:
 
 protected:
 
+	virtual const char *		Get_Model_ID			(void)	const	{	return( "dtree" );	}
+
+	virtual Ptr<StatModel>		Get_Model				(const CSG_String &File);
 	virtual Ptr<StatModel>		Get_Model				(void);
 
+	virtual Ptr<DTrees>			Get_Trees				(const CSG_String &File);
 	virtual Ptr<DTrees>			Get_Trees				(void);
 
 };
@@ -223,6 +229,9 @@ public:
 
 protected:
 
+	virtual const char *		Get_Model_ID			(void)	const	{	return( "boost" );	}
+
+	virtual Ptr<DTrees>			Get_Trees				(const CSG_String &File);
 	virtual Ptr<DTrees>			Get_Trees				(void);
 
 };
@@ -236,6 +245,9 @@ public:
 
 protected:
 
+	virtual const char *		Get_Model_ID			(void)	const	{	return( "rtrees" );	}
+
+	virtual Ptr<DTrees>			Get_Trees				(const CSG_String &File);
 	virtual Ptr<DTrees>			Get_Trees				(void);
 
 };
@@ -256,6 +268,34 @@ protected:
 
 	virtual int					On_Parameters_Enable	(CSG_Parameters *pParameters, CSG_Parameter *pParameter);
 
+	virtual const char *		Get_Model_ID			(void)	const	{	return( "ann" );	}
+
+	virtual Ptr<StatModel>		Get_Model				(const CSG_String &File);
+	virtual Ptr<StatModel>		Get_Model				(void);
+
+	virtual Ptr<TrainData>		Get_Training			(const CSG_Matrix &Data);
+
+};
+
+
+///////////////////////////////////////////////////////////
+//														 //
+///////////////////////////////////////////////////////////
+
+//---------------------------------------------------------
+class COpenCV_ML_LogR : public COpenCV_ML
+{
+public:
+	COpenCV_ML_LogR(void);
+
+
+protected:
+
+	virtual int					On_Parameters_Enable	(CSG_Parameters *pParameters, CSG_Parameter *pParameter);
+
+	virtual const char *		Get_Model_ID			(void)	const	{	return( "logr" );	}
+
+	virtual Ptr<StatModel>		Get_Model				(const CSG_String &File);
 	virtual Ptr<StatModel>		Get_Model				(void);
 
 	virtual Ptr<TrainData>		Get_Training			(const CSG_Matrix &Data);
@@ -270,23 +310,25 @@ protected:
 ///////////////////////////////////////////////////////////
 
 //---------------------------------------------------------
-#define new_COpenCV_ML_NBayes	new COpenCV_ML_NBayes
-#define new_COpenCV_ML_KNN		new COpenCV_ML_KNN
-#define new_COpenCV_ML_SVM		new COpenCV_ML_SVM
-#define new_COpenCV_ML_DTrees	new COpenCV_ML_DTrees
-#define new_COpenCV_ML_Boost	new COpenCV_ML_Boost
-#define new_COpenCV_ML_RTrees	new COpenCV_ML_RTrees
-#define new_COpenCV_ML_ANN		new COpenCV_ML_ANN
+#define new_COpenCV_ML_NBayes new COpenCV_ML_NBayes
+#define new_COpenCV_ML_KNN    new COpenCV_ML_KNN
+#define new_COpenCV_ML_SVM    new COpenCV_ML_SVM
+#define new_COpenCV_ML_DTrees new COpenCV_ML_DTrees
+#define new_COpenCV_ML_Boost  new COpenCV_ML_Boost
+#define new_COpenCV_ML_RTrees new COpenCV_ML_RTrees
+#define new_COpenCV_ML_ANN    new COpenCV_ML_ANN
+#define new_COpenCV_ML_LogR   new COpenCV_ML_LogR
 
 #else // CV_MAJOR_VERSION == 3
 
-#define new_COpenCV_ML_NBayes	TLB_INTERFACE_SKIP_TOOL
-#define new_COpenCV_ML_KNN		TLB_INTERFACE_SKIP_TOOL
-#define new_COpenCV_ML_SVM		TLB_INTERFACE_SKIP_TOOL
-#define new_COpenCV_ML_DTrees	TLB_INTERFACE_SKIP_TOOL
-#define new_COpenCV_ML_Boost	TLB_INTERFACE_SKIP_TOOL
-#define new_COpenCV_ML_RTrees	TLB_INTERFACE_SKIP_TOOL
-#define new_COpenCV_ML_ANN		TLB_INTERFACE_SKIP_TOOL
+#define new_COpenCV_ML_NBayes TLB_INTERFACE_SKIP_TOOL
+#define new_COpenCV_ML_KNN    TLB_INTERFACE_SKIP_TOOL
+#define new_COpenCV_ML_SVM    TLB_INTERFACE_SKIP_TOOL
+#define new_COpenCV_ML_DTrees TLB_INTERFACE_SKIP_TOOL
+#define new_COpenCV_ML_Boost  TLB_INTERFACE_SKIP_TOOL
+#define new_COpenCV_ML_RTrees TLB_INTERFACE_SKIP_TOOL
+#define new_COpenCV_ML_ANN    TLB_INTERFACE_SKIP_TOOL
+#define new_COpenCV_ML_LogR   TLB_INTERFACE_SKIP_TOOL
 
 #endif
 

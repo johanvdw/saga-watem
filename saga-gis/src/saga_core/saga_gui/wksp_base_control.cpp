@@ -186,8 +186,6 @@ bool CWKSP_Base_Control::_Set_Manager(CWKSP_Base_Manager *pManager)
 
 ///////////////////////////////////////////////////////////
 //														 //
-//														 //
-//														 //
 ///////////////////////////////////////////////////////////
 
 //---------------------------------------------------------
@@ -246,8 +244,6 @@ void CWKSP_Base_Control::On_Command_UI(wxUpdateUIEvent &event)
 
 ///////////////////////////////////////////////////////////
 //														 //
-//														 //
-//														 //
 ///////////////////////////////////////////////////////////
 
 //---------------------------------------------------------
@@ -302,6 +298,12 @@ bool CWKSP_Base_Control::_Del_Item(CWKSP_Base_Item *pItem, bool bSilent)
 	if( !bSilent && !_Del_Item_Confirm(pItem) )
 	{
 		return( false );
+	}
+
+	//-----------------------------------------------------
+	if( m_pManager == g_pActive->Get_Active() && Get_Selection_Count() > 1 )
+	{
+		g_pActive->Set_Active(NULL);
 	}
 
 	//-----------------------------------------------------
@@ -416,8 +418,6 @@ bool CWKSP_Base_Control::_Del_Item_Confirm(CWKSP_Base_Item *pItem)
 
 ///////////////////////////////////////////////////////////
 //														 //
-//														 //
-//														 //
 ///////////////////////////////////////////////////////////
 
 //---------------------------------------------------------
@@ -450,8 +450,6 @@ bool CWKSP_Base_Control::Set_Item_Selected(CWKSP_Base_Item *pItem, bool bKeepMul
 
 ///////////////////////////////////////////////////////////
 //														 //
-//														 //
-//														 //
 ///////////////////////////////////////////////////////////
 
 //---------------------------------------------------------
@@ -474,8 +472,6 @@ wxMenu * CWKSP_Base_Control::Get_Context_Menu(void)
 
 
 ///////////////////////////////////////////////////////////
-//														 //
-//														 //
 //														 //
 ///////////////////////////////////////////////////////////
 
@@ -569,8 +565,6 @@ bool CWKSP_Base_Control::_Show_Active(void)
 
 
 ///////////////////////////////////////////////////////////
-//														 //
-//														 //
 //														 //
 ///////////////////////////////////////////////////////////
 
@@ -742,8 +736,6 @@ bool CWKSP_Base_Control::_Copy_Settings(void)
 
 ///////////////////////////////////////////////////////////
 //														 //
-//														 //
-//														 //
 ///////////////////////////////////////////////////////////
 
 //---------------------------------------------------------
@@ -871,14 +863,12 @@ bool CWKSP_Base_Control::_Search_Item(void)
 
 ///////////////////////////////////////////////////////////
 //														 //
-//														 //
-//														 //
 ///////////////////////////////////////////////////////////
 
 //---------------------------------------------------------
 void CWKSP_Base_Control::On_Item_LClick(wxMouseEvent &event)
 {
-	g_pACTIVE->Set_Active(Get_Item_Selected());
+	g_pActive->Set_Active(Get_Item_Selected());
 
 	event.Skip();
 }
@@ -901,7 +891,7 @@ void CWKSP_Base_Control::On_Item_RClick(wxTreeEvent &event)
 	{
 	//	SelectItem(event.GetItem());
 
-		g_pACTIVE->Set_Active(Get_Item_Selected());
+		g_pActive->Set_Active(Get_Item_Selected());
 	}
 
 	wxMenu	*pMenu	= Get_Context_Menu();
@@ -943,13 +933,13 @@ void CWKSP_Base_Control::On_Item_KeyDown(wxTreeEvent &event)
 //---------------------------------------------------------
 void CWKSP_Base_Control::On_Item_SelChanged(wxTreeEvent &event)
 {
-	if( g_pACTIVE )
+	if( g_pActive )
 	{
 		CWKSP_Base_Item	*pItem	= Get_Item_Selected(true);
 
 		if( pItem )
 		{
-			g_pACTIVE->Set_Active(pItem);
+			g_pActive->Set_Active(pItem);
 		}
 	}
 

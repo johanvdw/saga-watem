@@ -1,6 +1,3 @@
-/**********************************************************
- * Version $Id$
- *********************************************************/
 
 ///////////////////////////////////////////////////////////
 //                                                       //
@@ -62,7 +59,7 @@
 //---------------------------------------------------------
 // 1. Include the appropriate SAGA-API header...
 
-#include "MLB_Interface.h"
+#include <saga_api/saga_api.h>
 
 
 //---------------------------------------------------------
@@ -79,7 +76,7 @@ CSG_String Get_Info(int i)
 		return( _TL("Grid") );
 
 	case TLB_INFO_Author:
-		return( SG_T("O. Conrad, A. Ringeler, V. Olaya, J. Engels (c) 2001-2014") );
+		return( "O. Conrad, A. Ringeler, V. Olaya, J. Engels (c) 2001-2018" );
 
 	case TLB_INFO_Description:
 		return( _TL("Grid based or related calculations.") );
@@ -113,6 +110,9 @@ CSG_String Get_Info(int i)
 #include "gradient_cartes_polar.h"
 
 #include "kff_synth.h"
+
+#include "grid_histogram_match.h"
+
 
 //---------------------------------------------------------
 // 4. Allow your tools to be created here...
@@ -149,8 +149,12 @@ CSG_Tool *		Create_Tool(int i)
 
 	case 19:	return( new Ckff_synthesis );
 
+	case 20:	return( new CGrids_Calculator );
+
+	case 21:	return( new CGrid_Histogram_Match );
+
 	//-----------------------------------------------------
-	case 20:	return( NULL );
+	case 22:	return( NULL );
 	default:	return( TLB_INTERFACE_SKIP_TOOL );
 	}
 }

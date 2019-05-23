@@ -227,26 +227,28 @@ bool CSG_Grid::_Load_External(const CSG_String &FileName, bool bCached, bool bLo
 		||	SG_File_Cmp_Extension(FileName, "jpg")
 		||	SG_File_Cmp_Extension(FileName, "png")
 		||	SG_File_Cmp_Extension(FileName, "pcx") )
-	&&  !bResult
-	&&	(pTool = SG_Get_Tool_Library_Manager().Get_Tool("io_grid_image", 1)) != NULL && pTool->Settings_Push(&Data) )
+	&&  !bResult && (pTool = SG_Get_Tool_Library_Manager().Create_Tool("io_grid_image", 1)) != NULL )
 	{
+		pTool->Settings_Push(&Data);
+
 		bResult	=  pTool->Set_Parameter("FILE", FileName)
 				&& pTool->Execute();
 
-		pTool->Settings_Pop();
+		SG_Get_Tool_Library_Manager().Delete_Tool(pTool);
 	}
 
 	//-----------------------------------------------------
 	// GDAL Import
 
-	if( !bResult
-	&&  (pTool = SG_Get_Tool_Library_Manager().Get_Tool("io_gdal", 0)) != NULL && pTool->Settings_Push(&Data) )
+	if( !bResult && (pTool = SG_Get_Tool_Library_Manager().Create_Tool("io_gdal", 0)) != NULL )
 	{
+		pTool->Settings_Push(&Data);
+
 		bResult	=  pTool->Set_Parameter("FILES"   , FileName)
 				&& pTool->Set_Parameter("MULTIPLE", 0       )	// output as single grid(s)
 				&& pTool->Execute();
 
-		pTool->Settings_Pop();
+		SG_Get_Tool_Library_Manager().Delete_Tool(pTool);
 	}
 
 	SG_UI_Msg_Lock(false);
@@ -303,7 +305,7 @@ bool CSG_Grid::_Load_PGSQL(const CSG_String &FileName, bool bCached, bool bLoadD
 		s	= s.AfterFirst(':');	CSG_String	Table (s.BeforeFirst(':'));
 		s	= s.AfterFirst(':');	CSG_String	rid   (s.BeforeFirst(':').AfterFirst('='));
 
-		CSG_Tool	*pTool	= SG_Get_Tool_Library_Manager().Get_Tool("db_pgsql", 0);	// CGet_Connections
+		CSG_Tool	*pTool	= SG_Get_Tool_Library_Manager().Create_Tool("db_pgsql", 0);	// CGet_Connections
 
 		if(	pTool != NULL )
 		{
@@ -313,8 +315,8 @@ bool CSG_Grid::_Load_PGSQL(const CSG_String &FileName, bool bCached, bool bLoadD
 			CSG_Table	Connections;
 			CSG_String	Connection	= DBName + " [" + Host + ":" + Port + "]";
 
+			pTool->Set_Manager(NULL);
 			pTool->On_Before_Execution();
-			pTool->Settings_Push();
 
 			if( SG_TOOL_PARAMETER_SET("CONNECTIONS", &Connections) && pTool->Execute() )	// CGet_Connections
 			{
@@ -327,13 +329,13 @@ bool CSG_Grid::_Load_PGSQL(const CSG_String &FileName, bool bCached, bool bLoadD
 				}
 			}
 
-			pTool->Settings_Pop();
+			SG_Get_Tool_Library_Manager().Delete_Tool(pTool);
 
 			//---------------------------------------------
-			if( bResult && (bResult = (pTool = SG_Get_Tool_Library_Manager().Get_Tool("db_pgsql", 33)) != NULL) == true )	// CPGIS_Raster_Load_Band
+			if( bResult && (bResult = (pTool = SG_Get_Tool_Library_Manager().Create_Tool("db_pgsql", 33)) != NULL) == true )	// CPGIS_Raster_Load_Band
 			{
+				pTool->Set_Manager(NULL);
 				pTool->On_Before_Execution();
-				pTool->Settings_Push();
 
 				bResult	=  SG_TOOL_PARAMETER_SET("CONNECTION", Connection)
 						&& SG_TOOL_PARAMETER_SET("TABLES"    , Table)
@@ -341,7 +343,7 @@ bool CSG_Grid::_Load_PGSQL(const CSG_String &FileName, bool bCached, bool bLoadD
 						&& SG_TOOL_PARAMETER_SET("GRID"      , this)
 						&& pTool->Execute();
 
-				pTool->Settings_Pop();
+				SG_Get_Tool_Library_Manager().Delete_Tool(pTool);
 			}
 
 			SG_UI_ProgressAndMsg_Lock(false);
@@ -373,7 +375,8 @@ bool CSG_Grid::_Load_Native(const CSG_String &FileName, bool bCached, bool bLoad
 	Set_Name        (Info.m_Name);
 	Set_Description (Info.m_Description);
 	Set_Unit        (Info.m_Unit);
-	Set_NoData_Value(Info.m_NoData);
+
+	Set_NoData_Value_Range(Info.m_NoData[0], Info.m_NoData[1]);
 
 	m_System		= Info.m_System;
 	m_Type			= Info.m_Type;
@@ -542,7 +545,8 @@ bool CSG_Grid::_Load_Compressed(const CSG_String &_FileName, bool bCached, bool 
 	Set_Name        (Info.m_Name);
 	Set_Description (Info.m_Description);
 	Set_Unit        (Info.m_Unit);
-	Set_NoData_Value(Info.m_NoData);
+
+	Set_NoData_Value_Range(Info.m_NoData[0], Info.m_NoData[1]);
 
 	m_System		= Info.m_System;
 	m_Type			= Info.m_Type;
@@ -1031,7 +1035,8 @@ void CSG_Grid_File_Info::_On_Construction(void)
 	m_Type			= SG_DATATYPE_Float;	// defaults to float
 	m_zScale		= 1.0;
 	m_zOffset		= 0;
-	m_NoData		= -99999.0;
+	m_NoData[0]		= -99999.0;
+	m_NoData[1]		= -99999.0;
 	m_Data_File		.Clear();
 	m_bFlip			= false;
 	m_bSwapBytes	= false;
@@ -1054,7 +1059,8 @@ bool CSG_Grid_File_Info::Create(const CSG_Grid_File_Info &Info)
 	m_Type			= Info.m_Type;
 	m_zScale		= Info.m_zScale;
 	m_zOffset		= Info.m_zOffset;
-	m_NoData		= Info.m_NoData;
+	m_NoData[0]		= Info.m_NoData[0];
+	m_NoData[1]		= Info.m_NoData[1];
 	m_Data_File		= Info.m_Data_File;
 	m_bFlip			= Info.m_bFlip;
 	m_bSwapBytes	= Info.m_bSwapBytes;
@@ -1079,7 +1085,8 @@ bool CSG_Grid_File_Info::Create(const CSG_Grid &Grid)
 	m_Type			= Grid.Get_Type();
 	m_zScale		= Grid.Get_Scaling();
 	m_zOffset		= Grid.Get_Offset();
-	m_NoData		= Grid.Get_NoData_Value();
+	m_NoData[0]		= Grid.Get_NoData_Value  ();
+	m_NoData[1]		= Grid.Get_NoData_hiValue();
 	m_Data_File		.Clear();
 	m_bFlip			= false;
 	m_bSwapBytes	= false;
@@ -1140,7 +1147,8 @@ bool CSG_Grid_File_Info::Create(CSG_File &Stream)
 
 		case GRID_FILE_KEY_Z_FACTOR       :	m_zScale      = Value.asDouble();	break;
 		case GRID_FILE_KEY_Z_OFFSET       :	m_zOffset     = Value.asDouble();	break;
-		case GRID_FILE_KEY_NODATA_VALUE   :	m_NoData      = Value.asDouble();	break;
+		case GRID_FILE_KEY_NODATA_VALUE   :	m_NoData[0]   = Value.asDouble();
+			Value = Value.AfterFirst(';');  m_NoData[1]   = Value.is_Empty() ? m_NoData[0] : Value.asDouble();	break;
 
 		case GRID_FILE_KEY_DATAFILE_OFFSET:	m_Offset      = Value.asInt   ();	break;
 		case GRID_FILE_KEY_BYTEORDER_BIG  :	m_bSwapBytes  = Value.Find(GRID_FILE_KEY_TRUE) >= 0;	break;
@@ -1226,25 +1234,25 @@ bool CSG_Grid_File_Info::Save(const CSG_File &Stream, bool bBinary)
 
 #define GRID_FILE_PRINT(Key, Val)	{ CSG_String s(gSG_Grid_File_Key_Names[Key]); s += "\t= " + Val + "\n"; Stream.Write(s); }
 
-	GRID_FILE_PRINT(GRID_FILE_KEY_NAME           , CSG_String::Format("%s"  , m_Name       .c_str()));
-	GRID_FILE_PRINT(GRID_FILE_KEY_DESCRIPTION    , CSG_String::Format("%s"  , m_Description.c_str()));
-	GRID_FILE_PRINT(GRID_FILE_KEY_UNITNAME       , CSG_String::Format("%s"  , m_Unit       .c_str()));
-	GRID_FILE_PRINT(GRID_FILE_KEY_DATAFORMAT     , CSG_String::Format("%s"  , CSG_String(bBinary ? gSG_Data_Type_Identifier[m_Type] : "ASCII").c_str()));
-	GRID_FILE_PRINT(GRID_FILE_KEY_DATAFILE_OFFSET, CSG_String::Format("%d"  , 0                    ));
+	GRID_FILE_PRINT(GRID_FILE_KEY_NAME           , CSG_String::Format("%s"   , m_Name       .c_str()   ));
+	GRID_FILE_PRINT(GRID_FILE_KEY_DESCRIPTION    , CSG_String::Format("%s"   , m_Description.c_str()   ));
+	GRID_FILE_PRINT(GRID_FILE_KEY_UNITNAME       , CSG_String::Format("%s"   , m_Unit       .c_str()   ));
+	GRID_FILE_PRINT(GRID_FILE_KEY_DATAFORMAT     , CSG_String::Format("%s"   , CSG_String(bBinary ? gSG_Data_Type_Identifier[m_Type] : "ASCII").c_str()));
+	GRID_FILE_PRINT(GRID_FILE_KEY_DATAFILE_OFFSET, CSG_String::Format("%d"   , 0                       ));
 #ifdef WORDS_BIGENDIAN
-	GRID_FILE_PRINT(GRID_FILE_KEY_BYTEORDER_BIG  , CSG_String::Format("%s"  , GRID_FILE_KEY_TRUE   ));
+	GRID_FILE_PRINT(GRID_FILE_KEY_BYTEORDER_BIG  , CSG_String::Format("%s"   , GRID_FILE_KEY_TRUE      ));
 #else
-	GRID_FILE_PRINT(GRID_FILE_KEY_BYTEORDER_BIG  , CSG_String::Format("%s"  , GRID_FILE_KEY_FALSE  ));
+	GRID_FILE_PRINT(GRID_FILE_KEY_BYTEORDER_BIG  , CSG_String::Format("%s"   , GRID_FILE_KEY_FALSE     ));
 #endif
-	GRID_FILE_PRINT(GRID_FILE_KEY_TOPTOBOTTOM    , CSG_String::Format("%s"  , GRID_FILE_KEY_FALSE  ));
-	GRID_FILE_PRINT(GRID_FILE_KEY_POSITION_XMIN  , CSG_String::Format("%.*f", CSG_Grid_System::Get_Precision(), m_System.Get_XMin()));
-	GRID_FILE_PRINT(GRID_FILE_KEY_POSITION_YMIN  , CSG_String::Format("%.*f", CSG_Grid_System::Get_Precision(), m_System.Get_YMin()));
-	GRID_FILE_PRINT(GRID_FILE_KEY_CELLCOUNT_X    , CSG_String::Format("%d"  , m_System.Get_NX()    ));
-	GRID_FILE_PRINT(GRID_FILE_KEY_CELLCOUNT_Y    , CSG_String::Format("%d"  , m_System.Get_NY()    ));
-	GRID_FILE_PRINT(GRID_FILE_KEY_CELLSIZE       , CSG_String::Format("%.*f", CSG_Grid_System::Get_Precision(), m_System.Get_Cellsize()));
-	GRID_FILE_PRINT(GRID_FILE_KEY_Z_FACTOR       , CSG_String::Format("%f"  , m_zScale             ));
-	GRID_FILE_PRINT(GRID_FILE_KEY_Z_OFFSET       , CSG_String::Format("%f"  , m_zOffset            ));
-	GRID_FILE_PRINT(GRID_FILE_KEY_NODATA_VALUE   , CSG_String::Format("%f"  , m_NoData             ));
+	GRID_FILE_PRINT(GRID_FILE_KEY_TOPTOBOTTOM    , CSG_String::Format("%s"   , GRID_FILE_KEY_FALSE     ));
+	GRID_FILE_PRINT(GRID_FILE_KEY_POSITION_XMIN  , CSG_String::Format("%.*f" , CSG_Grid_System::Get_Precision(), m_System.Get_XMin()));
+	GRID_FILE_PRINT(GRID_FILE_KEY_POSITION_YMIN  , CSG_String::Format("%.*f" , CSG_Grid_System::Get_Precision(), m_System.Get_YMin()));
+	GRID_FILE_PRINT(GRID_FILE_KEY_CELLCOUNT_X    , CSG_String::Format("%d"   , m_System.Get_NX()       ));
+	GRID_FILE_PRINT(GRID_FILE_KEY_CELLCOUNT_Y    , CSG_String::Format("%d"   , m_System.Get_NY()       ));
+	GRID_FILE_PRINT(GRID_FILE_KEY_CELLSIZE       , CSG_String::Format("%.*f" , CSG_Grid_System::Get_Precision(), m_System.Get_Cellsize()));
+	GRID_FILE_PRINT(GRID_FILE_KEY_Z_FACTOR       , CSG_String::Format("%f"   , m_zScale                ));
+	GRID_FILE_PRINT(GRID_FILE_KEY_Z_OFFSET       , CSG_String::Format("%f"   , m_zOffset               ));
+	GRID_FILE_PRINT(GRID_FILE_KEY_NODATA_VALUE   , CSG_String::Format("%f;%f", m_NoData[0], m_NoData[1]));
 
 	return( true );
 }

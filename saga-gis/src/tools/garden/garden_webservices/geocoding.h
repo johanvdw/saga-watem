@@ -1,6 +1,3 @@
-/**********************************************************
- * Version $Id$
- *********************************************************/
 
 ///////////////////////////////////////////////////////////
 //                                                       //
@@ -9,14 +6,14 @@
 //      System for Automated Geoscientific Analyses      //
 //                                                       //
 //                     Tool Library                      //
-//                   Projection_Proj4                    //
+//                  garden_webservices                   //
 //                                                       //
 //-------------------------------------------------------//
 //                                                       //
-//                    PROJ4_Shapes.h                     //
+//                     geocoding.h                       //
 //                                                       //
-//                 Copyright (C) 2003 by                 //
-//                      Olaf Conrad                      //
+//                 Copyrights (C) 2018                   //
+//                     Olaf Conrad                       //
 //                                                       //
 //-------------------------------------------------------//
 //                                                       //
@@ -43,9 +40,7 @@
 //                                                       //
 //    contact:    Olaf Conrad                            //
 //                Institute of Geography                 //
-//                University of Goettingen               //
-//                Goldschmidtstr. 5                      //
-//                37077 Goettingen                       //
+//                University of Hamburg                  //
 //                Germany                                //
 //                                                       //
 ///////////////////////////////////////////////////////////
@@ -55,16 +50,13 @@
 
 ///////////////////////////////////////////////////////////
 //														 //
-//														 //
+//                                                       //
 //														 //
 ///////////////////////////////////////////////////////////
 
 //---------------------------------------------------------
-#ifndef HEADER_INCLUDED__PROJ4_Shapes_H
-#define HEADER_INCLUDED__PROJ4_Shapes_H
-
-//---------------------------------------------------------
-#include "PROJ4_Base.h"
+#ifndef HEADER_INCLUDED__geocoding_H
+#define HEADER_INCLUDED__geocoding_H
 
 
 ///////////////////////////////////////////////////////////
@@ -74,23 +66,43 @@
 ///////////////////////////////////////////////////////////
 
 //---------------------------------------------------------
-class pj_proj4_EXPORT CPROJ4_Shapes : public CPROJ4_Base
+#include "sg_curl.h"
+
+
+///////////////////////////////////////////////////////////
+//														 //
+//														 //
+//														 //
+///////////////////////////////////////////////////////////
+
+//---------------------------------------------------------
+class CGeoCoding : public CSG_Tool
 {
 public:
-	CPROJ4_Shapes(int Interface, bool bInputList);
+	CGeoCoding(void);
 
-	virtual CSG_String			Get_MenuPath			(void)	{	return( _TL("Alternatives") );	}
+//	virtual CSG_String		Get_MenuPath			(void)	{	return( _TL("") );	}
 
 
 protected:
 
-	virtual bool			On_Execute_Conversion	(void);
+	virtual int				On_Parameters_Enable	(CSG_Parameters *pParameters, CSG_Parameter *pParameter);
+
+	virtual bool			On_Execute				(void);
 
 
 private:
 
-	bool					_Get_Conversion			(CSG_Shapes *pSource, CSG_Shapes *pTarget);
+	CSG_String				m_API_Key;
 
+	CSG_MetaData			m_Answer;
+
+
+	bool					Request_Nominatim		(CWebClient &Connection, TSG_Point &Location, CSG_String &Address);
+	bool					Request_DSTK			(CWebClient &Connection, TSG_Point &Location, CSG_String &Address);
+	bool					Request_Google			(CWebClient &Connection, TSG_Point &Location, CSG_String &Address);
+	bool					Request_Bing			(CWebClient &Connection, TSG_Point &Location, CSG_String &Address);
+	bool					Request_MapQuest		(CWebClient &Connection, TSG_Point &Location, CSG_String &Address);
 
 };
 
@@ -102,4 +114,4 @@ private:
 ///////////////////////////////////////////////////////////
 
 //---------------------------------------------------------
-#endif // #ifndef HEADER_INCLUDED__PROJ4_Shapes_H
+#endif // #ifndef HEADER_INCLUDED__geocoding_H

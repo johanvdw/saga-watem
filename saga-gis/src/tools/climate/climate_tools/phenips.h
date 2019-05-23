@@ -1,6 +1,3 @@
-/**********************************************************
- * Version $Id$
- *********************************************************/
 
 ///////////////////////////////////////////////////////////
 //                                                       //
@@ -9,14 +6,14 @@
 //      System for Automated Geoscientific Analyses      //
 //                                                       //
 //                     Tool Library                      //
-//                   Projection_Proj4                    //
+//                       ips-pro                         //
 //                                                       //
 //-------------------------------------------------------//
 //                                                       //
-//                     PROJ4_Base.h                      //
+//                      phenips.h                        //
 //                                                       //
-//                 Copyright (C) 2003 by                 //
-//                      Olaf Conrad                      //
+//                 Copyrights (C) 2019                   //
+//                     Olaf Conrad                       //
 //                                                       //
 //-------------------------------------------------------//
 //                                                       //
@@ -43,14 +40,14 @@
 //                                                       //
 //    contact:    Olaf Conrad                            //
 //                Institute of Geography                 //
-//                University of Goettingen               //
-//                Goldschmidtstr. 5                      //
-//                37077 Goettingen                       //
+//                University of Hamburg                  //
 //                Germany                                //
 //                                                       //
 ///////////////////////////////////////////////////////////
 
 //---------------------------------------------------------
+#ifndef HEADER_INCLUDED__phenips_H
+#define HEADER_INCLUDED__phenips_H
 
 
 ///////////////////////////////////////////////////////////
@@ -60,15 +57,7 @@
 ///////////////////////////////////////////////////////////
 
 //---------------------------------------------------------
-#ifndef HEADER_INCLUDED__PROJ4_Base_H
-#define HEADER_INCLUDED__PROJ4_Base_H
-
-//---------------------------------------------------------
-#include "MLB_Interface.h"
-
-extern "C" {
-#include <projects.h>
-}
+#include <saga_api/saga_api.h>
 
 
 ///////////////////////////////////////////////////////////
@@ -78,61 +67,45 @@ extern "C" {
 ///////////////////////////////////////////////////////////
 
 //---------------------------------------------------------
-enum
-{
-	PROJ4_INTERFACE_SIMPLE	= 0,
-	PROJ4_INTERFACE_DIALOG
-};
-
-
-///////////////////////////////////////////////////////////
-//														 //
-//														 //
-//														 //
-///////////////////////////////////////////////////////////
-
-//---------------------------------------------------------
-class pj_proj4_EXPORT CPROJ4_Base : public CSG_Tool
+class CPhenIps_Table : public CSG_Tool
 {
 public:
-	CPROJ4_Base(int Interface, bool bInputList);
+	CPhenIps_Table(void);
 
-	virtual bool		do_Sync_Projections			(void)	{	return( false  );	}
+	virtual CSG_String		Get_MenuPath			(void)	{	return( _TL("Bioclimatology|Phenology") );	}
 
 
 protected:
 
-	bool				m_bInputList;
+	virtual bool			On_Execute				(void);
 
 
-	virtual int			On_Parameter_Changed		(CSG_Parameters *pParameters, CSG_Parameter *pParameter);
+};
 
-	virtual bool		On_Execute					(void);
-	virtual bool		On_Execute_Conversion		(void)	= 0;
 
-	bool				Set_Inverse					(bool bOn = true);
+///////////////////////////////////////////////////////////
+//														 //
+///////////////////////////////////////////////////////////
 
-	CSG_String			Get_Proj_Name				(bool bDestination = true);
+//---------------------------------------------------------
+class CPhenIps_Grids : public CSG_Tool_Grid
+{
+public:
+	CPhenIps_Grids(void);
 
-	bool				Get_Converted				(double &x, double &y);
-	bool				Get_Converted				(TSG_Point &Point);
+	virtual CSG_String		Get_MenuPath			(void)	{	return( _TL("Bioclimatology|Phenology") );	}
+
+
+protected:
+
+	virtual int				On_Parameters_Enable	(CSG_Parameters *pParameters, CSG_Parameter *pParameter);
+
+	virtual bool			On_Execute				(void);
 
 
 private:
 
-	bool				m_bInverse;
-
-	int					m_Interface;
-
-	PJ					*m_pPrjSrc, *m_pPrjDst;
-
-
-	bool				_Get_Projections			(CSG_String &sPrjSrc, CSG_String &sPrjDst);
-	bool				_Get_Projection				(CSG_String &sPrj, CSG_Parameters &P);
-
-	bool				_Init_Projection			(CSG_Parameters &P);
-	bool				_Init_Projection			(const CSG_String &sID, const CSG_String &sName, const CSG_String &sArgs);
-
+	bool					Get_Daily				(int x, int y, CSG_Parameter_Grid_List *pValues, CSG_Vector &Values);
 
 };
 
@@ -144,4 +117,4 @@ private:
 ///////////////////////////////////////////////////////////
 
 //---------------------------------------------------------
-#endif // #ifndef HEADER_INCLUDED__PROJ4_Base_H
+#endif // #ifndef HEADER_INCLUDED__phenips_H

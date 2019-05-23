@@ -164,13 +164,20 @@ bool CSG_PRQuadTree_Node::Add_Point(double x, double y, double z)
 			}
 
 			((CSG_PRQuadTree_Node *)m_pChildren[Quadrant])->Add_Point(x, y, z);
-
-			return( true );
 		}
-		else
+		else // if( x == pLeaf->Get_X() || y == pLeaf->Get_Y() ) // duplicate !!
 		{
-			return( false );	// ignore duplicates !!!
+			if( !pLeaf->has_Statistics() )
+			{
+				m_pChildren[Quadrant]	= new CSG_PRQuadTree_Leaf_List(pLeaf->m_Extent, -1, x, y, pLeaf->m_z);
+
+				delete(pLeaf);
+			}
+
+			((CSG_PRQuadTree_Leaf_List *)m_pChildren[Quadrant])->Add_Value(z);
 		}
+
+		return( true );
 	}
 
 	//-----------------------------------------------------
@@ -902,13 +909,13 @@ bool CSG_Parameters_Search_Points::On_Parameters_Enable(CSG_Parameters *pParamet
 		return( false );
 	}
 
-	if(	!SG_STR_CMP(pParameter->Get_Identifier(), "SEARCH_RANGE") )
+	if(	pParameter->Cmp_Identifier("SEARCH_RANGE") )
 	{
 		pParameters->Set_Enabled("SEARCH_RADIUS"    , pParameter->asInt() == 0);	// local
 		pParameters->Set_Enabled("SEARCH_POINTS_MIN", pParameter->asInt() == 0);	// when global, no minimum number of points
 	}
 
-	if(	!SG_STR_CMP(pParameter->Get_Identifier(), "SEARCH_POINTS_ALL") )
+	if(	pParameter->Cmp_Identifier("SEARCH_POINTS_ALL") )
 	{
 		pParameters->Set_Enabled("SEARCH_POINTS_MAX", pParameter->asInt() == 0);	// maximum number of points
 		pParameters->Set_Enabled("SEARCH_DIRECTION" , pParameter->asInt() == 0);	// maximum number of points per quadrant

@@ -1,6 +1,3 @@
-/**********************************************************
- * Version $Id$
- *********************************************************/
 
 ///////////////////////////////////////////////////////////
 //                                                       //
@@ -49,17 +46,15 @@
 ///////////////////////////////////////////////////////////
 
 //---------------------------------------------------------
-
-
-///////////////////////////////////////////////////////////
-//														 //
-//														 //
-//														 //
-///////////////////////////////////////////////////////////
-
-//---------------------------------------------------------
 #ifndef HEADER_INCLUDED__crs_base_H
 #define HEADER_INCLUDED__crs_base_H
+
+
+///////////////////////////////////////////////////////////
+//														 //
+//														 //
+//														 //
+///////////////////////////////////////////////////////////
 
 //---------------------------------------------------------
 #include "crs_transform.h"
@@ -72,12 +67,12 @@
 ///////////////////////////////////////////////////////////
 
 //---------------------------------------------------------
-class pj_proj4_EXPORT CCRS_Base : public CSG_Tool
+class CCRS_Base : public CSG_Tool
 {
 public:
 	CCRS_Base(void);
 
-	virtual bool			do_Sync_Projections		(void)	{	return( false  );	}
+	virtual bool			do_Sync_Projections		(void)	const	{	return( false );	}
 
 
 protected:
@@ -95,11 +90,11 @@ private:
 	CSG_Projection			m_Projection;
 
 
-	bool					Set_User_Parameters		(CSG_Parameters *pParameters);
-	bool					Add_User_Projection		(const CSG_String &sID, const CSG_String &sName, const CSG_String &sArgs);
+	bool					Set_User_Parameters		(CSG_Parameters &Parameters);
+	bool					Add_User_Projection		(CSG_Parameters &Parameters, const CSG_String &ID, const CSG_String &Args);
 
-	CSG_String				Get_User_Definition		(CSG_Parameters &pParameters);
-	bool					Set_User_Definition		(CSG_Parameters &pParameters, const CSG_String &Proj4);
+	CSG_String				Get_User_Definition		(CSG_Parameters &Parameters);
+	bool					Set_User_Definition		(CSG_Parameters &Parameters, const CSG_String &Proj4);
 
 };
 
@@ -109,7 +104,7 @@ private:
 ///////////////////////////////////////////////////////////
 
 //---------------------------------------------------------
-class pj_proj4_EXPORT CCRS_Picker : public CCRS_Base
+class CCRS_Picker : public CCRS_Base
 {
 public:
 	CCRS_Picker(void);
@@ -121,7 +116,6 @@ protected:
 
 	virtual bool			On_Execute			(void);
 
-
 };
 
 
@@ -130,7 +124,7 @@ protected:
 ///////////////////////////////////////////////////////////
 
 //---------------------------------------------------------
-class pj_proj4_EXPORT CCRS_Transform : public CCRS_Base
+class CCRS_Transform : public CCRS_Base
 {
 public:
 	CCRS_Transform(void)	{}
@@ -144,7 +138,6 @@ protected:
 	virtual bool			On_Execute					(void);
 
 	virtual bool			On_Execute_Transformation	(void)	= 0;
-
 
 };
 

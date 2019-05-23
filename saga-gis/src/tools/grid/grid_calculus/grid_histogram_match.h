@@ -1,6 +1,3 @@
-/**********************************************************
- * Version $Id$
- *********************************************************/
 
 ///////////////////////////////////////////////////////////
 //                                                       //
@@ -9,13 +6,13 @@
 //      System for Automated Geoscientific Analyses      //
 //                                                       //
 //                     Tool Library                      //
-//                   Projection_Proj4                    //
+//                     Grid_Calculus                     //
 //                                                       //
 //-------------------------------------------------------//
 //                                                       //
-//                    TLB_Interface.h                    //
+//                 grid_histogram_match.h                //
 //                                                       //
-//                 Copyright (C) 2003 by                 //
+//                 Copyright (C) 2019 by                 //
 //                      Olaf Conrad                      //
 //                                                       //
 //-------------------------------------------------------//
@@ -43,42 +40,55 @@
 //                                                       //
 //    contact:    Olaf Conrad                            //
 //                Institute of Geography                 //
-//                University of Goettingen               //
-//                Goldschmidtstr. 5                      //
-//                37077 Goettingen                       //
+//                University of Hamburg                  //
 //                Germany                                //
 //                                                       //
 ///////////////////////////////////////////////////////////
 
 //---------------------------------------------------------
+#ifndef HEADER_INCLUDED__grid_histogram_match_H
+#define HEADER_INCLUDED__grid_histogram_match_H
 
 
 ///////////////////////////////////////////////////////////
 //														 //
-//				Include the SAGA-API here				 //
+//                                                       //
 //														 //
 ///////////////////////////////////////////////////////////
-
-//---------------------------------------------------------
-#ifndef HEADER_INCLUDED__pj_proj4_H
-#define HEADER_INCLUDED__pj_proj4_H
 
 //---------------------------------------------------------
 #include <saga_api/saga_api.h>
 
-//---------------------------------------------------------
-#ifdef pj_proj4_EXPORTS
-	#define	pj_proj4_EXPORT	_SAGA_DLL_EXPORT
-#else
-	#define	pj_proj4_EXPORT	_SAGA_DLL_IMPORT
-#endif
-
 
 ///////////////////////////////////////////////////////////
 //														 //
-//														 //
+//                                                       //
 //														 //
 ///////////////////////////////////////////////////////////
 
 //---------------------------------------------------------
-#endif // #ifndef HEADER_INCLUDED__pj_proj4_H
+class CGrid_Histogram_Match : public CSG_Tool_Grid  
+{
+public:
+	CGrid_Histogram_Match(void);
+
+	virtual CSG_String		Get_MenuPath			(void)	{	return( _TL("Transformations") );	}
+
+
+protected:
+
+	virtual int				On_Parameters_Enable	(CSG_Parameters *pParameters, CSG_Parameter *pParameter);
+
+	virtual bool			On_Execute				(void);
+
+};
+
+
+///////////////////////////////////////////////////////////
+//														 //
+//                                                       //
+//														 //
+///////////////////////////////////////////////////////////
+
+//---------------------------------------------------------
+#endif // #ifndef HEADER_INCLUDED__grid_histogram_match_H

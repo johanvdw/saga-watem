@@ -1,6 +1,3 @@
-/**********************************************************
- * Version $Id$
- *********************************************************/
 
 ///////////////////////////////////////////////////////////
 //                                                       //
@@ -53,27 +50,8 @@
 ///////////////////////////////////////////////////////////
 
 //---------------------------------------------------------
-
-
-///////////////////////////////////////////////////////////
-//														 //
-//														 //
-//														 //
-///////////////////////////////////////////////////////////
-
-//---------------------------------------------------------
 #include "parameters.h"
 #include "data_manager.h"
-
-
-///////////////////////////////////////////////////////////
-//														 //
-//														 //
-//														 //
-///////////////////////////////////////////////////////////
-
-//---------------------------------------------------------
-#define SG_MD_PARM_DATAOBJECT_CREATE		SG_T("CREATE")
 
 
 ///////////////////////////////////////////////////////////
@@ -170,7 +148,7 @@ CSG_String SG_Parameter_Type_Get_Identifier(TSG_Parameter_Type Type)
 	case PARAMETER_TYPE_PointCloud       :	return( "points"       );
 
 	case PARAMETER_TYPE_Grid_List        :	return( "grid_list"    );
-	case PARAMETER_TYPE_Grids_List       :	return( "grids_list"    );
+	case PARAMETER_TYPE_Grids_List       :	return( "grids_list"   );
 	case PARAMETER_TYPE_Table_List       :	return( "table_list"   );
 	case PARAMETER_TYPE_Shapes_List      :	return( "shapes_list"  );
 	case PARAMETER_TYPE_TIN_List         :	return( "tin_list"     );
@@ -228,129 +206,16 @@ TSG_Parameter_Type SG_Parameter_Type_Get_Type(const CSG_String &Identifier)
 
 ///////////////////////////////////////////////////////////
 //														 //
-//						Base Class						 //
-//														 //
-///////////////////////////////////////////////////////////
-
-//---------------------------------------------------------
-CSG_Parameter_Data::CSG_Parameter_Data(CSG_Parameter *pOwner, long Constraint)
-{
-	m_pOwner		= pOwner;
-	m_Constraint	= Constraint;
-}
-
-//---------------------------------------------------------
-CSG_String CSG_Parameter_Data::Get_Type_Identifier(void)	const
-{
-	return( SG_Parameter_Type_Get_Identifier(Get_Type()) );
-}
-
-//---------------------------------------------------------
-CSG_String CSG_Parameter_Data::Get_Type_Name(void)	const
-{
-	return( SG_Parameter_Type_Get_Name(Get_Type()) );
-}
-
-//---------------------------------------------------------
-bool CSG_Parameter_Data::Set_Value(int Value)
-{
-	return( false );
-}
-
-bool CSG_Parameter_Data::Set_Value(double Value)
-{
-	return( false );
-}
-
-bool CSG_Parameter_Data::Set_Value(const CSG_String &Value)
-{
-	return( false );
-}
-
-bool CSG_Parameter_Data::Set_Value(void *Value)
-{
-	return( false );
-}
-
-//---------------------------------------------------------
-int CSG_Parameter_Data::asInt(void)	const
-{
-	return( 0 );
-}
-
-double CSG_Parameter_Data::asDouble(void)	const
-{
-	return( 0.0 );
-}
-
-void * CSG_Parameter_Data::asPointer(void)	const
-{
-	return( NULL );
-}
-
-const SG_Char * CSG_Parameter_Data::asString(void)
-{
-	return( NULL );
-}
-
-//---------------------------------------------------------
-void CSG_Parameter_Data::Set_Default(int Value)
-{
-	m_Default.Printf("%d", Value);
-}
-
-void CSG_Parameter_Data::Set_Default(double Value)
-{
-	m_Default.Printf("%f", Value);
-}
-
-void CSG_Parameter_Data::Set_Default(const CSG_String &Value)
-{
-	m_Default	= Value;
-}
-
-//---------------------------------------------------------
-bool CSG_Parameter_Data::Assign(CSG_Parameter_Data *pSource)
-{
-	if( pSource && Get_Type() == pSource->Get_Type() )
-	{
-		m_Default	= pSource->m_Default;
-
-		On_Assign(pSource);
-
-		return( true );
-	}
-
-	return( false );
-}
-
-void CSG_Parameter_Data::On_Assign(CSG_Parameter_Data *pSource)
-{}
-
-//---------------------------------------------------------
-bool CSG_Parameter_Data::Serialize(CSG_MetaData &Entry, bool bSave)
-{
-	return( On_Serialize(Entry, bSave) );
-}
-
-bool CSG_Parameter_Data::On_Serialize(CSG_MetaData &Entry, bool bSave)
-{
-	Entry.Set_Content(SG_T("-"));
-
-	return( true );
-}
-
-
-///////////////////////////////////////////////////////////
-//														 //
 //						Node							 //
 //														 //
 ///////////////////////////////////////////////////////////
 
 //---------------------------------------------------------
-CSG_Parameter_Node::CSG_Parameter_Node(CSG_Parameter *pOwner, long Constraint)
-	: CSG_Parameter_Data(pOwner, Constraint)
-{}
+CSG_Parameter_Node::CSG_Parameter_Node(CSG_Parameters *pOwner, CSG_Parameter *pParent, const CSG_String &ID, const CSG_String &Name, const CSG_String &Description, int Constraint)
+	: CSG_Parameter(pOwner, pParent, ID, Name, Description, Constraint)
+{
+	// nop
+}
 
 
 ///////////////////////////////////////////////////////////
@@ -360,78 +225,78 @@ CSG_Parameter_Node::CSG_Parameter_Node(CSG_Parameter *pOwner, long Constraint)
 ///////////////////////////////////////////////////////////
 
 //---------------------------------------------------------
-CSG_Parameter_Bool::CSG_Parameter_Bool(CSG_Parameter *pOwner, long Constraint)
-	: CSG_Parameter_Data(pOwner, Constraint)
+CSG_Parameter_Bool::CSG_Parameter_Bool(CSG_Parameters *pOwner, CSG_Parameter *pParent, const CSG_String &ID, const CSG_String &Name, const CSG_String &Description, int Constraint)
+	: CSG_Parameter(pOwner, pParent, ID, Name, Description, Constraint)
 {
-	m_Value		= false;
+	m_Value	= false;
 }
 
 //---------------------------------------------------------
-bool CSG_Parameter_Bool::Set_Value(int Value)
+int CSG_Parameter_Bool::_Set_Value(int Value)
 {
 	bool	bValue = Value != 0;
 
 	if( m_Value != bValue )
 	{
-		m_Value		= bValue;
+		m_Value	= bValue;
 
-		return( true );
+		return( SG_PARAMETER_DATA_SET_CHANGED );
 	}
 
-	return( false );
+	return( SG_PARAMETER_DATA_SET_TRUE );
 }
 
-bool CSG_Parameter_Bool::Set_Value(double Value)
+int CSG_Parameter_Bool::_Set_Value(double Value)
 {
-	return( Set_Value((int)Value) );
+	return( _Set_Value((int)Value) );
 }
 
-bool CSG_Parameter_Bool::Set_Value(const CSG_String &Value)
+int CSG_Parameter_Bool::_Set_Value(const CSG_String &Value)
 {
+	if( !Value.CmpNoCase("true") || !Value.CmpNoCase("yes") )
+	{
+		return( _Set_Value(1) );
+	}
+
+	if( !Value.CmpNoCase("false") || !Value.CmpNoCase("no") )
+	{
+		return( _Set_Value(0) );
+	}
+
 	int		i;
-
-	if( !Value.CmpNoCase("true") )
-	{
-		return( Set_Value(1) );
-	}
-
-	if( !Value.CmpNoCase("false") )
-	{
-		return( Set_Value(0) );
-	}
 
 	if( Value.asInt(i) )
 	{
-		return( Set_Value(i) );
+		return( _Set_Value(i) );
 	}
 
-	return( false );
+	return( SG_PARAMETER_DATA_SET_FALSE );
 }
 
 //---------------------------------------------------------
-const SG_Char * CSG_Parameter_Bool::asString(void)
+void CSG_Parameter_Bool::_Set_String(void)
 {
-	m_String	= m_Value ? _TL("yes") : _TL("no");
-
-	return( m_String );
+	m_String	= m_Value ? _TL("true") : _TL("false");
 }
 
 //---------------------------------------------------------
-void CSG_Parameter_Bool::On_Assign(CSG_Parameter_Data *pSource)
+bool CSG_Parameter_Bool::_Assign(CSG_Parameter *pSource)
 {
-	m_Value		= ((CSG_Parameter_Bool *)pSource)->m_Value;
+	m_Value		= pSource->asBool();
+
+	return( true );
 }
 
 //---------------------------------------------------------
-bool CSG_Parameter_Bool::On_Serialize(CSG_MetaData &Entry, bool bSave)
+bool CSG_Parameter_Bool::_Serialize(CSG_MetaData &Entry, bool bSave)
 {
 	if( bSave )
 	{
-		Entry.Set_Content(m_Value ? SG_T("TRUE") : SG_T("FALSE"));
+		Entry.Set_Content(m_Value ? "true" : "false");
 	}
 	else
 	{
-		m_Value	= Entry.Cmp_Content(SG_T("TRUE"), true);
+		m_Value	= Entry.Cmp_Content("true", true);
 	}
 
 	return( true );
@@ -445,8 +310,8 @@ bool CSG_Parameter_Bool::On_Serialize(CSG_MetaData &Entry, bool bSave)
 ///////////////////////////////////////////////////////////
 
 //---------------------------------------------------------
-CSG_Parameter_Value::CSG_Parameter_Value(CSG_Parameter *pOwner, long Constraint)
-	: CSG_Parameter_Data(pOwner, Constraint)
+CSG_Parameter_Value::CSG_Parameter_Value(CSG_Parameters *pOwner, CSG_Parameter *pParent, const CSG_String &ID, const CSG_String &Name, const CSG_String &Description, int Constraint)
+	: CSG_Parameter(pOwner, pParent, ID, Name, Description, Constraint)
 {
 	m_Minimum	= 0.0;
 	m_bMinimum	= false;
@@ -456,32 +321,20 @@ CSG_Parameter_Value::CSG_Parameter_Value(CSG_Parameter *pOwner, long Constraint)
 }
 
 //---------------------------------------------------------
-bool CSG_Parameter_Value::Set_Range(double Minimum, double Maximum)
+bool CSG_Parameter_Value::Set_Valid_Range(double Minimum, double Maximum)
 {
-	if( 1 )
+	m_Minimum	= !m_bMaximum || Minimum < Maximum ? Minimum : Maximum;
+	m_Maximum	= !m_bMinimum || Minimum < Maximum ? Maximum : Minimum;
+
+	switch( Get_Type() )
 	{
-		m_Minimum		= Minimum;
-		m_Maximum		= Maximum;
+	case PARAMETER_TYPE_Int   : return( _Set_Value(asInt   ()) != SG_PARAMETER_DATA_SET_FALSE );
+	case PARAMETER_TYPE_Double:
+	case PARAMETER_TYPE_Degree: return( _Set_Value(asDouble()) != SG_PARAMETER_DATA_SET_FALSE );
 
-		switch( Get_Type() )
-		{
-		default:
-			return( false );
-
-		case PARAMETER_TYPE_Int:
-			Set_Value(asInt());
-			break;
-
-		case PARAMETER_TYPE_Double:
-		case PARAMETER_TYPE_Degree:
-			Set_Value(asDouble());
-			break;
-		}
-
-		return( true );
+	default:
+		return( false );
 	}
-
-	return( false );
 }
 
 //---------------------------------------------------------
@@ -495,10 +348,11 @@ void CSG_Parameter_Value::Set_Minimum(double Minimum, bool bOn)
 	{
 		m_bMinimum	= true;
 
-		Set_Range(Minimum, m_Maximum);
+		Set_Valid_Range(Minimum, m_Maximum);
 	}
 }
 
+//---------------------------------------------------------
 void CSG_Parameter_Value::Set_Maximum(double Maximum, bool bOn)
 {
 	if( bOn == false || (m_bMaximum && Maximum <= m_Minimum) )
@@ -509,18 +363,20 @@ void CSG_Parameter_Value::Set_Maximum(double Maximum, bool bOn)
 	{
 		m_bMaximum	= true;
 
-		Set_Range(m_Minimum, Maximum);
+		Set_Valid_Range(m_Minimum, Maximum);
 	}
 }
 
 //---------------------------------------------------------
-void CSG_Parameter_Value::On_Assign(CSG_Parameter_Data *pSource)
+bool CSG_Parameter_Value::_Assign(CSG_Parameter *pSource)
 {
-	m_Minimum	= ((CSG_Parameter_Value *)pSource)->m_Minimum;
-	m_bMinimum	= ((CSG_Parameter_Value *)pSource)->m_bMinimum;
+	m_Minimum	= pSource->asValue()->m_Minimum;
+	m_bMinimum	= pSource->asValue()->m_bMinimum;
 
-	m_Maximum	= ((CSG_Parameter_Value *)pSource)->m_Maximum;
-	m_bMaximum	= ((CSG_Parameter_Value *)pSource)->m_bMaximum;
+	m_Maximum	= pSource->asValue()->m_Maximum;
+	m_bMaximum	= pSource->asValue()->m_bMaximum;
+
+	return( true );
 }
 
 
@@ -531,70 +387,68 @@ void CSG_Parameter_Value::On_Assign(CSG_Parameter_Data *pSource)
 ///////////////////////////////////////////////////////////
 
 //---------------------------------------------------------
-CSG_Parameter_Int::CSG_Parameter_Int(CSG_Parameter *pOwner, long Constraint)
-	: CSG_Parameter_Value(pOwner, Constraint)
+CSG_Parameter_Int::CSG_Parameter_Int(CSG_Parameters *pOwner, CSG_Parameter *pParent, const CSG_String &ID, const CSG_String &Name, const CSG_String &Description, int Constraint)
+	: CSG_Parameter_Value(pOwner, pParent, ID, Name, Description, Constraint)
 {
 	m_Value		= 0;
 }
 
 //---------------------------------------------------------
-bool CSG_Parameter_Int::Set_Value(int Value)
+int CSG_Parameter_Int::_Set_Value(int Value)
 {
-	if( m_bMinimum && Value < m_Minimum )
+	if( m_bMinimum && Value < (int)m_Minimum )
 	{
-		return( Set_Value((int)m_Minimum) );
+		return( _Set_Value((int)m_Minimum) );
 	}
 
-	if( m_bMaximum && Value > m_Maximum )
+	if( m_bMaximum && Value > (int)m_Maximum )
 	{
-		return( Set_Value((int)m_Maximum) );
+		return( _Set_Value((int)m_Maximum) );
 	}
 
 	if( m_Value != Value )
 	{
 		m_Value	= Value;
 
-		return( true );
+		return( SG_PARAMETER_DATA_SET_CHANGED );
 	}
 
-	return( false );
+	return( SG_PARAMETER_DATA_SET_TRUE );
 }
 
-bool CSG_Parameter_Int::Set_Value(double Value)
+int CSG_Parameter_Int::_Set_Value(double Value)
 {
-	return( Set_Value((int)Value) );
+	return( _Set_Value((int)Value) );
 }
 
-bool CSG_Parameter_Int::Set_Value(const CSG_String &Value)
+int CSG_Parameter_Int::_Set_Value(const CSG_String &Value)
 {
 	int		i;
 
 	if( Value.asInt(i) )
 	{
-		return( Set_Value(i) );
+		return( _Set_Value(i) );
 	}
 
-	return( false );
+	return( SG_PARAMETER_DATA_SET_FALSE );
 }
 
 //---------------------------------------------------------
-const SG_Char * CSG_Parameter_Int::asString(void)
+void CSG_Parameter_Int::_Set_String(void)
 {
-	m_String.Printf(SG_T("%d"), m_Value);
-
-	return( m_String );
+	m_String.Printf("%d", m_Value);
 }
 
 //---------------------------------------------------------
-void CSG_Parameter_Int::On_Assign(CSG_Parameter_Data *pSource)
+bool CSG_Parameter_Int::_Assign(CSG_Parameter *pSource)
 {
-	CSG_Parameter_Value::On_Assign(pSource);
+	CSG_Parameter_Value::_Assign(pSource);
 
-	Set_Value(((CSG_Parameter_Value *)pSource)->asInt());
+	return( _Set_Value(((CSG_Parameter_Value *)pSource)->asInt()) != 0 );
 }
 
 //---------------------------------------------------------
-bool CSG_Parameter_Int::On_Serialize(CSG_MetaData &Entry, bool bSave)
+bool CSG_Parameter_Int::_Serialize(CSG_MetaData &Entry, bool bSave)
 {
 	if( bSave )
 	{
@@ -616,70 +470,68 @@ bool CSG_Parameter_Int::On_Serialize(CSG_MetaData &Entry, bool bSave)
 ///////////////////////////////////////////////////////////
 
 //---------------------------------------------------------
-CSG_Parameter_Double::CSG_Parameter_Double(CSG_Parameter *pOwner, long Constraint)
-	: CSG_Parameter_Value(pOwner, Constraint)
+CSG_Parameter_Double::CSG_Parameter_Double(CSG_Parameters *pOwner, CSG_Parameter *pParent, const CSG_String &ID, const CSG_String &Name, const CSG_String &Description, int Constraint)
+	: CSG_Parameter_Value(pOwner, pParent, ID, Name, Description, Constraint)
 {
 	m_Value		= 0.0;
 }
 
 //---------------------------------------------------------
-bool CSG_Parameter_Double::Set_Value(int Value)
+int CSG_Parameter_Double::_Set_Value(int Value)
 {
-	return( Set_Value((double)Value) );
+	return( _Set_Value((double)Value) );
 }
 
-bool CSG_Parameter_Double::Set_Value(double Value)
+int CSG_Parameter_Double::_Set_Value(double Value)
 {
 	if( m_bMinimum && Value < m_Minimum )
 	{
-		return( Set_Value(m_Minimum) );
+		return( _Set_Value(m_Minimum) );
 	}
 
 	if( m_bMaximum && Value > m_Maximum )
 	{
-		return( Set_Value(m_Maximum) );
+		return( _Set_Value(m_Maximum) );
 	}
 
 	if( m_Value != Value )
 	{
 		m_Value	= Value;
 
-		return( true );
+		return( SG_PARAMETER_DATA_SET_CHANGED );
 	}
 
-	return( false );
+	return( SG_PARAMETER_DATA_SET_TRUE );
 }
 
-bool CSG_Parameter_Double::Set_Value(const CSG_String &Value)
+int  CSG_Parameter_Double::_Set_Value(const CSG_String &Value)
 {
 	double	d;
 
 	if( Value.asDouble(d) )
 	{
-		return( Set_Value(d) );
+		return( _Set_Value(d) );
 	}
 
-	return( false );
+	return( SG_PARAMETER_DATA_SET_FALSE );
 }
 
 //---------------------------------------------------------
-const SG_Char * CSG_Parameter_Double::asString(void)
+void CSG_Parameter_Double::_Set_String(void)
 {
-	m_String.Printf(SG_T("%f"), m_Value);
-
-	return( m_String );
+	m_String.Printf("%f", m_Value);
 }
 
 //---------------------------------------------------------
-void CSG_Parameter_Double::On_Assign(CSG_Parameter_Data *pSource)
+bool CSG_Parameter_Double::_Assign(CSG_Parameter *pSource)
 {
-	CSG_Parameter_Value::On_Assign(pSource);
+	CSG_Parameter_Value::_Assign(pSource);
 
-	Set_Value(((CSG_Parameter_Value *)pSource)->asDouble());
+	return( _Set_Value(pSource->asDouble()) != 0 );
 }
 
 //---------------------------------------------------------
-bool CSG_Parameter_Double::On_Serialize(CSG_MetaData &Entry, bool bSave)
+bool CSG_Parameter_Double::_Serialize(CSG_MetaData &Entry, bool bSave)
 {
 	if( bSave )
 	{
@@ -701,22 +553,22 @@ bool CSG_Parameter_Double::On_Serialize(CSG_MetaData &Entry, bool bSave)
 ///////////////////////////////////////////////////////////
 
 //---------------------------------------------------------
-CSG_Parameter_Degree::CSG_Parameter_Degree(CSG_Parameter *pOwner, long Constraint)
-	: CSG_Parameter_Double(pOwner, Constraint)
-{}
-
-//---------------------------------------------------------
-bool CSG_Parameter_Degree::Set_Value(const CSG_String &Value)
+CSG_Parameter_Degree::CSG_Parameter_Degree(CSG_Parameters *pOwner, CSG_Parameter *pParent, const CSG_String &ID, const CSG_String &Name, const CSG_String &Description, int Constraint)
+	: CSG_Parameter_Double(pOwner, pParent, ID, Name, Description, Constraint)
 {
-	return( CSG_Parameter_Double::Set_Value(SG_Degree_To_Double(Value)) );
+	// nop
 }
 
 //---------------------------------------------------------
-const SG_Char * CSG_Parameter_Degree::asString(void)
+int CSG_Parameter_Degree::_Set_Value(const CSG_String &Value)
+{
+	return( CSG_Parameter_Double::_Set_Value(SG_Degree_To_Double(Value)) );
+}
+
+//---------------------------------------------------------
+void CSG_Parameter_Degree::_Set_String(void)
 {
 	m_String	= SG_Double_To_Degree(asDouble());
-
-	return( m_String );
 }
 
 
@@ -727,59 +579,60 @@ const SG_Char * CSG_Parameter_Degree::asString(void)
 ///////////////////////////////////////////////////////////
 
 //---------------------------------------------------------
-CSG_Parameter_Date::CSG_Parameter_Date(CSG_Parameter *pOwner, long Constraint)
-	: CSG_Parameter_Data(pOwner, Constraint)
+CSG_Parameter_Date::CSG_Parameter_Date(CSG_Parameters *pOwner, CSG_Parameter *pParent, const CSG_String &ID, const CSG_String &Name, const CSG_String &Description, int Constraint)
+	: CSG_Parameter(pOwner, pParent, ID, Name, Description, Constraint)
 {
-	Set_Value(CSG_DateTime::Now().Get_JDN());
-}
-
-CSG_Parameter_Date::~CSG_Parameter_Date(void)
-{}
-
-//---------------------------------------------------------
-bool CSG_Parameter_Date::Restore_Default(void)
-{
-	return( Set_Value(m_Default) );
+	_Set_Value(CSG_DateTime::Now().Get_JDN());
 }
 
 //---------------------------------------------------------
-bool CSG_Parameter_Date::Set_Value(int Value)
+int CSG_Parameter_Date::_Set_Value(int Value)
 {
-	return( Set_Value((double)Value) );
+	return( _Set_Value((double)Value) );
+}
+
+int CSG_Parameter_Date::_Set_Value(double Value)
+{
+	Value	= 0.5 + floor(Value);	// always adjust to high noon, prevents rounding problems (we're not intested in time, just date!)
+
+	if( Value != asDouble() )
+	{
+		m_Date.Set(Value);
+
+		return( SG_PARAMETER_DATA_SET_CHANGED );
+	}
+
+	return( SG_PARAMETER_DATA_SET_TRUE );
+}
+
+int CSG_Parameter_Date::_Set_Value(const CSG_String &Value)
+{
+	CSG_DateTime	Date;
+
+	if( Date.Parse_Date(Value) )
+	{
+		return( _Set_Value(Date.Get_JDN()) );
+	}
+
+	return( SG_PARAMETER_DATA_SET_FALSE );
 }
 
 //---------------------------------------------------------
-bool CSG_Parameter_Date::Set_Value(double Value)
+void CSG_Parameter_Date::_Set_String(void)
 {
-	m_Date.Set(floor(Value) + 0.5);	// always adjust to high noon, prevents rounding problems (we're not intested in time, just date!)
-
-	return( true );
+	m_String	= m_Date.Format_ISODate();
 }
 
 //---------------------------------------------------------
-bool CSG_Parameter_Date::Set_Value(const CSG_String &Value)
-{
-	return( m_Date.Parse_Date(Value) && Set_Value(m_Date.Get_JDN()) );
-}
-
-//---------------------------------------------------------
-int CSG_Parameter_Date::asInt(void)	const
+int CSG_Parameter_Date::_asInt(void)	const
 {
 	return( (int)asDouble() );
 }
 
 //---------------------------------------------------------
-double CSG_Parameter_Date::asDouble(void)	const
+double CSG_Parameter_Date::_asDouble(void)	const
 {
 	return( m_Date.Get_JDN() );
-}
-
-//---------------------------------------------------------
-const SG_Char * CSG_Parameter_Date::asString(void)
-{
-	m_String	= m_Date.Format_ISODate();
-
-	return( m_String );
 }
 
 //---------------------------------------------------------
@@ -789,13 +642,15 @@ void CSG_Parameter_Date::Set_Date(const CSG_DateTime &Date)
 }
 
 //---------------------------------------------------------
-void CSG_Parameter_Date::On_Assign(CSG_Parameter_Data *pSource)
+bool CSG_Parameter_Date::_Assign(CSG_Parameter *pSource)
 {
 	m_Date	= ((CSG_Parameter_Date *)pSource)->m_Date;
+
+	return( true );
 }
 
 //---------------------------------------------------------
-bool CSG_Parameter_Date::On_Serialize(CSG_MetaData &Entry, bool bSave)
+bool CSG_Parameter_Date::_Serialize(CSG_MetaData &Entry, bool bSave)
 {
 	if( bSave )
 	{
@@ -803,7 +658,7 @@ bool CSG_Parameter_Date::On_Serialize(CSG_MetaData &Entry, bool bSave)
 	}
 	else
 	{
-		Set_Value(Entry.Get_Content());
+		_Set_Value(Entry.Get_Content());
 	}
 
 	return( true );
@@ -817,20 +672,20 @@ bool CSG_Parameter_Date::On_Serialize(CSG_MetaData &Entry, bool bSave)
 ///////////////////////////////////////////////////////////
 
 //---------------------------------------------------------
-CSG_Parameter_Range::CSG_Parameter_Range(CSG_Parameter *pOwner, long Constraint)
-	: CSG_Parameter_Data(pOwner, Constraint)
+CSG_Parameter_Range::CSG_Parameter_Range(CSG_Parameters *pOwner, CSG_Parameter *pParent, const CSG_String &ID, const CSG_String &Name, const CSG_String &Description, int Constraint)
+	: CSG_Parameter(pOwner, pParent, ID, Name, Description, Constraint)
 {
 	m_pRange	= new CSG_Parameters;
 
-	if( (m_Constraint & PARAMETER_INFORMATION) != 0 )
+	if( is_Information() )
 	{
-		m_pLo	= m_pRange->Add_Info_Value(m_pOwner->Get_Identifier(), "MIN", "Minimum", m_pOwner->Get_Description(), PARAMETER_TYPE_Double);
-		m_pHi	= m_pRange->Add_Info_Value(m_pOwner->Get_Identifier(), "MAX", "Maximum", m_pOwner->Get_Description(), PARAMETER_TYPE_Double);
+		m_pMin	= (CSG_Parameter_Double *)m_pRange->Add_Info_Value(ID, "MIN", "Minimum", Description, PARAMETER_TYPE_Double);
+		m_pMax	= (CSG_Parameter_Double *)m_pRange->Add_Info_Value(ID, "MAX", "Maximum", Description, PARAMETER_TYPE_Double);
 	}
 	else
 	{
-		m_pLo	= m_pRange->Add_Value     (m_pOwner->Get_Identifier(), "MIN", "Minimum", m_pOwner->Get_Description(), PARAMETER_TYPE_Double);
-		m_pHi	= m_pRange->Add_Value     (m_pOwner->Get_Identifier(), "MAX", "Maximum", m_pOwner->Get_Description(), PARAMETER_TYPE_Double);
+		m_pMin	= (CSG_Parameter_Double *)m_pRange->Add_Double    (ID, "MIN", "Minimum", Description, PARAMETER_TYPE_Double);
+		m_pMax	= (CSG_Parameter_Double *)m_pRange->Add_Double    (ID, "MAX", "Maximum", Description, PARAMETER_TYPE_Double);
 	}
 }
 
@@ -840,90 +695,102 @@ CSG_Parameter_Range::~CSG_Parameter_Range(void)
 }
 
 //---------------------------------------------------------
-const SG_Char * CSG_Parameter_Range::asString(void)
+void CSG_Parameter_Range::_Set_String(void)
 {
-	m_String.Printf("%f; %f", Get_LoVal(), Get_HiVal());
-
-	return( m_String );
+	m_String.Printf("%f; %f", Get_Min(), Get_Max());
 }
 
 //---------------------------------------------------------
-bool CSG_Parameter_Range::Set_Value(const CSG_String &Value)
+int CSG_Parameter_Range::_Set_Value(const CSG_String &Value)
 {
 	return( Set_Range(Value.BeforeFirst(';').asDouble(), Value.AfterFirst(';').asDouble()) );
 }
 
-//---------------------------------------------------------
-bool CSG_Parameter_Range::Set_Range(double loVal, double hiVal)
+bool CSG_Parameter_Range::Set_Range(double Min, double Max)
 {
 	bool	bResult;
 
-	if( loVal > hiVal )
+	if( Min > Max )
 	{
-		bResult	 = m_pLo->Set_Value(hiVal);
-		bResult	|= m_pHi->Set_Value(loVal);
+		bResult	 = m_pMin->Set_Value(Max);
+		bResult	|= m_pMax->Set_Value(Min);
 	}
 	else
 	{
-		bResult	 = m_pLo->Set_Value(loVal);
-		bResult	|= m_pHi->Set_Value(hiVal);
+		bResult	 = m_pMin->Set_Value(Min);
+		bResult	|= m_pMax->Set_Value(Max);
 	}
 
 	return( bResult );
 }
 
 //---------------------------------------------------------
-bool CSG_Parameter_Range::Set_LoVal(double newValue)
+bool CSG_Parameter_Range::Set_Min(double Value)
 {
-	return( m_pLo->Set_Value(newValue) );
+	if( m_pMin->Set_Value(Value) )
+	{
+		has_Changed();
+
+		return( true );
+	}
+
+	return( false );
 }
 
-double CSG_Parameter_Range::Get_LoVal(void)
+double CSG_Parameter_Range::Get_Min(void)	const
 {
-	return( m_pLo->asDouble() );
+	return( m_pMin->asDouble() );
 }
 
 //---------------------------------------------------------
-bool CSG_Parameter_Range::Set_HiVal(double newValue)
+bool CSG_Parameter_Range::Set_Max(double Value)
 {
-	return( m_pHi->Set_Value(newValue) );
+	if( m_pMax->Set_Value(Value) )
+	{
+		has_Changed();
+
+		return( true );
+	}
+
+	return( false );
 }
 
-double CSG_Parameter_Range::Get_HiVal(void)
+double CSG_Parameter_Range::Get_Max(void)	const
 {
-	return( m_pHi->asDouble() );
+	return( m_pMax->asDouble() );
 }
 
 //---------------------------------------------------------
 bool CSG_Parameter_Range::Restore_Default(void)
 {
-	return( m_pLo->Restore_Default() && m_pHi->Restore_Default() );
+	return( m_pMin->Restore_Default() && m_pMax->Restore_Default() );
 }
 
 //---------------------------------------------------------
-void CSG_Parameter_Range::On_Assign(CSG_Parameter_Data *pSource)
+bool CSG_Parameter_Range::_Assign(CSG_Parameter *pSource)
 {
-	m_pLo->Assign(((CSG_Parameter_Range *)pSource)->m_pLo);
-	m_pHi->Assign(((CSG_Parameter_Range *)pSource)->m_pHi);
+	m_pMin->Assign(pSource->asRange()->m_pMin);
+	m_pMax->Assign(pSource->asRange()->m_pMax);
+
+	return( true );
 }
 
 //---------------------------------------------------------
-bool CSG_Parameter_Range::On_Serialize(CSG_MetaData &Entry, bool bSave)
+bool CSG_Parameter_Range::_Serialize(CSG_MetaData &Entry, bool bSave)
 {
 	if( bSave )
 	{
-		Entry.Fmt_Content(SG_T("%f; %f"), Get_LoVal(), Get_HiVal());
+		Entry.Fmt_Content("%f; %f", Get_Min(), Get_Max());
 
 		return( true );
 	}
 	else
 	{
-		double		loVal, hiVal;
-		CSG_String	s(Entry.Get_Content());
+		CSG_String	s(Entry.Get_Content());	double	Min, Max;
 
-		if( s.BeforeFirst(SG_T(';')).asDouble(loVal) && s.AfterFirst(SG_T(';')).asDouble(hiVal) )
+		if( s.BeforeFirst(';').asDouble(Min) && s.AfterFirst(';').asDouble(Max) )
 		{
-			return( Set_Range(loVal, hiVal) );
+			return( Set_Range(Min, Max) );
 		}
 	}
 
@@ -938,41 +805,10 @@ bool CSG_Parameter_Range::On_Serialize(CSG_MetaData &Entry, bool bSave)
 ///////////////////////////////////////////////////////////
 
 //---------------------------------------------------------
-CSG_Parameter_Choice::CSG_Parameter_Choice(CSG_Parameter *pOwner, long Constraint)
-	: CSG_Parameter_Int(pOwner, Constraint)
-{}
-
-//---------------------------------------------------------
-bool CSG_Parameter_Choice::Set_Value(const CSG_String &Value)
+CSG_Parameter_Choice::CSG_Parameter_Choice(CSG_Parameters *pOwner, CSG_Parameter *pParent, const CSG_String &ID, const CSG_String &Name, const CSG_String &Description, int Constraint)
+	: CSG_Parameter(pOwner, pParent, ID, Name, Description, Constraint)
 {
-	int		i;
-
-	for(i=0; i<m_Items.Get_Count(); i++)
-	{
-		if( Value.Cmp(Get_Item_Data(i)) == 0 || Value.Cmp(Get_Item(i)) == 0 )
-		{
-			m_Value	= i;
-
-			return( true );
-		}
-	}
-
-	if( Value.asInt(i) )
-	{
-		m_Value	= i;
-
-		return( true );
-	}
-
-	return( false );
-}
-
-//---------------------------------------------------------
-const SG_Char * CSG_Parameter_Choice::asString(void)
-{
-	m_String	= Get_Item(m_Value) ? Get_Item(m_Value) : _TL("<no choice available>");
-
-	return( m_String );
+	m_Value	= -1;
 }
 
 //---------------------------------------------------------
@@ -982,37 +818,30 @@ void CSG_Parameter_Choice::Set_Items(const SG_Char *String)
 
 	if( String && *String != '\0' )
 	{
-		CSG_String	Items(String);
+		CSG_String_Tokenizer	Items(String, "|");
 
-		while( Items.Length() > 0 )
+		while( Items.Has_More_Tokens() )
 		{
-			CSG_String	Item(Items.BeforeFirst('|'));
+			CSG_String	Item(Items.Get_Next_Token());
 
-			if( Item.Length() )
+			if( !Item.is_Empty() )
 			{
 				m_Items	+= Item;
 			}
-
-			Items	= Items.AfterFirst('|');
 		}
 	}
 
-	if( m_Items.Get_Count() <= 0 )
+	if( m_Value < 0 && m_Items.Get_Count() > 0 )
 	{
-		m_Items	+= _TL("<not set>");
-
-		Set_Minimum(              0, true);
-		Set_Maximum(Get_Count() - 1, true);
-
-		CSG_Parameter_Int::Set_Value(0);
+		m_Value	= 0;
 	}
-	else
+
+	if( m_Value >= m_Items.Get_Count() )
 	{
-		Set_Minimum(              0, true);
-		Set_Maximum(Get_Count() - 1, true);
-
-		CSG_Parameter_Int::Set_Value(m_Value);
+		m_Value	= m_Items.Get_Count() - 1;
 	}
+
+	_Set_String();	// m_Items have changed
 }
 
 //---------------------------------------------------------
@@ -1022,11 +851,11 @@ const SG_Char * CSG_Parameter_Choice::Get_Item(int Index)	const
 	{
 		const SG_Char	*Item	= m_Items[Index].c_str();
 
-		if( *Item == SG_T('{') )
+		if( *Item == '{' )
 		{
-			do	{	Item++;	}	while( *Item != SG_T('\0') && *Item != SG_T('}') );
+			do	{	Item++;	}	while( *Item != '\0' && *Item != '}' );
 
-			if( *Item == SG_T('\0') )
+			if( *Item == '\0' )
 			{
 				return( m_Items[Index].c_str() );
 			}
@@ -1043,87 +872,111 @@ const SG_Char * CSG_Parameter_Choice::Get_Item(int Index)	const
 //---------------------------------------------------------
 CSG_String CSG_Parameter_Choice::Get_Item_Data(int Index)	const
 {
-	CSG_String	Value;
+	CSG_String	Data;
 
 	if( Index >= 0 && Index < m_Items.Get_Count() )
 	{
-		const SG_Char	*Item	= m_Items[Index].c_str();
+		Data	= m_Items[Index];	Data.Trim();
 
-		if( *Item == SG_T('{') )
+		if( Data.Find('{') == 0 )	// data entry within leading curly brackets: '{data} item text'
 		{
-			Item++;
-
-			do
-			{
-				Value	+= *(Item++);
-			}
-			while( *Item && *Item != SG_T('}') );
+			Data	= Data.AfterFirst('{').BeforeFirst('}');
 		}
 	}
 
-	return( Value );
+	return( Data );
 }
 
-//---------------------------------------------------------
 bool CSG_Parameter_Choice::Get_Data(int        &Value)	const
 {
-	CSG_String	sValue;
+	CSG_String	String;
 
-	if( Get_Data(sValue) )
-	{
-		return( sValue.asInt(Value) );
-	}
-
-	return( false );
+	return( Get_Data(String) && String.asInt   (Value) );
 }
 
 bool CSG_Parameter_Choice::Get_Data(double     &Value)	const
 {
-	CSG_String	sValue;
+	CSG_String	String;
 
-	if( Get_Data(sValue) )
-	{
-		return( sValue.asDouble(Value) );
-	}
-
-	return( false );
+	return( Get_Data(String) && String.asDouble(Value) );
 }
 
 bool CSG_Parameter_Choice::Get_Data(CSG_String &Value)	const
 {
-	if( m_Value >= 0 && m_Value < m_Items.Get_Count() )
+	Value	= Get_Item_Data(m_Value);
+
+	return( !Value.is_Empty() );
+}
+
+CSG_String CSG_Parameter_Choice::Get_Data(void)	const
+{
+	return( Get_Item_Data(m_Value) );
+}
+
+//---------------------------------------------------------
+int CSG_Parameter_Choice::_Set_Value(int               Value)
+{
+	if( Value >= 0 && Value < m_Items.Get_Count() )
 	{
-		const SG_Char	*Item	= m_Items[m_Value].c_str();
-
-		if( *Item == SG_T('{') )
+		if( m_Value != Value )
 		{
-			Item++;
+			m_Value	= Value;
 
-			Value.Clear();
+			return( SG_PARAMETER_DATA_SET_CHANGED );
+		}
 
-			do
-			{
-				Value	+= *(Item++);
-			}
-			while( *Item && *Item != SG_T('}') );
+		return( SG_PARAMETER_DATA_SET_TRUE );
+	}
 
-			return( Value.Length() > 0 );
+	return( SG_PARAMETER_DATA_SET_FALSE );
+}
+
+//---------------------------------------------------------
+int CSG_Parameter_Choice::_Set_Value(double            Value)
+{
+	return( _Set_Value((int)Value) );
+}
+
+//---------------------------------------------------------
+int CSG_Parameter_Choice::_Set_Value(const CSG_String &Value)
+{
+	for(int i=0; i<m_Items.Get_Count(); i++)
+	{
+		if( !Value.Cmp(Get_Item_Data(i)) || !Value.Cmp(Get_Item(i)) )
+		{
+			return( _Set_Value(i) );
 		}
 	}
 
-	return( false );
+	int	Index;
+
+	if( Value.asInt(Index) )
+	{
+		return( _Set_Value(Index) );
+	}
+
+	return( SG_PARAMETER_DATA_SET_FALSE );
 }
 
 //---------------------------------------------------------
-void CSG_Parameter_Choice::On_Assign(CSG_Parameter_Data *pSource)
+void CSG_Parameter_Choice::_Set_String(void)
 {
-	m_Items	= ((CSG_Parameter_Choice *)pSource)->m_Items;
-
-	CSG_Parameter_Int::On_Assign(pSource);
+	m_String	= m_Value >= 0 && m_Value < m_Items.Get_Count() ? Get_Item(m_Value) : _TL("<no choice available>");
 }
 
 //---------------------------------------------------------
-bool CSG_Parameter_Choice::On_Serialize(CSG_MetaData &Entry, bool bSave)
+bool CSG_Parameter_Choice::_Assign(CSG_Parameter *pSource)
+{
+	m_Items	= pSource->asChoice()->m_Items;
+	m_Value	= pSource->asChoice()->m_Value;
+
+	_Set_String();	// m_Items have changed
+
+	return( true );
+}
+
+//---------------------------------------------------------
+bool CSG_Parameter_Choice::_Serialize(CSG_MetaData &Entry, bool bSave)
 {
 	if( bSave )
 	{
@@ -1137,7 +990,7 @@ bool CSG_Parameter_Choice::On_Serialize(CSG_MetaData &Entry, bool bSave)
 	{
 		int	Index;
 
-		return( (Entry.Get_Property("index", Index) || Entry.Get_Content().asInt(Index)) && CSG_Parameter_Int::Set_Value(Index) );
+		return( (Entry.Get_Property("index", Index) || Entry.Get_Content().asInt(Index)) && _Set_Value(Index) );
 	}
 }
 
@@ -1149,12 +1002,14 @@ bool CSG_Parameter_Choice::On_Serialize(CSG_MetaData &Entry, bool bSave)
 ///////////////////////////////////////////////////////////
 
 //---------------------------------------------------------
-CSG_Parameter_Choices::CSG_Parameter_Choices(CSG_Parameter *pOwner, long Constraint)
-	: CSG_Parameter_Data(pOwner, Constraint)
-{}
+CSG_Parameter_Choices::CSG_Parameter_Choices(CSG_Parameters *pOwner, CSG_Parameter *pParent, const CSG_String &ID, const CSG_String &Name, const CSG_String &Description, int Constraint)
+	: CSG_Parameter(pOwner, pParent, ID, Name, Description, Constraint)
+{
+	// nop
+}
 
 //---------------------------------------------------------
-bool CSG_Parameter_Choices::Set_Value(const CSG_String &Value)
+int CSG_Parameter_Choices::_Set_Value(const CSG_String &Value)
 {
 	CSG_String_Tokenizer	Tokens(Value, ";");
 
@@ -1170,11 +1025,11 @@ bool CSG_Parameter_Choices::Set_Value(const CSG_String &Value)
 		}
 	}
 
-	return( true );
+	return( SG_PARAMETER_DATA_SET_CHANGED );
 }
 
 //---------------------------------------------------------
-const SG_Char * CSG_Parameter_Choices::asString(void)
+void CSG_Parameter_Choices::_Set_String(void)
 {
 	m_String.Clear();
 
@@ -1182,8 +1037,6 @@ const SG_Char * CSG_Parameter_Choices::asString(void)
 	{
 		m_String	+= CSG_String::Format("%d;", m_Selection[i]);
 	}
-
-	return( m_String );
 }
 
 //---------------------------------------------------------
@@ -1280,18 +1133,18 @@ bool CSG_Parameter_Choices::Clr_Selection(void)
 }
 
 //---------------------------------------------------------
-void CSG_Parameter_Choices::On_Assign(CSG_Parameter_Data *pSource)
+bool CSG_Parameter_Choices::_Assign(CSG_Parameter *pSource)
 {
-	m_Items[0]	= ((CSG_Parameter_Choices *)pSource)->m_Items[0];
-	m_Items[1]	= ((CSG_Parameter_Choices *)pSource)->m_Items[1];
+	m_Items[0]	= pSource->asChoices()->m_Items[0];
+	m_Items[1]	= pSource->asChoices()->m_Items[1];
 
-	m_Selection	= ((CSG_Parameter_Choices *)pSource)->m_Selection;
+	m_Selection	= pSource->asChoices()->m_Selection;
 
-	CSG_Parameter_Data::On_Assign(pSource);
+	return( true );
 }
 
 //---------------------------------------------------------
-bool CSG_Parameter_Choices::On_Serialize(CSG_MetaData &Entry, bool bSave)
+bool CSG_Parameter_Choices::_Serialize(CSG_MetaData &Entry, bool bSave)
 {
 	if( bSave )
 	{
@@ -1301,7 +1154,7 @@ bool CSG_Parameter_Choices::On_Serialize(CSG_MetaData &Entry, bool bSave)
 	}
 	else
 	{
-		return( Set_Value(Entry.Get_Content()) );
+		return( _Set_Value(Entry.Get_Content()) != 0 );
 	}
 }
 
@@ -1313,8 +1166,8 @@ bool CSG_Parameter_Choices::On_Serialize(CSG_MetaData &Entry, bool bSave)
 ///////////////////////////////////////////////////////////
 
 //---------------------------------------------------------
-CSG_Parameter_String::CSG_Parameter_String(CSG_Parameter *pOwner, long Constraint)
-	: CSG_Parameter_Data(pOwner, Constraint)
+CSG_Parameter_String::CSG_Parameter_String(CSG_Parameters *pOwner, CSG_Parameter *pParent, const CSG_String &ID, const CSG_String &Name, const CSG_String &Description, int Constraint)
+	: CSG_Parameter(pOwner, pParent, ID, Name, Description, Constraint)
 {
 	m_bPassword	= false;
 }
@@ -1322,32 +1175,45 @@ CSG_Parameter_String::CSG_Parameter_String(CSG_Parameter *pOwner, long Constrain
 //---------------------------------------------------------
 bool CSG_Parameter_String::is_Valid(void)	const
 {
-	return( m_String.Length() > 0 );
+	return( !m_String.is_Empty() );
 }
 
 //---------------------------------------------------------
-bool CSG_Parameter_String::Set_Value(const CSG_String &Value)
+void CSG_Parameter_String::Set_Password(bool bOn)
+{
+	m_bPassword	= bOn;
+}
+
+//---------------------------------------------------------
+bool CSG_Parameter_String::is_Password(void)	const
+{
+	return( m_bPassword );
+}
+
+//---------------------------------------------------------
+int CSG_Parameter_String::_Set_Value(const CSG_String &Value)
 {
 	if( m_String.Cmp(Value) )
 	{
 		m_String	= Value;
 
-		return( true );
+		return( SG_PARAMETER_DATA_SET_CHANGED );
 	}
 
-	return( false );
+	return( SG_PARAMETER_DATA_SET_TRUE );
 }
 
 //---------------------------------------------------------
-void CSG_Parameter_String::On_Assign(CSG_Parameter_Data *pSource)
+bool CSG_Parameter_String::_Assign(CSG_Parameter *pSource)
 {
-	m_String	= ((CSG_Parameter_String *)pSource)->m_String.c_str();
-
+	m_String	= ((CSG_Parameter_String *)pSource)->m_String;
 	m_bPassword	= ((CSG_Parameter_String *)pSource)->m_bPassword;
+
+	return( true );
 }
 
 //---------------------------------------------------------
-bool CSG_Parameter_String::On_Serialize(CSG_MetaData &Entry, bool bSave)
+bool CSG_Parameter_String::_Serialize(CSG_MetaData &Entry, bool bSave)
 {
 	if( bSave )
 	{
@@ -1369,9 +1235,11 @@ bool CSG_Parameter_String::On_Serialize(CSG_MetaData &Entry, bool bSave)
 ///////////////////////////////////////////////////////////
 
 //---------------------------------------------------------
-CSG_Parameter_Text::CSG_Parameter_Text(CSG_Parameter *pOwner, long Constraint)
-	: CSG_Parameter_String(pOwner, Constraint)
-{}
+CSG_Parameter_Text::CSG_Parameter_Text(CSG_Parameters *pOwner, CSG_Parameter *pParent, const CSG_String &ID, const CSG_String &Name, const CSG_String &Description, int Constraint)
+	: CSG_Parameter_String(pOwner, pParent, ID, Name, Description, Constraint)
+{
+	// nop
+}
 
 
 ///////////////////////////////////////////////////////////
@@ -1381,10 +1249,10 @@ CSG_Parameter_Text::CSG_Parameter_Text(CSG_Parameter *pOwner, long Constraint)
 ///////////////////////////////////////////////////////////
 
 //---------------------------------------------------------
-CSG_Parameter_File_Name::CSG_Parameter_File_Name(CSG_Parameter *pOwner, long Constraint)
-	: CSG_Parameter_String(pOwner, Constraint)
+CSG_Parameter_File_Name::CSG_Parameter_File_Name(CSG_Parameters *pOwner, CSG_Parameter *pParent, const CSG_String &ID, const CSG_String &Name, const CSG_String &Description, int Constraint)
+	: CSG_Parameter_String(pOwner, pParent, ID, Name, Description, Constraint)
 {
-	m_Filter.Printf(SG_T("%s|*.*"), _TL("All Files"));
+	m_Filter.Printf("%s|*.*", _TL("All Files"));
 
 	m_bSave			= false;
 	m_bMultiple		= false;
@@ -1400,7 +1268,7 @@ void CSG_Parameter_File_Name::Set_Filter(const SG_Char *Filter)
 	}
 	else
 	{
-		m_Filter.Printf(SG_T("%s|*.*"), _TL("All Files"));
+		m_Filter.Printf("%s|*.*", _TL("All Files"));
 	}
 }
 
@@ -1457,15 +1325,17 @@ bool CSG_Parameter_File_Name::Get_FilePaths(CSG_Strings &FilePaths)	const
 }
 
 //---------------------------------------------------------
-void CSG_Parameter_File_Name::On_Assign(CSG_Parameter_Data *pSource)
+bool CSG_Parameter_File_Name::_Assign(CSG_Parameter *pSource)
 {
-	CSG_Parameter_String::On_Assign(pSource);
+	CSG_Parameter_String::_Assign(pSource);
 
 	Set_Filter(((CSG_Parameter_File_Name *)pSource)->m_Filter.c_str());
 
-	m_bSave			= ((CSG_Parameter_File_Name *)pSource)->m_bSave;
-	m_bMultiple		= ((CSG_Parameter_File_Name *)pSource)->m_bMultiple;
-	m_bDirectory	= ((CSG_Parameter_File_Name *)pSource)->m_bDirectory;
+	m_bSave			= pSource->asFilePath()->m_bSave;
+	m_bMultiple		= pSource->asFilePath()->m_bMultiple;
+	m_bDirectory	= pSource->asFilePath()->m_bDirectory;
+
+	return( true );
 }
 
 
@@ -1476,8 +1346,8 @@ void CSG_Parameter_File_Name::On_Assign(CSG_Parameter_Data *pSource)
 ///////////////////////////////////////////////////////////
 
 //---------------------------------------------------------
-CSG_Parameter_Font::CSG_Parameter_Font(CSG_Parameter *pOwner, long Constraint)
-	: CSG_Parameter_Data(pOwner, Constraint)
+CSG_Parameter_Font::CSG_Parameter_Font(CSG_Parameters *pOwner, CSG_Parameter *pParent, const CSG_String &ID, const CSG_String &Name, const CSG_String &Description, int Constraint)
+	: CSG_Parameter(pOwner, pParent, ID, Name, Description, Constraint)
 {
 	Restore_Default();
 }
@@ -1486,76 +1356,90 @@ CSG_Parameter_Font::CSG_Parameter_Font(CSG_Parameter *pOwner, long Constraint)
 bool CSG_Parameter_Font::Restore_Default(void)
 {
 	m_Color		= SG_GET_RGB(0, 0, 0);
-	m_Font		= SG_T("0;-13;0;0;0;400;0;0;0;0;3;2;1;34;Arial");
-	m_String	= SG_T("Arial");
+	m_Font		= "0;-13;0;0;0;400;0;0;0;0;3;2;1;34;Arial";
+	m_String	= "Arial";
 
 	return( true );
 }
 
 //---------------------------------------------------------
-bool CSG_Parameter_Font::Set_Value(int Value)
+int CSG_Parameter_Font::_Set_Value(int Value)
 {
-	m_Color	= Value;
-
-	return( true );
-}
-
-//---------------------------------------------------------
-bool CSG_Parameter_Font::Set_Value(const CSG_String &Value)
-{
-	if( Value.Length() > 0 )
+	if( m_Color != Value )
 	{
-		m_Font		= Value;
-		m_String	= m_Font.AfterLast(SG_T(';'));
+		m_Color	= Value;
+
+		return( SG_PARAMETER_DATA_SET_CHANGED );
 	}
-	else
+
+	return( SG_PARAMETER_DATA_SET_TRUE );
+}
+
+//---------------------------------------------------------
+int CSG_Parameter_Font::_Set_Value(const CSG_String &Value)
+{
+	if( Value.is_Empty() )
 	{
 		Restore_Default();
+
+		return( SG_PARAMETER_DATA_SET_CHANGED );
 	}
+
+	m_Font		= Value;
+	m_String	= m_Font.AfterLast(';');
+
+	return( SG_PARAMETER_DATA_SET_CHANGED );
+}
+
+//---------------------------------------------------------
+int CSG_Parameter_Font::_asInt(void)	const
+{
+	return( m_Color );
+}
+
+//---------------------------------------------------------
+void * CSG_Parameter_Font::_asPointer(void)	const
+{
+	return( (void *)m_Font.c_str() );
+}
+
+//---------------------------------------------------------
+bool CSG_Parameter_Font::_Assign(CSG_Parameter *pSource)
+{
+	m_Color		= ((CSG_Parameter_Font *)pSource)->m_Color;
+	m_Font		= ((CSG_Parameter_Font *)pSource)->m_Font;
+	m_String	= ((CSG_Parameter_Font *)pSource)->m_String;
 
 	return( true );
 }
 
 //---------------------------------------------------------
-void CSG_Parameter_Font::On_Assign(CSG_Parameter_Data *pSource)
-{
-	if( pSource && pSource->Get_Type() == Get_Type() )
-	{
-		m_Color		= ((CSG_Parameter_Font *)pSource)->m_Color;
-		m_Font		= ((CSG_Parameter_Font *)pSource)->m_Font;
-		m_String	= ((CSG_Parameter_Font *)pSource)->m_String;
-	}
-}
-
-//---------------------------------------------------------
-bool CSG_Parameter_Font::On_Serialize(CSG_MetaData &Entry, bool bSave)
+bool CSG_Parameter_Font::_Serialize(CSG_MetaData &Entry, bool bSave)
 {
 	if( bSave )
 	{
-		Entry.Add_Child(SG_T("COLOR")	, CSG_String::Format(SG_T("R%03d G%03d B%03d"),
+		Entry.Add_Child("COLOR", CSG_String::Format("R%03d G%03d B%03d",
 			SG_GET_R(m_Color),
 			SG_GET_G(m_Color),
 			SG_GET_B(m_Color)
 		));
 
-		Entry.Add_Child(SG_T("FONT")	, m_Font);
+		Entry.Add_Child("FONT", m_Font);
 	}
 	else
 	{
-		CSG_MetaData	*pEntry;
-
-		if( (pEntry = Entry.Get_Child(SG_T("COLOR"))) != NULL )
+		if( Entry("COLOR") != NULL )
 		{
-			Set_Value((int)SG_GET_RGB(
-				pEntry->Get_Content().AfterFirst(SG_T('R')).asInt(),
-				pEntry->Get_Content().AfterFirst(SG_T('G')).asInt(),
-				pEntry->Get_Content().AfterFirst(SG_T('B')).asInt()
+			_Set_Value((int)SG_GET_RGB(
+				Entry("COLOR")->Get_Content().AfterFirst('R').asInt(),
+				Entry("COLOR")->Get_Content().AfterFirst('G').asInt(),
+				Entry("COLOR")->Get_Content().AfterFirst('B').asInt()
 			));
 		}
 
-		if( (pEntry = Entry.Get_Child(SG_T("FONT"))) != NULL )
+		if( Entry("FONT") != NULL )
 		{
-			Set_Value(pEntry->Get_Content());
+			_Set_Value(Entry("FONT")->Get_Content());
 		}
 	}
 
@@ -1570,23 +1454,45 @@ bool CSG_Parameter_Font::On_Serialize(CSG_MetaData &Entry, bool bSave)
 ///////////////////////////////////////////////////////////
 
 //---------------------------------------------------------
-CSG_Parameter_Color::CSG_Parameter_Color(CSG_Parameter *pOwner, long Constraint)
-	: CSG_Parameter_Int(pOwner, Constraint)
-{}
+CSG_Parameter_Color::CSG_Parameter_Color(CSG_Parameters *pOwner, CSG_Parameter *pParent, const CSG_String &ID, const CSG_String &Name, const CSG_String &Description, int Constraint)
+	: CSG_Parameter_Int(pOwner, pParent, ID, Name, Description, Constraint)
+{
+	// nop
+}
 
 //---------------------------------------------------------
-bool CSG_Parameter_Color::On_Serialize(CSG_MetaData &Entry, bool bSave)
+int CSG_Parameter_Color::_Set_Value(const CSG_String &Value)
+{
+	long	l;
+
+	if( SG_Color_From_Text(Value, l) )
+	{
+		return( CSG_Parameter_Int::_Set_Value((int)l) );
+	}
+
+	int		i;
+
+	if( Value.asInt(i) )
+	{
+		return( CSG_Parameter_Int::_Set_Value(i) );
+	}
+
+	return( SG_PARAMETER_DATA_SET_FALSE );
+}
+
+//---------------------------------------------------------
+bool CSG_Parameter_Color::_Serialize(CSG_MetaData &Entry, bool bSave)
 {
 	if( bSave )
 	{
-		Entry.Fmt_Content(SG_T("R%03d G%03d B%03d"), SG_GET_R(m_Value), SG_GET_G(m_Value), SG_GET_B(m_Value));
+		Entry.Fmt_Content("R%03d G%03d B%03d", SG_GET_R(m_Value), SG_GET_G(m_Value), SG_GET_B(m_Value));
 	}
 	else
 	{
 		m_Value	= SG_GET_RGB(
-			Entry.Get_Content().AfterFirst(SG_T('R')).asInt(),
-			Entry.Get_Content().AfterFirst(SG_T('G')).asInt(),
-			Entry.Get_Content().AfterFirst(SG_T('B')).asInt()
+			Entry.Get_Content().AfterFirst('R').asInt(),
+			Entry.Get_Content().AfterFirst('G').asInt(),
+			Entry.Get_Content().AfterFirst('B').asInt()
 		);
 	}
 
@@ -1601,32 +1507,49 @@ bool CSG_Parameter_Color::On_Serialize(CSG_MetaData &Entry, bool bSave)
 ///////////////////////////////////////////////////////////
 
 //---------------------------------------------------------
-CSG_Parameter_Colors::CSG_Parameter_Colors(CSG_Parameter *pOwner, long Constraint)
-	: CSG_Parameter_Data(pOwner, Constraint)
-{}
-
-//---------------------------------------------------------
-const SG_Char * CSG_Parameter_Colors::asString(void)
+CSG_Parameter_Colors::CSG_Parameter_Colors(CSG_Parameters *pOwner, CSG_Parameter *pParent, const CSG_String &ID, const CSG_String &Name, const CSG_String &Description, int Constraint)
+	: CSG_Parameter(pOwner, pParent, ID, Name, Description, Constraint)
 {
-	m_String.Printf(SG_T("%d %s"), m_Colors.Get_Count(), _TL("colors"));
-
-	return( m_String );
+	// nop
 }
 
 //---------------------------------------------------------
-void CSG_Parameter_Colors::On_Assign(CSG_Parameter_Data *pSource)
+void CSG_Parameter_Colors::_Set_String(void)
 {
-	m_Colors.Assign(&((CSG_Parameter_Colors *)pSource)->m_Colors);
+	m_String.Printf("%d %s", m_Colors.Get_Count(), _TL("colors"));
+}
+
+
+//---------------------------------------------------------
+int CSG_Parameter_Colors::_asInt(void)	const
+{
+	return( m_Colors.Get_Count() );
 }
 
 //---------------------------------------------------------
-bool CSG_Parameter_Colors::On_Serialize(CSG_MetaData &Entry, bool bSave)
+void * CSG_Parameter_Colors::_asPointer(void)	const
+{
+	return( (void *)&m_Colors );
+}
+
+//---------------------------------------------------------
+bool CSG_Parameter_Colors::_Assign(CSG_Parameter *pSource)
+{
+	return( m_Colors.Assign(pSource->asColors()) );
+}
+
+//---------------------------------------------------------
+bool CSG_Parameter_Colors::_Serialize(CSG_MetaData &Entry, bool bSave)
 {
 	if( bSave )
 	{
 		for(int i=0; i<m_Colors.Get_Count(); i++)
 		{
-			Entry.Add_Child(SG_T("COLOR"), CSG_String::Format(SG_T("R%03d G%03d B%03d"), m_Colors.Get_Red(i), m_Colors.Get_Green(i), m_Colors.Get_Blue(i)));
+			Entry.Add_Child("COLOR", CSG_String::Format("R%03d G%03d B%03d",
+				m_Colors.Get_Red  (i),
+				m_Colors.Get_Green(i),
+				m_Colors.Get_Blue (i))
+			);
 		}
 	}
 	else
@@ -1640,11 +1563,11 @@ bool CSG_Parameter_Colors::On_Serialize(CSG_MetaData &Entry, bool bSave)
 
 		for(int i=0; i<m_Colors.Get_Count(); i++)
 		{
-			CSG_String	s(Entry.Get_Child(i)->Get_Content());
+			CSG_String	s(Entry(i)->Get_Content());
 
-			m_Colors.Set_Red  (i, s.AfterFirst(SG_T('R')).asInt());
-			m_Colors.Set_Green(i, s.AfterFirst(SG_T('G')).asInt());
-			m_Colors.Set_Blue (i, s.AfterFirst(SG_T('B')).asInt());
+			m_Colors.Set_Red  (i, s.AfterFirst('R').asInt());
+			m_Colors.Set_Green(i, s.AfterFirst('G').asInt());
+			m_Colors.Set_Blue (i, s.AfterFirst('B').asInt());
 		}
 	}
 
@@ -1659,47 +1582,51 @@ bool CSG_Parameter_Colors::On_Serialize(CSG_MetaData &Entry, bool bSave)
 ///////////////////////////////////////////////////////////
 
 //---------------------------------------------------------
-CSG_Parameter_Fixed_Table::CSG_Parameter_Fixed_Table(CSG_Parameter *pOwner, long Constraint)
-	: CSG_Parameter_Data(pOwner, Constraint)
+CSG_Parameter_Fixed_Table::CSG_Parameter_Fixed_Table(CSG_Parameters *pOwner, CSG_Parameter *pParent, const CSG_String &ID, const CSG_String &Name, const CSG_String &Description, int Constraint)
+	: CSG_Parameter(pOwner, pParent, ID, Name, Description, Constraint)
 {
 	m_Table.Set_Name(_TL("Table"));
 }
 
 //---------------------------------------------------------
-const SG_Char * CSG_Parameter_Fixed_Table::asString(void)
+void CSG_Parameter_Fixed_Table::_Set_String(void)
 {
-	m_String.Printf(SG_T("%s (%s: %d, %s: %d)"), m_Table.Get_Name(), _TL("columns"), m_Table.Get_Field_Count(), _TL("rows"), m_Table.Get_Record_Count());
-
-	return( m_String );
+	m_String.Printf("%s (%s: %d, %s: %d)", m_Table.Get_Name(), _TL("columns"), m_Table.Get_Field_Count(), _TL("rows"), m_Table.Get_Record_Count());
 }
 
 //---------------------------------------------------------
-void CSG_Parameter_Fixed_Table::On_Assign(CSG_Parameter_Data *pSource)
+void * CSG_Parameter_Fixed_Table::_asPointer(void)	const
 {
-	m_Table.Assign(&((CSG_Parameter_Fixed_Table *)pSource)->m_Table);
+	return( (void *)&m_Table );
 }
 
 //---------------------------------------------------------
-bool CSG_Parameter_Fixed_Table::On_Serialize(CSG_MetaData &Entry, bool bSave)
+bool CSG_Parameter_Fixed_Table::_Assign(CSG_Parameter *pSource)
 {
-	int				iField, iRecord;
-	CSG_MetaData	*pNode, *pEntry;
+	return( m_Table.Create(*pSource->asTable()) );
+}
+
+//---------------------------------------------------------
+bool CSG_Parameter_Fixed_Table::_Serialize(CSG_MetaData &Entry, bool bSave)
+{
+	int	iField;
 
 	if( bSave )
 	{
-		pNode	= Entry.Add_Child("FIELDS");
+		CSG_MetaData	*pNode	= Entry.Add_Child("FIELDS");
 
 		for(iField=0; iField<m_Table.Get_Field_Count(); iField++)
 		{
-			pEntry	= pNode->Add_Child("FIELD", m_Table.Get_Field_Name(iField));
-			pEntry	->Set_Property("type" , gSG_Data_Type_Identifier[m_Table.Get_Field_Type(iField)]);
+			CSG_MetaData	*pEntry	= pNode->Add_Child("FIELD", m_Table.Get_Field_Name(iField));
+
+			pEntry->Set_Property("type", gSG_Data_Type_Identifier[m_Table.Get_Field_Type(iField)]);
 		}
 
 		pNode	= Entry.Add_Child("RECORDS");
 
-		for(iRecord=0; iRecord<m_Table.Get_Count(); iRecord++)
+		for(int iRecord=0; iRecord<m_Table.Get_Count(); iRecord++)
 		{
-			pEntry	= pNode->Add_Child("RECORD");
+			CSG_MetaData	*pEntry	= pNode->Add_Child("RECORD");
 
 			CSG_Table_Record	*pRecord	= m_Table.Get_Record(iRecord);
 
@@ -1711,12 +1638,14 @@ bool CSG_Parameter_Fixed_Table::On_Serialize(CSG_MetaData &Entry, bool bSave)
 	}
 	else
 	{
-		CSG_Table	t;
+		CSG_MetaData	*pNode;
 
-		if( (pNode = Entry.Get_Child("FIELDS")) == NULL )
+		if( (pNode = Entry("FIELDS")) == NULL )
 		{
 			return( false );
 		}
+
+		CSG_Table	Table;
 
 		for(iField=0; iField<pNode->Get_Children_Count(); iField++)
 		{
@@ -1729,19 +1658,19 @@ bool CSG_Parameter_Fixed_Table::On_Serialize(CSG_MetaData &Entry, bool bSave)
 				type	= SG_Data_Type_Get_Type(s);
 			}
 
-			t.Add_Field(pNode->Get_Child(iField)->Get_Content(), type == SG_DATATYPE_Undefined ? SG_DATATYPE_String : type);
+			Table.Add_Field(pNode->Get_Child(iField)->Get_Content(), type == SG_DATATYPE_Undefined ? SG_DATATYPE_String : type);
 		}
 
-		if( (pNode = Entry.Get_Child("RECORDS")) == NULL )
+		if( (pNode = Entry("RECORDS")) == NULL )
 		{
 			return( false );
 		}
 
-		for(iRecord=0; iRecord<pNode->Get_Children_Count(); iRecord++)
+		for(int iRecord=0; iRecord<pNode->Get_Children_Count(); iRecord++)
 		{
-			pEntry	= pNode->Get_Child(iRecord);
+			CSG_MetaData	*pEntry	= pNode->Get_Child(iRecord);
 
-			CSG_Table_Record	*pRecord	= t.Add_Record();
+			CSG_Table_Record	*pRecord	= Table.Add_Record();
 
 			for(iField=0; iField<pEntry->Get_Children_Count(); iField++)
 			{
@@ -1749,7 +1678,7 @@ bool CSG_Parameter_Fixed_Table::On_Serialize(CSG_MetaData &Entry, bool bSave)
 			}
 		}
 
-		return( m_Table.Assign_Values(&t) );
+		return( m_Table.Assign_Values(&Table) );
 	}
 
 	return( true );
@@ -1763,12 +1692,14 @@ bool CSG_Parameter_Fixed_Table::On_Serialize(CSG_MetaData &Entry, bool bSave)
 ///////////////////////////////////////////////////////////
 
 //---------------------------------------------------------
-CSG_Parameter_Grid_System::CSG_Parameter_Grid_System(CSG_Parameter *pOwner, long Constraint)
-	: CSG_Parameter_Data(pOwner, Constraint)
-{}
+CSG_Parameter_Grid_System::CSG_Parameter_Grid_System(CSG_Parameters *pOwner, CSG_Parameter *pParent, const CSG_String &ID, const CSG_String &Name, const CSG_String &Description, int Constraint)
+	: CSG_Parameter(pOwner, pParent, ID, Name, Description, Constraint)
+{
+	// nop
+}
 
 //---------------------------------------------------------
-bool CSG_Parameter_Grid_System::Set_Value(void *Value)
+int CSG_Parameter_Grid_System::_Set_Value(void *Value)
 {
 	//-----------------------------------------------------
 	CSG_Grid_System	Invalid;
@@ -1779,22 +1710,56 @@ bool CSG_Parameter_Grid_System::Set_Value(void *Value)
 	}
 
 	//-----------------------------------------------------
-	if( !m_System.is_Equal(*((CSG_Grid_System *)Value)) )
+	if( m_System.is_Equal(*((CSG_Grid_System *)Value)) )
 	{
-		m_System.Assign(*((CSG_Grid_System *)Value));
+		return( SG_PARAMETER_DATA_SET_TRUE );
+	}
 
-		CSG_Data_Manager *pManager    = m_pOwner->Get_Manager();
+	//-----------------------------------------------------
+	m_System.Assign(*((CSG_Grid_System *)Value));
 
-		for(int i=0; i<m_pOwner->Get_Children_Count(); i++)
+	CSG_Data_Manager *pManager    = Get_Manager();
+
+	for(int i=0; i<Get_Children_Count(); i++)
+	{
+		CSG_Parameter	*pParameter	= Get_Child(i);
+
+		if( pParameter->is_DataObject() )
 		{
-			CSG_Parameter	*pParameter	= m_pOwner->Get_Child(i);
+			CSG_Data_Object	*pObject	= pParameter->asDataObject();
 
-			//--------------------------------------------
-			if( pParameter->is_DataObject() )
+			bool	bInvalid	= !m_System.is_Valid() || !(pManager && pManager->Exists(pObject));
+
+			if( !bInvalid && pObject != DATAOBJECT_NOTSET && pObject != DATAOBJECT_CREATE )
 			{
-				CSG_Data_Object	*pObject	= pParameter->asDataObject();
+				switch( pObject->Get_ObjectType() )
+				{
+				case SG_DATAOBJECT_TYPE_Grid : bInvalid = !m_System.is_Equal(((CSG_Grid  *)pObject)->Get_System()); break;
+				case SG_DATAOBJECT_TYPE_Grids: bInvalid = !m_System.is_Equal(((CSG_Grids *)pObject)->Get_System()); break;
+				default: break;
+				}
+			}
 
-				bool	bInvalid	= !m_System.is_Valid() || !(pManager && pManager->Exists(pObject));
+			if( bInvalid && pObject != DATAOBJECT_CREATE )
+			{
+				pParameter->Set_Value(DATAOBJECT_NOTSET);
+			}
+		}
+
+		//-------------------------------------------------
+		else if( pParameter->is_DataObject_List() )
+		{
+			CSG_Parameter_List	*pList	= pParameter->asList();
+
+			if( !m_System.is_Valid() )
+			{
+				pList->Del_Items();
+			}
+			else for(int j=pList->Get_Item_Count()-1; j>=0; j--)
+			{
+				CSG_Data_Object	*pObject	= pList->Get_Item(j);
+
+				bool	bInvalid	= !(pManager && pManager->Exists(pObject));
 
 				if( !bInvalid && pObject != DATAOBJECT_NOTSET && pObject != DATAOBJECT_CREATE )
 				{
@@ -1808,82 +1773,59 @@ bool CSG_Parameter_Grid_System::Set_Value(void *Value)
 
 				if( bInvalid )
 				{
-					pParameter->Set_Value(DATAOBJECT_NOTSET);
+					pList->Del_Item(j);
 				}
 			}
 
-			//--------------------------------------------
-			else if( pParameter->is_DataObject_List() )
-			{
-				CSG_Parameter_List	*pList	= pParameter->asList();
-
-				if( !m_System.is_Valid() )
-				{
-					pList->Del_Items();
-				}
-				else for(int j=pList->Get_Item_Count()-1; j>=0; j--)
-				{
-					CSG_Data_Object	*pObject	= pList->Get_Item(j);
-
-					bool	bInvalid	= !(pManager && pManager->Exists(pObject));
-
-					if( !bInvalid && pObject != DATAOBJECT_NOTSET && pObject != DATAOBJECT_CREATE )
-					{
-						switch( pObject->Get_ObjectType() )
-						{
-						case SG_DATAOBJECT_TYPE_Grid : bInvalid = !m_System.is_Equal(((CSG_Grid  *)pObject)->Get_System()); break;
-						case SG_DATAOBJECT_TYPE_Grids: bInvalid = !m_System.is_Equal(((CSG_Grids *)pObject)->Get_System()); break;
-						default: break;
-						}
-					}
-
-					if( bInvalid )
-					{
-						pList->Del_Item(j);
-					}
-				}
-			}
+			pParameter->has_Changed();
 		}
 	}
+
+	//-----------------------------------------------------
+	return( SG_PARAMETER_DATA_SET_CHANGED );
+}
+
+//---------------------------------------------------------
+void CSG_Parameter_Grid_System::_Set_String(void)
+{
+	m_String	= m_System.Get_Name();
+}
+
+//---------------------------------------------------------
+void * CSG_Parameter_Grid_System::_asPointer(void)	const
+{
+	return( (void *)&m_System );
+}
+
+//---------------------------------------------------------
+bool CSG_Parameter_Grid_System::_Assign(CSG_Parameter *pSource)
+{
+	m_System	= ((CSG_Parameter_Grid_System *)pSource)->m_System;
 
 	return( true );
 }
 
 //---------------------------------------------------------
-const SG_Char * CSG_Parameter_Grid_System::asString(void)
-{
-	m_String	= m_System.Get_Name();
-
-	return( m_String );
-}
-
-//---------------------------------------------------------
-void CSG_Parameter_Grid_System::On_Assign(CSG_Parameter_Data *pSource)
-{
-	m_System	= ((CSG_Parameter_Grid_System *)pSource)->m_System;
-}
-
-//---------------------------------------------------------
-bool CSG_Parameter_Grid_System::On_Serialize(CSG_MetaData &Entry, bool bSave)
+bool CSG_Parameter_Grid_System::_Serialize(CSG_MetaData &Entry, bool bSave)
 {
 	if( bSave )
 	{
-		Entry.Add_Child(SG_T("CELLSIZE"), m_System.Get_Cellsize());
-		Entry.Add_Child(SG_T("XMIN")    , m_System.Get_Extent().Get_XMin());
-		Entry.Add_Child(SG_T("XMAX")    , m_System.Get_Extent().Get_XMax());
-		Entry.Add_Child(SG_T("YMIN")    , m_System.Get_Extent().Get_YMin());
-		Entry.Add_Child(SG_T("YMAX")    , m_System.Get_Extent().Get_YMax());
+		Entry.Add_Child("CELLSIZE", m_System.Get_Cellsize());
+		Entry.Add_Child("XMIN"    , m_System.Get_Extent().Get_XMin());
+		Entry.Add_Child("XMAX"    , m_System.Get_Extent().Get_XMax());
+		Entry.Add_Child("YMIN"    , m_System.Get_Extent().Get_YMin());
+		Entry.Add_Child("YMAX"    , m_System.Get_Extent().Get_YMax());
 	}
 	else
 	{
 		double		Cellsize;
 		TSG_Rect	Extent;
 
-		Cellsize	= Entry.Get_Child(SG_T("CELLSIZE"))->Get_Content().asDouble();
-		Extent.xMin	= Entry.Get_Child(SG_T("XMIN"))    ->Get_Content().asDouble();
-		Extent.xMax	= Entry.Get_Child(SG_T("XMAX"))    ->Get_Content().asDouble();
-		Extent.yMin	= Entry.Get_Child(SG_T("YMIN"))    ->Get_Content().asDouble();
-		Extent.yMax	= Entry.Get_Child(SG_T("YMAX"))    ->Get_Content().asDouble();
+		Cellsize	= Entry("CELLSIZE")->Get_Content().asDouble();
+		Extent.xMin	= Entry("XMIN"    )->Get_Content().asDouble();
+		Extent.xMax	= Entry("XMAX"    )->Get_Content().asDouble();
+		Extent.yMin	= Entry("YMIN"    )->Get_Content().asDouble();
+		Extent.yMax	= Entry("YMAX"    )->Get_Content().asDouble();
 
 		m_System.Assign(Cellsize, CSG_Rect(Extent));
 	}
@@ -1899,22 +1841,21 @@ bool CSG_Parameter_Grid_System::On_Serialize(CSG_MetaData &Entry, bool bSave)
 ///////////////////////////////////////////////////////////
 
 //---------------------------------------------------------
-CSG_Parameter_Table_Field::CSG_Parameter_Table_Field(CSG_Parameter *pOwner, long Constraint)
-	: CSG_Parameter_Int(pOwner, Constraint)
+CSG_Parameter_Table_Field::CSG_Parameter_Table_Field(CSG_Parameters *pOwner, CSG_Parameter *pParent, const CSG_String &ID, const CSG_String &Name, const CSG_String &Description, int Constraint)
+	: CSG_Parameter_Int(pOwner, pParent, ID, Name, Description, Constraint)
 {
-	m_Default		= -1;
+	m_Default	= -1;
+	m_Value		= -1;
 }
 
 //---------------------------------------------------------
 bool CSG_Parameter_Table_Field::Add_Default(double Value, double Minimum, bool bMinimum, double Maximum, bool bMaximum)
 {
-	if( m_Default < 0 && (m_Constraint & PARAMETER_OPTIONAL) != 0 )
+	if( m_Default < 0 && is_Optional() )
 	{
-		m_Default	= m_pOwner->Get_Children_Count();
+		m_Default	= Get_Children_Count();
 
-		m_pOwner->Get_Owner()->Add_Double(
-			m_pOwner->Get_Identifier(),
-			CSG_String::Format("%s_DEFAULT", m_pOwner->Get_Identifier()),
+		Get_Owner()->Add_Double(Get_Identifier(), CSG_String::Format("%s_DEFAULT", Get_Identifier()),
 			_TL("Default"), _TL("default value if no attribute has been selected"),
 			Value, Minimum, bMinimum, Maximum, bMaximum
 		);
@@ -1924,116 +1865,128 @@ bool CSG_Parameter_Table_Field::Add_Default(double Value, double Minimum, bool b
 }
 
 //---------------------------------------------------------
-const SG_Char * CSG_Parameter_Table_Field::asString(void)
-{
-	CSG_Table	*pTable	= Get_Table();
-
-	if( pTable )
-	{
-		if( m_Value >= 0 && m_Value < pTable->Get_Field_Count() )
-		{
-			return( m_String = pTable->Get_Field_Name(m_Value) );
-		}
-
-		return( m_String = _TL("<not set>") );
-	}
-
-	return( m_String = _TL("<no attributes>") );
-}
-
-//---------------------------------------------------------
-double CSG_Parameter_Table_Field::asDouble(void) const
-{
-	return( m_pOwner->Get_Child(m_Default) ? m_pOwner->Get_Child(m_Default)->asDouble() : CSG_Parameter_Int::asDouble() );
-}
-
-//---------------------------------------------------------
-bool CSG_Parameter_Table_Field::Set_Value(int Value)
-{
-	m_Value	= Value;
-
-	CSG_Table	*pTable	= Get_Table();
-
-	if( pTable && pTable->Get_Field_Count() > 0 && m_Value >= 0 )
-	{
-		if( m_Value >= pTable->Get_Field_Count() )
-		{
-			m_Value	= !m_pOwner->is_Optional() ? pTable->Get_Field_Count() - 1 : -1;
-		}
-	}
-	else
-	{
-		m_Value	= -1;
-	}
-
-	if( m_pOwner->Get_Child(m_Default) )
-	{
-		m_pOwner->Get_Child(m_Default)->Set_Enabled(m_Value < 0);
-	}
-
-	return( true );
-}
-
-//---------------------------------------------------------
-bool CSG_Parameter_Table_Field::Set_Value(const CSG_String &Value)
-{
-	CSG_Table	*pTable	= Get_Table();
-
-	if( pTable )
-	{
-		for(int i=0; i<pTable->Get_Field_Count(); i++)
-		{
-			if( Value.CmpNoCase(pTable->Get_Field_Name(i)) == 0 )
-			{
-				m_Value	= i;
-
-				return( true );
-			}
-		}
-	}
-
-	return( false );
-}
-
-//---------------------------------------------------------
 CSG_Table * CSG_Parameter_Table_Field::Get_Table(void)	const
 {
-	CSG_Table	*pTable	= m_pOwner->Get_Parent() ? m_pOwner->Get_Parent()->asTable() : NULL;
+	CSG_Table	*pTable	= Get_Parent() ? Get_Parent()->asTable() : NULL;
 
 	return( pTable && pTable != DATAOBJECT_CREATE && pTable->Get_Field_Count() > 0 ? pTable : NULL );
 }
 
 //---------------------------------------------------------
-void CSG_Parameter_Table_Field::On_Assign(CSG_Parameter_Data *pSource)
+int CSG_Parameter_Table_Field::_Set_Value(int Value)
 {
-	CSG_Parameter_Int::On_Assign(pSource);
+	CSG_Table	*pTable	= Get_Table();
 
-	m_Default	= ((CSG_Parameter_Table_Field *)pSource)->m_Default;
+	if( pTable != NULL && pTable->Get_Field_Count() > 0 && Value >= 0 )
+	{
+		if( Value >= pTable->Get_Field_Count() )
+		{
+			Value	= !is_Optional() ? pTable->Get_Field_Count() - 1 : -1;
+		}
+	}
+	else
+	{
+		Value	= -1;
+	}
+
+	if( Get_Child(m_Default) )
+	{
+		Get_Child(m_Default)->Set_Enabled(Value < 0);
+	}
+
+	if( m_Value != Value )
+	{
+		m_Value	= Value;
+
+		return( SG_PARAMETER_DATA_SET_CHANGED );
+	}
+
+	return( SG_PARAMETER_DATA_SET_TRUE );
 }
 
 //---------------------------------------------------------
-bool CSG_Parameter_Table_Field::On_Serialize(CSG_MetaData &Entry, bool bSave)
+int CSG_Parameter_Table_Field::_Set_Value(const CSG_String &Value)
+{
+	CSG_Table	*pTable	= Get_Table();
+
+	if( pTable != NULL )
+	{
+		int	Index;
+
+		for(Index=0; Index<pTable->Get_Field_Count(); Index++)
+		{
+			if( !Value.CmpNoCase(pTable->Get_Field_Name(Index)) )
+			{
+				return( _Set_Value(Index) );
+			}
+		}
+
+		if( Value.asInt(Index) )
+		{
+			return( _Set_Value(Index) );
+		}
+	}
+
+	return( _Set_Value(-1) );
+}
+
+//---------------------------------------------------------
+void CSG_Parameter_Table_Field::_Set_String(void)
+{
+	CSG_Table	*pTable	= Get_Table();
+
+	if( !pTable || pTable->Get_Field_Count() < 1 )
+	{
+		m_String	= _TL("<no attributes>");
+	}
+	else if( m_Value < 0 || m_Value >= pTable->Get_Field_Count() )
+	{
+		m_String	= _TL("<not set>");
+	}
+	else
+	{
+		m_String	= pTable->Get_Field_Name(m_Value);
+	}
+}
+
+//---------------------------------------------------------
+double CSG_Parameter_Table_Field::_asDouble(void) const
+{
+	return( Get_Child(m_Default) ? Get_Child(m_Default)->asDouble() : CSG_Parameter_Int::asDouble() );
+}
+
+//---------------------------------------------------------
+bool CSG_Parameter_Table_Field::_Assign(CSG_Parameter *pSource)
+{
+	m_Value		= ((CSG_Parameter_Table_Field *)pSource)->m_Value;
+	m_Default	= ((CSG_Parameter_Table_Field *)pSource)->m_Default;
+
+	_Set_String();
+
+	return( true );
+}
+
+//---------------------------------------------------------
+bool CSG_Parameter_Table_Field::_Serialize(CSG_MetaData &Entry, bool bSave)
 {
 	if( bSave )
 	{
 		Entry.Set_Property("index", asInt());
 		Entry.Set_Content(asString());
+
+		return( true );
 	}
 	else
 	{
-		int	idx;
+		int	Index;
 
-		if( Entry.Get_Property("index", idx) )	// we require this check for backward compatibility, "index" was first introduced with SAGA 2.2.3 (r2671)
+		if( Entry.Get_Property("index", Index) )	// we require this check for backward compatibility, "index" was first introduced with SAGA 2.2.3 (r2671)
 		{
-			return( Set_Value(idx) );
+			return( _Set_Value(Index) != 0 );
 		}
-		else
-		{
-			return( Set_Value(Entry.Get_Content()) );
-		}
+
+		return( _Set_Value(Entry.Get_Content()) != 0 );
 	}
-
-	return( true );
 }
 
 
@@ -2044,8 +1997,8 @@ bool CSG_Parameter_Table_Field::On_Serialize(CSG_MetaData &Entry, bool bSave)
 ///////////////////////////////////////////////////////////
 
 //---------------------------------------------------------
-CSG_Parameter_Table_Fields::CSG_Parameter_Table_Fields(CSG_Parameter *pOwner, long Constraint)
-	: CSG_Parameter_Data(pOwner, Constraint)
+CSG_Parameter_Table_Fields::CSG_Parameter_Table_Fields(CSG_Parameters *pOwner, CSG_Parameter *pParent, const CSG_String &ID, const CSG_String &Name, const CSG_String &Description, int Constraint)
+	: CSG_Parameter(pOwner, pParent, ID, Name, Description, Constraint)
 {
 	m_nFields	= 0;
 	m_Fields	= NULL;
@@ -2058,7 +2011,7 @@ CSG_Parameter_Table_Fields::~CSG_Parameter_Table_Fields(void)
 }
 
 //---------------------------------------------------------
-bool CSG_Parameter_Table_Fields::Set_Value(const CSG_String &Value)
+int CSG_Parameter_Table_Fields::_Set_Value(const CSG_String &Value)
 {
 	CSG_Table	*pTable	= Get_Table();
 
@@ -2068,7 +2021,7 @@ bool CSG_Parameter_Table_Fields::Set_Value(const CSG_String &Value)
 		m_nFields	= 0;
 		m_String	= _TL("<no attributes>");
 
-		return( false );
+		return( SG_PARAMETER_DATA_SET_CHANGED );
 	}
 
 	m_Fields	= (int *)SG_Realloc(m_Fields, pTable->Get_Field_Count() * sizeof(int));
@@ -2129,25 +2082,37 @@ bool CSG_Parameter_Table_Fields::Set_Value(const CSG_String &Value)
 		m_String	= _TL("<no attributes>");
 	}
 
-	return( true );
+	return( SG_PARAMETER_DATA_SET_CHANGED );
+}
+
+//---------------------------------------------------------
+int CSG_Parameter_Table_Fields::_asInt(void)	const
+{
+	return( m_nFields );
+}
+
+//---------------------------------------------------------
+void * CSG_Parameter_Table_Fields::_asPointer(void)	const
+{
+	return( m_Fields );
 }
 
 //---------------------------------------------------------
 CSG_Table * CSG_Parameter_Table_Fields::Get_Table(void)	const
 {
-	CSG_Table	*pTable	= m_pOwner->Get_Parent() ? m_pOwner->Get_Parent()->asTable() : NULL;
+	CSG_Table	*pTable	= Get_Parent() ? Get_Parent()->asTable() : NULL;
 
 	return( pTable && pTable != DATAOBJECT_CREATE && pTable->Get_Field_Count() > 0 ? pTable : NULL );
 }
 
 //---------------------------------------------------------
-void CSG_Parameter_Table_Fields::On_Assign(CSG_Parameter_Data *pSource)
+bool CSG_Parameter_Table_Fields::_Assign(CSG_Parameter *pSource)
 {
-	Set_Value(pSource->asString());
+	return( _Set_Value(pSource->asString()) != 0 );
 }
 
 //---------------------------------------------------------
-bool CSG_Parameter_Table_Fields::On_Serialize(CSG_MetaData &Entry, bool bSave)
+bool CSG_Parameter_Table_Fields::_Serialize(CSG_MetaData &Entry, bool bSave)
 {
 	if( bSave )
 	{
@@ -2169,8 +2134,8 @@ bool CSG_Parameter_Table_Fields::On_Serialize(CSG_MetaData &Entry, bool bSave)
 ///////////////////////////////////////////////////////////
 
 //---------------------------------------------------------
-CSG_Parameter_Data_Object::CSG_Parameter_Data_Object(CSG_Parameter *pOwner, long Constraint)
-	: CSG_Parameter_Data(pOwner, Constraint)
+CSG_Parameter_Data_Object::CSG_Parameter_Data_Object(CSG_Parameters *pOwner, CSG_Parameter *pParent, const CSG_String &ID, const CSG_String &Name, const CSG_String &Description, int Constraint)
+	: CSG_Parameter(pOwner, pParent, ID, Name, Description, Constraint)
 {
 	m_pDataObject	= NULL;
 }
@@ -2178,28 +2143,28 @@ CSG_Parameter_Data_Object::CSG_Parameter_Data_Object(CSG_Parameter *pOwner, long
 //---------------------------------------------------------
 bool CSG_Parameter_Data_Object::is_Valid(void)	const
 {
-	return(	m_pOwner->is_Optional() || (m_pDataObject && m_pDataObject->is_Valid()) );
+	return(	is_Optional() || (m_pDataObject && m_pDataObject->is_Valid()) );
 }
 
 //---------------------------------------------------------
-bool CSG_Parameter_Data_Object::Set_Value(void *Value)
+int CSG_Parameter_Data_Object::_Set_Value(void *Value)
 {
 	if( m_pDataObject != Value )
 	{
 		m_pDataObject	= (CSG_Data_Object *)Value;
+
+		return( SG_PARAMETER_DATA_SET_CHANGED );
 	}
 
-	return( true );
+	return( SG_PARAMETER_DATA_SET_TRUE );
 }
 
 //---------------------------------------------------------
-const SG_Char * CSG_Parameter_Data_Object::asString(void)
+void CSG_Parameter_Data_Object::_Set_String(void)
 {
 	if( m_pDataObject == DATAOBJECT_NOTSET )
 	{
-		m_String	= m_pOwner->is_Output() && !m_pOwner->is_Optional()
-					? _TL("<create>")
-					: _TL("<not set>");
+		m_String	= is_Output() && !is_Optional() ? _TL("<create>") : _TL("<not set>");
 	}
 	else if( m_pDataObject == DATAOBJECT_CREATE )
 	{
@@ -2209,51 +2174,99 @@ const SG_Char * CSG_Parameter_Data_Object::asString(void)
 	{
 		m_String	= m_pDataObject->Get_Name();
 	}
-
-	return( m_String );
 }
 
 //---------------------------------------------------------
-void CSG_Parameter_Data_Object::On_Assign(CSG_Parameter_Data *pSource)
+void * CSG_Parameter_Data_Object::_asPointer(void)	const
+{
+	return( m_pDataObject );
+}
+
+//---------------------------------------------------------
+bool CSG_Parameter_Data_Object::_Assign(CSG_Parameter *pSource)
 {
 	m_pDataObject	= ((CSG_Parameter_Data_Object *)pSource)->m_pDataObject;
+
+	return( true );
 }
 
 //---------------------------------------------------------
-bool CSG_Parameter_Data_Object::On_Serialize(CSG_MetaData &Entry, bool bSave)
+bool CSG_Parameter_Data_Object::_Serialize(CSG_MetaData &Entry, bool bSave)
 {
 	if( bSave )
 	{
 		if(	m_pDataObject == DATAOBJECT_CREATE )
 		{
 			Entry.Set_Content("CREATE");
+
+			return( true );
 		}
-		else if( m_pDataObject == DATAOBJECT_NOTSET )//|| !SG_File_Exists(m_pDataObject->Get_File_Name(false)) )
+
+		if( m_pDataObject == DATAOBJECT_NOTSET )//|| !SG_File_Exists(m_pDataObject->Get_File_Name(false)) )
 		{
 			Entry.Set_Content("NOT SET");
+
+			return( true );
 		}
-		else
+
+		if( !m_pDataObject->Get_Owner() )
 		{
 			Entry.Set_Content(m_pDataObject->Get_File_Name(false));
+
+			return( true );
+		}
+
+		if( m_pDataObject->Get_Owner()->Get_ObjectType() == SG_DATAOBJECT_TYPE_Grids )
+		{
+			CSG_Grids	*pGrids	= m_pDataObject->Get_Owner()->asGrids();
+
+			for(int i=0; i<pGrids->Get_NZ(); i++)
+			{
+				if( pGrids->Get_Grid_Ptr(i) == m_pDataObject )
+				{
+					Entry.Set_Content(m_pDataObject->Get_Owner()->Get_File_Name(false));
+
+					Entry.Add_Property("index", i);
+
+					return( true );
+				}
+			}
 		}
 	}
 	else
 	{
+		CSG_Data_Object	*pDataObject = NULL; int Index = -1;
+
 		if( Entry.Cmp_Content("CREATE") )
 		{
-			Set_Value(DATAOBJECT_CREATE);
+			_Set_Value(DATAOBJECT_CREATE);
+
+			return( true );
 		}
-		else if( Entry.Cmp_Content("NOT SET") )
+
+		if( Entry.Cmp_Content("NOT SET") || !Get_Manager() || !(pDataObject = Get_Manager()->Find(Entry.Get_Content(), false)) )
 		{
-			Set_Value(DATAOBJECT_NOTSET);
+			_Set_Value(DATAOBJECT_NOTSET);
+
+			return( true );
 		}
-		else
+
+		if( !Entry.Get_Property("index", Index) )
 		{
-			Set_Value(m_pOwner->Get_Manager() ? m_pOwner->Get_Manager()->Find(Entry.Get_Content(), false) : NULL);
+			_Set_Value(pDataObject);
+
+			return( true );
+		}
+
+		if( pDataObject->Get_ObjectType() == SG_DATAOBJECT_TYPE_Grids )
+		{
+			_Set_Value(pDataObject->asGrids()->Get_Grid_Ptr(Index));
+
+			return( true );
 		}
 	}
 
-	return( true );
+	return( false );
 }
 
 
@@ -2264,14 +2277,14 @@ bool CSG_Parameter_Data_Object::On_Serialize(CSG_MetaData &Entry, bool bSave)
 ///////////////////////////////////////////////////////////
 
 //---------------------------------------------------------
-CSG_Parameter_Data_Object_Output::CSG_Parameter_Data_Object_Output(CSG_Parameter *pOwner, long Constraint)
-	: CSG_Parameter_Data_Object(pOwner, Constraint)
+CSG_Parameter_Data_Object_Output::CSG_Parameter_Data_Object_Output(CSG_Parameters *pOwner, CSG_Parameter *pParent, const CSG_String &ID, const CSG_String &Name, const CSG_String &Description, int Constraint)
+	: CSG_Parameter_Data_Object(pOwner, pParent, ID, Name, Description, Constraint)
 {
 	m_Type	= SG_DATAOBJECT_TYPE_Undefined;
 }
 
 //---------------------------------------------------------
-bool CSG_Parameter_Data_Object_Output::Set_Value(void *Value)
+int CSG_Parameter_Data_Object_Output::_Set_Value(void *Value)
 {
 	CSG_Data_Object	*pDataObject	= (CSG_Data_Object *)Value;
 
@@ -2284,18 +2297,18 @@ bool CSG_Parameter_Data_Object_Output::Set_Value(void *Value)
 	{
 		m_pDataObject	= pDataObject;
 
-		if( m_pOwner->Get_Manager() )
+		if( Get_Manager() )
 		{
-			m_pOwner->Get_Manager()->Add(m_pDataObject);
+			Get_Manager()->Add(m_pDataObject);
 
-			if( m_pOwner->Get_Manager() == &SG_Get_Data_Manager() )	// prevent that local data manager send their data objects to gui
+			if( Get_Manager() == &SG_Get_Data_Manager() )	// prevent that local data manager send their data objects to gui
 			{
 				SG_UI_DataObject_Add(m_pDataObject, false);
 			}
 		}
 	}
 
-	return( true );
+	return( SG_PARAMETER_DATA_SET_CHANGED );
 }
 
 //---------------------------------------------------------
@@ -2331,8 +2344,8 @@ bool CSG_Parameter_Data_Object_Output::Set_DataObject_Type(TSG_Data_Object_Type 
 ///////////////////////////////////////////////////////////
 
 //---------------------------------------------------------
-CSG_Parameter_Grid::CSG_Parameter_Grid(CSG_Parameter *pOwner, long Constraint)
-	: CSG_Parameter_Data_Object(pOwner, Constraint)
+CSG_Parameter_Grid::CSG_Parameter_Grid(CSG_Parameters *pOwner, CSG_Parameter *pParent, const CSG_String &ID, const CSG_String &Name, const CSG_String &Description, int Constraint)
+	: CSG_Parameter_Data_Object(pOwner, pParent, ID, Name, Description, Constraint)
 {
 	m_Type		= SG_DATATYPE_Undefined;
 
@@ -2348,9 +2361,9 @@ void CSG_Parameter_Grid::Set_Preferred_Type(TSG_Data_Type Type)
 //---------------------------------------------------------
 CSG_Grid_System * CSG_Parameter_Grid::Get_System(void)	const
 {
-	if( m_pOwner->Get_Parent() && m_pOwner->Get_Parent()->Get_Type() == PARAMETER_TYPE_Grid_System )
+	if( Get_Parent() && Get_Parent()->Get_Type() == PARAMETER_TYPE_Grid_System )
 	{
-		return( m_pOwner->Get_Parent()->asGrid_System() );
+		return( Get_Parent()->asGrid_System() );
 	}
 
 	return( NULL );
@@ -2359,13 +2372,11 @@ CSG_Grid_System * CSG_Parameter_Grid::Get_System(void)	const
 //---------------------------------------------------------
 bool CSG_Parameter_Grid::Add_Default(double Value, double Minimum, bool bMinimum, double Maximum, bool bMaximum)
 {
-	if( m_Default < 0 && (Get_Constraint() & PARAMETER_INPUT) && (Get_Constraint() & PARAMETER_OPTIONAL) )
+	if( m_Default < 0 && is_Input() && is_Optional() )
 	{
-		m_Default	= m_pOwner->Get_Children_Count();
+		m_Default	= Get_Children_Count();
 
-		m_pOwner->Get_Owner()->Add_Double(
-			m_pOwner->Get_Identifier(),
-			CSG_String::Format("%s_DEFAULT", m_pOwner->Get_Identifier()),
+		Get_Owner()->Add_Double(Get_Identifier(), CSG_String::Format("%s_DEFAULT", Get_Identifier()),
 			_TL("Default"), _TL("default value if no grid has been selected"),
 			Value, Minimum, bMinimum, Maximum, bMaximum
 		);
@@ -2375,15 +2386,15 @@ bool CSG_Parameter_Grid::Add_Default(double Value, double Minimum, bool bMinimum
 }
 
 //---------------------------------------------------------
-bool CSG_Parameter_Grid::Set_Value(void *Value)
+int CSG_Parameter_Grid::_Set_Value(void *Value)
 {
 	if( Value == m_pDataObject )	// nothing to do
 	{
-		return( true );
+		return( SG_PARAMETER_DATA_SET_TRUE );
 	}
 
 	//-----------------------------------------------------
-	if( Value != DATAOBJECT_NOTSET && Value != DATAOBJECT_CREATE && Get_System() )// && m_pOwner->Get_Manager()
+	if( Value != DATAOBJECT_NOTSET && Value != DATAOBJECT_CREATE && Get_System() )// && Get_Manager()
 	{
 		CSG_Grid_System	System	= Get_Type() == PARAMETER_TYPE_Grid
 			? ((CSG_Grid  *)Value)->Get_System()
@@ -2391,9 +2402,9 @@ bool CSG_Parameter_Grid::Set_Value(void *Value)
 
 		if( !Get_System()->is_Equal(System) )
 		{
-			for(int i=0; i<m_pOwner->Get_Parent()->Get_Children_Count(); i++)
+			for(int i=0; i<Get_Parent()->Get_Children_Count(); i++)
 			{
-				CSG_Parameter	*pChild	= m_pOwner->Get_Parent()->Get_Child(i);
+				CSG_Parameter	*pChild	= Get_Parent()->Get_Child(i);
 
 				if( pChild->Get_Type() == PARAMETER_TYPE_Grid
 				||  pChild->Get_Type() == PARAMETER_TYPE_Grids )
@@ -2416,41 +2427,40 @@ bool CSG_Parameter_Grid::Set_Value(void *Value)
 				}
 			}
 
-			Get_System()->Assign(System);
+			Get_Parent()->Set_Value((void *)&System);
 		}
 	}
 
 	//-----------------------------------------------------
 	m_pDataObject	= (CSG_Data_Object *)Value;
 
-	if( m_pOwner->Get_Child(m_Default) )
+	if( Get_Child(m_Default) )
 	{
-		m_pOwner->Get_Child(m_Default)->Set_Enabled(m_pDataObject == DATAOBJECT_NOTSET);
+		Get_Child(m_Default)->Set_Enabled(m_pDataObject == DATAOBJECT_NOTSET);
 	}
 
-	return( true );
+	return( SG_PARAMETER_DATA_SET_CHANGED );
 }
 
 //---------------------------------------------------------
-int	CSG_Parameter_Grid::asInt(void) const
+int	CSG_Parameter_Grid::_asInt(void) const
 {
-	return( m_pOwner->Get_Child(m_Default) ? m_pOwner->Get_Child(m_Default)->asInt() : CSG_Parameter_Data_Object::asInt() );
+	return( Get_Child(m_Default) ? Get_Child(m_Default)->asInt() : CSG_Parameter_Data_Object::asInt() );
 }
 
 //---------------------------------------------------------
-double CSG_Parameter_Grid::asDouble(void) const
+double CSG_Parameter_Grid::_asDouble(void) const
 {
-	return( m_pOwner->Get_Child(m_Default) ? m_pOwner->Get_Child(m_Default)->asDouble() : CSG_Parameter_Data_Object::asDouble() );
+	return( Get_Child(m_Default) ? Get_Child(m_Default)->asDouble() : CSG_Parameter_Data_Object::asDouble() );
 }
 
 //---------------------------------------------------------
-void CSG_Parameter_Grid::On_Assign(CSG_Parameter_Data *pSource)
+bool CSG_Parameter_Grid::_Assign(CSG_Parameter *pSource)
 {
 	m_Type		= ((CSG_Parameter_Grid *)pSource)->m_Type;
-
 	m_Default	= ((CSG_Parameter_Grid *)pSource)->m_Default;
 
-	Set_Value(pSource->asPointer());
+	return( _Set_Value(pSource->asPointer()) != 0 );
 }
 
 
@@ -2461,9 +2471,11 @@ void CSG_Parameter_Grid::On_Assign(CSG_Parameter_Data *pSource)
 ///////////////////////////////////////////////////////////
 
 //---------------------------------------------------------
-CSG_Parameter_Grids::CSG_Parameter_Grids(CSG_Parameter *pOwner, long Constraint)
-	: CSG_Parameter_Grid(pOwner, Constraint)
-{}
+CSG_Parameter_Grids::CSG_Parameter_Grids(CSG_Parameters *pOwner, CSG_Parameter *pParent, const CSG_String &ID, const CSG_String &Name, const CSG_String &Description, int Constraint)
+	: CSG_Parameter_Grid(pOwner, pParent, ID, Name, Description, Constraint)
+{
+	// nop
+}
 
 
 ///////////////////////////////////////////////////////////
@@ -2473,23 +2485,25 @@ CSG_Parameter_Grids::CSG_Parameter_Grids(CSG_Parameter *pOwner, long Constraint)
 ///////////////////////////////////////////////////////////
 
 //---------------------------------------------------------
-CSG_Parameter_Table::CSG_Parameter_Table(CSG_Parameter *pOwner, long Constraint)
-	: CSG_Parameter_Data_Object(pOwner, Constraint)
-{}
+CSG_Parameter_Table::CSG_Parameter_Table(CSG_Parameters *pOwner, CSG_Parameter *pParent, const CSG_String &ID, const CSG_String &Name, const CSG_String &Description, int Constraint)
+	: CSG_Parameter_Data_Object(pOwner, pParent, ID, Name, Description, Constraint)
+{
+	// nop
+}
 
 //---------------------------------------------------------
-bool CSG_Parameter_Table::Set_Value(void *Value)
+int CSG_Parameter_Table::_Set_Value(void *Value)
 {
 	if( m_pDataObject == Value )
 	{
-		return( true );
+		return( SG_PARAMETER_DATA_SET_TRUE );
 	}
 
 	m_pDataObject	= (CSG_Data_Object *)Value;
 
-	for(int i=0; i<m_pOwner->Get_Children_Count(); i++)
+	for(int i=0; i<Get_Children_Count(); i++)
 	{
-		CSG_Parameter	*pChild	= m_pOwner->Get_Child(i);
+		CSG_Parameter	*pChild	= Get_Child(i);
 
 		if( pChild->Get_Type() == PARAMETER_TYPE_Table_Field )
 		{
@@ -2501,7 +2515,7 @@ bool CSG_Parameter_Table::Set_Value(void *Value)
 		}
 	}
 
-	return( true );
+	return( SG_PARAMETER_DATA_SET_CHANGED );
 }
 
 
@@ -2512,31 +2526,31 @@ bool CSG_Parameter_Table::Set_Value(void *Value)
 ///////////////////////////////////////////////////////////
 
 //---------------------------------------------------------
-CSG_Parameter_Shapes::CSG_Parameter_Shapes(CSG_Parameter *pOwner, long Constraint)
-	: CSG_Parameter_Data_Object(pOwner, Constraint)
+CSG_Parameter_Shapes::CSG_Parameter_Shapes(CSG_Parameters *pOwner, CSG_Parameter *pParent, const CSG_String &ID, const CSG_String &Name, const CSG_String &Description, int Constraint)
+	: CSG_Parameter_Data_Object(pOwner, pParent, ID, Name, Description, Constraint)
 {
 	m_Type	= SHAPE_TYPE_Undefined;
 }
 
 //---------------------------------------------------------
-bool CSG_Parameter_Shapes::Set_Value(void *Value)
+int CSG_Parameter_Shapes::_Set_Value(void *Value)
 {
 	if(	Value != DATAOBJECT_NOTSET && Value != DATAOBJECT_CREATE
 	&&	m_Type != SHAPE_TYPE_Undefined && m_Type != ((CSG_Shapes *)Value)->Get_Type() )
 	{
-		return( false );
+		return( SG_PARAMETER_DATA_SET_FALSE );
 	}
 
 	if( m_pDataObject == Value )
 	{
-		return( true );
+		return( SG_PARAMETER_DATA_SET_TRUE );
 	}
 
 	m_pDataObject	= (CSG_Data_Object *)Value;
 
-	for(int i=0; i<m_pOwner->Get_Children_Count(); i++)
+	for(int i=0; i<Get_Children_Count(); i++)
 	{
-		CSG_Parameter	*pChild	= m_pOwner->Get_Child(i);
+		CSG_Parameter	*pChild	= Get_Child(i);
 
 		if(	pChild->Get_Type() == PARAMETER_TYPE_Table_Field )
 		{
@@ -2548,7 +2562,7 @@ bool CSG_Parameter_Shapes::Set_Value(void *Value)
 		}
 	}
 
-	return( true );
+	return( SG_PARAMETER_DATA_SET_CHANGED );
 }
 
 //---------------------------------------------------------
@@ -2558,11 +2572,11 @@ void CSG_Parameter_Shapes::Set_Shape_Type(TSG_Shape_Type Type)
 }
 
 //---------------------------------------------------------
-void CSG_Parameter_Shapes::On_Assign(CSG_Parameter_Data *pSource)
+bool CSG_Parameter_Shapes::_Assign(CSG_Parameter *pSource)
 {
-	CSG_Parameter_Data_Object::On_Assign(pSource);
-
 	m_Type	= ((CSG_Parameter_Shapes *)pSource)->m_Type;
+
+	return( CSG_Parameter_Data_Object::_Assign(pSource) );
 }
 
 
@@ -2573,23 +2587,25 @@ void CSG_Parameter_Shapes::On_Assign(CSG_Parameter_Data *pSource)
 ///////////////////////////////////////////////////////////
 
 //---------------------------------------------------------
-CSG_Parameter_TIN::CSG_Parameter_TIN(CSG_Parameter *pOwner, long Constraint)
-	: CSG_Parameter_Data_Object(pOwner, Constraint)
-{}
+CSG_Parameter_TIN::CSG_Parameter_TIN(CSG_Parameters *pOwner, CSG_Parameter *pParent, const CSG_String &ID, const CSG_String &Name, const CSG_String &Description, int Constraint)
+	: CSG_Parameter_Data_Object(pOwner, pParent, ID, Name, Description, Constraint)
+{
+	// nop
+}
 
 //---------------------------------------------------------
-bool CSG_Parameter_TIN::Set_Value(void *Value)
+int CSG_Parameter_TIN::_Set_Value(void *Value)
 {
 	if( m_pDataObject == Value )
 	{
-		return( true );
+		return( SG_PARAMETER_DATA_SET_TRUE );
 	}
 
 	m_pDataObject	= (CSG_Data_Object *)Value;
 
-	for(int i=0; i<m_pOwner->Get_Children_Count(); i++)
+	for(int i=0; i<Get_Children_Count(); i++)
 	{
-		CSG_Parameter	*pChild	= m_pOwner->Get_Child(i);
+		CSG_Parameter	*pChild	= Get_Child(i);
 
 		if( pChild->Get_Type() == PARAMETER_TYPE_Table_Field )
 		{
@@ -2601,7 +2617,7 @@ bool CSG_Parameter_TIN::Set_Value(void *Value)
 		}
 	}
 
-	return( true );
+	return( SG_PARAMETER_DATA_SET_CHANGED );
 }
 
 
@@ -2612,29 +2628,25 @@ bool CSG_Parameter_TIN::Set_Value(void *Value)
 ///////////////////////////////////////////////////////////
 
 //---------------------------------------------------------
-CSG_Parameter_PointCloud::CSG_Parameter_PointCloud(CSG_Parameter *pOwner, long Constraint)
-	: CSG_Parameter_Data_Object(pOwner, Constraint)
-{}
-
-//---------------------------------------------------------
-void CSG_Parameter_PointCloud::On_Assign(CSG_Parameter_Data *pSource)
+CSG_Parameter_PointCloud::CSG_Parameter_PointCloud(CSG_Parameters *pOwner, CSG_Parameter *pParent, const CSG_String &ID, const CSG_String &Name, const CSG_String &Description, int Constraint)
+	: CSG_Parameter_Data_Object(pOwner, pParent, ID, Name, Description, Constraint)
 {
-	CSG_Parameter_Data_Object::On_Assign(pSource);
+	// nop
 }
 
 //---------------------------------------------------------
-bool CSG_Parameter_PointCloud::Set_Value(void *Value)
+int CSG_Parameter_PointCloud::_Set_Value(void *Value)
 {
 	if( m_pDataObject == Value )
 	{
-		return( true );
+		return( SG_PARAMETER_DATA_SET_TRUE );
 	}
 
 	m_pDataObject	= (CSG_Data_Object *)Value;
 
-	for(int i=0; i<m_pOwner->Get_Children_Count(); i++)
+	for(int i=0; i<Get_Children_Count(); i++)
 	{
-		CSG_Parameter	*pChild	= m_pOwner->Get_Child(i);
+		CSG_Parameter	*pChild	= Get_Child(i);
 
 		if( pChild->Get_Type() == PARAMETER_TYPE_Table_Field )
 		{
@@ -2646,7 +2658,13 @@ bool CSG_Parameter_PointCloud::Set_Value(void *Value)
 		}
 	}
 
-	return( true );
+	return( SG_PARAMETER_DATA_SET_CHANGED );
+}
+
+//---------------------------------------------------------
+bool CSG_Parameter_PointCloud::_Assign(CSG_Parameter *pSource)
+{
+	return( CSG_Parameter_Data_Object::_Assign(pSource) );
 }
 
 
@@ -2657,38 +2675,10 @@ bool CSG_Parameter_PointCloud::Set_Value(void *Value)
 ///////////////////////////////////////////////////////////
 
 //---------------------------------------------------------
-CSG_Parameter_List::CSG_Parameter_List(CSG_Parameter *pOwner, long Constraint)
-	: CSG_Parameter_Data(pOwner, Constraint)
-{}
-
-CSG_Parameter_List::~CSG_Parameter_List(void)
-{}
-
-//---------------------------------------------------------
-const SG_Char * CSG_Parameter_List::asString(void)
+CSG_Parameter_List::CSG_Parameter_List(CSG_Parameters *pOwner, CSG_Parameter *pParent, const CSG_String &ID, const CSG_String &Name, const CSG_String &Description, int Constraint)
+	: CSG_Parameter(pOwner, pParent, ID, Name, Description, Constraint)
 {
-	if( Get_Item_Count() > 0 )
-	{
-		m_String.Printf("%d %s (", Get_Item_Count(), Get_Item_Count() == 1 ? _TL("object") : _TL("objects"));
-
-		for(int i=0; i<Get_Item_Count(); i++)
-		{
-			if( i > 0 )
-			{
-				m_String	+= ", ";
-			}
-
-			m_String	+= Get_Item(i)->Get_Name();
-		}
-
-		m_String	+= ")";
-	}
-	else
-	{
-		m_String	= _TL("No objects");
-	}
-
-	return( m_String );
+	// nop
 }
 
 //---------------------------------------------------------
@@ -2713,21 +2703,60 @@ bool CSG_Parameter_List::Del_Items(void)
 }
 
 //---------------------------------------------------------
-void CSG_Parameter_List::On_Assign(CSG_Parameter_Data *pSource)
+void CSG_Parameter_List::_Set_String(void)
+{
+	if( Get_Item_Count() > 0 )
+	{
+		m_String.Printf("%d %s (", Get_Item_Count(), Get_Item_Count() == 1 ? _TL("object") : _TL("objects"));
+
+		for(int i=0; i<Get_Item_Count(); i++)
+		{
+			if( i > 0 )
+			{
+				m_String	+= ", ";
+			}
+
+			m_String	+= Get_Item(i)->Get_Name();
+		}
+
+		m_String	+= ")";
+	}
+	else
+	{
+		m_String	= _TL("No objects");
+	}
+}
+
+//---------------------------------------------------------
+int CSG_Parameter_List::_asInt(void)	const
+{
+	return( Get_Item_Count() );
+}
+
+//---------------------------------------------------------
+void * CSG_Parameter_List::_asPointer(void)	const
+{
+	return( m_Objects.Get_Array() );
+}
+
+//---------------------------------------------------------
+bool CSG_Parameter_List::_Assign(CSG_Parameter *pSource)
 {
 	Del_Items();
 
 	for(int i=0; i<((CSG_Parameter_List *)pSource)->Get_Item_Count(); i++)
 	{
-		if( m_pOwner->Get_Manager() != &SG_Get_Data_Manager() || SG_Get_Data_Manager().Exists(((CSG_Parameter_List *)pSource)->Get_Item(i)) )
+		if( Get_Manager() != &SG_Get_Data_Manager() || SG_Get_Data_Manager().Exists(((CSG_Parameter_List *)pSource)->Get_Item(i)) )
 		{
 			Add_Item(((CSG_Parameter_List *)pSource)->Get_Item(i));
 		}
 	}
+
+	return( true );
 }
 
 //---------------------------------------------------------
-bool CSG_Parameter_List::On_Serialize(CSG_MetaData &Entry, bool bSave)
+bool CSG_Parameter_List::_Serialize(CSG_MetaData &Entry, bool bSave)
 {
 	if( bSave )
 	{
@@ -2747,7 +2776,7 @@ bool CSG_Parameter_List::On_Serialize(CSG_MetaData &Entry, bool bSave)
 
 		for(int i=0; i<Entry.Get_Children_Count(); i++)
 		{
-			CSG_Data_Object	*pObject	= m_pOwner->Get_Manager() ? m_pOwner->Get_Manager()->Find(Entry.Get_Content(i), false) : NULL;
+			CSG_Data_Object	*pObject	= Get_Manager() ? Get_Manager()->Find(Entry.Get_Content(i), false) : NULL;
 
 			if( pObject )
 			{
@@ -2767,16 +2796,18 @@ bool CSG_Parameter_List::On_Serialize(CSG_MetaData &Entry, bool bSave)
 ///////////////////////////////////////////////////////////
 
 //---------------------------------------------------------
-CSG_Parameter_Grid_List::CSG_Parameter_Grid_List(CSG_Parameter *pOwner, long Constraint)
-	: CSG_Parameter_List(pOwner, Constraint)
-{}
+CSG_Parameter_Grid_List::CSG_Parameter_Grid_List(CSG_Parameters *pOwner, CSG_Parameter *pParent, const CSG_String &ID, const CSG_String &Name, const CSG_String &Description, int Constraint)
+	: CSG_Parameter_List(pOwner, pParent, ID, Name, Description, Constraint)
+{
+	// nop
+}
 
 //---------------------------------------------------------
 CSG_Grid_System * CSG_Parameter_Grid_List::Get_System(void) const
 {
-	if( m_pOwner->Get_Parent() && m_pOwner->Get_Parent()->Get_Type() == PARAMETER_TYPE_Grid_System )
+	if( Get_Parent() && Get_Parent()->Get_Type() == PARAMETER_TYPE_Grid_System )
 	{
-		return( m_pOwner->Get_Parent()->asGrid_System() );
+		return( Get_Parent()->asGrid_System() );
 	}
 
 	return( NULL );
@@ -2801,9 +2832,9 @@ bool CSG_Parameter_Grid_List::Add_Item(CSG_Data_Object *pObject)
 
 		if( !Get_System()->is_Equal(System) )
 		{
-			for(int i=0; i<m_pOwner->Get_Parent()->Get_Children_Count(); i++)
+			for(int i=0; i<Get_Parent()->Get_Children_Count(); i++)
 			{
-				CSG_Parameter	*pChild	= m_pOwner->Get_Parent()->Get_Child(i);
+				CSG_Parameter	*pChild	= Get_Parent()->Get_Child(i);
 
 				if( pChild->Get_Type() == PARAMETER_TYPE_Grid
 				||  pChild->Get_Type() == PARAMETER_TYPE_Grids )
@@ -2825,7 +2856,7 @@ bool CSG_Parameter_Grid_List::Add_Item(CSG_Data_Object *pObject)
 				}
 			}
 
-			Get_System()->Assign(System);
+			Get_Parent()->Set_Value((void *)&System);
 		}
 	}
 
@@ -2891,16 +2922,18 @@ bool CSG_Parameter_Grid_List::Update_Data(void)
 ///////////////////////////////////////////////////////////
 
 //---------------------------------------------------------
-CSG_Parameter_Grids_List::CSG_Parameter_Grids_List(CSG_Parameter *pOwner, long Constraint)
-	: CSG_Parameter_List(pOwner, Constraint)
-{}
+CSG_Parameter_Grids_List::CSG_Parameter_Grids_List(CSG_Parameters *pOwner, CSG_Parameter *pParent, const CSG_String &ID, const CSG_String &Name, const CSG_String &Description, int Constraint)
+	: CSG_Parameter_List(pOwner, pParent, ID, Name, Description, Constraint)
+{
+	// nop
+}
 
 //---------------------------------------------------------
 CSG_Grid_System * CSG_Parameter_Grids_List::Get_System(void) const
 {
-	if( m_pOwner->Get_Parent() && m_pOwner->Get_Parent()->Get_Type() == PARAMETER_TYPE_Grid_System )
+	if( Get_Parent() && Get_Parent()->Get_Type() == PARAMETER_TYPE_Grid_System )
 	{
-		return( m_pOwner->Get_Parent()->asGrid_System() );
+		return( Get_Parent()->asGrid_System() );
 	}
 
 	return( NULL );
@@ -2923,9 +2956,9 @@ bool CSG_Parameter_Grids_List::Add_Item(CSG_Data_Object *pObject)
 
 		if( !Get_System()->is_Equal(System) )
 		{
-			for(int i=0; i<m_pOwner->Get_Parent()->Get_Children_Count(); i++)
+			for(int i=0; i<Get_Parent()->Get_Children_Count(); i++)
 			{
-				CSG_Parameter	*pChild	= m_pOwner->Get_Parent()->Get_Child(i);
+				CSG_Parameter	*pChild	= Get_Parent()->Get_Child(i);
 
 				if( pChild->Get_Type() == PARAMETER_TYPE_Grids )
 				{
@@ -2945,7 +2978,7 @@ bool CSG_Parameter_Grids_List::Add_Item(CSG_Data_Object *pObject)
 				}
 			}
 
-			Get_System()->Assign(((CSG_Grids *)pObject)->Get_System());
+			Get_Parent()->Set_Value((void *)&System);
 		}
 	}
 
@@ -2961,9 +2994,11 @@ bool CSG_Parameter_Grids_List::Add_Item(CSG_Data_Object *pObject)
 
 
 //---------------------------------------------------------
-CSG_Parameter_Table_List::CSG_Parameter_Table_List(CSG_Parameter *pOwner, long Constraint)
-	: CSG_Parameter_List(pOwner, Constraint)
-{}
+CSG_Parameter_Table_List::CSG_Parameter_Table_List(CSG_Parameters *pOwner, CSG_Parameter *pParent, const CSG_String &ID, const CSG_String &Name, const CSG_String &Description, int Constraint)
+	: CSG_Parameter_List(pOwner, pParent, ID, Name, Description, Constraint)
+{
+	// nop
+}
 
 
 ///////////////////////////////////////////////////////////
@@ -2974,8 +3009,8 @@ CSG_Parameter_Table_List::CSG_Parameter_Table_List(CSG_Parameter *pOwner, long C
 
 
 //---------------------------------------------------------
-CSG_Parameter_Shapes_List::CSG_Parameter_Shapes_List(CSG_Parameter *pOwner, long Constraint)
-	: CSG_Parameter_List(pOwner, Constraint)
+CSG_Parameter_Shapes_List::CSG_Parameter_Shapes_List(CSG_Parameters *pOwner, CSG_Parameter *pParent, const CSG_String &ID, const CSG_String &Name, const CSG_String &Description, int Constraint)
+	: CSG_Parameter_List(pOwner, pParent, ID, Name, Description, Constraint)
 {
 	m_Type	= SHAPE_TYPE_Undefined;
 }
@@ -2987,11 +3022,11 @@ void CSG_Parameter_Shapes_List::Set_Shape_Type(TSG_Shape_Type Type)
 }
 
 //---------------------------------------------------------
-void CSG_Parameter_Shapes_List::On_Assign(CSG_Parameter_Data *pSource)
+bool CSG_Parameter_Shapes_List::_Assign(CSG_Parameter *pSource)
 {
-	CSG_Parameter_List::On_Assign(pSource);
-
 	m_Type	= ((CSG_Parameter_Shapes_List *)pSource)->m_Type;
+
+	return( CSG_Parameter_List::_Assign(pSource) );
 }
 
 
@@ -3003,9 +3038,11 @@ void CSG_Parameter_Shapes_List::On_Assign(CSG_Parameter_Data *pSource)
 
 
 //---------------------------------------------------------
-CSG_Parameter_TIN_List::CSG_Parameter_TIN_List(CSG_Parameter *pOwner, long Constraint)
-	: CSG_Parameter_List(pOwner, Constraint)
-{}
+CSG_Parameter_TIN_List::CSG_Parameter_TIN_List(CSG_Parameters *pOwner, CSG_Parameter *pParent, const CSG_String &ID, const CSG_String &Name, const CSG_String &Description, int Constraint)
+	: CSG_Parameter_List(pOwner, pParent, ID, Name, Description, Constraint)
+{
+	// nop
+}
 
 
 ///////////////////////////////////////////////////////////
@@ -3016,9 +3053,11 @@ CSG_Parameter_TIN_List::CSG_Parameter_TIN_List(CSG_Parameter *pOwner, long Const
 
 
 //---------------------------------------------------------
-CSG_Parameter_PointCloud_List::CSG_Parameter_PointCloud_List(CSG_Parameter *pOwner, long Constraint)
-	: CSG_Parameter_List(pOwner, Constraint)
-{}
+CSG_Parameter_PointCloud_List::CSG_Parameter_PointCloud_List(CSG_Parameters *pOwner, CSG_Parameter *pParent, const CSG_String &ID, const CSG_String &Name, const CSG_String &Description, int Constraint)
+	: CSG_Parameter_List(pOwner, pParent, ID, Name, Description, Constraint)
+{
+	// nop
+}
 
 
 ///////////////////////////////////////////////////////////
@@ -3028,23 +3067,15 @@ CSG_Parameter_PointCloud_List::CSG_Parameter_PointCloud_List(CSG_Parameter *pOwn
 ///////////////////////////////////////////////////////////
 
 //---------------------------------------------------------
-CSG_Parameter_Parameters::CSG_Parameter_Parameters(CSG_Parameter *pOwner, long Constraint)
-	: CSG_Parameter_Data(pOwner, Constraint)
+CSG_Parameter_Parameters::CSG_Parameter_Parameters(CSG_Parameters *pOwner, CSG_Parameter *pParent, const CSG_String &ID, const CSG_String &Name, const CSG_String &Description, int Constraint)
+	: CSG_Parameter(pOwner, pParent, ID, Name, Description, Constraint)
 {
-	m_pParameters	= new CSG_Parameters(pOwner->Get_Owner()->Get_Owner(), pOwner->Get_Name(), pOwner->Get_Description(), pOwner->Get_Identifier());
+	m_pParameters	= new CSG_Parameters(Get_Owner()->Get_Owner(), Name, Description, ID);
 }
 
 CSG_Parameter_Parameters::~CSG_Parameter_Parameters(void)
 {
 	delete(m_pParameters);
-}
-
-//---------------------------------------------------------
-const SG_Char * CSG_Parameter_Parameters::asString(void)
-{
-	m_String.Printf(SG_T("%d %s"), m_pParameters->Get_Count(), _TL("parameters"));
-
-	return( m_String );
 }
 
 //---------------------------------------------------------
@@ -3054,20 +3085,34 @@ bool CSG_Parameter_Parameters::Restore_Default(void)
 }
 
 //---------------------------------------------------------
-void CSG_Parameter_Parameters::On_Assign(CSG_Parameter_Data *pSource)
+void CSG_Parameter_Parameters::_Set_String(void)
 {
-	m_pParameters->Assign(((CSG_Parameter_Parameters *)pSource)->m_pParameters);
+	m_String.Printf("%d %s", m_pParameters->Get_Count(), _TL("parameters"));
 }
 
 //---------------------------------------------------------
-bool CSG_Parameter_Parameters::On_Serialize(CSG_MetaData &Entry, bool bSave)
+void * CSG_Parameter_Parameters::_asPointer(void)	const
+{
+	return( m_pParameters );
+}
+
+//---------------------------------------------------------
+bool CSG_Parameter_Parameters::_Assign(CSG_Parameter *pSource)
+{
+	m_pParameters->Assign(pSource->asParameters());
+
+	return( true );
+}
+
+//---------------------------------------------------------
+bool CSG_Parameter_Parameters::_Serialize(CSG_MetaData &Entry, bool bSave)
 {
 	if( m_pParameters->Serialize(Entry, bSave) )
 	{
 		if( bSave )
 		{
-			Entry.Set_Property(SG_T("id")  , m_pOwner->Get_Identifier());
-			Entry.Set_Property(SG_T("type"), m_pOwner->Get_Type_Identifier());
+			Entry.Set_Property("id"  , Get_Identifier     ());
+			Entry.Set_Property("type", Get_Type_Identifier());
 		}
 
 		return( true );

@@ -138,7 +138,7 @@ CWKSP_Data_Manager::CWKSP_Data_Manager(void)
 	m_Parameters.Add_Choice("NODE_GENERAL",
 		"PROJECT_START"			, _TL("Startup Project"),
 		_TL(""),
-		CSG_String::Format("%s|%s|%s|",
+		CSG_String::Format("%s|%s|%s",
 			_TL("empty"),
 			_TL("last state"),
 			_TL("always ask what to do")
@@ -148,7 +148,7 @@ CWKSP_Data_Manager::CWKSP_Data_Manager(void)
 	m_Parameters.Add_Choice("NODE_GENERAL",
 		"PROJECT_MAP_ARRANGE"	, _TL("Map Window Arrangement"),
 		_TL("initial map window arrangement after a project is loaded"),
-		CSG_String::Format("%s|%s|%s|",
+		CSG_String::Format("%s|%s|%s",
 			_TL("Cascade"),
 			_TL("Tile Horizontally"),
 			_TL("Tile Vertically")
@@ -256,7 +256,7 @@ CWKSP_Data_Manager::CWKSP_Data_Manager(void)
 	m_Parameters.Add_Choice("NODE_GRID",
 		"GRID_FMT_DEFAULT"		, _TL("Default Output Format"),
 		_TL(""),
-		CSG_String::Format("%s|%s|%s|",
+		CSG_String::Format("%s|%s|%s",
 			_TL("SAGA Compressed Grid File (*.sg-grd-z)"),
 			_TL("SAGA Grid File (*.sg-grd)"),
 			_TL("SAGA Grid File (*.sgrd)")
@@ -272,7 +272,7 @@ CWKSP_Data_Manager::CWKSP_Data_Manager(void)
 	m_Parameters.Add_Choice("NODE_GRID",
 		"GRID_STRETCH_DEFAULT"	, _TL("Histogram Stretch"),
 		_TL("Histogram stretch appolied by default to new grids."),
-		CSG_String::Format("%s|%s|%s|",
+		CSG_String::Format("%s|%s|%s",
 			_TL("Minimum/Maximum"),
 			_TL("Standard Deviation"),
 			_TL("Percentile")
@@ -290,7 +290,7 @@ CWKSP_Data_Manager::CWKSP_Data_Manager(void)
 	m_Parameters.Add_Choice("NODE_GRID",
 		"GRID_CACHE_MODE"		, _TL("File Cache"),
 		_TL("Activate file caching automatically, if memory size exceeds the threshold value."),
-		CSG_String::Format("%s|%s|%s|",
+		CSG_String::Format("%s|%s|%s",
 			_TL("no"),
 			_TL("yes"),
 			_TL("after confirmation")
@@ -318,7 +318,7 @@ CWKSP_Data_Manager::CWKSP_Data_Manager(void)
 	m_Parameters.Add_Choice("NODE_TABLE",
 		"TABLE_FLT_STYLE"		, _TL("Floating Point Numbers"),
 		_TL(""),
-		CSG_String::Format("%s|%s|%s|",
+		CSG_String::Format("%s|%s|%s",
 			_TL("system default"),
 			_TL("maximum number of significant decimals"),
 			_TL("fix number of decimals")
@@ -340,7 +340,7 @@ CWKSP_Data_Manager::CWKSP_Data_Manager(void)
 	m_Parameters.Add_Choice("NODE_SHAPES",
 		"SHAPES_FMT_DEFAULT"	, _TL("Default Output Format"),
 		_TL(""),
-		CSG_String::Format("%s|%s|%s|",
+		CSG_String::Format("%s|%s|%s",
 			_TL("ESRI Shape File (*.shp)"),
 			_TL("GeoPackage (*.gpkg)"),
 			_TL("GeoJSON (*.geojson)")
@@ -391,8 +391,6 @@ CWKSP_Data_Manager::~CWKSP_Data_Manager(void)
 
 
 ///////////////////////////////////////////////////////////
-//														 //
-//														 //
 //														 //
 ///////////////////////////////////////////////////////////
 
@@ -498,8 +496,6 @@ bool CWKSP_Data_Manager::Finalise(void)
 
 ///////////////////////////////////////////////////////////
 //														 //
-//														 //
-//														 //
 ///////////////////////////////////////////////////////////
 
 //---------------------------------------------------------
@@ -574,8 +570,6 @@ wxMenu * CWKSP_Data_Manager::Get_Menu(void)
 
 
 ///////////////////////////////////////////////////////////
-//														 //
-//														 //
 //														 //
 ///////////////////////////////////////////////////////////
 
@@ -686,8 +680,6 @@ bool CWKSP_Data_Manager::On_Command_UI(wxUpdateUIEvent &event)
 
 ///////////////////////////////////////////////////////////
 //														 //
-//														 //
-//														 //
 ///////////////////////////////////////////////////////////
 
 //---------------------------------------------------------
@@ -744,8 +736,6 @@ void CWKSP_Data_Manager::Parameters_Changed(void)
 
 ///////////////////////////////////////////////////////////
 //														 //
-//														 //
-//														 //
 ///////////////////////////////////////////////////////////
 
 //---------------------------------------------------------
@@ -759,10 +749,15 @@ int CWKSP_Data_Manager::On_Parameter_Changed(CSG_Parameters *pParameters, CSG_Pa
 	//-----------------------------------------------------
 	if( Flags & PARAMETER_CHECK_ENABLE )
 	{
-		if(	!SG_STR_CMP(pParameter->Get_Identifier(), "GRID_CACHE_MODE") )
+		if(	pParameter->Cmp_Identifier("GRID_CACHE_MODE") )
 		{
 			pParameters->Set_Enabled("GRID_CACHE_THRSHLD", pParameter->asInt() != 0);
 			pParameters->Set_Enabled("GRID_CACHE_TMPDIR" , pParameter->asInt() != 0);
+		}
+
+		if(	pParameter->Cmp_Identifier("TABLE_FLT_STYLE") )
+		{
+			pParameters->Set_Enabled("TABLE_FLT_DECIMALS", pParameter->asInt() != 0);
 		}
 	}
 
@@ -772,8 +767,6 @@ int CWKSP_Data_Manager::On_Parameter_Changed(CSG_Parameters *pParameters, CSG_Pa
 
 
 ///////////////////////////////////////////////////////////
-//														 //
-//														 //
 //														 //
 ///////////////////////////////////////////////////////////
 
@@ -857,7 +850,7 @@ bool CWKSP_Data_Manager::Open(const wxString &File)
 		return( Open(File, SG_DATAOBJECT_TYPE_Grids     ) != NULL );
 	}
 
-	return( SG_Get_Data_Manager().Add(&File) );
+	return( SG_Get_Data_Manager().Add(&File) != NULL );
 }
 
 //---------------------------------------------------------
@@ -905,8 +898,6 @@ bool CWKSP_Data_Manager::Open_CMD(int Cmd_ID)
 
 
 ///////////////////////////////////////////////////////////
-//														 //
-//														 //
 //														 //
 ///////////////////////////////////////////////////////////
 
@@ -983,8 +974,6 @@ bool CWKSP_Data_Manager::Open_Browser(wxArrayString &Projects, const wxString &D
 
 ///////////////////////////////////////////////////////////
 //														 //
-//														 //
-//														 //
 ///////////////////////////////////////////////////////////
 
 //---------------------------------------------------------
@@ -1030,7 +1019,7 @@ int CWKSP_Data_Manager::_Modified_Changed(CSG_Parameter *pParameter, int Flags)
 
 	CSG_Parameters	*pParameters	= pParameter->Get_Owner();
 
-	if( !SG_STR_CMP(pParameter->Get_Identifier(), SG_T("SAVE_ALL")) )
+	if( pParameter->Cmp_Identifier("SAVE_ALL") )
 	{
 		for(int i=0; i<pParameters->Get_Count(); i++)
 		{
@@ -1238,7 +1227,7 @@ bool CWKSP_Data_Manager::Close(bool bSilent)
 	{
 		m_pProject->Clr_File_Name();
 
-		g_pACTIVE->Get_Parameters()->Restore_Parameters();
+		g_pActive->Get_Parameters()->Restore_Parameters();
 
 		g_pSAGA_Frame->Close_Children();
 
@@ -1252,8 +1241,6 @@ bool CWKSP_Data_Manager::Close(bool bSilent)
 
 
 ///////////////////////////////////////////////////////////
-//														 //
-//														 //
 //														 //
 ///////////////////////////////////////////////////////////
 
@@ -1353,8 +1340,6 @@ void CWKSP_Data_Manager::Del_Manager(CWKSP_Base_Item *pItem)
 
 ///////////////////////////////////////////////////////////
 //														 //
-//														 //
-//														 //
 ///////////////////////////////////////////////////////////
 
 //---------------------------------------------------------
@@ -1369,16 +1354,14 @@ bool CWKSP_Data_Manager::Update(CSG_Data_Object *pObject, CSG_Parameters *pParam
 
 	if( SG_Get_Data_Manager().Exists(pObject) )
 	{
-		return( pItem->DataObject_Changed(pParameters) );
+		pItem->Get_Parameters()->Assign_Values(pParameters);
+
+		return( pItem->DataObject_Changed() );
 	}
 
 	Get_Control()->Del_Item(pItem, true);
 
 	return( true );
-
-	//CWKSP_Data_Item	*pItem	= Get(pObject);
-
-	//return( pItem && pItem->DataObject_Changed(pParameters) );
 }
 
 //---------------------------------------------------------
@@ -1451,8 +1434,6 @@ bool CWKSP_Data_Manager::Set_Parameters(CSG_Data_Object *pObject, CSG_Parameters
 
 
 ///////////////////////////////////////////////////////////
-//														 //
-//														 //
 //														 //
 ///////////////////////////////////////////////////////////
 
@@ -1584,9 +1565,9 @@ bool CWKSP_Data_Manager::MultiSelect_Check(void)
 		{
 			m_Sel_Parms[1]	= m_Sel_Parms[0];
 
-			if( g_pACTIVE->Get_Active() == this )
+			if( g_pActive->Get_Active() == this )
 			{
-				g_pACTIVE->Get_Parameters()->Update_Parameters(&m_Sel_Parms[0], false);
+				g_pActive->Get_Parameters()->Update_Parameters(&m_Sel_Parms[0], false);
 			}
 
 			return( true );

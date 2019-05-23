@@ -1,6 +1,3 @@
-/**********************************************************
- * Version $Id: Data_Source.cpp 911 2011-02-14 16:38:15Z reklov_w $
- *********************************************************/
 
 ///////////////////////////////////////////////////////////
 //                                                       //
@@ -153,16 +150,16 @@ static	wxString	g_Password	= "postgres";
 //---------------------------------------------------------
 #define RUN_TOOL(TOOL, bManager, CONDITION)	bool bResult = false;\
 {\
-	CSG_Tool	*pTool	= SG_Get_Tool_Library_Manager().Get_Tool("db_pgsql", TOOL);\
+	CSG_Tool	*pTool	= SG_Get_Tool_Library_Manager().Create_Tool("db_pgsql", TOOL);\
 	\
 	if(	pTool )\
 	{\
 		SG_UI_Msg_Lock(true);\
 		pTool->On_Before_Execution();\
-		pTool->Settings_Push(bManager ? &SG_Get_Data_Manager() : NULL);\
+		if( !bManager ) pTool->Set_Manager(NULL);\
 		bResult	= (CONDITION) && pTool->Execute();\
-		pTool->Settings_Pop();\
 		SG_UI_Msg_Lock(false);\
+		SG_Get_Tool_Library_Manager().Delete_Tool(pTool);\
 	}\
 }
 
@@ -190,11 +187,11 @@ bool	PGSQL_Connect			(const CSG_String &Host, const CSG_String &Port, const CSG_
 	}
 
 	RUN_TOOL(DB_PGSQL_Get_Connection, false,	// CGet_Connection
-			SET_PARAMETER("PG_HOST",   Host    )
-		&&	SET_PARAMETER("PG_PORT",   Port    )
-		&&	SET_PARAMETER("PG_NAME",   DBName  )
-		&&	SET_PARAMETER("PG_USER", g_Username)
-		&&	SET_PARAMETER("PG_PWD" , g_Password)
+			SET_PARAMETER("PG_HOST", Host  )
+		&&	SET_PARAMETER("PG_PORT", Port  )
+		&&	SET_PARAMETER("PG_NAME", DBName)
+		&&	SET_PARAMETER("PG_USER", CSG_String(&g_Username))
+		&&	SET_PARAMETER("PG_PWD" , CSG_String(&g_Password))
 	);
 
 	return( bResult );
@@ -265,64 +262,58 @@ bool	PGSQL_has_Connections	(double vPostGIS)
 //---------------------------------------------------------
 bool	PGSQL_Save_Table	(CSG_Table *pTable)
 {
-	CSG_Tool	*pTool	= SG_Get_Tool_Library_Manager().Get_Tool("db_pgsql", DB_PGSQL_Table_Save);
+	CSG_Tool	*pTool	= SG_Get_Tool_Library_Manager().Create_Tool("db_pgsql", DB_PGSQL_Table_Save);
 
 	SG_UI_Msg_Lock(true);
 
-	if(	pTool && pTool->On_Before_Execution() && pTool->Set_Parameter("TABLE", pTable)
-	&&  DLG_Parameters(pTool->Get_Parameters()) && pTool->Execute() )
-	{
-		SG_UI_Msg_Lock(false);
-
-		return( true );
-	}
+	bool	bResult	= pTool && pTool->On_Before_Execution() && pTool->Set_Parameter("TABLE", pTable)
+		&&  DLG_Parameters(pTool->Get_Parameters()) && pTool->Execute();
 
 	SG_UI_Msg_Lock(false);
 
-	return( false );
+	SG_Get_Tool_Library_Manager().Delete_Tool(pTool);
+
+	return( bResult );
 }
 
 //---------------------------------------------------------
 bool	PGSQL_Save_Shapes	(CSG_Shapes *pShapes)
 {
-	CSG_Tool	*pTool	= SG_Get_Tool_Library_Manager().Get_Tool("db_pgsql", DB_PGSQL_Shapes_Save);
+	CSG_Tool	*pTool	= SG_Get_Tool_Library_Manager().Create_Tool("db_pgsql", DB_PGSQL_Shapes_Save);
 
 	SG_UI_Msg_Lock(true);
 
-	if(	pTool && pTool->On_Before_Execution() && pTool->Set_Parameter("SHAPES", pShapes)
-	&&  DLG_Parameters(pTool->Get_Parameters()) && pTool->Execute() )
-	{
-		SG_UI_Msg_Lock(false);
-
-		return( true );
-	}
+	bool	bResult	= pTool && pTool->On_Before_Execution() && pTool->Set_Parameter("SHAPES", pShapes)
+		&&  DLG_Parameters(pTool->Get_Parameters()) && pTool->Execute();
 
 	SG_UI_Msg_Lock(false);
 
-	return( false );
+	SG_Get_Tool_Library_Manager().Delete_Tool(pTool);
+
+	return( bResult );
 }
 
 //---------------------------------------------------------
 bool	PGSQL_Save_Grid		(CSG_Grid *pGrid)
 {
-	CSG_Tool	*pTool	= SG_Get_Tool_Library_Manager().Get_Tool("db_pgsql", DB_PGSQL_Raster_Save);
+	bool	bResult	= false;
+
+	CSG_Tool	*pTool	= SG_Get_Tool_Library_Manager().Create_Tool("db_pgsql", DB_PGSQL_Raster_Save);
 
 	SG_UI_Msg_Lock(true);
 
 	if(	pTool && pTool->On_Before_Execution() && pTool->Set_Parameter("NAME", pGrid->Get_Name()) )
 	{
-		pTool->Get_Parameters()->Get_Parameter("GRIDS")->asList()->Del_Items();
+		pTool->Get_Parameter("GRIDS")->asList()->Del_Items();
+		pTool->Get_Parameter("GRIDS")->asList()->Add_Item(pGrid);
+		pTool->Set_Parameter("CRS_EPSG", pGrid->Get_Projection().Get_EPSG());
 
-		if( pTool->Get_Parameters()->Get_Parameter("GRIDS")->asList()->Add_Item(pGrid)
-		&&  DLG_Parameters(pTool->Get_Parameters()) && pTool->Execute() )
-		{
-			SG_UI_Msg_Lock(false);
-
-			return( true );
-		}
+		bResult	= DLG_Parameters(pTool->Get_Parameters()) && pTool->Execute();
 	}
 
 	SG_UI_Msg_Lock(false);
+
+	SG_Get_Tool_Library_Manager().Delete_Tool(pTool);
 
 	return( false );
 }
@@ -330,21 +321,18 @@ bool	PGSQL_Save_Grid		(CSG_Grid *pGrid)
 //---------------------------------------------------------
 bool	PGSQL_Save_Grids		(CSG_Grids *pGrids)
 {
-	CSG_Tool	*pTool	= SG_Get_Tool_Library_Manager().Get_Tool("db_pgsql", DB_PGSQL_Rasters_Save);
+	CSG_Tool	*pTool	= SG_Get_Tool_Library_Manager().Create_Tool("db_pgsql", DB_PGSQL_Rasters_Save);
 
 	SG_UI_Msg_Lock(true);
 
-	if(	pTool && pTool->On_Before_Execution() && pTool->Set_Parameter("GRIDS", pGrids)
-	&&  DLG_Parameters(pTool->Get_Parameters()) && pTool->Execute() )
-	{
-		SG_UI_Msg_Lock(false);
-
-		return( true );
-	}
+	bool	bResult	= pTool && pTool->On_Before_Execution() && pTool->Set_Parameter("GRIDS", pGrids)
+		&&  DLG_Parameters(pTool->Get_Parameters()) && pTool->Execute();
 
 	SG_UI_Msg_Lock(false);
 
-	return( false );
+	SG_Get_Tool_Library_Manager().Delete_Tool(pTool);
+
+	return( bResult );
 }
 
 
@@ -500,10 +488,10 @@ CData_Source_PgSQL::~CData_Source_PgSQL(void)
 				CONFIG_Write(CFG_PGSQL_DIR, wxString::Format(CFG_PGSQL_SRC, i++), Connection.c_str());
 			}
 
-			Item	= GetNextChild(Item, Cookie);
+			Item	= GetNextChild(srvItem, Cookie);
 		}
 
-		srvItem	= GetNextChild(srvItem, srvCookie);
+		srvItem	= GetNextChild(GetRootItem(), srvCookie);
 	}
 }
 
@@ -538,10 +526,10 @@ void CData_Source_PgSQL::Autoconnect(void)
 					Source_Open(pData, false);
 				}
 
-				Item	= GetNextChild(Item, Cookie);
+				Item	= GetNextChild(srvItem, Cookie);
 			}
 
-			srvItem	= GetNextChild(srvItem, srvCookie);
+			srvItem	= GetNextChild(GetRootItem(), srvCookie);
 		}
 	}
 }
@@ -751,7 +739,7 @@ wxTreeItemId CData_Source_PgSQL::Get_Server_Item(const wxString &Server, bool bC
 			return( Item );
 		}
 
-		Item	= GetNextChild(Item, Cookie);
+		Item	= GetNextChild(GetRootItem(), Cookie);
 	}
 
 	if( bCreate )
@@ -768,17 +756,17 @@ wxTreeItemId CData_Source_PgSQL::Get_Server_Item(const wxString &Server, bool bC
 //---------------------------------------------------------
 wxTreeItemId CData_Source_PgSQL::Find_Source(const wxString &Server)
 {
-	wxTreeItemId	Item	= Get_Server_Item(Server, false);
+	wxTreeItemId	Item, srvItem	= Get_Server_Item(Server, false);
 
-	if( Item.IsOk() )
+	if( srvItem.IsOk() )
 	{
-		wxTreeItemIdValue Cookie; Item = GetFirstChild(Item, Cookie);
+		wxTreeItemIdValue Cookie; Item = GetFirstChild(srvItem, Cookie);
 
 		wxString	Name	= Server.BeforeLast('['); Name.Trim(true);
 
 		while( Item.IsOk() && Name.Cmp(GetItemText(Item)) )
 		{
-			Item	= GetNextChild(Item, Cookie);
+			Item	= GetNextChild(srvItem, Cookie);
 		}
 	}
 
@@ -810,7 +798,7 @@ void CData_Source_PgSQL::Update_Sources(const wxTreeItemId &Root)
 	{
 		Update_Source(Item);
 
-		Item	= GetNextChild(Item, Cookie);
+		Item	= GetNextChild(Root, Cookie);
 	}
 
 	//-----------------------------------------------------
@@ -842,7 +830,7 @@ void CData_Source_PgSQL::Update_Sources(void)
 	{
 		Update_Sources(Item);
 
-		Item	= GetNextChild(Item, Cookie);
+		Item	= GetNextChild(GetRootItem(), Cookie);
 	}
 }
 
@@ -986,7 +974,7 @@ bool CData_Source_PgSQL::Source_Create(const wxTreeItemId &Item)
 	if( pData->Get_Type() == TYPE_ROOT
 	||  pData->Get_Type() == TYPE_SERVER )
 	{
-		CSG_Tool	*pTool	= SG_Get_Tool_Library_Manager().Get_Tool("db_pgsql", DB_PGSQL_DB_Create);
+		CSG_Tool	*pTool	= SG_Get_Tool_Library_Manager().Create_Tool("db_pgsql", DB_PGSQL_DB_Create);
 
 		SG_UI_Msg_Lock(true);
 
@@ -1005,6 +993,8 @@ bool CData_Source_PgSQL::Source_Create(const wxTreeItemId &Item)
 		}
 
 		SG_UI_Msg_Lock(false);
+
+		SG_Get_Tool_Library_Manager().Delete_Tool(pTool);
 	}
 
 	return( true );
@@ -1066,7 +1056,6 @@ bool CData_Source_PgSQL::Source_Open(CData_Source_PgSQL_Data *pData, bool bDialo
 		&&	SET_PARAMETER("PG_PORT", pData->Get_Port    ())
 		&&	SET_PARAMETER("PG_USER", pData->Get_Username())
 		&&	SET_PARAMETER("PG_PWD" , pData->Get_Password())
-		&&	SET_PARAMETER("PG_LIST", pData->Get_DBName  ())
 		&&	SET_PARAMETER("PG_NAME", pData->Get_DBName  ())
 	);
 
@@ -1090,7 +1079,7 @@ void CData_Source_PgSQL::Source_Open(const wxTreeItemId &Item)
 	if( pData->Get_Type() == TYPE_ROOT
 	||  pData->Get_Type() == TYPE_SERVER )
 	{
-		CSG_Tool	*pTool	= SG_Get_Tool_Library_Manager().Get_Tool("db_pgsql", DB_PGSQL_Get_Connection);	// CGet_Connection
+		CSG_Tool	*pTool	= SG_Get_Tool_Library_Manager().Create_Tool("db_pgsql", DB_PGSQL_Get_Connection);	// CGet_Connection
 
 		SG_UI_Msg_Lock(true);
 
@@ -1109,6 +1098,8 @@ void CData_Source_PgSQL::Source_Open(const wxTreeItemId &Item)
 		}
 
 		SG_UI_Msg_Lock(false);
+
+		SG_Get_Tool_Library_Manager().Delete_Tool(pTool);
 	}
 	else if( pData->is_Connected() )
 	{
@@ -1215,7 +1206,7 @@ void CData_Source_PgSQL::Table_From_Query(const wxTreeItemId &Item)
 {
 	CData_Source_PgSQL_Data	*pData	= Item.IsOk() ? (CData_Source_PgSQL_Data *)GetItemData(Item) : NULL; if( pData == NULL )	return;
 
-	CSG_Tool	*pTool	= SG_Get_Tool_Library_Manager().Get_Tool("db_pgsql", DB_PGSQL_Table_Query);
+	CSG_Tool	*pTool	= SG_Get_Tool_Library_Manager().Create_Tool("db_pgsql", DB_PGSQL_Table_Query);
 
 	SG_UI_Msg_Lock(true);
 
@@ -1234,6 +1225,8 @@ void CData_Source_PgSQL::Table_From_Query(const wxTreeItemId &Item)
 	}
 
 	SG_UI_Msg_Lock(false);
+
+	SG_Get_Tool_Library_Manager().Delete_Tool(pTool);
 }
 
 //---------------------------------------------------------

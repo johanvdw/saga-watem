@@ -168,13 +168,13 @@ CHypsometry::CHypsometry(void)
 //---------------------------------------------------------
 int CHypsometry::On_Parameters_Enable(CSG_Parameters *pParameters, CSG_Parameter *pParameter)
 {
-	if(	!SG_STR_CMP(pParameter->Get_Identifier(), "METHOD") )
+	if(	pParameter->Cmp_Identifier("METHOD") )
 	{
 		pParameters->Set_Enabled("BZRANGE", pParameter->asInt() == 1);
 		pParameters->Set_Enabled("ZRANGE" , pParameter->asInt() == 1);
 	}
 
-	if(	!SG_STR_CMP(pParameter->Get_Identifier(), "BZRANGE") )
+	if(	pParameter->Cmp_Identifier("BZRANGE") )
 	{
 		pParameters->Set_Enabled("ZRANGE" , pParameter->asBool());
 	}
@@ -200,8 +200,8 @@ bool CHypsometry::On_Execute(void)
 	pTable		= Parameters("TABLE"    )->asTable();
 	bDown		= Parameters("SORTING"  )->asInt() == 1;
 	nClasses	= Parameters("COUNT"    )->asInt();
-	zMin		= Parameters("BZRANGE"  )->asBool() ? Parameters("ZRANGE")->asRange()->Get_LoVal() : 0.0;
-	zMax		= Parameters("BZRANGE"  )->asBool() ? Parameters("ZRANGE")->asRange()->Get_HiVal() : 0.0;
+	zMin		= Parameters("BZRANGE"  )->asBool() ? Parameters("ZRANGE")->asRange()->Get_Min() : 0.0;
+	zMax		= Parameters("BZRANGE"  )->asBool() ? Parameters("ZRANGE")->asRange()->Get_Max() : 0.0;
 	
 	if( !bDown && Parameters("BZRANGE")->asBool() && Parameters("METHOD")->asInt() == 1 )
 	{
@@ -221,7 +221,7 @@ bool CHypsometry::On_Execute(void)
 	}
 
 	pTable->Destroy();
-	pTable->Set_Name(CSG_String::Format("%s: %s", _TL("Hypsometric Curve"), pDEM->Get_Name()));
+	pTable->Fmt_Name("%s: %s", _TL("Hypsometric Curve"), pDEM->Get_Name());
 	pTable->Add_Field(_TL("Relative Height"), SG_DATATYPE_Double);
 	pTable->Add_Field(_TL("Relative Area"  ), SG_DATATYPE_Double);
 	pTable->Add_Field(_TL("Absolute Height"), SG_DATATYPE_Double);
@@ -378,7 +378,7 @@ bool CHypsometry::Calculate_B(CSG_Grid *pDEM, CSG_Table *pTable, bool bDown, int
 		pTable->Add_Field(_TL("Absolute Height"), SG_DATATYPE_Double);
 		pTable->Add_Field(_TL("Absolute Area"  ), SG_DATATYPE_Double);
 
-		pTable->Set_Name(CSG_String::Format("%s: %s", _TL("Hypsometric Curve"), pDEM->Get_Name()));
+		pTable->Fmt_Name("%s: %s", _TL("Hypsometric Curve"), pDEM->Get_Name());
 
 		//-------------------------------------------------
 		nStep	= nRange / nClasses;

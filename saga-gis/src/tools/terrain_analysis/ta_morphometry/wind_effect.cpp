@@ -186,7 +186,7 @@ CWind_Effect::CWind_Effect(void)
 //---------------------------------------------------------
 int CWind_Effect::On_Parameters_Enable(CSG_Parameters *pParameters, CSG_Parameter *pParameter)
 {
-	if( !SG_STR_CMP(pParameter->Get_Identifier(), "DIR") )
+	if( pParameter->Cmp_Identifier("DIR") )
 	{
 		pParameters->Set_Enabled("DIR_CONST", pParameter->asGrid() == NULL);
 		pParameters->Set_Enabled("DIR_UNITS", pParameter->asGrid() != NULL);
@@ -195,12 +195,12 @@ int CWind_Effect::On_Parameters_Enable(CSG_Parameters *pParameters, CSG_Paramete
 		pParameters->Set_Enabled("PYRAMIDS" , pParameters->Get_Parameter("OLDVER")->asBool() == false);
 	}
 
-	if( !SG_STR_CMP(pParameter->Get_Identifier(), "LEN") )
+	if( pParameter->Cmp_Identifier("LEN") )
 	{
 		pParameters->Set_Enabled("LEN_SCALE", pParameter->asGrid() != NULL);
 	}
 
-	if( !SG_STR_CMP(pParameter->Get_Identifier(), "OLDVER") )
+	if( pParameter->Cmp_Identifier("OLDVER") )
 	{
 		pParameters->Set_Enabled("ACCEL"    , pParameter->asBool() == false);
 		pParameters->Set_Enabled("PYRAMIDS" , pParameter->asBool() == false);
@@ -262,7 +262,7 @@ bool CWind_Effect::On_Execute(void)
 	}
 	else
 	{
-		if( !m_DX.Create(*Get_System()) || !m_DY.Create(*Get_System()) )
+		if( !m_DX.Create(Get_System()) || !m_DY.Create(Get_System()) )
 		{
 			Error_Set(_TL("could not allocate sufficient memory"));
 
@@ -423,7 +423,7 @@ inline bool CWind_Effect::Get_Next(TSG_Point &Position, double Distance, bool bR
 	Position.x	+= Distance * dx;
 	Position.y	+= Distance * dy;
 
-	return( Get_System()->Get_Extent(true).Contains(Position) );
+	return( Get_System().Get_Extent(true).Contains(Position) );
 }
 
 //---------------------------------------------------------
@@ -462,7 +462,7 @@ void CWind_Effect::Get_Luv(int x, int y, double &Sum_A)
 
 		z	= m_pDEM->asDouble(x, y);
 		d	= id = Get_Cellsize();
-		p	= Get_System()->Get_Grid_to_World(x, y);
+		p	= Get_System().Get_Grid_to_World(x, y);
 
 		while( id <= m_maxDistance && Get_Next(p, d, true) )
 		{
@@ -493,7 +493,7 @@ void CWind_Effect::Get_Lee(int x, int y, double &Sum_A, double &Sum_B)
 
 		z	= m_pDEM->asDouble(x, y);
 		d	= id = Get_Cellsize();
-		p	= Get_System()->Get_Grid_to_World(x, y);
+		p	= Get_System().Get_Grid_to_World(x, y);
 
 		while( id <= m_maxDistance && Get_Next(p, d, true) )
 		{
@@ -651,7 +651,7 @@ CWind_Exposition::CWind_Exposition(void)
 //---------------------------------------------------------
 int CWind_Exposition::On_Parameters_Enable(CSG_Parameters *pParameters, CSG_Parameter *pParameter)
 {
-	if( !SG_STR_CMP(pParameter->Get_Identifier(), "OLDVER") )
+	if( pParameter->Cmp_Identifier("OLDVER") )
 	{
 		pParameters->Set_Enabled("ACCEL"    , pParameter->asBool() == false);
 		pParameters->Set_Enabled("PYRAMIDS" , pParameter->asBool() == false);
@@ -669,7 +669,7 @@ int CWind_Exposition::On_Parameters_Enable(CSG_Parameters *pParameters, CSG_Para
 bool CWind_Exposition::On_Execute(void)
 {
 	//-----------------------------------------------------
-	CSG_Grid	Exposition(*Get_System()), *pExposition	= Parameters("EXPOSITION")->asGrid();
+	CSG_Grid	Exposition(Get_System()), *pExposition	= Parameters("EXPOSITION")->asGrid();
 
 	CSG_Colors	Colors(5);
 
@@ -699,7 +699,7 @@ bool CWind_Exposition::On_Execute(void)
 
 	for(double Direction=0.0; Direction<360.0 && Process_Get_Okay(); Direction+=dDirection)
 	{
-		Process_Set_Text(CSG_String::Format("%s: %.1f", _TL("Direction"), Direction));
+		Process_Set_Text("%s: %.1f", _TL("Direction"), Direction);
 
 		Tool.Set_Parameter("DIR_CONST", Direction);
 

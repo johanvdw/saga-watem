@@ -73,14 +73,14 @@
 ///////////////////////////////////////////////////////////
 
 //---------------------------------------------------------
-CSG_Parameter::CSG_Parameter(CSG_Parameters *pOwner, CSG_Parameter *pParent, const CSG_String &Identifier, const CSG_String &Name, const CSG_String &Description, TSG_Parameter_Type Type, int Constraint)
+CSG_Parameter::CSG_Parameter(CSG_Parameters *pOwner, CSG_Parameter *pParent, const CSG_String &Identifier, const CSG_String &Name, const CSG_String &Description, int Constraint)
 {
 	m_pOwner		= pOwner;
 	m_pParent		= pParent;
-
 	m_Identifier	= Identifier;
 	m_Name			= Name;
 	m_Description	= Description;
+	m_Constraint	= Constraint;
 
 	m_bEnabled		= true;
 
@@ -94,66 +94,7 @@ CSG_Parameter::CSG_Parameter(CSG_Parameters *pOwner, CSG_Parameter *pParent, con
 	}
 
 	//-----------------------------------------------------
-	switch( Type )
-	{
-	default                              : m_pData	= NULL                                                  ;	break;
-
-	case PARAMETER_TYPE_Node             : m_pData	= new CSG_Parameter_Node              (this, Constraint);	break;
-
-	case PARAMETER_TYPE_Bool             : m_pData	= new CSG_Parameter_Bool              (this, Constraint);	break;
-	case PARAMETER_TYPE_Int              : m_pData	= new CSG_Parameter_Int               (this, Constraint);	break;
-	case PARAMETER_TYPE_Double           : m_pData	= new CSG_Parameter_Double            (this, Constraint);	break;
-	case PARAMETER_TYPE_Degree           : m_pData	= new CSG_Parameter_Degree            (this, Constraint);	break;
-	case PARAMETER_TYPE_Date             : m_pData	= new CSG_Parameter_Date              (this, Constraint);	break;
-	case PARAMETER_TYPE_Range            : m_pData	= new CSG_Parameter_Range             (this, Constraint);	break;
-	case PARAMETER_TYPE_Choice           : m_pData	= new CSG_Parameter_Choice            (this, Constraint);	break;
-	case PARAMETER_TYPE_Choices          : m_pData	= new CSG_Parameter_Choices           (this, Constraint);	break;
-
-	case PARAMETER_TYPE_String           : m_pData	= new CSG_Parameter_String            (this, Constraint);	break;
-	case PARAMETER_TYPE_Text             : m_pData	= new CSG_Parameter_Text              (this, Constraint);	break;
-	case PARAMETER_TYPE_FilePath         : m_pData	= new CSG_Parameter_File_Name         (this, Constraint);	break;
-
-	case PARAMETER_TYPE_Font             : m_pData	= new CSG_Parameter_Font              (this, Constraint);	break;
-	case PARAMETER_TYPE_Color            : m_pData	= new CSG_Parameter_Color             (this, Constraint);	break;
-	case PARAMETER_TYPE_Colors           : m_pData	= new CSG_Parameter_Colors            (this, Constraint);	break;
-	case PARAMETER_TYPE_FixedTable       : m_pData	= new CSG_Parameter_Fixed_Table       (this, Constraint);	break;
-	case PARAMETER_TYPE_Grid_System      : m_pData	= new CSG_Parameter_Grid_System       (this, Constraint);	break;
-	case PARAMETER_TYPE_Table_Field      : m_pData	= new CSG_Parameter_Table_Field       (this, Constraint);	break;
-	case PARAMETER_TYPE_Table_Fields     : m_pData	= new CSG_Parameter_Table_Fields      (this, Constraint);	break;
-
-	case PARAMETER_TYPE_DataObject_Output: m_pData	= new CSG_Parameter_Data_Object_Output(this, Constraint);	break;
-	case PARAMETER_TYPE_Grid             : m_pData	= new CSG_Parameter_Grid              (this, Constraint);	break;
-	case PARAMETER_TYPE_Grids            : m_pData	= new CSG_Parameter_Grids             (this, Constraint);	break;
-	case PARAMETER_TYPE_Table            : m_pData	= new CSG_Parameter_Table             (this, Constraint);	break;
-	case PARAMETER_TYPE_Shapes           : m_pData	= new CSG_Parameter_Shapes            (this, Constraint);	break;
-	case PARAMETER_TYPE_TIN              : m_pData	= new CSG_Parameter_TIN               (this, Constraint);	break;
-	case PARAMETER_TYPE_PointCloud       : m_pData	= new CSG_Parameter_PointCloud        (this, Constraint);	break;
-
-	case PARAMETER_TYPE_Grid_List        : m_pData	= new CSG_Parameter_Grid_List         (this, Constraint);	break;
-	case PARAMETER_TYPE_Grids_List       : m_pData	= new CSG_Parameter_Grids_List        (this, Constraint);	break;
-	case PARAMETER_TYPE_Table_List       : m_pData	= new CSG_Parameter_Table_List        (this, Constraint);	break;
-	case PARAMETER_TYPE_Shapes_List      : m_pData	= new CSG_Parameter_Shapes_List       (this, Constraint);	break;
-	case PARAMETER_TYPE_TIN_List         : m_pData	= new CSG_Parameter_TIN_List          (this, Constraint);	break;
-	case PARAMETER_TYPE_PointCloud_List  : m_pData	= new CSG_Parameter_PointCloud_List   (this, Constraint);	break;
-
-	case PARAMETER_TYPE_Parameters       : m_pData	= new CSG_Parameter_Parameters        (this, Constraint);	break;
-	}
-
-	//-----------------------------------------------------
-	switch( Type )
-	{
-	case PARAMETER_TYPE_Range:
-		SG_Free(m_Children);
-		m_nChildren	= 0;
-		m_Children	= NULL;
-		break;
-
-	default:
-		break;
-	}
-
-	//-----------------------------------------------------
-	if( m_pParent && m_pParent->m_pData )
+	if( m_pParent )
 	{
 		Set_UseInCMD(m_pParent->do_UseInCMD());
 		Set_UseInGUI(m_pParent->do_UseInGUI());
@@ -167,31 +108,50 @@ CSG_Parameter::~CSG_Parameter(void)
 	{
 		SG_Free(m_Children);
 	}
-
-	if( m_pData )
-	{
-		delete(m_pData);
-	}
 }
 
 
 ///////////////////////////////////////////////////////////
-//														 //
-//														 //
 //														 //
 ///////////////////////////////////////////////////////////
 
 //---------------------------------------------------------
-void CSG_Parameter::_Add_Child(CSG_Parameter *pChild)
+CSG_Parameters * CSG_Parameter::Get_Owner(void)	const
 {
-	m_Children	= (CSG_Parameter **)SG_Realloc(m_Children, (m_nChildren + 1) * sizeof(CSG_Parameter *));
-	m_Children[m_nChildren++]	= pChild;
+	return( m_pOwner );	
+}
+
+//---------------------------------------------------------
+CSG_Parameter * CSG_Parameter::Get_Parent(void)	const
+{
+	return( m_pParent );
+}
+
+//---------------------------------------------------------
+CSG_Data_Manager * CSG_Parameter::Get_Manager(void)	const
+{
+	return( m_pOwner ? m_pOwner->Get_Manager() : NULL );
 }
 
 
 ///////////////////////////////////////////////////////////
 //														 //
-//														 //
+///////////////////////////////////////////////////////////
+
+//---------------------------------------------------------
+CSG_String CSG_Parameter::Get_Type_Identifier(void)	const
+{
+	return( SG_Parameter_Type_Get_Identifier(Get_Type()) );
+}
+
+//---------------------------------------------------------
+CSG_String CSG_Parameter::Get_Type_Name(void)	const
+{
+	return( SG_Parameter_Type_Get_Name(Get_Type()) );
+}
+
+
+///////////////////////////////////////////////////////////
 //														 //
 ///////////////////////////////////////////////////////////
 
@@ -200,11 +160,11 @@ void CSG_Parameter::Set_UseInGUI(bool bDoUse)
 {
 	if( bDoUse )
 	{
-		m_pData->m_Constraint	&= ~PARAMETER_NOT_FOR_GUI;
+		m_Constraint	&= ~PARAMETER_NOT_FOR_GUI;
 	}
 	else
 	{
-		m_pData->m_Constraint	|=  PARAMETER_NOT_FOR_GUI;
+		m_Constraint	|=  PARAMETER_NOT_FOR_GUI;
 	}
 
 	for(int i=0; i<Get_Children_Count(); i++)
@@ -218,11 +178,11 @@ void CSG_Parameter::Set_UseInCMD(bool bDoUse)
 {
 	if( bDoUse )
 	{
-		m_pData->m_Constraint	&= ~PARAMETER_NOT_FOR_CMD;
+		m_Constraint	&= ~PARAMETER_NOT_FOR_CMD;
 	}
 	else
 	{
-		m_pData->m_Constraint	|=  PARAMETER_NOT_FOR_CMD;
+		m_Constraint	|=  PARAMETER_NOT_FOR_CMD;
 	}
 
 	for(int i=0; i<Get_Children_Count(); i++)
@@ -232,22 +192,32 @@ void CSG_Parameter::Set_UseInCMD(bool bDoUse)
 }
 
 //---------------------------------------------------------
+bool CSG_Parameter::do_UseInGUI(void)	const
+{
+	return( !(m_Constraint & PARAMETER_NOT_FOR_GUI) && (Get_Parent() == NULL || Get_Parent()->do_UseInGUI()) );
+}
+
+//---------------------------------------------------------
+bool CSG_Parameter::do_UseInCMD(void)	const
+{
+	return( !(m_Constraint & PARAMETER_NOT_FOR_CMD) && (Get_Parent() == NULL || Get_Parent()->do_UseInGUI()) );
+}
+
+//---------------------------------------------------------
 void CSG_Parameter::ignore_Projection(bool bIgnore)
 {
 	if( bIgnore )
 	{
-		m_pData->m_Constraint	&= ~PARAMETER_IGNORE_PROJECTION;
+		m_Constraint	&= ~PARAMETER_IGNORE_PROJECTION;
 	}
 	else
 	{
-		m_pData->m_Constraint	|=  PARAMETER_IGNORE_PROJECTION;
+		m_Constraint	|=  PARAMETER_IGNORE_PROJECTION;
 	}
 }
 
 
 ///////////////////////////////////////////////////////////
-//														 //
-//														 //
 //														 //
 ///////////////////////////////////////////////////////////
 
@@ -381,7 +351,7 @@ bool CSG_Parameter::is_Serializable(void)	const
 		return( false );
 
 	case PARAMETER_TYPE_String           :
-		return( ((CSG_Parameter_String *)Get_Data())->is_Password() == false );
+		return( ((CSG_Parameter_String *)this)->is_Password() == false );
 
 	default:
 		return( !is_Information() );
@@ -471,8 +441,8 @@ bool CSG_Parameter::is_Value_Equal(CSG_Parameter *pParameter)	const
 		case PARAMETER_TYPE_FilePath         :
 		case PARAMETER_TYPE_String           :	return( SG_STR_CMP(pParameter->asString(), asString()) == 0 );
 
-		case PARAMETER_TYPE_Range            :	return( pParameter->asRange()->Get_LoVal() == asRange()->Get_LoVal()
-													&&  pParameter->asRange()->Get_HiVal() == asRange()->Get_HiVal() );
+		case PARAMETER_TYPE_Range            :	return( pParameter->asRange()->Get_Min() == asRange()->Get_Min()
+													&&  pParameter->asRange()->Get_Max() == asRange()->Get_Max() );
 
 		case PARAMETER_TYPE_Grid_System      :	return( pParameter->asGrid_System()->is_Equal(*asGrid_System()) );
 
@@ -587,20 +557,12 @@ TSG_Data_Object_Type CSG_Parameter::Get_DataObject_Type(void)	const
 	case PARAMETER_TYPE_PointCloud       :
 	case PARAMETER_TYPE_PointCloud_List  :	return( SG_DATAOBJECT_TYPE_PointCloud );
 	case PARAMETER_TYPE_DataObject_Output:
-		return( ((CSG_Parameter_Data_Object_Output *)m_pData)->Get_DataObject_Type() );
+		return( ((CSG_Parameter_Data_Object_Output *)this)->Get_DataObject_Type() );
 	}
-}
-
-//---------------------------------------------------------
-CSG_Data_Manager * CSG_Parameter::Get_Manager(void)	const
-{
-	return( m_pOwner ? m_pOwner->Get_Manager() : NULL );
 }
 
 
 ///////////////////////////////////////////////////////////
-//														 //
-//														 //
 //														 //
 ///////////////////////////////////////////////////////////
 
@@ -608,6 +570,12 @@ CSG_Data_Manager * CSG_Parameter::Get_Manager(void)	const
 const SG_Char * CSG_Parameter::Get_Identifier(void)	const
 {
 	return( m_Identifier );
+}
+
+//---------------------------------------------------------
+bool CSG_Parameter::Cmp_Identifier(const CSG_String &Identifier)	const
+{
+	return( m_Identifier.Cmp(Identifier) == 0 );
 }
 
 //---------------------------------------------------------
@@ -729,28 +697,28 @@ CSG_String CSG_Parameter::Get_Description(int Flags, const SG_Char *Separator)	c
 			break;
 
 		case PARAMETER_TYPE_Int:
-			if( ((CSG_Parameter_Value *)m_pData)->has_Minimum() )
+			if( asValue()->has_Minimum() )
 			{
-				SEPARATE;	s	+= CSG_String::Format("%s: %d", _TL("Minimum"), (int)((CSG_Parameter_Value *)m_pData)->Get_Minimum());
+				SEPARATE;	s	+= CSG_String::Format("%s: %d", _TL("Minimum"), (int)asValue()->Get_Minimum());
 			}
 
-			if( ((CSG_Parameter_Value *)m_pData)->has_Maximum() )
+			if( asValue()->has_Maximum() )
 			{
-				SEPARATE;	s	+= CSG_String::Format("%s: %d", _TL("Maximum"), (int)((CSG_Parameter_Value *)m_pData)->Get_Maximum());
+				SEPARATE;	s	+= CSG_String::Format("%s: %d", _TL("Maximum"), (int)asValue()->Get_Maximum());
 			}
 			break;
 
 		case PARAMETER_TYPE_Double:
 		case PARAMETER_TYPE_Degree:
 //		case PARAMETER_TYPE_Range:
-			if( ((CSG_Parameter_Value *)m_pData)->has_Minimum() )
+			if( asValue()->has_Minimum() )
 			{
-				SEPARATE;	s	+= CSG_String::Format("%s: %f", _TL("Minimum"), ((CSG_Parameter_Value *)m_pData)->Get_Minimum());
+				SEPARATE;	s	+= CSG_String::Format("%s: %f", _TL("Minimum"), asValue()->Get_Minimum());
 			}
 
-			if( ((CSG_Parameter_Value *)m_pData)->has_Maximum() )
+			if( asValue()->has_Maximum() )
 			{
-				SEPARATE;	s	+= CSG_String::Format("%s: %f", _TL("Maximum"), ((CSG_Parameter_Value *)m_pData)->Get_Maximum());
+				SEPARATE;	s	+= CSG_String::Format("%s: %f", _TL("Maximum"), asValue()->Get_Maximum());
 			}
 			break;
 
@@ -773,9 +741,9 @@ CSG_String CSG_Parameter::Get_Description(int Flags, const SG_Char *Separator)	c
 			break;
 		}
 
-		if( !m_pData->Get_Default().is_Empty() )
+		if( !m_Default.is_Empty() )
 		{
-			SEPARATE;	s	+= CSG_String::Format("%s: %s", _TL("Default"), m_pData->Get_Default().c_str());
+			SEPARATE;	s	+= CSG_String::Format("%s: %s", _TL("Default"), m_Default.c_str());
 		}
 	}
 
@@ -794,70 +762,74 @@ CSG_String CSG_Parameter::Get_Description(int Flags, const SG_Char *Separator)	c
 
 ///////////////////////////////////////////////////////////
 //														 //
-//														 //
-//														 //
 ///////////////////////////////////////////////////////////
+
+//---------------------------------------------------------
+int CSG_Parameter::_Set_Value(int               Value)	{	return( SG_PARAMETER_DATA_SET_FALSE );	}
+int CSG_Parameter::_Set_Value(double            Value)	{	return( SG_PARAMETER_DATA_SET_FALSE );	}
+int CSG_Parameter::_Set_Value(const CSG_String &Value)	{	return( SG_PARAMETER_DATA_SET_FALSE );	}
+int CSG_Parameter::_Set_Value(void             *Value)	{	return( SG_PARAMETER_DATA_SET_FALSE );	}
 
 //---------------------------------------------------------
 bool CSG_Parameter::Set_Value(int Value)
 {
-	if( m_pData->Set_Value(Value) )
+	switch( _Set_Value(Value) )
 	{
-		has_Changed();
+	case SG_PARAMETER_DATA_SET_FALSE:
+		return( false );
 
-		return( true );
+	case SG_PARAMETER_DATA_SET_CHANGED:
+		has_Changed();
 	}
 
-	return( false );
+	return( true );
 }
 
 //---------------------------------------------------------
 bool CSG_Parameter::Set_Value(double Value)
 {
-	if( m_pData->Set_Value(Value) )
+	switch( _Set_Value(Value) )
 	{
-		has_Changed();
+	case SG_PARAMETER_DATA_SET_FALSE:
+		return( false );
 
-		return( true );
+	case SG_PARAMETER_DATA_SET_CHANGED:
+		has_Changed();
 	}
 
-	return( false );
+	return( true );
 }
 
 //---------------------------------------------------------
+bool CSG_Parameter::Set_Value(const char       *Value)	{	return( Set_Value(CSG_String(Value)) );	}
+bool CSG_Parameter::Set_Value(const wchar_t    *Value)	{	return( Set_Value(CSG_String(Value)) );	}
 bool CSG_Parameter::Set_Value(const CSG_String &Value)
 {
-	if( m_pData->Set_Value(Value) )
+	switch( _Set_Value(Value) )
 	{
-		has_Changed();
+	case SG_PARAMETER_DATA_SET_FALSE:
+		return( false );
 
-		return( true );
+	case SG_PARAMETER_DATA_SET_CHANGED:
+		has_Changed();
 	}
 
-	return( false );
-}
-
-bool CSG_Parameter::Set_Value(const char *Value)
-{
-	return( Set_Value(CSG_String(Value)) );
-}
-
-bool CSG_Parameter::Set_Value(const wchar_t *Value)
-{
-	return( Set_Value(CSG_String(Value)) );
+	return( true );
 }
 
 //---------------------------------------------------------
 bool CSG_Parameter::Set_Value(void *Value)
 {
-	if( m_pData->Set_Value(Value) )
+	switch( _Set_Value(Value) )
 	{
-		has_Changed();
+	case SG_PARAMETER_DATA_SET_FALSE:
+		return( false );
 
-		return( true );
+	case SG_PARAMETER_DATA_SET_CHANGED:
+		has_Changed();
 	}
 
-	return( false );
+	return( true );
 }
 
 //---------------------------------------------------------
@@ -867,24 +839,76 @@ bool CSG_Parameter::Set_Value(CSG_Parameter *Value)
 	{
 		switch( Value->Get_Type() )
 		{
-		default                   : return( Assign(Value) );
-		case PARAMETER_TYPE_Choice: return( Set_Value(Value->asInt()) );
+		default:
+			break;
+
+		case PARAMETER_TYPE_Choice:
+			return( Set_Value(Value->asInt()) );
 		}
 	}
 
-	return( false );
+	return( Assign(Value) );
 }
 
 //---------------------------------------------------------
 bool CSG_Parameter::has_Changed(int Check_Flags)
 {
-	if( m_pOwner )
-	{
-		return( m_pOwner->_On_Parameter_Changed(this, Check_Flags) );
-	}
+	_Set_String();
 
-	return( false );
+	return( m_pOwner && m_pOwner->_On_Parameter_Changed(this, Check_Flags) );
 }
+
+//---------------------------------------------------------
+void CSG_Parameter::_Set_String(void)
+{
+	// nop
+}
+
+
+///////////////////////////////////////////////////////////
+//														 //
+///////////////////////////////////////////////////////////
+
+//---------------------------------------------------------
+bool CSG_Parameter::Set_Default(int Value)
+{
+	m_Default.Printf("%d", Value);
+
+	return( true );
+}
+
+//---------------------------------------------------------
+bool CSG_Parameter::Set_Default(double Value)
+{
+	m_Default.Printf("%f", Value);
+
+	return( true );
+}
+
+//---------------------------------------------------------
+bool CSG_Parameter::Set_Default(const CSG_String &Value)
+{
+	m_Default	= Value;
+
+	return( true );
+}
+
+//---------------------------------------------------------
+const CSG_String & CSG_Parameter::Get_Default(void)	const
+{
+	return( m_Default );
+}
+
+//---------------------------------------------------------
+bool CSG_Parameter::Restore_Default(void)
+{
+	return( Set_Value(m_Default) );
+}
+
+
+///////////////////////////////////////////////////////////
+//														 //
+///////////////////////////////////////////////////////////
 
 //---------------------------------------------------------
 bool CSG_Parameter::Check(bool bSilent)
@@ -950,35 +974,22 @@ bool CSG_Parameter::Check(bool bSilent)
 
 ///////////////////////////////////////////////////////////
 //														 //
-//														 //
-//														 //
 ///////////////////////////////////////////////////////////
 
 //---------------------------------------------------------
-CSG_Colors                    * CSG_Parameter::asColors        (void) const {	return( Get_Type() != PARAMETER_TYPE_Colors          ? NULL : (CSG_Colors      *)m_pData->asPointer() );	}
-const SG_Char                 * CSG_Parameter::asFont          (void) const {	return( Get_Type() != PARAMETER_TYPE_Font            ? NULL : (const SG_Char   *)m_pData->asPointer() );	}
-CSG_Grid_System               * CSG_Parameter::asGrid_System   (void) const {	return( Get_Type() != PARAMETER_TYPE_Grid_System     ? NULL : (CSG_Grid_System *)m_pData->asPointer() );	}
-CSG_Parameters                * CSG_Parameter::asParameters    (void) const {	return( Get_Type() != PARAMETER_TYPE_Parameters      ? NULL : (CSG_Parameters  *)m_pData->asPointer() );	}
+int                             CSG_Parameter::_asInt          (void)	const	{	return( 0        );	}
+double                          CSG_Parameter::_asDouble       (void)	const	{	return( 0.0      );	}
+void                          * CSG_Parameter::_asPointer      (void)	const	{	return( NULL     );	}
+const SG_Char                 * CSG_Parameter::_asString       (void)	const	{	return( m_String );	}
 
 //---------------------------------------------------------
-CSG_Parameter_Date            * CSG_Parameter::asDate          (void) const {	return( Get_Type() != PARAMETER_TYPE_Date            ? NULL : (CSG_Parameter_Date            *)m_pData );	}
-CSG_Parameter_Choice          * CSG_Parameter::asChoice        (void) const {	return( Get_Type() != PARAMETER_TYPE_Choice          ? NULL : (CSG_Parameter_Choice          *)m_pData );	}
-CSG_Parameter_Choices         * CSG_Parameter::asChoices       (void) const {	return( Get_Type() != PARAMETER_TYPE_Choices         ? NULL : (CSG_Parameter_Choices         *)m_pData );	}
-CSG_Parameter_Range           * CSG_Parameter::asRange         (void) const {	return( Get_Type() != PARAMETER_TYPE_Range           ? NULL : (CSG_Parameter_Range           *)m_pData );	}
-CSG_Parameter_File_Name       * CSG_Parameter::asFilePath      (void) const {	return( Get_Type() != PARAMETER_TYPE_FilePath        ? NULL : (CSG_Parameter_File_Name       *)m_pData );	}
-CSG_Parameter_Table_Fields    * CSG_Parameter::asTableFields   (void) const {	return( Get_Type() != PARAMETER_TYPE_Table_Fields    ? NULL : (CSG_Parameter_Table_Fields    *)m_pData );	}
+CSG_Colors                    * CSG_Parameter::asColors        (void) const {	return( Get_Type() != PARAMETER_TYPE_Colors          ? NULL : (CSG_Colors      *)asPointer() );	}
+const SG_Char                 * CSG_Parameter::asFont          (void) const {	return( Get_Type() != PARAMETER_TYPE_Font            ? NULL : (const SG_Char   *)asPointer() );	}
+CSG_Grid_System               * CSG_Parameter::asGrid_System   (void) const {	return( Get_Type() != PARAMETER_TYPE_Grid_System     ? NULL : (CSG_Grid_System *)asPointer() );	}
+CSG_Parameters                * CSG_Parameter::asParameters    (void) const {	return( Get_Type() != PARAMETER_TYPE_Parameters      ? NULL : (CSG_Parameters  *)asPointer() );	}
 
 //---------------------------------------------------------
-CSG_Parameter_List            * CSG_Parameter::asList          (void) const {	return( !is_DataObject_List()                        ? NULL : (CSG_Parameter_List            *)m_pData );	}
-CSG_Parameter_Grid_List       * CSG_Parameter::asGridList      (void) const {	return( Get_Type() != PARAMETER_TYPE_Grid_List       ? NULL : (CSG_Parameter_Grid_List       *)m_pData );	}
-CSG_Parameter_Grids_List      * CSG_Parameter::asGridsList     (void) const {	return( Get_Type() != PARAMETER_TYPE_Grids_List      ? NULL : (CSG_Parameter_Grids_List      *)m_pData );	}
-CSG_Parameter_Table_List      * CSG_Parameter::asTableList     (void) const {	return( Get_Type() != PARAMETER_TYPE_Table_List      ? NULL : (CSG_Parameter_Table_List      *)m_pData );	}
-CSG_Parameter_Shapes_List     * CSG_Parameter::asShapesList    (void) const {	return( Get_Type() != PARAMETER_TYPE_Shapes_List     ? NULL : (CSG_Parameter_Shapes_List     *)m_pData );	}
-CSG_Parameter_TIN_List        * CSG_Parameter::asTINList       (void) const {	return( Get_Type() != PARAMETER_TYPE_TIN_List        ? NULL : (CSG_Parameter_TIN_List        *)m_pData );	}
-CSG_Parameter_PointCloud_List * CSG_Parameter::asPointCloudList(void) const {	return( Get_Type() != PARAMETER_TYPE_PointCloud_List ? NULL : (CSG_Parameter_PointCloud_List *)m_pData );	}
-
-//---------------------------------------------------------
-CSG_Data_Object               * CSG_Parameter::asDataObject    (void) const {	return( !is_DataObject()                             ? NULL : (CSG_Data_Object *)m_pData->asPointer() );	}
+CSG_Data_Object               * CSG_Parameter::asDataObject    (void) const {	return( !is_DataObject()                             ? NULL : (CSG_Data_Object *)asPointer() );	}
 CSG_Grid                      * CSG_Parameter::asGrid          (void) const {	CSG_Data_Object	*pObject = asDataObject(); return( !pObject || pObject == DATAOBJECT_CREATE || pObject->Get_ObjectType() != SG_DATAOBJECT_TYPE_Grid       ? NULL : (CSG_Grid        *)pObject );	}
 CSG_Grids                     * CSG_Parameter::asGrids         (void) const {	CSG_Data_Object	*pObject = asDataObject(); return( !pObject || pObject == DATAOBJECT_CREATE || pObject->Get_ObjectType() != SG_DATAOBJECT_TYPE_Grids      ? NULL : (CSG_Grids       *)pObject );	}
 CSG_TIN                       * CSG_Parameter::asTIN           (void) const {	CSG_Data_Object	*pObject = asDataObject(); return( !pObject || pObject == DATAOBJECT_CREATE || pObject->Get_ObjectType() != SG_DATAOBJECT_TYPE_TIN        ? NULL : (CSG_TIN         *)pObject );	}
@@ -1021,71 +1032,130 @@ CSG_Table                     * CSG_Parameter::asTable         (void) const
 		return( asGrids() ? asGrids()->Get_Attributes_Ptr() : NULL );
 
 	case PARAMETER_TYPE_FixedTable:
-		return( (CSG_Table *)m_pData->asPointer() );
+		return( (CSG_Table *)asPointer() );
 	}
 
 	return( NULL );
 }
 
+//---------------------------------------------------------
+CSG_Parameter_Value           * CSG_Parameter::asValue         (void) const
+{
+	if( Get_Type() == PARAMETER_TYPE_Double
+	||  Get_Type() == PARAMETER_TYPE_Degree
+	||  Get_Type() == PARAMETER_TYPE_Int
+	||  Get_Type() == PARAMETER_TYPE_Color
+	||  Get_Type() == PARAMETER_TYPE_Table_Field )
+	{
+		return( (CSG_Parameter_Value *)this );
+	}
+
+	return( NULL );
+}
+
+CSG_Parameter_Date            * CSG_Parameter::asDate          (void) const {	return( Get_Type() != PARAMETER_TYPE_Date            ? NULL : (CSG_Parameter_Date            *)this );	}
+CSG_Parameter_Choice          * CSG_Parameter::asChoice        (void) const {	return( Get_Type() != PARAMETER_TYPE_Choice          ? NULL : (CSG_Parameter_Choice          *)this );	}
+CSG_Parameter_Choices         * CSG_Parameter::asChoices       (void) const {	return( Get_Type() != PARAMETER_TYPE_Choices         ? NULL : (CSG_Parameter_Choices         *)this );	}
+CSG_Parameter_Range           * CSG_Parameter::asRange         (void) const {	return( Get_Type() != PARAMETER_TYPE_Range           ? NULL : (CSG_Parameter_Range           *)this );	}
+CSG_Parameter_File_Name       * CSG_Parameter::asFilePath      (void) const {	return( Get_Type() != PARAMETER_TYPE_FilePath        ? NULL : (CSG_Parameter_File_Name       *)this );	}
+CSG_Parameter_Table_Fields    * CSG_Parameter::asTableFields   (void) const {	return( Get_Type() != PARAMETER_TYPE_Table_Fields    ? NULL : (CSG_Parameter_Table_Fields    *)this );	}
+
+//---------------------------------------------------------
+CSG_Parameter_List            * CSG_Parameter::asList          (void) const {	return( !is_DataObject_List()                        ? NULL : (CSG_Parameter_List            *)this );	}
+CSG_Parameter_Grid_List       * CSG_Parameter::asGridList      (void) const {	return( Get_Type() != PARAMETER_TYPE_Grid_List       ? NULL : (CSG_Parameter_Grid_List       *)this );	}
+CSG_Parameter_Grids_List      * CSG_Parameter::asGridsList     (void) const {	return( Get_Type() != PARAMETER_TYPE_Grids_List      ? NULL : (CSG_Parameter_Grids_List      *)this );	}
+CSG_Parameter_Table_List      * CSG_Parameter::asTableList     (void) const {	return( Get_Type() != PARAMETER_TYPE_Table_List      ? NULL : (CSG_Parameter_Table_List      *)this );	}
+CSG_Parameter_Shapes_List     * CSG_Parameter::asShapesList    (void) const {	return( Get_Type() != PARAMETER_TYPE_Shapes_List     ? NULL : (CSG_Parameter_Shapes_List     *)this );	}
+CSG_Parameter_TIN_List        * CSG_Parameter::asTINList       (void) const {	return( Get_Type() != PARAMETER_TYPE_TIN_List        ? NULL : (CSG_Parameter_TIN_List        *)this );	}
+CSG_Parameter_PointCloud_List * CSG_Parameter::asPointCloudList(void) const {	return( Get_Type() != PARAMETER_TYPE_PointCloud_List ? NULL : (CSG_Parameter_PointCloud_List *)this );	}
+
 
 ///////////////////////////////////////////////////////////
 //														 //
-//														 //
+///////////////////////////////////////////////////////////
+
+//---------------------------------------------------------
+void CSG_Parameter::_Add_Child(CSG_Parameter *pChild)
+{
+	m_Children	= (CSG_Parameter **)SG_Realloc(m_Children, (m_nChildren + 1) * sizeof(CSG_Parameter *));
+	m_Children[m_nChildren++]	= pChild;
+}
+
+
+///////////////////////////////////////////////////////////
 //														 //
 ///////////////////////////////////////////////////////////
 
 //---------------------------------------------------------
 bool CSG_Parameter::Assign(CSG_Parameter *pSource)
 {
-	if( pSource )
+	if( pSource && Get_Type() == pSource->Get_Type() )
 	{
 		m_bEnabled	= pSource->m_bEnabled;
+		m_Default	= pSource->m_Default;
 
-		return( m_pData->Assign(pSource->m_pData) );
+		if( _Assign(pSource) )
+		{
+			_Set_String();
+
+			return( true );
+		}
 	}
 
 	return( false );
 }
 
+bool CSG_Parameter::_Assign(CSG_Parameter *pSource)
+{
+	return( true );
+}
+
 //---------------------------------------------------------
-CSG_MetaData * CSG_Parameter::Serialize(CSG_MetaData &Entry, bool bSave)
+bool CSG_Parameter::Serialize(CSG_MetaData &MetaData, bool bSave)
 {
 	if( bSave )
 	{
-		if( !is_Information() && Get_Type() != PARAMETER_TYPE_Node && Get_Type() != PARAMETER_TYPE_Undefined )
+		if( is_Information() || Get_Type() == PARAMETER_TYPE_Node || Get_Type() == PARAMETER_TYPE_Undefined )
 		{
-			CSG_MetaData	*pEntry	= Entry.Add_Child(
-				is_Option         () ? "OPTION"    :
-				is_DataObject     () ? "DATA"      :
-				is_DataObject_List() ? "DATA_LIST" : "PARAMETER"
-			);
-
-			pEntry->Add_Property("type" , Get_Type_Identifier        ());
-			pEntry->Add_Property("id"   , Get_Identifier             ());
-			pEntry->Add_Property("name" , Get_Name                   ());
-			pEntry->Add_Property("parms", Get_Owner()->Get_Identifier());
-
-			m_pData->Serialize(*pEntry, bSave);
-
-			return( pEntry );
+			return( true );
 		}
+
+		CSG_MetaData	&Child	= *MetaData.Add_Child(
+			is_Option         () ? "OPTION"    :
+			is_DataObject     () ? "DATA"      :
+			is_DataObject_List() ? "DATA_LIST" : "PARAMETER"
+		);
+
+		Child.Add_Property("type" , Get_Type_Identifier        ());
+		Child.Add_Property("id"   , Get_Identifier             ());
+		Child.Add_Property("name" , Get_Name                   ());
+		Child.Add_Property("parms", Get_Owner()->Get_Identifier());
+
+		_Serialize(Child, bSave);
+
+		return( true );
 	}
-	else
+	else if( MetaData.Cmp_Property("type", Get_Type_Identifier())
+		&&	 MetaData.Cmp_Property("id"  , Get_Identifier     ()) 
+		&&	_Serialize(MetaData, bSave) )
 	{
-		if(	Entry.Cmp_Property("type", Get_Type_Identifier())
-		&&	Entry.Cmp_Property("id"  , Get_Identifier     ()) )
-		{
-			return( m_pData->Serialize(Entry, bSave) ? &Entry : NULL );
-		}
+		_Set_String();
+
+		return( true );
 	}
 
-	return( NULL );
+	return( false );
+}
+
+bool CSG_Parameter::_Serialize(CSG_MetaData &Entry, bool bSave)
+{
+	Entry.Set_Content("-");
+
+	return( true );
 }
 
 
 ///////////////////////////////////////////////////////////
-//														 //
-//														 //
 //														 //
 ///////////////////////////////////////////////////////////
 
@@ -1117,22 +1187,22 @@ bool CSG_Parameters_Grid_Target::Create(CSG_Parameters *pParameters, bool bAddDe
 	m_pParameters->Add_Choice(
 		ParentID, TargetID, _TL("Target Grid System"),
 		_TL(""),
-		CSG_String::Format("%s|%s|",
+		CSG_String::Format("%s|%s",
 			_TL("user defined"),
 			_TL("grid or grid system")
 		), 0
 	);
 
 	//-----------------------------------------------------
-	m_pParameters->Add_Double    (TargetID, m_Prefix + "USER_SIZE", _TL("Cellsize"), _TL(""), 1.0, 0.0, true);
-	m_pParameters->Add_Double    (TargetID, m_Prefix + "USER_XMIN", _TL("Left"    ), _TL(""),   0.0);
-	m_pParameters->Add_Double    (TargetID, m_Prefix + "USER_XMAX", _TL("Right"   ), _TL(""), 100.0);
-	m_pParameters->Add_Double    (TargetID, m_Prefix + "USER_YMIN", _TL("Bottom"  ), _TL(""),   0.0);
-	m_pParameters->Add_Double    (TargetID, m_Prefix + "USER_YMAX", _TL("Top"     ), _TL(""), 100.0);
-	m_pParameters->Add_Info_Value(TargetID, m_Prefix + "USER_COLS", _TL("Columns" ), _TL(""), PARAMETER_TYPE_Int, 100);
-	m_pParameters->Add_Info_Value(TargetID, m_Prefix + "USER_ROWS", _TL("Rows"    ), _TL(""), PARAMETER_TYPE_Int, 100);
-	m_pParameters->Add_Choice    (TargetID, m_Prefix + "USER_FITS", _TL("Fit"     ), _TL(""),
-		CSG_String::Format("%s|%s|",
+	m_pParameters->Add_Double(TargetID, m_Prefix + "USER_SIZE", _TL("Cellsize"), _TL(""), 1.0, 0.0, true);
+	m_pParameters->Add_Double(TargetID, m_Prefix + "USER_XMIN", _TL("West"    ), _TL(""),   0.0);
+	m_pParameters->Add_Double(TargetID, m_Prefix + "USER_XMAX", _TL("East"    ), _TL(""), 100.0);
+	m_pParameters->Add_Double(TargetID, m_Prefix + "USER_YMIN", _TL("South"   ), _TL(""),   0.0);
+	m_pParameters->Add_Double(TargetID, m_Prefix + "USER_YMAX", _TL("North"   ), _TL(""), 100.0);
+	m_pParameters->Add_Int   (TargetID, m_Prefix + "USER_COLS", _TL("Columns" ), _TL("Number of cells in East-West direction."  ), 100, 1, true);
+	m_pParameters->Add_Int   (TargetID, m_Prefix + "USER_ROWS", _TL("Rows"    ), _TL("Number of cells in North-South direction."), 100, 1, true);
+	m_pParameters->Add_Choice(TargetID, m_Prefix + "USER_FITS", _TL("Fit"     ), _TL(""),
+		CSG_String::Format("%s|%s",
 			_TL("nodes"),
 			_TL("cells")
 		), 0
@@ -1168,14 +1238,14 @@ bool CSG_Parameters_Grid_Target::On_Parameter_Changed(CSG_Parameters *pParameter
 		return( false );
 	}
 
-	CSG_Parameter	*pSize	= pParameters->Get_Parameter(m_Prefix + "USER_SIZE");
-	CSG_Parameter	*pXMin	= pParameters->Get_Parameter(m_Prefix + "USER_XMIN");
-	CSG_Parameter	*pXMax	= pParameters->Get_Parameter(m_Prefix + "USER_XMAX");
-	CSG_Parameter	*pYMin	= pParameters->Get_Parameter(m_Prefix + "USER_YMIN");
-	CSG_Parameter	*pYMax	= pParameters->Get_Parameter(m_Prefix + "USER_YMAX");
-	CSG_Parameter	*pRows	= pParameters->Get_Parameter(m_Prefix + "USER_ROWS");
-	CSG_Parameter	*pCols	= pParameters->Get_Parameter(m_Prefix + "USER_COLS");
-	CSG_Parameter	*pFits	= pParameters->Get_Parameter(m_Prefix + "USER_FITS");
+	CSG_Parameter	*pSize	= (*pParameters)(m_Prefix + "USER_SIZE");
+	CSG_Parameter	*pXMin	= (*pParameters)(m_Prefix + "USER_XMIN");
+	CSG_Parameter	*pXMax	= (*pParameters)(m_Prefix + "USER_XMAX");
+	CSG_Parameter	*pYMin	= (*pParameters)(m_Prefix + "USER_YMIN");
+	CSG_Parameter	*pYMax	= (*pParameters)(m_Prefix + "USER_YMAX");
+	CSG_Parameter	*pRows	= (*pParameters)(m_Prefix + "USER_ROWS");
+	CSG_Parameter	*pCols	= (*pParameters)(m_Prefix + "USER_COLS");
+	CSG_Parameter	*pFits	= (*pParameters)(m_Prefix + "USER_FITS");
 
 	double		Size	= pSize->asDouble();
 
@@ -1187,72 +1257,144 @@ bool CSG_Parameters_Grid_Target::On_Parameter_Changed(CSG_Parameters *pParameter
 	}
 
 	//-----------------------------------------------------
-	if(      !SG_STR_CMP(pParameter->Get_Identifier(), pFits->Get_Identifier()) )
+	bool	bChanged	= true;
+
+	if(      pParameter->Cmp_Identifier(pFits->Get_Identifier()) )
 	{
 		if( m_bFitToCells != (pFits->asInt() == 1) )
 		{
 			m_bFitToCells	= pFits->asInt() == 1;
 		}
 	}
-	else if( !SG_STR_CMP(pParameter->Get_Identifier(), pSize->Get_Identifier()) )
+	else if( pParameter->Cmp_Identifier(pSize->Get_Identifier()) )
 	{
 		r.m_rect.xMax	= r.Get_XMin() + Size * (int)(r.Get_XRange() / Size);
 		r.m_rect.yMax	= r.Get_YMin() + Size * (int)(r.Get_YRange() / Size);
 	}
-	else if( !SG_STR_CMP(pParameter->Get_Identifier(), pXMin->Get_Identifier()) )
+	else if( pParameter->Cmp_Identifier(pXMin->Get_Identifier()) )
 	{
 		if( r.Get_XRange() <= 0.0 )
 			r.m_rect.xMin	= r.Get_XMax() - Size * pCols->asInt();
 		else
 			r.m_rect.xMax	= r.Get_XMin() + Size * (int)(r.Get_XRange() / Size);
 	}
-	else if( !SG_STR_CMP(pParameter->Get_Identifier(), pXMax->Get_Identifier()) )
+	else if( pParameter->Cmp_Identifier(pXMax->Get_Identifier()) )
 	{
 		if( r.Get_XRange() <= 0.0 )
 			r.m_rect.xMax	= r.Get_XMin() + Size * pCols->asInt();
 		else
 			r.m_rect.xMin	= r.Get_XMax() - Size * (int)(r.Get_XRange() / Size);
 	}
-	else if( !SG_STR_CMP(pParameter->Get_Identifier(), pYMin->Get_Identifier()) )
+	else if( pParameter->Cmp_Identifier(pYMin->Get_Identifier()) )
 	{
 		if( r.Get_YRange() <= 0.0 )
 			r.m_rect.yMin	= r.Get_YMax() - Size * pRows->asInt();
 		else
 			r.m_rect.yMax	= r.Get_YMin() + Size * (int)(r.Get_YRange() / Size);
 	}
-	else if( !SG_STR_CMP(pParameter->Get_Identifier(), pYMax->Get_Identifier()) )
+	else if( pParameter->Cmp_Identifier(pYMax->Get_Identifier()) )
 	{
 		if( r.Get_YRange() <= 0.0 )
 			r.m_rect.yMax	= r.Get_YMin() + Size * pRows->asInt();
 		else
 			r.m_rect.yMin	= r.Get_YMax() - Size * (int)(r.Get_YRange() / Size);
 	}
-	else if( !SG_STR_CMP(pParameter->Get_Identifier(), pCols->Get_Identifier()) && pCols->asInt() > 0 )
+	else if( pParameter->Cmp_Identifier(pCols->Get_Identifier()) && pCols->asInt() > 0 )
 	{
 		pSize->Set_Value(Size	= r.Get_XRange() / pCols->asDouble());
 	}
-	else if( !SG_STR_CMP(pParameter->Get_Identifier(), pRows->Get_Identifier()) && pRows->asInt() > 0 )
+	else if( pParameter->Cmp_Identifier(pRows->Get_Identifier()) && pRows->asInt() > 0 )
 	{
 		pSize->Set_Value(Size	= r.Get_YRange() / pRows->asDouble());
 	}
 	else
 	{
-		return( true );	// none of the relevant parameters did change
+		bChanged	= false;	// none of the relevant parameters did change so far
 	}
 
 	//-----------------------------------------------------
-	pCols->Set_Value(1 + (int)((r.Get_XRange()) / Size));
-	pRows->Set_Value(1 + (int)((r.Get_YRange()) / Size));
-
-	if( m_bFitToCells )
+	if( bChanged )
 	{
-		r.Inflate(0.5 * Size, false);
+		pCols->Set_Value(1 + (int)((r.Get_XRange()) / Size));
+		pRows->Set_Value(1 + (int)((r.Get_YRange()) / Size));
+
+		if( m_bFitToCells )
+		{
+			r.Inflate(0.5 * Size, false);
+		}
+
+		pXMin->Set_Value(r.Get_XMin());
+		pXMax->Set_Value(r.Get_XMax());
+		pYMin->Set_Value(r.Get_YMin());
+		pYMax->Set_Value(r.Get_YMax());
 	}
 
-	pXMin->Set_Value(r.Get_XMin());
-	pXMax->Set_Value(r.Get_XMax());
-	pYMin->Set_Value(r.Get_YMin());
-	pYMax->Set_Value(r.Get_YMax());
+	//-----------------------------------------------------
+	CSG_Parameter	*pZSize	= (*pParameters)(m_Prefix + "USER_ZSIZE");
+	CSG_Parameter	*pZMin	= (*pParameters)(m_Prefix + "USER_ZMIN");
+	CSG_Parameter	*pZMax	= (*pParameters)(m_Prefix + "USER_ZMAX");
+	CSG_Parameter	*pZNum	= (*pParameters)(m_Prefix + "USER_ZNUM");
+
+	if( pZSize && pZMin && pZMax && pZNum )
+	{
+		double	zSize	= pZSize->asDouble();
+		double	zMin	= pZMin ->asDouble();
+		double	zMax	= pZMax ->asDouble();
+
+		if( zMin > zMax )
+		{
+			double z = zMin; zMin = zMax; zMax = z;
+		}
+
+		if( m_bFitToCells )
+		{
+			zMin	+= 0.5 * zSize;
+			zMax	-= 0.5 * zSize;
+		}
+
+		bChanged	= true;
+
+		if(      pParameter->Cmp_Identifier(pZSize->Get_Identifier()) )
+		{
+			zMax	= zMin + zSize * (int)((zMax - zMin) / zSize);
+		}
+		else if( pParameter->Cmp_Identifier(pZMin->Get_Identifier()) )
+		{
+			if( zMax - zMin <= 0.0 )
+				zMin	= zMax - zSize * pZNum->asInt();
+			else
+				zMax	= zMin + zSize * (int)((zMax - zMin) / zSize);
+		}
+		else if( pParameter->Cmp_Identifier(pZMax->Get_Identifier()) )
+		{
+			if( zMax - zMin <= 0.0 )
+				zMax	= zMin + zSize * pZNum->asInt();
+			else
+				zMin	= zMax - zSize * (int)((zMax - zMin) / zSize);
+		}
+		else if( pParameter->Cmp_Identifier(pZNum->Get_Identifier()) && pZNum->asInt() > 0 )
+		{
+			pZSize->Set_Value(zSize	= (zMax - zMin) / pZNum->asDouble());
+		}
+		else
+		{
+			bChanged	= false;
+		}
+
+		if( bChanged )
+		{
+			pZNum->Set_Value(1 + (int)((zMax - zMin) / zSize));
+
+			if( m_bFitToCells )
+			{
+				zMin	-= 0.5 * zSize;
+				zMax	+= 0.5 * zSize;
+			}
+
+			pZMin->Set_Value(zMin);
+			pZMax->Set_Value(zMax);
+		}
+	}
 
 	return( true );
 }
@@ -1265,10 +1407,12 @@ bool CSG_Parameters_Grid_Target::On_Parameters_Enable(CSG_Parameters *pParameter
 		return( false );
 	}
 
-	if( (pParameter = pParameters->Get_Parameter(m_Prefix + "DEFINITION")) == NULL )
+	if( (pParameter = (*pParameters)(m_Prefix + "DEFINITION")) == NULL )
 	{
 		return( false );
 	}
+
+	pParameters->Set_Enabled(m_Prefix + "SYSTEM"   , pParameter->asInt() == 1);
 
 	pParameters->Set_Enabled(m_Prefix + "USER_SIZE", pParameter->asInt() == 0);
 	pParameters->Set_Enabled(m_Prefix + "USER_XMIN", pParameter->asInt() == 0);
@@ -1279,7 +1423,7 @@ bool CSG_Parameters_Grid_Target::On_Parameters_Enable(CSG_Parameters *pParameter
 	pParameters->Set_Enabled(m_Prefix + "USER_COLS", pParameter->asInt() == 0);
 	pParameters->Set_Enabled(m_Prefix + "USER_FITS", pParameter->asInt() == 0);
 	pParameters->Set_Enabled(m_Prefix + "USER_OPTS", pParameter->asInt() == 0);
-	pParameters->Set_Enabled(m_Prefix + "SYSTEM"   , pParameter->asInt() == 1);
+	pParameters->Set_Enabled(m_Prefix + "USER_Z"   , pParameter->asInt() == 0);
 
 	return( true );
 }
@@ -1305,7 +1449,7 @@ bool CSG_Parameters_Grid_Target::Set_User_Defined(CSG_Parameters *pParameters, c
 		return( false );
 	}
 
-	if( Rows < 1 && (Rows = m_pParameters->Get_Parameter(m_Prefix + "USER_ROWS")->asInt()) < 1 )
+	if( Rows < 1 && (Rows = (*m_pParameters)(m_Prefix + "USER_ROWS")->asInt()) < 1 )
 	{
 		Rows	= 100;
 	}
@@ -1343,7 +1487,7 @@ bool CSG_Parameters_Grid_Target::Set_User_Defined(CSG_Parameters *pParameters, c
 	r.m_rect.xMax	= r.Get_XMin() + (Cols - 1) * Size;
 
 	//-----------------------------------------------------
-	if( (m_bFitToCells = pParameters->Get_Parameter(m_Prefix + "USER_FITS")->asInt() == 1) == true )
+	if( (m_bFitToCells = (*pParameters)(m_Prefix + "USER_FITS")->asInt() == 1) == true )
 	{
 		r.Inflate(0.5 * Size, false);
 	}
@@ -1434,20 +1578,83 @@ bool CSG_Parameters_Grid_Target::Set_User_Defined(CSG_Parameters *pParameters, d
 	return( Set_User_Defined(pParameters, CSG_Grid_System(Cellsize, xMin, yMin, nx, ny)) );
 }
 
+//---------------------------------------------------------
+/**
+* Initializes the grid collection's z level arrangement.
+*/
+bool CSG_Parameters_Grid_Target::Set_User_Defined_ZLevels(CSG_Parameters *pParameters, double zMin, double zMax, int nLevels, int Rounding)
+{
+	if( !SG_UI_Get_Window_Main() )	// no cancel button, so set parameters directly
+	{
+		pParameters	= m_pParameters;
+	}
+
+	if( !m_pParameters || !pParameters || m_pParameters->Get_Identifier().Cmp(pParameters->Get_Identifier()) )
+	{
+		return( false );
+	}
+
+	if( nLevels < 1 )
+	{
+		nLevels	= 100;
+	}
+
+	//-----------------------------------------------------
+	if( zMin > zMax )
+	{
+		double z = zMin; zMin = zMax; zMax = z;
+	}
+
+	if( zMax - zMin <= 0.0 )
+	{
+		zMin	-= 0.5 * nLevels;
+		zMax	+= 0.5 * nLevels;	// assume cellsize = 1.0
+	}
+
+	//-----------------------------------------------------
+	double	Size	= (zMax - zMin) / (nLevels - 1.);
+
+	if( Rounding > 0 )
+	{
+		Size	= SG_Get_Rounded_To_SignificantFigures(Size, Rounding);
+
+		zMin	= Size * floor(zMin / Size);
+		zMax	= Size * ceil (zMax / Size);
+	}
+
+	//-----------------------------------------------------
+	if( (m_bFitToCells = (*pParameters)(m_Prefix + "USER_FITS")->asInt() == 1) == true )
+	{
+		zMin	-= 0.5 * Size;
+		zMax	+= 0.5 * Size;
+	}
+
+	bool	bCallback	= pParameters->Set_Callback(false);
+
+	pParameters->Set_Parameter(m_Prefix + "USER_ZSIZE", Size   );
+	pParameters->Set_Parameter(m_Prefix + "USER_ZMIN" , zMin   );
+	pParameters->Set_Parameter(m_Prefix + "USER_ZMAX" , zMax   );
+	pParameters->Set_Parameter(m_Prefix + "USER_ZNUM" , nLevels);
+
+	pParameters->Set_Callback(bCallback);
+
+	return( true );
+}
+
 
 ///////////////////////////////////////////////////////////
 //														 //
 ///////////////////////////////////////////////////////////
 
 //---------------------------------------------------------
-bool CSG_Parameters_Grid_Target::Add_Grid(const CSG_String &Identifier, const CSG_String &Name, bool bOptional, bool bGrids)
+bool CSG_Parameters_Grid_Target::Add_Grid(const CSG_String &Identifier, const CSG_String &Name, bool bOptional)
 {
-	if( !m_pParameters || Identifier.Length() == 0 || m_pParameters->Get_Parameter(Identifier) != NULL )
+	if( !m_pParameters || Identifier.Length() == 0 || (*m_pParameters)(Identifier) != NULL )
 	{
 		return( false );
 	}
 
-	CSG_Parameter	*pTarget	= m_pParameters->Get_Parameter(m_Prefix + "DEFINITION");
+	CSG_Parameter	*pTarget	= (*m_pParameters)(m_Prefix + "DEFINITION");
 	CSG_Parameter	*pSystem	= NULL;
 
 	for(int i=0; i<pTarget->Get_Children_Count() && !pSystem; i++)
@@ -1458,18 +1665,11 @@ bool CSG_Parameters_Grid_Target::Add_Grid(const CSG_String &Identifier, const CS
 		}
 	}
 
-	if( bGrids )
-	{
-		m_pParameters->Add_Grids(pSystem ? pSystem->Get_Identifier() : SG_T(""), Identifier, Name, _TL(""), bOptional ? PARAMETER_OUTPUT_OPTIONAL : PARAMETER_OUTPUT, false);
-	}
-	else
-	{
-		m_pParameters->Add_Grid (pSystem ? pSystem->Get_Identifier() : SG_T(""), Identifier, Name, _TL(""), bOptional ? PARAMETER_OUTPUT_OPTIONAL : PARAMETER_OUTPUT, false);
-	}
+	m_pParameters->Add_Grid (pSystem ? pSystem->Get_Identifier() : SG_T(""), Identifier, Name, _TL(""), bOptional ? PARAMETER_OUTPUT_OPTIONAL : PARAMETER_OUTPUT, false);
 
 	if( bOptional && SG_UI_Get_Window_Main() )
 	{
-		CSG_Parameter	*pNode	= m_pParameters->Get_Parameter(m_Prefix + "USER_OPTS");
+		CSG_Parameter	*pNode	= (*m_pParameters)(m_Prefix + "USER_OPTS");
 
 		if( !pNode )
 		{
@@ -1477,6 +1677,52 @@ bool CSG_Parameters_Grid_Target::Add_Grid(const CSG_String &Identifier, const CS
 		}
 
 		m_pParameters->Add_Bool(pNode->Get_Identifier(), Identifier + "_CREATE", Name, _TL(""), false);
+	}
+
+	return( true );
+}
+
+//---------------------------------------------------------
+bool CSG_Parameters_Grid_Target::Add_Grids(const CSG_String &Identifier, const CSG_String &Name, bool bOptional, bool bZLevels)
+{
+	if( !m_pParameters || Identifier.Length() == 0 || (*m_pParameters)(Identifier) != NULL )
+	{
+		return( false );
+	}
+
+	CSG_Parameter	*pTarget	= (*m_pParameters)(m_Prefix + "DEFINITION");
+	CSG_Parameter	*pSystem	= NULL;
+
+	for(int i=0; i<pTarget->Get_Children_Count() && !pSystem; i++)
+	{
+		if( pTarget->Get_Child(i)->Get_Type() == PARAMETER_TYPE_Grid_System )
+		{
+			pSystem	= pTarget->Get_Child(i);
+		}
+	}
+
+	m_pParameters->Add_Grids(pSystem ? pSystem->Get_Identifier() : SG_T(""), Identifier, Name, _TL(""), bOptional ? PARAMETER_OUTPUT_OPTIONAL : PARAMETER_OUTPUT, false);
+
+	if( bOptional && SG_UI_Get_Window_Main() )
+	{
+		CSG_Parameter	*pNode	= (*m_pParameters)(m_Prefix + "USER_OPTS");
+
+		if( !pNode )
+		{
+			pNode	= m_pParameters->Add_Node(pTarget->Get_Identifier(), m_Prefix + "USER_OPTS", _TL("Optional Target Grids"), _TL(""));
+		}
+
+		m_pParameters->Add_Bool(pNode->Get_Identifier(), Identifier + "_CREATE", Name, _TL(""), false);
+	}
+
+	if( bZLevels )
+	{
+		pTarget	= m_pParameters->Add_Node(pTarget, "USER_Z", _TL("Z Levels"), _TL(""));
+
+		m_pParameters->Add_Double(pTarget, m_Prefix + "USER_ZSIZE", _TL("Cellsize"), _TL(""), 1.0, 0.0, true);
+		m_pParameters->Add_Double(pTarget, m_Prefix + "USER_ZMIN" , _TL("Bottom"  ), _TL(""),   0.0);
+		m_pParameters->Add_Double(pTarget, m_Prefix + "USER_ZMAX" , _TL("Top"     ), _TL(""), 100.0);
+		m_pParameters->Add_Int   (pTarget, m_Prefix + "USER_ZNUM" , _TL("Levels"  ), _TL(""), 100, 1, true);
 	}
 
 	return( true );
@@ -1494,15 +1740,15 @@ CSG_Grid_System CSG_Parameters_Grid_Target::Get_System(void)
 
 	if( m_pParameters )
 	{
-		if( m_pParameters->Get_Parameter(m_Prefix + "DEFINITION")->asInt() == 0 )	// user defined
+		if( (*m_pParameters)(m_Prefix + "DEFINITION")->asInt() == 0 )	// user defined
 		{
-			double	Size	= m_pParameters->Get_Parameter(m_Prefix + "USER_SIZE")->asDouble();
+			double	Size	= (*m_pParameters)(m_Prefix + "USER_SIZE")->asDouble();
 
 			CSG_Rect	r(
-				m_pParameters->Get_Parameter(m_Prefix + "USER_XMIN")->asDouble(),
-				m_pParameters->Get_Parameter(m_Prefix + "USER_YMIN")->asDouble(),
-				m_pParameters->Get_Parameter(m_Prefix + "USER_XMAX")->asDouble(),
-				m_pParameters->Get_Parameter(m_Prefix + "USER_YMAX")->asDouble()
+				(*m_pParameters)(m_Prefix + "USER_XMIN")->asDouble(),
+				(*m_pParameters)(m_Prefix + "USER_YMIN")->asDouble(),
+				(*m_pParameters)(m_Prefix + "USER_XMAX")->asDouble(),
+				(*m_pParameters)(m_Prefix + "USER_YMAX")->asDouble()
 			);
 
 			if( m_bFitToCells )
@@ -1514,7 +1760,7 @@ CSG_Grid_System CSG_Parameters_Grid_Target::Get_System(void)
 		}
 		else
 		{
-			CSG_Parameter	*pParameter	= m_pParameters->Get_Parameter(m_Prefix + "SYSTEM");
+			CSG_Parameter	*pParameter	= (*m_pParameters)(m_Prefix + "SYSTEM");
 
 			if( pParameter->asGrid_System() )
 			{
@@ -1534,7 +1780,7 @@ CSG_Grid * CSG_Parameters_Grid_Target::Get_Grid(const CSG_String &Identifier, TS
 		return( NULL );
 	}
 
-	CSG_Parameter	*pParameter	= m_pParameters->Get_Parameter(Identifier);
+	CSG_Parameter	*pParameter	= (*m_pParameters)(Identifier);
 
 	if( !pParameter || pParameter->Get_Type() != PARAMETER_TYPE_Grid )
 	{
@@ -1550,10 +1796,10 @@ CSG_Grid * CSG_Parameters_Grid_Target::Get_Grid(const CSG_String &Identifier, TS
 
 	CSG_Grid	*pGrid	= NULL;
 
-	if( m_pParameters->Get_Parameter(m_Prefix + "DEFINITION")->asInt() == 0 )
+	if( (*m_pParameters)(m_Prefix + "DEFINITION")->asInt() == 0 )
 	{
-		if( m_pParameters->Get_Parameter(Identifier + "_CREATE") == NULL
-		||  m_pParameters->Get_Parameter(Identifier + "_CREATE")->asBool() )
+		if( (*m_pParameters)(Identifier + "_CREATE") == NULL
+		||  (*m_pParameters)(Identifier + "_CREATE")->asBool() )
 		{
 			pGrid	= SG_Create_Grid(System, Type);
 		}
@@ -1580,6 +1826,11 @@ CSG_Grid * CSG_Parameters_Grid_Target::Get_Grid(const CSG_String &Identifier, TS
 	return( pGrid );
 }
 
+
+///////////////////////////////////////////////////////////
+//														 //
+///////////////////////////////////////////////////////////
+
 //---------------------------------------------------------
 CSG_Grid * CSG_Parameters_Grid_Target::Get_Grid(TSG_Data_Type Type)
 {
@@ -1594,7 +1845,7 @@ CSG_Grids * CSG_Parameters_Grid_Target::Get_Grids(const CSG_String &Identifier, 
 		return( NULL );
 	}
 
-	CSG_Parameter	*pParameter	= m_pParameters->Get_Parameter(Identifier);
+	CSG_Parameter	*pParameter	= (*m_pParameters)(Identifier);
 
 	if( !pParameter || pParameter->Get_Type() != PARAMETER_TYPE_Grids )
 	{
@@ -1610,10 +1861,10 @@ CSG_Grids * CSG_Parameters_Grid_Target::Get_Grids(const CSG_String &Identifier, 
 
 	CSG_Grids	*pGrids	= NULL;
 
-	if( m_pParameters->Get_Parameter(m_Prefix + "DEFINITION")->asInt() == 0 )
+	if( (*m_pParameters)(m_Prefix + "DEFINITION")->asInt() == 0 )
 	{
-		if( m_pParameters->Get_Parameter(Identifier + "_CREATE") == NULL
-		||  m_pParameters->Get_Parameter(Identifier + "_CREATE")->asBool() )
+		if( (*m_pParameters)(Identifier + "_CREATE") == NULL
+		||  (*m_pParameters)(Identifier + "_CREATE")->asBool() )
 		{
 			pGrids	= SG_Create_Grids(System, 0, 0.0, Type);
 		}
@@ -1633,13 +1884,30 @@ CSG_Grids * CSG_Parameters_Grid_Target::Get_Grids(const CSG_String &Identifier, 
 		pParameter->Set_Value(pGrids);
 	}
 
+	if( pGrids
+	&&  (*m_pParameters)(m_Prefix + "USER_ZSIZE")
+	&&  (*m_pParameters)(m_Prefix + "USER_ZMIN" )
+	&&  (*m_pParameters)(m_Prefix + "USER_ZNUM" ) )
+	{
+		int		nz	= (*m_pParameters)(m_Prefix + "USER_ZNUM" )->asInt   ();
+		double	z	= (*m_pParameters)(m_Prefix + "USER_ZMIN" )->asDouble();
+		double	dz	= (*m_pParameters)(m_Prefix + "USER_ZSIZE")->asDouble();
+
+		pGrids->Del_Grids();
+
+		for(int iz=0; iz<nz; iz++, z+=dz)
+		{
+			pGrids->Add_Grid(z);
+		}
+	}
+
 	return( pGrids );
 }
 
 //---------------------------------------------------------
 CSG_Grids * CSG_Parameters_Grid_Target::Get_Grids(TSG_Data_Type Type)
 {
-	return( Get_Grids(m_Prefix + "OUT_GRID", Type) );
+	return( Get_Grids(m_Prefix + "OUT_GRIDS", Type) );
 }
 
 

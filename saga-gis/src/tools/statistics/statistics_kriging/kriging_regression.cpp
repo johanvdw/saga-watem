@@ -248,7 +248,7 @@ CKriging_Regression::CKriging_Regression(void)
 //---------------------------------------------------------
 int CKriging_Regression::On_Parameter_Changed(CSG_Parameters *pParameters, CSG_Parameter *pParameter)
 {
-	if( !SG_STR_CMP(pParameter->Get_Identifier(), "POINTS") )
+	if( pParameter->Cmp_Identifier("POINTS") )
 	{
 		m_Search.On_Parameter_Changed(pParameters, pParameter);
 	}
@@ -358,23 +358,23 @@ bool CKriging_Regression::On_Execute(void)
 			}
 			else
 			{
-				pPrediction->Add_Value(x, y, pRegression->asDouble(x, y) + pResiduals->asDouble(x, y));
+				pPrediction->Set_Value(x, y, pRegression->asDouble(x, y) + pResiduals->asDouble(x, y));
 			}
 		}
 	}
 
 	//-----------------------------------------------------
-	pRegression->Set_Name(CSG_String::Format("%s.%s [%s]", Parameters("POINTS")->asShapes()->Get_Name(), Parameters("FIELD")->asString(), _TL("Regression")));
-	pPrediction->Set_Name(CSG_String::Format("%s.%s [%s]", Parameters("POINTS")->asShapes()->Get_Name(), Parameters("FIELD")->asString(), _TL("Prediction")));
+	pRegression->Fmt_Name("%s.%s [%s]", Parameters("POINTS")->asShapes()->Get_Name(), Parameters("FIELD")->asString(), _TL("Regression"));
+	pPrediction->Fmt_Name("%s.%s [%s]", Parameters("POINTS")->asShapes()->Get_Name(), Parameters("FIELD")->asString(), _TL("Prediction"));
 
 	if( Parameters("RESIDUALS")->asGrid() )
 	{
-		pResiduals->Set_Name(CSG_String::Format("%s.%s [%s]", Parameters("POINTS")->asShapes()->Get_Name(), Parameters("FIELD")->asString(), _TL("Residuals")));
+		pResiduals->Fmt_Name("%s.%s [%s]", Parameters("POINTS")->asShapes()->Get_Name(), Parameters("FIELD")->asString(), _TL("Residuals"));
 	}
 
 	if( pVariance )
 	{
-		pVariance ->Set_Name(CSG_String::Format("%s.%s [%s]", Parameters("POINTS")->asShapes()->Get_Name(), Parameters("FIELD")->asString(), _TL("Quality")));
+		pVariance ->Fmt_Name("%s.%s [%s]", Parameters("POINTS")->asShapes()->Get_Name(), Parameters("FIELD")->asString(), _TL("Quality"));
 	}
 
 	//-----------------------------------------------------

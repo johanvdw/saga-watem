@@ -5,7 +5,7 @@ if DEBUG
 DBGFLAGS = -g -DDEBUG
 endif
 
-DEP_DEFS = -fPIC `wx-config --unicode=yes --static=no --cxxflags` -D_SAGA_UNICODE $(DBGFLAGS)
+DEP_DEFS = -fPIC `wx-config --unicode=yes --static=no --cxxflags` $(DBGFLAGS)
 DEP_LFLG = -fPIC -shared `wx-config --unicode=yes --static=no --libs`
 
 DEF_SAGA           = -D_SAGA_LINUX -D_TYPEDEF_BYTE -D_TYPEDEF_WORD
@@ -22,7 +22,6 @@ tl_union.cpp\
 tool_counter.cpp\
 tool_py_updater.cpp\
 arctoolbox.h\
-MLB_Interface.h\
 tl_extract.h\
 tl_merge.h\
 tl_union.h\

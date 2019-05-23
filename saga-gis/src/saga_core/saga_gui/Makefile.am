@@ -10,7 +10,7 @@ MSHAREPATH = "SHARE_PATH=\"$(prefix)/share/saga\""
 
 BASEFLAGS = -fPIC -D_SAGA_LINUX -D_TYPEDEF_BYTE -D_TYPEDEF_WORD -D_SAGA_DONOTUSE_HARU -D$(MLIBPATH) -D$(MSHAREPATH) $(DBGFLAGS) $(INCS)
 
-AM_CXXFLAGS = $(BASEFLAGS) `wx-config --unicode=yes --cxxflags` -D_SAGA_UNICODE $(GOMPFLAGS)
+AM_CXXFLAGS = $(BASEFLAGS) `wx-config --unicode=yes --cxxflags` $(GOMPFLAGS)
 AM_LDFLAGS = -fPIC `wx-config --unicode=yes --libs adv,aui,base,core,html,net,propgrid,xml`
 
 
@@ -22,6 +22,7 @@ active_attributes.cpp\
 active_attributes_control.cpp\
 active_description.cpp\
 active_history.cpp\
+active_info.cpp\
 active_legend.cpp\
 active_parameters.cpp\
 callback.cpp\
@@ -118,6 +119,7 @@ active_attributes.h\
 active_attributes_control.h\
 active_description.h\
 active_history.h\
+active_info.h\
 active_legend.h\
 active_parameters.h\
 callback.h\
@@ -227,8 +229,8 @@ install-icons:
 	mkdir -p $(DESTDIR)$(datadir)/icons/hicolor/256x256/apps; \
 	$(INSTALL_DATA) res/saga.png $(DESTDIR)$(datadir)/icons/hicolor/256x256/apps/saga.png
 
-appdatadir = $(datadir)/appdata
-dist_appdata_DATA = res/saga.appdata.xml
+appdatadir = $(datadir)/metainfo
+dist_appdata_DATA = res/org.saga-gis.saga-gui.appdata.xml
 
 dist_pkgdata_DATA = res/saga_tip.txt res/saga_dic.txt res/saga_srs.txt
 

@@ -247,13 +247,13 @@ C3D_Viewer_PointCloud_Panel::C3D_Viewer_PointCloud_Panel(wxWindow *pParent, CSG_
 //---------------------------------------------------------
 int C3D_Viewer_PointCloud_Panel::On_Parameters_Enable(CSG_Parameters *pParameters, CSG_Parameter *pParameter)
 {
-	if( !SG_STR_CMP(pParameter->Get_Identifier(), "VAL_AS_RGB") )
+	if( pParameter->Cmp_Identifier("VAL_AS_RGB") )
 	{
 		pParameters->Get_Parameter("COLORS"      )->Set_Enabled(pParameter->asBool() == false);
 		pParameters->Get_Parameter("COLORS_RANGE")->Set_Enabled(pParameter->asBool() == false);
 	}
 
-	if( !SG_STR_CMP(pParameter->Get_Identifier(), "DIM") )
+	if( pParameter->Cmp_Identifier("DIM") )
 	{
 		pParameters->Get_Parameter("DIM_RANGE")->Set_Enabled(pParameter->asBool());
 	}
@@ -429,8 +429,8 @@ bool C3D_Viewer_PointCloud_Panel::On_Draw(void)
 	//-----------------------------------------------------
 	int		cField	= m_Parameters("COLORS_ATTR")->asInt();
 
-	if( m_Parameters("COLORS_RANGE")->asRange()->Get_LoVal()
-	>=  m_Parameters("COLORS_RANGE")->asRange()->Get_HiVal() )
+	if( m_Parameters("COLORS_RANGE")->asRange()->Get_Min()
+	>=  m_Parameters("COLORS_RANGE")->asRange()->Get_Max() )
 	{
 		m_Parameters("COLORS_RANGE")->asRange()->Set_Range(
 			m_pPoints->Get_Mean(cField) - 1.5 * m_pPoints->Get_StdDev(cField),
@@ -440,14 +440,14 @@ bool C3D_Viewer_PointCloud_Panel::On_Draw(void)
 
 	m_Colors		= *m_Parameters("COLORS")->asColors();
 	m_Color_bGrad	= m_Parameters("COLORS_GRAD")->asBool();
-	m_Color_Min		= m_Parameters("COLORS_RANGE")->asRange()->Get_LoVal();
+	m_Color_Min		= m_Parameters("COLORS_RANGE")->asRange()->Get_Min();
 	m_Color_Scale	= m_Parameters("VAL_AS_RGB")->asBool() ? 0.0 :
-		m_Colors.Get_Count() / (m_Parameters("COLORS_RANGE")->asRange()->Get_HiVal() - m_Color_Min);
+		m_Colors.Get_Count() / (m_Parameters("COLORS_RANGE")->asRange()->Get_Max() - m_Color_Min);
 
 	if( m_Parameters("DIM")->asBool() )
 	{
-		m_Color_Dim_Min	= m_Parameters("DIM_RANGE")->asRange()->Get_LoVal() * (m_Data_Max.z - m_Data_Min.z);
-		m_Color_Dim_Max	= m_Parameters("DIM_RANGE")->asRange()->Get_HiVal() * (m_Data_Max.z - m_Data_Min.z);
+		m_Color_Dim_Min	= m_Parameters("DIM_RANGE")->asRange()->Get_Min() * (m_Data_Max.z - m_Data_Min.z);
+		m_Color_Dim_Max	= m_Parameters("DIM_RANGE")->asRange()->Get_Max() * (m_Data_Max.z - m_Data_Min.z);
 	}
 	else
 	{

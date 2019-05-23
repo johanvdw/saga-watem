@@ -1,6 +1,3 @@
-/**********************************************************
- * Version $Id$
- *********************************************************/
 
 ///////////////////////////////////////////////////////////
 //                                                       //
@@ -48,15 +45,6 @@
 //                                                       //
 //    e-mail:     oconrad@saga-gis.org                   //
 //                                                       //
-///////////////////////////////////////////////////////////
-
-//---------------------------------------------------------
-
-
-///////////////////////////////////////////////////////////
-//														 //
-//														 //
-//														 //
 ///////////////////////////////////////////////////////////
 
 //---------------------------------------------------------
@@ -174,8 +162,6 @@ END_EVENT_TABLE()
 
 ///////////////////////////////////////////////////////////
 //														 //
-//														 //
-//														 //
 ///////////////////////////////////////////////////////////
 
 //---------------------------------------------------------
@@ -193,7 +179,7 @@ CParameters_Control::CParameters_Control(wxWindow *pParent, bool bDialog)
 
 //	m_pPGM->SetDescBoxHeight(bDialog ? 100 : 50);
 
-	m_pPG->AddActionTrigger(wxPG_ACTION_PRESS_BUTTON , WXK_SPACE);
+	m_pPG->AddActionTrigger(wxPG_ACTION_PRESS_BUTTON, WXK_SPACE);
 
 //	m_pPG->SetExtraStyle(wxPG_EX_HELP_AS_TOOLTIPS);
 //	m_pPG->SetCellDisabledTextColour(wxColour(200, 200, 200));
@@ -209,8 +195,6 @@ CParameters_Control::~CParameters_Control(void)
 
 
 ///////////////////////////////////////////////////////////
-//														 //
-//														 //
 //														 //
 ///////////////////////////////////////////////////////////
 
@@ -259,8 +243,6 @@ void CParameters_Control::On_PG_Changed(wxPropertyGridEvent &event)
 
 
 ///////////////////////////////////////////////////////////
-//														 //
-//														 //
 //														 //
 ///////////////////////////////////////////////////////////
 
@@ -360,8 +342,6 @@ bool CParameters_Control::Save(void)
 
 ///////////////////////////////////////////////////////////
 //														 //
-//														 //
-//														 //
 ///////////////////////////////////////////////////////////
 
 //---------------------------------------------------------
@@ -423,8 +403,6 @@ bool CParameters_Control::Set_Parameters(CSG_Parameters *pParameters)
 
 
 ///////////////////////////////////////////////////////////
-//														 //
-//														 //
 //														 //
 ///////////////////////////////////////////////////////////
 
@@ -612,7 +590,7 @@ wxPGProperty * CParameters_Control::_Get_Property(wxPGProperty *pParent, CSG_Par
 		break;
 
 	case PARAMETER_TYPE_String          :
-		if( ((CSG_Parameter_String *)pParameter->Get_Data())->is_Password() )
+		if( ((CSG_Parameter_String *)pParameter)->is_Password() )
 		{
 			ADD_PROPERTY(new wxStringProperty    (Name, ID, pParameter->asString()), false);
 			pProperty->SetAttribute(wxPG_STRING_PASSWORD, true);
@@ -677,8 +655,6 @@ wxPGProperty * CParameters_Control::_Get_Property(wxPGProperty *pParent, CSG_Par
 
 ///////////////////////////////////////////////////////////
 //														 //
-//														 //
-//														 //
 ///////////////////////////////////////////////////////////
 
 //---------------------------------------------------------
@@ -704,8 +680,6 @@ bool CParameters_Control::_Get_Enabled(CSG_Parameter *pParameter)
 
 
 ///////////////////////////////////////////////////////////
-//														 //
-//														 //
 //														 //
 ///////////////////////////////////////////////////////////
 

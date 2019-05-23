@@ -164,10 +164,11 @@ CWKSP_Tool_Manager::CWKSP_Tool_Manager(void)
 
 	m_Parameters.Add_FilePath("NODE_FILES",
 		"LNG_FILE_DIC"	, _TL("Language Translations"),
-		_TL("Dictionary for translations from built-in (English) to local language (editable text table). You need to restart SAGA to apply the changes."),
-		CSG_String::Format("%s|*.lng|%s|*.txt|%s|*.*",
-			_TL("Dictionary Files (*.lng)"),
-			_TL("Text Table (*.txt)"),
+		_TL("Dictionary for translations from built-in (English) to local language (editable text table, utf-8 encoded). You need to restart SAGA to apply the changes."),
+		CSG_String::Format("%s|*.lng;*.txt|%s (*.lng)|*.lng|%s (*.txt)|*.txt|%s|*.*",
+			_TL("Recognized Files"),
+			_TL("Dictionary Files"),
+			_TL("Text Table"),
 			_TL("All Files")
 		)
 	);
@@ -175,8 +176,8 @@ CWKSP_Tool_Manager::CWKSP_Tool_Manager(void)
 	m_Parameters.Add_FilePath("NODE_FILES",
 		"CRS_FILE_SRS"	, _TL("CRS Database"),
 		_TL("Database with Coordinate Reference System (CRS) definitions. You need to restart SAGA to apply the changes."),
-		CSG_String::Format("%s|*.srs|%s|*.*",
-			_TL("Spatial Reference System Files (*.srs)"),
+		CSG_String::Format("%s (*.srs)|*.srs|%s|*.*",
+			_TL("Spatial Reference System Files"),
 			_TL("All Files")
 		)
 	);
@@ -184,8 +185,8 @@ CWKSP_Tool_Manager::CWKSP_Tool_Manager(void)
 	m_Parameters.Add_FilePath("NODE_FILES",
 		"CRS_FILE_DIC"	, _TL("CRS Dictionary"),
 		_TL("Dictionary for Proj.4/OGC WKT translations. You need to restart SAGA to apply the changes."),
-		CSG_String::Format("%s|*.dic|%s|*.*",
-			_TL("Dictionary Files (*.dic)"),
+		CSG_String::Format("%s (*.dic)|*.dic|%s|*.*",
+			_TL("Dictionary Files"),
 			_TL("All Files")
 		)
 	);
@@ -253,7 +254,9 @@ bool CWKSP_Tool_Manager::Initialise(void)
 			Library	= fn.GetFullPath();
 		}
 
-		SG_Get_Tool_Library_Manager().Add_Library(Library);
+		SG_UI_Progress_Lock(true);
+		SG_Get_Tool_Library_Manager().Add_Library(&Library);
+		SG_UI_Progress_Lock(false);
 	}
 
 	if( SG_Get_Tool_Library_Manager().Get_Count() == 0 )
@@ -262,7 +265,7 @@ bool CWKSP_Tool_Manager::Initialise(void)
 	if( (SG_Get_Tool_Library_Manager().Add_Directory(CSG_String(MODULE_LIBRARY_PATH), false)
 	   + SG_Get_Tool_Library_Manager().Add_Directory(SG_File_Make_Path(CSG_String(SHARE_PATH), SG_T("toolchains")), false)) == 0 )
 #endif
-		SG_Get_Tool_Library_Manager().Add_Directory(g_pSAGA->Get_App_Path(), true);
+		SG_Get_Tool_Library_Manager().Add_Directory(&g_pSAGA->Get_App_Path(), true);
 	}
 
 	_Update(false);
@@ -272,7 +275,7 @@ bool CWKSP_Tool_Manager::Initialise(void)
 
 //---------------------------------------------------------
 #ifdef _SAGA_MSW
-	#define GET_LIBPATH(path)	Get_FilePath_Relative(g_pSAGA->Get_App_Path(), path.c_str())
+	#define GET_LIBPATH(path)	Get_FilePath_Relative(g_pSAGA->Get_App_Path().c_str(), path.c_str())
 #else
 	#define GET_LIBPATH(path)	path.c_str()
 #endif
@@ -324,11 +327,11 @@ int CWKSP_Tool_Manager::On_Parameter_Changed(CSG_Parameters *pParameters, CSG_Pa
 	{
 		if( g_pSAGA_Frame && g_pData )
 		{
-			if( !SG_STR_CMP(pParameter->Get_Identifier(), "LNG_OLDSTYLE")
-			||  !SG_STR_CMP(pParameter->Get_Identifier(), "LNG_FILE_DIC")
-			||  !SG_STR_CMP(pParameter->Get_Identifier(), "CRS_FILE_SRS")
-			||  !SG_STR_CMP(pParameter->Get_Identifier(), "CRS_FILE_DIC")
-			||  !SG_STR_CMP(pParameter->Get_Identifier(), "LOOK_TB_SIZE") )
+			if( pParameter->Cmp_Identifier("LNG_OLDSTYLE")
+			||  pParameter->Cmp_Identifier("LNG_FILE_DIC")
+			||  pParameter->Cmp_Identifier("CRS_FILE_SRS")
+			||  pParameter->Cmp_Identifier("CRS_FILE_DIC")
+			||  pParameter->Cmp_Identifier("LOOK_TB_SIZE") )
 			{
 				if( DLG_Message_Confirm(_TL("Restart now ?"), _TL("Restart SAGA to apply the changes")) && g_pData->Close(true) )
 				{
@@ -432,7 +435,7 @@ bool CWKSP_Tool_Manager::On_Command(int Cmd_ID)
 			SG_Get_Tool_Library_Manager().Add_Directory(CSG_String(MODULE_LIBRARY_PATH), false);
 			SG_Get_Tool_Library_Manager().Add_Directory(SG_File_Make_Path(CSG_String(SHARE_PATH), SG_T("toolchains")), false);
 		#else
-			SG_Get_Tool_Library_Manager().Add_Directory(g_pSAGA->Get_App_Path() + "/tools", false);
+			SG_Get_Tool_Library_Manager().Add_Directory(CSG_String(&g_pSAGA->Get_App_Path()) + "/tools", false);
 		#endif
 			_Update(false);
 		break;
@@ -635,7 +638,7 @@ void CWKSP_Tool_Manager::Open(void)
 
 		for(size_t i=0; i<File_Paths.GetCount(); i++)
 		{
-			if( SG_Get_Tool_Library_Manager().Add_Library(File_Paths[i]) )
+			if( SG_Get_Tool_Library_Manager().Add_Library(&File_Paths[i]) )
 			{
 				bUpdate	= true;
 			}
@@ -651,7 +654,7 @@ void CWKSP_Tool_Manager::Open(void)
 //---------------------------------------------------------
 bool CWKSP_Tool_Manager::Open(const wxString &File_Name)
 {
-	if( SG_Get_Tool_Library_Manager().Add_Library(File_Name) )
+	if( SG_Get_Tool_Library_Manager().Add_Library(&File_Name) )
 	{
 		_Update(false);
 

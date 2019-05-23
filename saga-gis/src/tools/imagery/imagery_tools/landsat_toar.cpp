@@ -409,7 +409,7 @@ CLandsat_TOAR::CLandsat_TOAR(void)
 //---------------------------------------------------------
 int CLandsat_TOAR::On_Parameter_Changed(CSG_Parameters *pParameters, CSG_Parameter *pParameter)
 {
-	if(	!SG_STR_CMP(pParameter->Get_Identifier(), "METAFILE") && *pParameter->asString() )
+	if(	pParameter->Cmp_Identifier("METAFILE") && *pParameter->asString() )
 	{
 		lsat_data	lsat;
 
@@ -421,18 +421,18 @@ int CLandsat_TOAR::On_Parameter_Changed(CSG_Parameters *pParameters, CSG_Paramet
 		}
 		else
 		{
-			pParameters->Get("SENSOR"   )->Set_Value(Get_Sensor_Index(lsat.number, lsat.sensor));
-			pParameters->Get("DATE_ACQU")->Set_Value((const char *)lsat.date);
-			pParameters->Get("DATE_PROD")->Set_Value((const char *)lsat.creation);
-			pParameters->Get("SUN_HGT"  )->Set_Value(lsat.sun_elev);
+			pParameters->Set_Parameter("SENSOR"   , Get_Sensor_Index(lsat.number, lsat.sensor));
+			pParameters->Set_Parameter("DATE_ACQU", (const char *)lsat.date);
+			pParameters->Set_Parameter("DATE_PROD", (const char *)lsat.creation);
+			pParameters->Set_Parameter("SUN_HGT"  , lsat.sun_elev);
 
-			On_Parameters_Enable(pParameters, pParameters->Get("SENSOR"));
+			On_Parameters_Enable(pParameters, (*pParameters)("SENSOR"));
 		}
 	}
 
-	if(	!SG_STR_CMP(pParameter->Get_Identifier(), "SENSOR") )
+	if(	pParameter->Cmp_Identifier("SENSOR") )
 	{
-		pParameters->Get("METAFILE")->Set_Value((const char *)"");
+		(*pParameters)("METAFILE")->Set_Value((const char *)"");
 	}
 
 	return( CSG_Tool::On_Parameter_Changed(pParameters, pParameter) );
@@ -441,30 +441,30 @@ int CLandsat_TOAR::On_Parameter_Changed(CSG_Parameters *pParameters, CSG_Paramet
 //---------------------------------------------------------
 int CLandsat_TOAR::On_Parameters_Enable(CSG_Parameters *pParameters, CSG_Parameter *pParameter)
 {
-	if(	!SG_STR_CMP(pParameter->Get_Identifier(), "AC_METHOD") )
+	if(	pParameter->Cmp_Identifier("AC_METHOD") )
 	{
 		pParameters->Set_Enabled("AC_DO_CELLS", pParameter->asInt() > 1);
 		pParameters->Set_Enabled("AC_RAYLEIGH", pParameter->asInt() > 1);
 		pParameters->Set_Enabled("AC_SUN_RAD" , pParameter->asInt() > 1);
 	}
 
-	if( !SG_STR_CMP(pParameter->Get_Identifier(), "METAFILE")
-	||  !SG_STR_CMP(pParameter->Get_Identifier(), "SENSOR"  ) )
+	if( pParameter->Cmp_Identifier("METAFILE")
+	||  pParameter->Cmp_Identifier("SENSOR"  ) )
 	{
-		int	Sensor	= pParameters->Get("SENSOR")->asInt();
+		int	Sensor	= (*pParameters)("SENSOR")->asInt();
 
 		pParameters->Set_Enabled("MSS"        , Sensor <= mss5);
 		pParameters->Set_Enabled("TM"         , Sensor >= tm4 && Sensor <= tm5);
 		pParameters->Set_Enabled("TM_T"       , Sensor >= tm4 && Sensor <= tm5);
 		pParameters->Set_Enabled("ETM"        , Sensor == tm7);
 		pParameters->Set_Enabled("ETM_T"      , Sensor == tm7);
-		pParameters->Set_Enabled("ETM_GAIN"   , Sensor == tm7 && *pParameters->Get("METAFILE")->asString() == '\0');
+		pParameters->Set_Enabled("ETM_GAIN"   , Sensor == tm7 && *(*pParameters)("METAFILE")->asString() == '\0');
 		pParameters->Set_Enabled("OLI"        , Sensor == oli8);
 		pParameters->Set_Enabled("TIRS"       , Sensor == oli8);
 		pParameters->Set_Enabled("PAN"        , Sensor >= tm7);
 	}
 
-	if(	!SG_STR_CMP(pParameter->Get_Identifier(), "GRIDS_OUT") )
+	if(	pParameter->Cmp_Identifier("GRIDS_OUT") )
 	{
 		pParameters->Set_Enabled("GRIDS_NAME" , pParameter->asBool());
 	}
@@ -678,7 +678,7 @@ bool CLandsat_TOAR::On_Execute(void)
 			//---------------------------------------------
 			if( AC_Method > DOS && !lsat.band[iBand].thermal )	// calculate dark pixel
 			{
-				Process_Set_Text(CSG_String::Format("%s [%d/%d]", _TL("Dark Object Subtraction"), lsat.band[iBand].number, lsat.bands));
+				Process_Set_Text("%s [%d/%d]", _TL("Dark Object Subtraction"), lsat.band[iBand].number, lsat.bands);
 
 				int				j;
 				unsigned long	hist[256], h_max;
@@ -721,11 +721,11 @@ bool CLandsat_TOAR::On_Execute(void)
 					}
 				}
 
-				Message_Add(CSG_String::Format("DN = %.2d [%lu] : mode %.2d [%lu] %s",
+				Message_Fmt("\nDN = %.2d [%lu] : mode %.2d [%lu] %s",
 					dn_dark[iBand], hist[dn_dark[iBand]],
 					dn_mode[iBand], hist[dn_mode[iBand]],
 					hist[255] > hist[dn_mode[iBand]] ? ", excluding DN > 241" : ""
-				));
+				);
 			}
 
 			//---------------------------------------------
@@ -765,12 +765,12 @@ bool CLandsat_TOAR::On_Execute(void)
 			continue;
 		}
 
-		Process_Set_Text(CSG_String::Format("%s [%d/%d]", _TL("Processing"), lsat.band[iBand].number, lsat.bands));
+		Process_Set_Text("%s [%d/%d]", _TL("Processing"), lsat.band[iBand].number, lsat.bands);
 
 		//-------------------------------------------------
 		if( bRadiance )
 		{
-			pOutput->Set_Name(CSG_String::Format("%s [%s]", pInput->Get_Name(), _TL("Radiance"   )));
+			pOutput->Fmt_Name("%s [%s]", pInput->Get_Name(), _TL("Radiance"));
 			pOutput->asGrid()->Set_NoData_Value(MaxVal);
 
 			double	min	= lsat_qcal2rad(pInput->Get_Min(), &lsat.band[iBand]);
@@ -780,14 +780,14 @@ bool CLandsat_TOAR::On_Execute(void)
 		}
 		else if( lsat.band[iBand].thermal )
 		{
-			pOutput->Set_Name(CSG_String::Format("%s [%s]", pInput->Get_Name(), _TL("Temperature")));
+			pOutput->Fmt_Name("%s [%s]", pInput->Get_Name(), _TL("Temperature"));
 			pOutput->Set_Unit(_TL("Kelvin"));
 			pOutput->asGrid()->Set_NoData_Value(MaxVal);
 			pOutput->asGrid()->Set_Scaling(150.0 / (MaxVal - 1.0), 183.16);	// -90°C to 60°C
 		}
 		else
 		{
-			pOutput->Set_Name(CSG_String::Format("%s [%s]", pInput->Get_Name(), _TL("Reflectance")));
+			pOutput->Fmt_Name("%s [%s]", pInput->Get_Name(), _TL("Reflectance"));
 			pOutput->asGrid()->Set_NoData_Value(MaxVal);
 			pOutput->asGrid()->Set_Scaling(1.0 / (MaxVal - 1.0));
 		}

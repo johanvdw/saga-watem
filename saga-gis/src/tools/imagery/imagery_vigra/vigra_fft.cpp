@@ -1,6 +1,3 @@
-/**********************************************************
- * Version $Id: vigra_fft.cpp 1921 2014-01-09 10:24:11Z oconrad $
- *********************************************************/
 
 ///////////////////////////////////////////////////////////
 //                                                       //
@@ -168,33 +165,33 @@ CViGrA_FFT::CViGrA_FFT(void)
 	Set_Author		("O.Conrad (c) 2009");
 
 	Set_Description	(_TW(
-		"References:\n"
-		"ViGrA - Vision with Generic Algorithms\n"
-		"<a target=\"_blank\" href=\"http://hci.iwr.uni-heidelberg.de/vigra\">http://hci.iwr.uni-heidelberg.de</a>"
+		"Fourier Transform."
 	));
 
+	Add_Reference("http://ukoethe.github.io/vigra/", SG_T("ViGrA - Vision with Generic Algorithms"));
+
 	Parameters.Add_Grid(
-		NULL	, "INPUT"		, _TL("Input"),
+		"", "INPUT"		, _TL("Input"),
 		_TL(""),
 		PARAMETER_INPUT
 	);
 
 	Parameters.Add_Grid(
-		NULL	, "REAL"		, _TL("Real"),
+		"", "REAL"		, _TL("Real"),
 		_TL(""),
 		PARAMETER_OUTPUT
 	);
 
 	Parameters.Add_Grid(
-		NULL	, "IMAG"		, _TL("Imaginary"),
+		"", "IMAG"		, _TL("Imaginary"),
 		_TL(""),
 		PARAMETER_OUTPUT
 	);
 
-	Parameters.Add_Value(
-		NULL	, "CENTER"		, _TL("Centered"),
+	Parameters.Add_Bool(
+		"", "CENTER"	, _TL("Centered"),
 		_TL(""),
-		PARAMETER_TYPE_Bool, true
+		true
 	);
 }
 
@@ -233,8 +230,8 @@ bool CViGrA_FFT::On_Execute(void)
 	//-----------------------------------------------------
 	Copy_ComplexGrid_VIGRA_to_SAGA(*pReal, *pImag, Output, false);
 
-	pReal->Set_Name(CSG_String::Format(SG_T("%s [FFT - %s]"), pInput->Get_Name(), _TL("Real")));
-	pImag->Set_Name(CSG_String::Format(SG_T("%s [FFT - %s]"), pInput->Get_Name(), _TL("Imaginary")));
+	pReal->Fmt_Name("%s [FFT - %s]", pInput->Get_Name(), _TL("Real"     ));
+	pImag->Fmt_Name("%s [FFT - %s]", pInput->Get_Name(), _TL("Imaginary"));
 
 	return( true );
 }
@@ -254,33 +251,33 @@ CViGrA_FFT_Inverse::CViGrA_FFT_Inverse(void)
 	Set_Author		("O.Conrad (c) 2009");
 
 	Set_Description	(_TW(
-		"References:\n"
-		"ViGrA - Vision with Generic Algorithms\n"
-		"<a target=\"_blank\" href=\"http://hci.iwr.uni-heidelberg.de/vigra\">http://hci.iwr.uni-heidelberg.de</a>"
+		"Inverse Fourier Transform."
 	));
 
+	Add_Reference("http://ukoethe.github.io/vigra/", SG_T("ViGrA - Vision with Generic Algorithms"));
+
 	Parameters.Add_Grid(
-		NULL	, "REAL"		, _TL("Real"),
+		"", "REAL"		, _TL("Real"),
 		_TL(""),
 		PARAMETER_INPUT
 	);
 
 	Parameters.Add_Grid(
-		NULL	, "IMAG"		, _TL("Imaginary"),
+		"", "IMAG"		, _TL("Imaginary"),
 		_TL(""),
 		PARAMETER_INPUT
 	);
 
 	Parameters.Add_Grid(
-		NULL	, "OUTPUT"		, _TL("Output"),
+		"", "OUTPUT"	, _TL("Output"),
 		_TL(""),
 		PARAMETER_OUTPUT
 	);
 
-	Parameters.Add_Value(
-		NULL	, "CENTER"		, _TL("Centered"),
+	Parameters.Add_Bool(
+		"", "CENTER"	, _TL("Centered"),
 		_TL(""),
-		PARAMETER_TYPE_Bool, true
+		true
 	);
 }
 
@@ -319,7 +316,7 @@ bool CViGrA_FFT_Inverse::On_Execute(void)
 
 	Copy_ComplexGrid_VIGRA_to_SAGA(*pReal, Output, false);
 
-	pReal->Set_Name(CSG_String::Format(SG_T("%s [FFT - %s]"), Get_Name().c_str(), _TL("Real")));
+	pReal->Fmt_Name("%s [FFT - %s]", Get_Name().c_str(), _TL("Real"));
 
 	return( true );
 }
@@ -339,19 +336,19 @@ CViGrA_FFT_Real::CViGrA_FFT_Real(void)
 	Set_Author		("O.Conrad (c) 2009");
 
 	Set_Description	(_TW(
-		"References:\n"
-		"ViGrA - Vision with Generic Algorithms\n"
-		"<a target=\"_blank\" href=\"http://hci.iwr.uni-heidelberg.de/vigra\">http://hci.iwr.uni-heidelberg.de</a>"
+		"Fourier Transform (Real)."
 	));
 
+	Add_Reference("http://ukoethe.github.io/vigra/", SG_T("ViGrA - Vision with Generic Algorithms"));
+
 	Parameters.Add_Grid(
-		NULL	, "INPUT"		, _TL("Input"),
+		"", "INPUT"		, _TL("Input"),
 		_TL(""),
 		PARAMETER_INPUT
 	);
 
 	Parameters.Add_Grid(
-		NULL	, "OUTPUT"		, _TL("Output"),
+		"", "OUTPUT"	, _TL("Output"),
 		_TL(""),
 		PARAMETER_OUTPUT
 	);
@@ -367,8 +364,8 @@ bool CViGrA_FFT_Real::On_Execute(void)
 {
 	CSG_Grid	*pInput, *pOutput;
 
-	pInput	= Parameters("INPUT")	->asGrid();
-	pOutput	= Parameters("OUTPUT")	->asGrid();
+	pInput	= Parameters("INPUT" )->asGrid();
+	pOutput	= Parameters("OUTPUT")->asGrid();
 
 	//-----------------------------------------------------
 	vigra::FImage	Input, Output(Get_NX(), Get_NY());
@@ -381,7 +378,7 @@ bool CViGrA_FFT_Real::On_Execute(void)
 	//-----------------------------------------------------
 	Copy_Grid_VIGRA_to_SAGA(*pOutput, Output, false);
 
-	pOutput->Set_Name(CSG_String::Format(SG_T("%s [%s - %s]"), Get_Name().c_str(), pInput->Get_Name()));
+	pOutput->Fmt_Name("%s [%s - %s]", Get_Name().c_str(), pInput->Get_Name());
 
 	return( true );
 
@@ -419,45 +416,45 @@ CViGrA_FFT_Filter::CViGrA_FFT_Filter(void)
 	Set_Author		("O.Conrad (c) 2009");
 
 	Set_Description	(_TW(
-		"References:\n"
-		"ViGrA - Vision with Generic Algorithms\n"
-		"<a target=\"_blank\" href=\"http://hci.iwr.uni-heidelberg.de/vigra\">http://hci.iwr.uni-heidelberg.de</a>"
+		"Fourier Filter."
 	));
 
+	Add_Reference("http://ukoethe.github.io/vigra/", SG_T("ViGrA - Vision with Generic Algorithms"));
+
 	Parameters.Add_Grid(
-		NULL	, "INPUT"		, _TL("Input"),
+		"", "INPUT"		, _TL("Input"),
 		_TL(""),
 		PARAMETER_INPUT
 	);
 
 	Parameters.Add_Grid(
-		NULL	, "OUTPUT"		, _TL("Output"),
+		"", "OUTPUT"	, _TL("Output"),
 		_TL(""),
 		PARAMETER_OUTPUT
 	);
 
-	Parameters.Add_Value(
-		NULL	, "SCALE"		, _TL("Size of smoothing filter"),
+	Parameters.Add_Double(
+		"", "SCALE"		, _TL("Size of smoothing filter"),
 		_TL(""),
-		PARAMETER_TYPE_Double, 2.0, 0.0, true
+		2.0, 0.0, true
 	);
 
-	Parameters.Add_Value(
-		NULL	, "POWER"		, _TL("Power"),
+	Parameters.Add_Double(
+		"", "POWER"		, _TL("Power"),
 		_TL(""),
-		PARAMETER_TYPE_Double, 0.5
+		0.5
 	);
 
 	Parameters.Add_Range(
-		NULL	, "RANGE"		, _TL("Range"),
+		"", "RANGE"		, _TL("Range"),
 		_TL(""),
 		0.1, 0.9, 0.0, true
 	);
 
 	Parameters.Add_Choice(
-		NULL	, "FILTER"		, _TL("Filter"),
+		"", "FILTER"	, _TL("Filter"),
 		_TL(""),
-		CSG_String::Format(SG_T("%s|%s|%s|%s|"),
+		CSG_String::Format("%s|%s|%s|%s",
 			_TL("gaussian"),
 			_TL("power of distance"),
 			_TL("include range"),
@@ -474,14 +471,14 @@ CViGrA_FFT_Filter::CViGrA_FFT_Filter(void)
 //---------------------------------------------------------
 int CViGrA_FFT_Filter::On_Parameters_Enable(CSG_Parameters *pParameters, CSG_Parameter *pParameter)
 {
-	if( !SG_STR_CMP(pParameter->Get_Identifier(), "FILTER") )
+	if( pParameter->Cmp_Identifier("FILTER") )
 	{
-		pParameters->Get_Parameter("SCALE")->Set_Enabled(pParameter->asInt() == 0);
-		pParameters->Get_Parameter("POWER")->Set_Enabled(pParameter->asInt() == 1);
-		pParameters->Get_Parameter("RANGE")->Set_Enabled(pParameter->asInt() >= 2);
+		pParameters->Set_Enabled("SCALE", pParameter->asInt() == 0);
+		pParameters->Set_Enabled("POWER", pParameter->asInt() == 1);
+		pParameters->Set_Enabled("RANGE", pParameter->asInt() >= 2);
 	}
 
-	return( 1 );
+	return( CSG_Tool_Grid::On_Parameters_Enable(pParameters, pParameter) );
 }
 
 
@@ -501,8 +498,8 @@ bool CViGrA_FFT_Filter::On_Execute(void)
 	Scale		= Parameters("SCALE" )->asDouble();
 	Power		= Parameters("POWER" )->asDouble();
 	Filter		= Parameters("FILTER")->asInt();
-	Range_Min	= Parameters("RANGE" )->asRange()->Get_LoVal();
-	Range_Max	= Parameters("RANGE" )->asRange()->Get_HiVal();
+	Range_Min	= Parameters("RANGE" )->asRange()->Get_Min();
+	Range_Max	= Parameters("RANGE" )->asRange()->Get_Max();
 
 	//-----------------------------------------------------
 	vigra::FImage			Input, Filter_Raw(Get_NX(), Get_NY()), Filter_(Get_NX(), Get_NY());
@@ -520,19 +517,19 @@ bool CViGrA_FFT_Filter::On_Execute(void)
 
 			switch( Filter )
 			{
-			case 0:
+			default:
 				Filter_Raw(x, y)	= exp(-(xx*xx + yy*yy) / 2.0 * Scale);
 				break;
 
-			case 1:
+			case  1:
 				Filter_Raw(x, y)	= pow(sqrt(xx*xx + yy*yy), Power);
 				break;
 
-			case 2:
+			case  2:
 				Filter_Raw(x, y)	= (xx = sqrt(xx*xx + yy*yy)) < Range_Min || xx > Range_Max ? 0.0 : 1.0;
 				break;
 
-			case 3:
+			case  3:
 				Filter_Raw(x, y)	= (xx = sqrt(xx*xx + yy*yy)) < Range_Min || xx > Range_Max ? 1.0 : 0.0;
 				break;
 			}
@@ -549,7 +546,7 @@ bool CViGrA_FFT_Filter::On_Execute(void)
 	//-----------------------------------------------------
 	Copy_ComplexGrid_VIGRA_to_SAGA(*pOutput, Output, false);
 
-	pOutput->Set_Name(CSG_String::Format(SG_T("%s [FFT %s]"), pInput->Get_Name(), _TL("Filter")));
+	pOutput->Fmt_Name("%s [FFT %s]", pInput->Get_Name(), _TL("Filter"));
 
 	return( true );
 }

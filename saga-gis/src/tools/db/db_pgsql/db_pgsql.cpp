@@ -64,6 +64,8 @@ extern "C" {
 #include <libpq-fe.h>
 }
 
+#include <ctype.h>
+
 
 ///////////////////////////////////////////////////////////
 //														 //
@@ -475,7 +477,7 @@ CSG_Table CSG_PG_Connection::Get_Field_Desc(const CSG_String &Table_Name, bool b
 {
 	CSG_Table	Fields;
 
-	Fields.Set_Name(CSG_String::Format("%s [%s]", Table_Name.c_str(), _TL("Field Description")));
+	Fields.Fmt_Name("%s [%s]", Table_Name.c_str(), _TL("Field Description"));
 
 	if( bVerbose )
 	{
@@ -742,7 +744,57 @@ bool CSG_PG_Connection::Commit(const CSG_String &SavePoint)
 ///////////////////////////////////////////////////////////
 
 //---------------------------------------------------------
-bool CSG_PG_Connection::Table_Create(const CSG_String &Table_Name, const CSG_Table &Table, const CSG_Buffer &Flags, bool bCommit)
+bool	SG_String_Replace_Characters(CSG_String &String, const CSG_String Characters, const CSG_String &Replacement)
+{
+	for(size_t i=0; i<Characters.Length(); i++)
+	{
+		String.Replace(Characters[i], Replacement);
+	}
+
+	return( true );
+}
+
+//---------------------------------------------------------
+CSG_String CSG_PG_Connection::Make_Table_Name(const CSG_String &Table_Name)
+{
+	CSG_String	Name(Table_Name);
+
+	Name.Make_Lower();
+
+	Name.Replace("ä", "ae");
+	Name.Replace("ö", "oe");
+	Name.Replace("ü", "ue");
+	Name.Replace("ß", "sz");
+
+	SG_String_Replace_Characters(Name, ".,;:({[]})#+-", '_');
+
+	if( !Name.is_Empty() && isdigit(Name[0]) )
+	{
+		Name.Prepend("_");
+	}
+
+	return( Name );
+}
+
+//---------------------------------------------------------
+CSG_String CSG_PG_Connection::Make_Table_Field_Name(const CSG_Table &Table, int Field)
+{
+	CSG_String	Name(Table.Get_Field_Name(Field));
+
+	Name.Make_Lower();
+
+	Name.Replace("ä", "ae"); //Name.Replace("Ä", "Ae");
+	Name.Replace("ö", "oe"); //Name.Replace("Ö", "Oe");
+	Name.Replace("ü", "ue"); //Name.Replace("Ü", "Ue");
+	Name.Replace("ß", "sz");
+
+	SG_String_Replace_Characters(Name, ".,;:({[]})#+-", '_');
+
+	return( Name );
+}
+
+//---------------------------------------------------------
+bool CSG_PG_Connection::Table_Create(const CSG_String &_Table_Name, const CSG_Table &Table, const CSG_Buffer &Flags, bool bCommit)
 {
 	if( Table.Get_Field_Count() <= 0 )
 	{
@@ -753,7 +805,7 @@ bool CSG_PG_Connection::Table_Create(const CSG_String &Table_Name, const CSG_Tab
 
 	//-----------------------------------------------------
 	int			iField;
-	CSG_String	SQL;
+	CSG_String	SQL, Table_Name(Make_Table_Name(_Table_Name));
 
 	SQL.Printf("CREATE TABLE \"%s\"(", Table_Name.c_str());
 
@@ -782,7 +834,7 @@ bool CSG_PG_Connection::Table_Create(const CSG_String &Table_Name, const CSG_Tab
 			SQL	+= ", ";
 		}
 
-		SQL	+= CSG_String::Format("%s %s", Table.Get_Field_Name(iField), s.c_str());
+		SQL	+= CSG_String::Format("\"%s\" %s", Make_Table_Field_Name(Table, iField).c_str(), s.c_str());
 	}
 
 	//-----------------------------------------------------
@@ -795,7 +847,7 @@ bool CSG_PG_Connection::Table_Create(const CSG_String &Table_Name, const CSG_Tab
 			if( (Flags[iField] & SG_PG_PRIMARY_KEY) != 0 )
 			{
 				s	+= s.Length() == 0 ? ", PRIMARY KEY(" : ", ";
-				s	+= Table.Get_Field_Name(iField);
+				s	+= Make_Table_Field_Name(Table, iField);
 			}
 		}
 
@@ -812,8 +864,10 @@ bool CSG_PG_Connection::Table_Create(const CSG_String &Table_Name, const CSG_Tab
 }
 
 //---------------------------------------------------------
-bool CSG_PG_Connection::Table_Drop(const CSG_String &Table_Name, bool bCommit)
+bool CSG_PG_Connection::Table_Drop(const CSG_String &_Table_Name, bool bCommit)
 {
+	CSG_String	Table_Name(Make_Table_Name(_Table_Name));
+
 	if( !Table_Exists(Table_Name) )
 	{
 		_Error_Message(_TL("database table does not exist"));
@@ -830,11 +884,13 @@ bool CSG_PG_Connection::Table_Drop(const CSG_String &Table_Name, bool bCommit)
 ///////////////////////////////////////////////////////////
 
 //---------------------------------------------------------
-bool CSG_PG_Connection::Table_Insert(const CSG_String &Table_Name, const CSG_Table &Table, bool bCommit)
+bool CSG_PG_Connection::Table_Insert(const CSG_String &_Table_Name, const CSG_Table &Table, bool bCommit)
 {
 	if( !is_Connected() )	{	_Error_Message(_TL("no database connection"));	return( false );	}
 
 	//-----------------------------------------------------
+	CSG_String	Table_Name(Make_Table_Name(_Table_Name));
+
 	if( !Table_Exists(Table_Name) )
 	{
 		return( false );
@@ -972,7 +1028,7 @@ bool CSG_PG_Connection::Table_Insert(const CSG_String &Table_Name, const CSG_Tab
 ///////////////////////////////////////////////////////////
 
 //---------------------------------------------------------
-bool CSG_PG_Connection::Table_Save(const CSG_String &Table_Name, const CSG_Table &Table, const CSG_Buffer &Flags, bool bCommit)
+bool CSG_PG_Connection::Table_Save(const CSG_String &_Table_Name, const CSG_Table &Table, const CSG_Buffer &Flags, bool bCommit)
 {
 	//-----------------------------------------------------
 	if( !is_Connected() )
@@ -981,6 +1037,8 @@ bool CSG_PG_Connection::Table_Save(const CSG_String &Table_Name, const CSG_Table
 
 		return( false );
 	}
+
+	CSG_String	Table_Name(Make_Table_Name(_Table_Name));
 
 	if( Table_Exists(Table_Name) && !Table_Drop(Table_Name, bCommit) )
 	{
@@ -1553,7 +1611,7 @@ bool CSG_PG_Connection::Raster_Load(CSG_Parameter_Grid_List *pGrids, const CSG_S
 	}
 
 	//-----------------------------------------------------
-	for(size_t iSystem=0; iSystem<Grids.Grid_System_Count(); iSystem++)
+	for(size_t jSystem=0, iSystem=Grids.Grid_System_Count()-1; jSystem<Grids.Grid_System_Count(); jSystem++, iSystem--)
 	{
 		CSG_Grid_Collection	*pSystem	= Grids.Get_Grid_System(iSystem);
 
@@ -1566,39 +1624,57 @@ bool CSG_PG_Connection::Raster_Load(CSG_Parameter_Grid_List *pGrids, const CSG_S
 		}
 		else if( pSystem->Count() > 0 )
 		{
-			CSG_Grids	*pCollection	= SG_Create_Grids();
+			bool	*bAdded	= (bool *)SG_Calloc(pSystem->Count(), sizeof(bool));
 
-			pCollection->Get_Attributes_Ptr()->Create(&Info);
-
-			pCollection->Set_Z_Attribute(0);
-
-			CSG_String	rids;
-
-			for(int iGrid=0; iGrid<pSystem->Count(); iGrid++)
+			for(size_t nAdded=0; nAdded<pSystem->Count(); )
 			{
-				pCollection->Add_Grid(iGrid, (CSG_Grid *)pSystem->Get(iGrid), true);
+				CSG_Grids	*pCollection	= SG_Create_Grids();
 
-				CSG_String	rid(pSystem->Get(iGrid)->Get_MetaData_DB().Get_Content("ID"));
+				pCollection->Get_Attributes_Ptr()->Create(&Info);
+				pCollection->Set_Z_Attribute(0);
 
-				if( !rid.is_Empty() )
+				CSG_String	rids;
+
+				for(size_t iGrid=0; iGrid<pSystem->Count(); iGrid++)
 				{
-					pCollection->Get_Attributes(iGrid).Assign(Info.Find_Record(0, rid));
-
-					if( !rids.is_Empty() )
+					if( bAdded[iGrid] )
 					{
-						rids	+= ",";
+						continue;
 					}
 
-					rids	+= rid;
+					CSG_Grid	*pGrid	= (CSG_Grid *)pSystem->Get(iGrid);
+
+					CSG_String	rid(pGrid->Get_MetaData_DB().Get_Content("ID"));
+
+					CSG_Table_Record	*pInfo	= Info.Find_Record(0, rid);
+
+					if( pInfo ? pCollection->Add_Grid(*pInfo, pGrid, true)
+							  : pCollection->Add_Grid( iGrid, pGrid, true) )
+					{
+						bAdded[iGrid]	= true;
+						nAdded++;
+
+						if( !rid.is_Empty() )
+						{
+							if( !rids.is_Empty() )
+							{
+								rids	+= ",";
+							}
+
+							rids	+= rid;
+						}
+					}
 				}
+
+				pCollection->Set_Name(Table);
+				pCollection->Set_Modified(false);
+
+				Add_MetaData(*pCollection, Table + ":rid=" + rids);
+
+				pGrids->Add_Item(pCollection);
 			}
 
-			pCollection->Set_Name(Table);
-			pCollection->Set_Modified(false);
-
-			Add_MetaData(*pCollection, Table + ":rid=" + rids);
-
-			pGrids->Add_Item(pCollection);
+			delete[](bAdded);
 		}
 	}
 
@@ -2125,8 +2201,8 @@ int CSG_PG_Tool::On_Parameter_Changed(CSG_Parameters *pParameters, CSG_Parameter
 	if( SG_UI_Get_Window_Main() )
 	{
 		//-------------------------------------------------
-		if(	!SG_STR_CMP(pParameter->Get_Identifier(), "CRS_EPSG_GEOGCS")
-		||	!SG_STR_CMP(pParameter->Get_Identifier(), "CRS_EPSG_PROJCS") )
+		if(	pParameter->Cmp_Identifier("CRS_EPSG_GEOGCS")
+		||	pParameter->Cmp_Identifier("CRS_EPSG_PROJCS") )
 		{
 			int		EPSG;
 
@@ -2137,7 +2213,7 @@ int CSG_PG_Tool::On_Parameter_Changed(CSG_Parameters *pParameters, CSG_Parameter
 		}
 
 		//-------------------------------------------------
-		if( !SG_STR_CMP(pParameter->Get_Identifier(), "CONNECTION") )
+		if( pParameter->Cmp_Identifier("CONNECTION") )
 		{
 			CSG_PG_Connection	*pConnection	= SG_PG_Get_Connection_Manager().Get_Connection(pParameter->asString());
 

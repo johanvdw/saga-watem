@@ -141,7 +141,7 @@ CGrid_Resample::CGrid_Resample(void)
 //---------------------------------------------------------
 int CGrid_Resample::On_Parameter_Changed(CSG_Parameters *pParameters, CSG_Parameter *pParameter)
 {
-	if( !SG_STR_CMP(pParameter->Get_Identifier(), "PARAMETERS_GRID_SYSTEM") && pParameter->asGrid_System() )
+	if( pParameter == pParameters->Get_Grid_System_Parameter() && pParameter->asGrid_System() )
 	{
 		m_Grid_Target.Set_User_Defined(pParameters, *pParameter->asGrid_System());
 	}
@@ -200,7 +200,7 @@ bool CGrid_Resample::On_Execute(void)
 	//-----------------------------------------------------
 	CSG_Grid_System	System	= m_Grid_Target.Get_System();
 
-	if( Get_System()->Get_Extent().Intersects(System.Get_Extent()) == INTERSECTION_None )
+	if( Get_System().Get_Extent().Intersects(System.Get_Extent()) == INTERSECTION_None )
 	{
 		Error_Set(_TL("clip extent does not match extent of input grids"));
 

@@ -122,13 +122,13 @@ bool CGrid_Normalise::On_Execute(void)
 		pGrid	->Assign(Parameters("INPUT")->asGrid());
 	}
 
-	pGrid->Set_Name(CSG_String::Format("%s (%s)", pGrid->Get_Name(), _TL("Normalized")));
+	pGrid->Fmt_Name("%s (%s)", pGrid->Get_Name(), _TL("Normalized"));
 
 	//-----------------------------------------------------
 	double		Minimum, Maximum, Offset, Scale;
 
-	Minimum	= Parameters("RANGE")->asRange()->Get_LoVal();
-	Maximum	= Parameters("RANGE")->asRange()->Get_HiVal();
+	Minimum	= Parameters("RANGE")->asRange()->Get_Min();
+	Maximum	= Parameters("RANGE")->asRange()->Get_Max();
 	Offset	= pGrid->Get_Min();
 	Scale	= (Maximum - Minimum) / pGrid->Get_Range();
 
@@ -214,7 +214,7 @@ bool CGrid_Standardise::On_Execute(void)
 		pGrid	->Assign(Parameters("INPUT")->asGrid());
 	}
 
-	pGrid->Set_Name(CSG_String::Format("%s (%s)", pGrid->Get_Name(), _TL("Standard Score")));
+	pGrid->Fmt_Name("%s (%s)", pGrid->Get_Name(), _TL("Standard Score"));
 
 	//-----------------------------------------------------
 	double	Mean	= pGrid->Get_Mean();

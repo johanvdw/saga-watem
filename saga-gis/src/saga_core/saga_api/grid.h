@@ -196,13 +196,28 @@ class SAGA_API_DLL_EXPORT CSG_Grid_System
 {
 public:
 	CSG_Grid_System(void);
-	CSG_Grid_System(const CSG_Grid_System &System);
-	CSG_Grid_System(double Cellsize, const CSG_Rect &Extent);
-	CSG_Grid_System(double Cellsize, double xMin, double yMin, double xMax, double yMax);
-	CSG_Grid_System(double Cellsize, double xMin, double yMin, int NX, int NY);
+
+								CSG_Grid_System		(const CSG_Grid_System &System);
+	bool						Create				(const CSG_Grid_System &System);
+
+								CSG_Grid_System		(double Cellsize, const CSG_Rect &Extent);
+	bool						Create				(double Cellsize, const CSG_Rect &Extent);
+
+								CSG_Grid_System		(double Cellsize, double xMin, double yMin, double xMax, double yMax);
+	bool						Create				(double Cellsize, double xMin, double yMin, double xMax, double yMax);
+
+								CSG_Grid_System		(double Cellsize, double xMin, double yMin, int NX, int NY);
+	bool						Create				(double Cellsize, double xMin, double yMin, int NX, int NY);
 
 	~CSG_Grid_System(void);
 
+	bool						Destroy				(void);
+
+	//-----------------------------------------------------
+	bool						Assign				(const CSG_Grid_System &System);
+	bool						Assign				(double Cellsize, const CSG_Rect &Extent);
+	bool						Assign				(double Cellsize, double xMin, double yMin, double xMax, double yMax);
+	bool						Assign				(double Cellsize, double xMin, double yMin, int NX, int NY);
 
 	//-----------------------------------------------------
 	bool						is_Valid			(void)	const;
@@ -231,21 +246,16 @@ public:
 	bool						operator ==			(const CSG_Grid_System &System) const;
 	void						operator =			(const CSG_Grid_System &System);
 
-	bool						Assign				(const CSG_Grid_System &System);
-	bool						Assign				(double Cellsize, const CSG_Rect &Extent);
-	bool						Assign				(double Cellsize, double xMin, double yMin, double xMax, double yMax);
-	bool						Assign				(double Cellsize, double xMin, double yMin, int NX, int NY);
-
 	bool						is_Equal			(const CSG_Grid_System &System) const;
 	bool						is_Equal			(double Cellsize, const TSG_Rect &Extent) const;
 
 
 	//-----------------------------------------------------
 	/// Aligns the world coordinate x to the rows of the grid system and returns it.
-	double						Fit_xto_Grid_System	(double x)	const	{	return( Get_XMin() + m_Cellsize * (int)(0.5 + (x - Get_XMin()) / m_Cellsize) );	}
+	double						Fit_xto_Grid_System	(double x)	const	{	return( Get_XMin() + m_Cellsize * Get_xWorld_to_Grid(x) );	}
 
 	/// Aligns the world coordinate y to the columns of the grid system and returns it.
-	double						Fit_yto_Grid_System	(double y)	const	{	return( Get_YMin() + m_Cellsize * (int)(0.5 + (y - Get_YMin()) / m_Cellsize) );	}
+	double						Fit_yto_Grid_System	(double y)	const	{	return( Get_YMin() + m_Cellsize * Get_yWorld_to_Grid(y) );	}
 
 	/// Aligns the world coordinate ptWorld to the rows and columns of the grid system and returns it.
 	TSG_Point					Fit_to_Grid_System	(TSG_Point ptWorld)	const
@@ -273,8 +283,8 @@ public:
 
 
 	//-----------------------------------------------------
-	int							Get_xWorld_to_Grid	(double xWorld)	const	{	return( (int)(0.5 + (xWorld - Get_XMin()) / m_Cellsize) );	}
-	int							Get_yWorld_to_Grid	(double yWorld)	const	{	return( (int)(0.5 + (yWorld - Get_YMin()) / m_Cellsize) );	}
+	int							Get_xWorld_to_Grid	(double xWorld)	const	{	return( (int)floor(0.5 + (xWorld - Get_XMin()) / m_Cellsize) );	}
+	int							Get_yWorld_to_Grid	(double yWorld)	const	{	return( (int)floor(0.5 + (yWorld - Get_YMin()) / m_Cellsize) );	}
 
 	bool						Get_World_to_Grid	(int &xGrid, int &yGrid, double xWorld, double yWorld)	const
 	{
@@ -401,7 +411,7 @@ public:		///////////////////////////////////////////////
 
 	sLong						m_Offset;
 
-	double						m_zScale, m_zOffset, m_NoData;
+	double						m_zScale, m_zOffset, m_NoData[2];
 
 	TSG_Data_Type				m_Type;
 
@@ -463,7 +473,9 @@ public:		///////////////////////////////////////////////
 
 
 	//-----------------------------------------------------
-	virtual bool					Save			(const CSG_String &FileName, int Format = GRID_FILE_FORMAT_Binary);
+	virtual bool					Save			(const CSG_String &File, int Format = 0);
+	virtual bool					Save			(const char       *File, int Format = 0)	{	return( Save(CSG_String(File), Format) );	}
+	virtual bool					Save			(const wchar_t    *File, int Format = 0)	{	return( Save(CSG_String(File), Format) );	}
 
 	//-----------------------------------------------------
 	/** Data object type information.
@@ -519,10 +531,14 @@ public:		///////////////////////////////////////////////
 	double							Get_Range			(void);
 	double							Get_StdDev			(void);
 	double							Get_Variance		(void);
-	double							Get_Quantile		(double Quantile);
+	double							Get_Quantile		(double   Quantile, bool bFromHistogram = true);
+	double							Get_Percentile		(double Percentile, bool bFromHistogram = true);
 
 	const CSG_Simple_Statistics &	Get_Statistics		(void);
 	bool							Get_Statistics		(const CSG_Rect &rWorld, CSG_Simple_Statistics &Statistics, bool bHoldValues = false)	const;
+
+	const CSG_Histogram &			Get_Histogram		(size_t nClasses = 0);
+	bool							Get_Histogram		(const CSG_Rect &rWorld, CSG_Histogram &Histogram, size_t nClasses = 0)	const;
 
 	sLong							Get_Data_Count		(void);
 	sLong							Get_NoData_Count	(void);
@@ -591,8 +607,6 @@ public:		///////////////////////////////////////////////
 		if( bModified )
 		{
 			Set_Update_Flag();
-
-			Set_Index(false);
 		}
 	}
 
@@ -609,12 +623,12 @@ public:		///////////////////////////////////////////////
 			return( true );
 		}
 
-		return( m_Index || _Set_Index() );
+		return( _Get_Index() );
 	}
 
 	sLong							Get_Sorted		(sLong Position, bool bDown = true, bool bCheckNoData = true)
 	{
-		if( Position >= 0 && Position < Get_NCells() && (m_Index || _Set_Index()) )
+		if( Position >= 0 && Position < Get_NCells() && _Get_Index() )
 		{
 			Position	= m_Index[bDown ? Get_NCells() - Position - 1 : Position];
 
@@ -629,17 +643,17 @@ public:		///////////////////////////////////////////////
 
 	bool							Get_Sorted		(sLong Position, sLong &i, bool bDown = true, bool bCheckNoData = true)
 	{
-		return( (i = Get_Sorted(Position, bDown, false)) >= 0 && (!bCheckNoData || !is_NoData(i)) );
+		return( (i = Get_Sorted(Position, bDown, bCheckNoData)) >= 0 );
 	}
 
 	bool							Get_Sorted		(sLong Position, int &x, int &y, bool bDown = true, bool bCheckNoData = true)
 	{
-		if( (Position = Get_Sorted(Position, bDown, false)) >= 0 )
+		if( (Position = Get_Sorted(Position, bDown, bCheckNoData)) >= 0 )
 		{
 			x	= (int)(Position % Get_NX());
 			y	= (int)(Position / Get_NX());
 
-			return( !bCheckNoData || !is_NoData(x, y) );
+			return( true );
 		}
 
 		return( false );
@@ -804,6 +818,10 @@ public:		///////////////////////////////////////////////
 		Set_Modified();
 	}
 
+	//-----------------------------------------------------
+	CSG_Vector					Get_Row					(int y)	const;
+	bool						Set_Row					(int y, const CSG_Vector &Values);
+
 
 //---------------------------------------------------------
 protected:	///////////////////////////////////////////////
@@ -826,13 +844,15 @@ private:	///////////////////////////////////////////////
 
 	double						m_zOffset, m_zScale;
 
+	FILE						*m_Cache_Stream;
+
 	TSG_Data_Type				m_Type;
 
 	CSG_String					m_Unit, m_Cache_File;
 
 	CSG_Simple_Statistics		m_Statistics;
 
-	FILE						*m_Cache_Stream;
+	CSG_Histogram				m_Histogram;
 
 	CSG_Grid_System				m_System;
 
@@ -847,6 +867,15 @@ private:	///////////////////////////////////////////////
 	void						_Set_Properties			(TSG_Data_Type Type, int NX, int NY, double Cellsize, double xMin, double yMin);
 
 	bool						_Set_Index				(void);
+	bool						_Get_Index				(void)
+	{
+		if( Get_Update_Flag() )
+		{
+			Update();
+		}
+
+		return( m_Index || _Set_Index() );
+	}
 
 
 	//-----------------------------------------------------
@@ -903,7 +932,6 @@ private:	///////////////////////////////////////////////
 
 	bool						_Get_ValAtPos_NearestNeighbour	(double &Value, int x, int y, double dx, double dy                )	const;
 	bool						_Get_ValAtPos_BiLinear			(double &Value, int x, int y, double dx, double dy, bool bByteWise)	const;
-	bool						_Get_ValAtPos_InverseDistance	(double &Value, int x, int y, double dx, double dy, bool bByteWise)	const;
 	bool						_Get_ValAtPos_BiCubicSpline		(double &Value, int x, int y, double dx, double dy, bool bByteWise)	const;
 	bool						_Get_ValAtPos_BSpline			(double &Value, int x, int y, double dx, double dy, bool bByteWise)	const;
 
@@ -1042,7 +1070,7 @@ public:
 	bool						Set_Circle			(class CSG_Parameters &Parameters);
 	bool						Set_Annulus			(class CSG_Parameters &Parameters);
 	bool						Set_Sector			(class CSG_Parameters &Parameters);
-	static bool					On_Parameters_Enable(class CSG_Parameters &pParameters);
+	static bool					Enable_Parameters	(class CSG_Parameters &Parameters);
 
 	CSG_Distance_Weighting &	Get_Weighting		(void)			{	return( m_Weighting );		}
 

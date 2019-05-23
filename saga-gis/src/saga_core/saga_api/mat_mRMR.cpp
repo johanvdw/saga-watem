@@ -221,7 +221,7 @@ bool CSG_mRMR::Parameters_Add(CSG_Parameters *pParameters, CSG_Parameter *pNode)
 //---------------------------------------------------------
 int CSG_mRMR::Parameters_Enable(CSG_Parameters *pParameters, CSG_Parameter *pParameter)
 {
-	if( !SG_STR_CMP(pParameter->Get_Identifier(), "mRMR_DISCRETIZE") )
+	if( pParameter->Cmp_Identifier("mRMR_DISCRETIZE") )
 	{
 		pParameters->Set_Enabled("mRMR_THRESHOLD", pParameter->asBool());
 	}
@@ -232,16 +232,16 @@ int CSG_mRMR::Parameters_Enable(CSG_Parameters *pParameters, CSG_Parameter *pPar
 //---------------------------------------------------------
 bool CSG_mRMR::Set_Data(CSG_Table &Data, int ClassField, CSG_Parameters *pParameters)
 {
-	bool	bDiscretize	= pParameters->Get("mRMR_DISCRETIZE") ? pParameters->Get("mRMR_DISCRETIZE")->asBool  () : true;
-	double	Threshold	= pParameters->Get("mRMR_THRESHOLD" ) ? pParameters->Get("mRMR_THRESHOLD" )->asDouble() : 1.0;
+	bool	bDiscretize	= (*pParameters)("mRMR_DISCRETIZE") ? (*pParameters)("mRMR_DISCRETIZE")->asBool  () : true;
+	double	Threshold	= (*pParameters)("mRMR_THRESHOLD" ) ? (*pParameters)("mRMR_THRESHOLD" )->asDouble() : 1.0;
 
 	return( Set_Data(Data, ClassField, bDiscretize ? Threshold : -1.0) );
 }
 
 bool CSG_mRMR::Set_Data(CSG_Matrix &Data, int ClassField, CSG_Parameters *pParameters)
 {
-	bool	bDiscretize	= pParameters->Get("mRMR_DISCRETIZE") ? pParameters->Get("mRMR_DISCRETIZE")->asBool  () : true;
-	double	Threshold	= pParameters->Get("mRMR_THRESHOLD" ) ? pParameters->Get("mRMR_THRESHOLD" )->asDouble() : 1.0;
+	bool	bDiscretize	= (*pParameters)("mRMR_DISCRETIZE") ? (*pParameters)("mRMR_DISCRETIZE")->asBool  () : true;
+	double	Threshold	= (*pParameters)("mRMR_THRESHOLD" ) ? (*pParameters)("mRMR_THRESHOLD" )->asDouble() : 1.0;
 
 	return( Set_Data(Data, ClassField, bDiscretize ? Threshold : -1.0) );
 }
@@ -249,8 +249,8 @@ bool CSG_mRMR::Set_Data(CSG_Matrix &Data, int ClassField, CSG_Parameters *pParam
 //---------------------------------------------------------
 bool CSG_mRMR::Get_Selection(CSG_Parameters *pParameters)
 {
-	int		nFeatures	= pParameters->Get("mRMR_NFEATURES") ? pParameters->Get("mRMR_NFEATURES")->asInt() : 50;
-	int		Method		= pParameters->Get("mRMR_METHOD"   ) ? pParameters->Get("mRMR_METHOD"   )->asInt() : 0;
+	int		nFeatures	= (*pParameters)("mRMR_NFEATURES") ? (*pParameters)("mRMR_NFEATURES")->asInt() : 50;
+	int		Method		= (*pParameters)("mRMR_METHOD"   ) ? (*pParameters)("mRMR_METHOD"   )->asInt() : 0;
 
 	return( Get_Selection(nFeatures, Method) );
 }
@@ -877,7 +877,7 @@ template <class T> double * CSG_mRMR::Get_JointProb(T * img1, T * img2, long len
 		return( NULL );
 	}
 
-	int	b_findstatenum	= 1;	//  int nstate1 = 0, nstate2 = 0;
+//	int	b_findstatenum	= 1;	//  int nstate1 = 0, nstate2 = 0;
 	int	b_returnprob	= 1;
 
 	//-----------------------------------------------------

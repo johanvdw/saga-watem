@@ -124,7 +124,7 @@ CGW_Regression::CGW_Regression(void)
 //---------------------------------------------------------
 int CGW_Regression::On_Parameter_Changed(CSG_Parameters *pParameters, CSG_Parameter *pParameter)
 {
-	if( !SG_STR_CMP(pParameter->Get_Identifier(), "POINTS") )
+	if( pParameter->Cmp_Identifier("POINTS") )
 	{
 		m_Grid_Target.Set_User_Defined(pParameters, pParameter->asShapes());
 
@@ -182,9 +182,9 @@ bool CGW_Regression::On_Execute(void)
 		return( false );
 	}
 
-	m_pIntercept->Set_Name(CSG_String::Format(SG_T("%s (%s)"), Parameters("DEPENDENT")->asString(), _TL("GWR Intercept")));
-	m_pSlope    ->Set_Name(CSG_String::Format(SG_T("%s (%s)"), Parameters("DEPENDENT")->asString(), _TL("GWR Slope")));
-	m_pQuality  ->Set_Name(CSG_String::Format(SG_T("%s (%s)"), Parameters("DEPENDENT")->asString(), _TL("GWR Quality")));
+	m_pIntercept->Fmt_Name("%s (%s)", Parameters("DEPENDENT")->asString(), _TL("GWR Intercept"));
+	m_pSlope    ->Fmt_Name("%s (%s)", Parameters("DEPENDENT")->asString(), _TL("GWR Slope"    ));
+	m_pQuality  ->Fmt_Name("%s (%s)", Parameters("DEPENDENT")->asString(), _TL("GWR Quality"  ));
 
 	//-----------------------------------------------------
 	for(int y=0; y<m_pIntercept->Get_NY() && Set_Progress(y, m_pIntercept->Get_NY()); y++)

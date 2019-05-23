@@ -1,6 +1,3 @@
-/**********************************************************
- * Version $Id$
- *********************************************************/
 
 ///////////////////////////////////////////////////////////
 //                                                       //
@@ -70,15 +67,20 @@
 //---------------------------------------------------------
 bool		CRS_Get_UTM_Zone	(const CSG_Rect &Extent, const CSG_Projection &Source, int &Zone, bool &bSouth)
 {
-	TSG_Point	Point	= Extent.Get_Center();
-
 	CSG_CRSProjector	Projector;
 
 	Projector.Set_Target(CSG_Projection("+proj=longlat +datum=WGS84", SG_PROJ_FMT_Proj4));
 
+	TSG_Point	Point	= Extent.Get_Center();
+
 	if( Projector.Set_Source(Source) && Projector.Get_Projection(Point) )
 	{
-		Zone	= ((int)(0.5 + (Point.x + 180.) / 6.)) % 60;	if( Zone < 1 ) Zone += 60;
+		if( Point.x < -180. )
+		{
+			Point.x	= 360. + fmod(Point.x, 360.);
+		}
+
+		Zone	= 1 + (int)fmod(floor((Point.x + 180.) / 6.), 60.);
 
 		bSouth	= Point.y < 0.0;
 
@@ -89,18 +91,25 @@ bool		CRS_Get_UTM_Zone	(const CSG_Rect &Extent, const CSG_Projection &Source, in
 }
 
 //---------------------------------------------------------
-CSG_String	CRS_Get_UTM_Proj4	(int Zone, bool bSouth)
+CSG_Projection	CRS_Get_UTM_Projection	(int Zone, bool bSouth)
 {
-	CSG_String	s;
+	CSG_Projection	UTM;
 
-	s.Printf("+proj=utm +datum=WGS84 +zone=%d", Zone);
-		
-	if( bSouth )
+	int	EPSG_ID	= (bSouth ? 32700 : 32600) + Zone;
+
+	if( UTM.Create(EPSG_ID) )
 	{
-		s	+= " +south";
+		return( UTM );
 	}
 
-	return( s );
+	//-----------------------------------------------------
+	CSG_String	Proj4;
+
+	Proj4.Printf("+proj=utm +zone=%d%s +datum=WGS84 +units=m +no_defs", Zone, bSouth ? SG_T(" +south") : SG_T(""));
+
+	UTM.Create(Proj4, SG_PROJ_FMT_Proj4);
+
+	return( UTM );
 }
 
 
@@ -149,7 +158,7 @@ CCRS_Transform_UTM_Grids::CCRS_Transform_UTM_Grids(bool bList)
 int CCRS_Transform_UTM_Grids::On_Parameter_Changed(CSG_Parameters *pParameters, CSG_Parameter *pParameter)
 {
 	//-----------------------------------------------------
-	if( !SG_STR_CMP(pParameter->Get_Identifier(), "SOURCE") )
+	if( pParameter->Cmp_Identifier("SOURCE") )
 	{
 		int Zone; bool bSouth; CSG_Data_Object *pObject = pParameter->is_DataObject() ? pParameter->asDataObject() : pParameter->asList()->Get_Item(0);
 
@@ -159,26 +168,37 @@ int CCRS_Transform_UTM_Grids::On_Parameter_Changed(CSG_Parameters *pParameters, 
 
 			if( CRS_Get_UTM_Zone(pGrid->Get_Extent(), pGrid->Get_Projection(), Zone, bSouth) )
 			{
-				pParameters->Set_Parameter("UTM_ZONE" , Zone);
-				pParameters->Set_Parameter("UTM_SOUTH", bSouth);
+				CSG_Projection	UTM	= CRS_Get_UTM_Projection(Zone, bSouth);
 
-				pParameters->Set_Parameter("CRS_PROJ4", CRS_Get_UTM_Proj4(Zone, bSouth));
+				pParameters->Set_Parameter("UTM_ZONE"     , Zone  );
+				pParameters->Set_Parameter("UTM_SOUTH"    , bSouth);
+				pParameters->Set_Parameter("CRS_PROJ4"    , UTM.Get_Proj4       ());
+				pParameters->Set_Parameter("CRS_EPSG"     , UTM.Get_Authority_ID());
+				pParameters->Set_Parameter("CRS_EPSG_AUTH", UTM.Get_Authority   ());
+
+				return( CCRS_Transform_Grid::On_Parameter_Changed(pParameters, (*pParameters)
+					(UTM.Get_EPSG() > 0 ? "CRS_EPSG" : "CRS_PROJ4")
+				));
 			}
 		}
-
-		return( CCRS_Transform_Grid::On_Parameter_Changed(pParameters, pParameters->Get("CRS_PROJ4")) );
 	}
 
 	//-----------------------------------------------------
-	if( !SG_STR_CMP(pParameter->Get_Identifier(), "UTM_ZONE" )
-	||  !SG_STR_CMP(pParameter->Get_Identifier(), "UTM_SOUTH") )
+	if( pParameter->Cmp_Identifier("UTM_ZONE" )
+	||  pParameter->Cmp_Identifier("UTM_SOUTH") )
 	{
-		pParameters->Set_Parameter("CRS_PROJ4", CRS_Get_UTM_Proj4(
-			pParameters->Get("UTM_ZONE" )->asInt (),
-			pParameters->Get("UTM_SOUTH")->asBool()
-		));
+		CSG_Projection	UTM	= CRS_Get_UTM_Projection(
+			(*pParameters)("UTM_ZONE" )->asInt (),
+			(*pParameters)("UTM_SOUTH")->asBool()
+		);
 
-		return( CCRS_Transform_Grid::On_Parameter_Changed(pParameters, pParameters->Get("CRS_PROJ4")) );
+		pParameters->Set_Parameter("CRS_PROJ4"    , UTM.Get_Proj4       ());
+		pParameters->Set_Parameter("CRS_EPSG"     , UTM.Get_Authority_ID());
+		pParameters->Set_Parameter("CRS_EPSG_AUTH", UTM.Get_Authority   ());
+
+		return( CCRS_Transform_Grid::On_Parameter_Changed(pParameters, (*pParameters)
+			(UTM.Get_EPSG() > 0 ? "CRS_EPSG" : "CRS_PROJ4")
+		));
 	}
 
 	//-----------------------------------------------------
@@ -231,112 +251,46 @@ CCRS_Transform_UTM_Shapes::CCRS_Transform_UTM_Shapes(bool bList)
 int CCRS_Transform_UTM_Shapes::On_Parameter_Changed(CSG_Parameters *pParameters, CSG_Parameter *pParameter)
 {
 	//-----------------------------------------------------
-	if( !SG_STR_CMP(pParameter->Get_Identifier(), "SOURCE") )
+	if( pParameter->Cmp_Identifier("SOURCE") )
 	{
 		int Zone; bool bSouth; CSG_Shapes *pObject = (CSG_Shapes *)(pParameter->is_DataObject() ? pParameter->asDataObject() : pParameter->asShapesList()->Get_Item(0));
 
 		if( pObject && CRS_Get_UTM_Zone(pObject->Get_Extent(), pObject->Get_Projection(), Zone, bSouth) )
 		{
-			pParameters->Set_Parameter("UTM_ZONE" , Zone);
-			pParameters->Set_Parameter("UTM_SOUTH", bSouth);
+			CSG_Projection	UTM	= CRS_Get_UTM_Projection(Zone, bSouth);
 
-			pParameters->Set_Parameter("CRS_PROJ4", CRS_Get_UTM_Proj4(Zone, bSouth));
+			pParameters->Set_Parameter("UTM_ZONE"     , Zone  );
+			pParameters->Set_Parameter("UTM_SOUTH"    , bSouth);
+			pParameters->Set_Parameter("CRS_PROJ4"    , UTM.Get_Proj4       ());
+			pParameters->Set_Parameter("CRS_EPSG"     , UTM.Get_Authority_ID());
+			pParameters->Set_Parameter("CRS_EPSG_AUTH", UTM.Get_Authority   ());
+
+			return( CCRS_Transform_Shapes::On_Parameter_Changed(pParameters, (*pParameters)
+				(UTM.Get_EPSG() > 0 ? "CRS_EPSG" : "CRS_PROJ4")
+			));
 		}
-
-		return( CCRS_Transform_Shapes::On_Parameter_Changed(pParameters, pParameters->Get("CRS_PROJ4")) );
 	}
 
 	//-----------------------------------------------------
-	if( !SG_STR_CMP(pParameter->Get_Identifier(), "UTM_ZONE" )
-	||  !SG_STR_CMP(pParameter->Get_Identifier(), "UTM_SOUTH") )
+	if( pParameter->Cmp_Identifier("UTM_ZONE" )
+	||  pParameter->Cmp_Identifier("UTM_SOUTH") )
 	{
-		pParameters->Set_Parameter("CRS_PROJ4", CRS_Get_UTM_Proj4(
-			pParameters->Get("UTM_ZONE" )->asInt (),
-			pParameters->Get("UTM_SOUTH")->asBool()
-		));
+		CSG_Projection	UTM	= CRS_Get_UTM_Projection(
+			(*pParameters)("UTM_ZONE" )->asInt (),
+			(*pParameters)("UTM_SOUTH")->asBool()
+		);
 
-		return( CCRS_Transform_Shapes::On_Parameter_Changed(pParameters, pParameters->Get("CRS_PROJ4")) );
+		pParameters->Set_Parameter("CRS_PROJ4"    , UTM.Get_Proj4       ());
+		pParameters->Set_Parameter("CRS_EPSG"     , UTM.Get_Authority_ID());
+		pParameters->Set_Parameter("CRS_EPSG_AUTH", UTM.Get_Authority   ());
+
+		return( CCRS_Transform_Shapes::On_Parameter_Changed(pParameters, (*pParameters)
+			(UTM.Get_EPSG() > 0 ? "CRS_EPSG" : "CRS_PROJ4")
+		));
 	}
 
 	//-----------------------------------------------------
 	return( CCRS_Transform_Shapes::On_Parameter_Changed(pParameters, pParameter) );
-}
-
-
-///////////////////////////////////////////////////////////
-//														 //
-//														 //
-//														 //
-///////////////////////////////////////////////////////////
-
-//---------------------------------------------------------
-CCRS_Transform_UTM_PointCloud::CCRS_Transform_UTM_PointCloud(bool bList)
-	: CCRS_Transform_PointCloud(bList)
-{
-	//-----------------------------------------------------
-	Set_Name		(CSG_String::Format("%s (%s)", _TL("UTM Projection"),
-		bList ? _TL("Point Cloud List") : _TL("Point Cloud")
-	));
-
-	Set_Author		("O. Conrad (c) 2017");
-
-	Set_Description	(_TW(
-		"Project point clouds into UTM coordinates."
-	));
-
-	Set_Description	(Get_Description() + "\n" + CSG_CRSProjector::Get_Description());
-
-	//-----------------------------------------------------
-	Parameters.Add_Int("",
-		"UTM_ZONE"	, _TL("Zone"),
-		_TL(""),
-		1, 1, true, 60, true
-	);
-
-	Parameters.Add_Bool("",
-		"UTM_SOUTH"	, _TL("South"),
-		_TL(""),
-		false
-	);
-
-	//-----------------------------------------------------
-	Parameters.Set_Enabled("CRS_PROJ4", false);
-	Parameters.Set_Enabled("PRECISE"  , false);
-}
-
-//---------------------------------------------------------
-int CCRS_Transform_UTM_PointCloud::On_Parameter_Changed(CSG_Parameters *pParameters, CSG_Parameter *pParameter)
-{
-	//-----------------------------------------------------
-	if( !SG_STR_CMP(pParameter->Get_Identifier(), "SOURCE") )
-	{
-		int Zone; bool bSouth; CSG_Shapes *pObject = (CSG_Shapes *)(pParameter->is_DataObject() ? pParameter->asDataObject() : pParameter->asShapesList()->Get_Item(0));
-
-		if( pObject && CRS_Get_UTM_Zone(pObject->Get_Extent(), pObject->Get_Projection(), Zone, bSouth) )
-		{
-			pParameters->Set_Parameter("UTM_ZONE" , Zone);
-			pParameters->Set_Parameter("UTM_SOUTH", bSouth);
-
-			pParameters->Set_Parameter("CRS_PROJ4", CRS_Get_UTM_Proj4(Zone, bSouth));
-		}
-
-		return( CCRS_Transform_PointCloud::On_Parameter_Changed(pParameters, pParameters->Get("CRS_PROJ4")) );
-	}
-
-	//-----------------------------------------------------
-	if( !SG_STR_CMP(pParameter->Get_Identifier(), "UTM_ZONE" )
-	||  !SG_STR_CMP(pParameter->Get_Identifier(), "UTM_SOUTH") )
-	{
-		pParameters->Set_Parameter("CRS_PROJ4", CRS_Get_UTM_Proj4(
-			pParameters->Get("UTM_ZONE" )->asInt (),
-			pParameters->Get("UTM_SOUTH")->asBool()
-		));
-
-		return( CCRS_Transform_PointCloud::On_Parameter_Changed(pParameters, pParameters->Get("CRS_PROJ4")) );
-	}
-
-	//-----------------------------------------------------
-	return( CCRS_Transform_PointCloud::On_Parameter_Changed(pParameters, pParameter) );
 }
 
 

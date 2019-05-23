@@ -1,6 +1,3 @@
-/**********************************************************
- * Version $Id$
- *********************************************************/
 
 ///////////////////////////////////////////////////////////
 //                                                       //
@@ -51,15 +48,6 @@
 ///////////////////////////////////////////////////////////
 
 //---------------------------------------------------------
-
-
-///////////////////////////////////////////////////////////
-//														 //
-//														 //
-//														 //
-///////////////////////////////////////////////////////////
-
-//---------------------------------------------------------
 #include "Grid_Merge.h"
 
 
@@ -72,20 +60,40 @@
 //---------------------------------------------------------
 CGrid_Merge::CGrid_Merge(void)
 {
-	//-----------------------------------------------------
 	Set_Name		(_TL("Mosaicking"));
 
 	Set_Author		("O.Conrad (c) 2003-17");
 
 	Set_Description	(_TW(
-		"Merges multiple grids into one single grid."
+		"The tool allows one to merge multiple grids into one single grid. This "
+		"involves resampling if the input grids have different cell sizes or are "
+		"not aligned to each other. Besides different resampling methods, the tool "
+		"provides several options on how to handle overlapping areas. It is also "
+		"possible to apply a histogram matching.\n\n"
+		"In order to be able to also merge a large amount of grids, which, for "
+		"example, would exceed the maximum command line length, the tools has "
+		"the option to provide a file list as input (instead of using the input "
+		"grid list). This is a text file with the full path to an input grid "
+		"on each line. Please note the limitiations: (i) the target grid system "
+		"is set automatically in this case (the extent is calculated from all "
+		"inputs and the cell size is set to the smallest one detected) and (ii) "
+		"the input grids must still fit into memory, i.e. are all loaded at once.\n\n"
 	));
 
 	//-----------------------------------------------------
 	Parameters.Add_Grid_List("",
 		"GRIDS"		, _TL("Grids"),
 		_TL(""),
-		PARAMETER_INPUT
+		PARAMETER_INPUT_OPTIONAL
+	);
+
+	Parameters.Add_FilePath("",
+		"INPUT_FILE_LIST"	, _TL("Input File List"),
+		_TL("A text file with the full path to an input grid on each line"),
+		CSG_String::Format("%s|*.txt|%s|*.*",
+			_TL("Text Files"),
+            _TL("All Files")
+        ), NULL, false, false, false
 	);
 
 	Add_Parameters(Parameters);
@@ -106,7 +114,7 @@ void CGrid_Merge::Add_Parameters(CSG_Parameters &Parameters)
 	Parameters.Add_Choice("",
 		"TYPE"		, _TL("Data Storage Type"),
 		_TL(""),
-		CSG_String::Format("%s|%s|%s|%s|%s|%s|%s|%s|%s|%s|",
+		CSG_String::Format("%s|%s|%s|%s|%s|%s|%s|%s|%s|%s",
 			_TL("1 bit"),
 			_TL("1 byte unsigned integer"),
 			_TL("1 byte signed integer"),
@@ -123,7 +131,7 @@ void CGrid_Merge::Add_Parameters(CSG_Parameters &Parameters)
 	Parameters.Add_Choice("",
 		"RESAMPLING", _TL("Resampling"),
 		_TL(""),
-		CSG_String::Format("%s|%s|%s|%s|",
+		CSG_String::Format("%s|%s|%s|%s",
 			_TL("Nearest Neighbour"),
 			_TL("Bilinear Interpolation"),
 			_TL("Bicubic Spline Interpolation"),
@@ -134,7 +142,7 @@ void CGrid_Merge::Add_Parameters(CSG_Parameters &Parameters)
 	Parameters.Add_Choice("",
 		"OVERLAP"	, _TL("Overlapping Areas"),
 		_TL(""),
-		CSG_String::Format("%s|%s|%s|%s|%s|%s|%s|",
+		CSG_String::Format("%s|%s|%s|%s|%s|%s|%s",
 			_TL("first"),
 			_TL("last"),
 			_TL("minimum"),
@@ -154,7 +162,7 @@ void CGrid_Merge::Add_Parameters(CSG_Parameters &Parameters)
 	Parameters.Add_Choice("",
 		"MATCH"		, _TL("Match"),
 		_TL(""),
-		CSG_String::Format("%s|%s|%s|%s|",
+		CSG_String::Format("%s|%s|%s|%s",
 			_TL("none"),
 			_TL("match histogram of first grid in list"),
 			_TL("match histogram of overlapping area"),
@@ -171,7 +179,7 @@ void CGrid_Merge::Add_Parameters(CSG_Parameters &Parameters)
 //---------------------------------------------------------
 int CGrid_Merge::On_Parameter_Changed(CSG_Parameters *pParameters, CSG_Parameter *pParameter)
 {
-	if( !SG_STR_CMP(pParameter->Get_Identifier(), "GRIDS") )
+	if( pParameter->Cmp_Identifier("GRIDS") )
 	{
 		Set_Target(pParameters, pParameter->asList(), m_Grid_Target);
 	}
@@ -182,7 +190,7 @@ int CGrid_Merge::On_Parameter_Changed(CSG_Parameters *pParameters, CSG_Parameter
 //---------------------------------------------------------
 int CGrid_Merge::On_Parameters_Enable(CSG_Parameters *pParameters, CSG_Parameter *pParameter)
 {
-	if(	!SG_STR_CMP(pParameter->Get_Identifier(), "OVERLAP") )
+	if(	pParameter->Cmp_Identifier("OVERLAP") )
 	{
 		pParameters->Set_Enabled("BLEND_DIST", pParameter->asInt() == 5 || pParameter->asInt() == 6);
 	}
@@ -219,7 +227,7 @@ bool CGrid_Merge::On_Execute(void)
 		//-------------------------------------------------
 		if(	is_Aligned(pGrid) )
 		{
-			Process_Set_Text(CSG_String::Format("[%d/%d] %s: %s", i + 1, m_pGrids->Get_Grid_Count(), _TL("copying"), pGrid->Get_Name()));
+			Process_Set_Text("[%d/%d] %s: %s", i + 1, m_pGrids->Get_Grid_Count(), _TL("copying"), pGrid->Get_Name());
 
 			int	nx	= pGrid->Get_NX(); if( nx > m_pMosaic->Get_NX() - ax )	nx	= m_pMosaic->Get_NX() - ax;
 			int	ny	= pGrid->Get_NY(); if( ny > m_pMosaic->Get_NY() - ay )	ny	= m_pMosaic->Get_NY() - ay;
@@ -243,7 +251,7 @@ bool CGrid_Merge::On_Execute(void)
 		//-------------------------------------------------
 		else
 		{
-			Process_Set_Text(CSG_String::Format("[%d/%d] %s: %s", i + 1, m_pGrids->Get_Grid_Count(), _TL("resampling"), pGrid->Get_Name()));
+			Process_Set_Text("[%d/%d] %s: %s", i + 1, m_pGrids->Get_Grid_Count(), _TL("resampling"), pGrid->Get_Name());
 
 			if( ax < 0 )	ax	= 0;
 			if( ay < 0 )	ay	= 0;
@@ -288,6 +296,16 @@ bool CGrid_Merge::On_Execute(void)
 	m_Weight .Destroy();
 	m_Weights.Destroy();
 
+	if( m_bFileList )
+	{
+		for(int i=0; i<m_pGrids->Get_Grid_Count(); i++)
+		{
+			delete(m_pGrids->Get_Grid(i));
+		}
+
+		m_pGrids->Del_Items();
+	}
+
 	return( true );
 }
 
@@ -299,19 +317,40 @@ bool CGrid_Merge::On_Execute(void)
 //---------------------------------------------------------
 bool CGrid_Merge::Initialize(void)
 {
-	//-----------------------------------------------------
 	m_pMosaic	= NULL;
+
 	m_Overlap	= Parameters("OVERLAP"   )->asInt();
 	m_pGrids	= Parameters("GRIDS"     )->asGridList();
 	m_dBlend	= Parameters("BLEND_DIST")->asDouble();
 
+	//-----------------------------------------------------
 	if( m_pGrids->Get_Grid_Count() < 1 )
 	{
-		Error_Set(_TL("nothing to do, input list is empty."));
+		SG_UI_Msg_Add(_TL("input grid list is empty, trying to open input file list."), true);
 
-		return( false );
+		CSG_Table	Table;
+
+		if( !Table.Create(Parameters("INPUT_FILE_LIST")->asString(), TABLE_FILETYPE_Text_NoHeadLine) )
+		{
+			Error_Set(_TL("input file list could not be opened or is empty!"));
+
+			return( false );
+		}
+
+		for(int i=0; i<Table.Get_Count(); i++)
+		{
+			m_pGrids->Add_Item(SG_Create_Grid(Table[i].asString(0)));
+		}
+
+		Set_Target(&Parameters, m_pGrids, m_Grid_Target);
+
+		m_bFileList	= true;
 	}
-
+	else
+	{
+		m_bFileList	= false;
+	}
+	
 	//-----------------------------------------------------
 	switch( Parameters("RESAMPLING")->asInt() )
 	{
@@ -708,7 +747,7 @@ void CGrid_Merge::Get_Match(CSG_Grid *pGrid)
 		//-------------------------------------------------
 		else	// investigate overlapping areas
 		{
-			Process_Set_Text(CSG_String::Format("%s: %s", _TL("analyzing overlap"), pGrid->Get_Name()));
+			Process_Set_Text("%s: %s", _TL("analyzing overlap"), pGrid->Get_Name());
 
 			int	ax	= (int)((pGrid->Get_XMin() - m_pMosaic->Get_XMin()) / m_pMosaic->Get_Cellsize());	if( ax < 0 )	ax	= 0;
 			int	ay	= (int)((pGrid->Get_YMin() - m_pMosaic->Get_YMin()) / m_pMosaic->Get_Cellsize());	if( ay < 0 )	ay	= 0;
@@ -786,7 +825,6 @@ void CGrid_Merge::Get_Match(CSG_Grid *pGrid)
 //---------------------------------------------------------
 CGrids_Merge::CGrids_Merge(void)
 {
-	//-----------------------------------------------------
 	Set_Name		(_TL("Mosaicking (Grid Collections)"));
 
 	Set_Author		("O.Conrad (c) 2017");
@@ -810,7 +848,7 @@ CGrids_Merge::CGrids_Merge(void)
 	//-----------------------------------------------------
 	m_Grid_Target.Create(&Parameters, false, "", "TARGET_");
 
-	m_Grid_Target.Add_Grid("MOSAIC", _TL("Mosaic"), false, true);
+	m_Grid_Target.Add_Grids("MOSAIC", _TL("Mosaic"), false);
 }
 
 
@@ -821,7 +859,7 @@ CGrids_Merge::CGrids_Merge(void)
 //---------------------------------------------------------
 int CGrids_Merge::On_Parameter_Changed(CSG_Parameters *pParameters, CSG_Parameter *pParameter)
 {
-	if( !SG_STR_CMP(pParameter->Get_Identifier(), "GRIDS") )
+	if( pParameter->Cmp_Identifier("GRIDS") )
 	{
 		CGrid_Merge::Set_Target(pParameters, pParameter->asList(), m_Grid_Target);
 	}
@@ -832,7 +870,7 @@ int CGrids_Merge::On_Parameter_Changed(CSG_Parameters *pParameters, CSG_Paramete
 //---------------------------------------------------------
 int CGrids_Merge::On_Parameters_Enable(CSG_Parameters *pParameters, CSG_Parameter *pParameter)
 {
-	if(	!SG_STR_CMP(pParameter->Get_Identifier(), "OVERLAP") )
+	if(	pParameter->Cmp_Identifier("OVERLAP") )
 	{
 		pParameters->Set_Enabled("BLEND_DIST", pParameter->asInt() == 5 || pParameter->asInt() == 6);
 	}
@@ -881,9 +919,9 @@ bool CGrids_Merge::On_Execute(void)
 
 	Mosaic.Set_Manager(NULL);
 	Mosaic.Get_Parameters()->Assign_Values(&Parameters);
-	Mosaic.Get_Parameters()->Get("TARGET_DEFINITION")->Set_Value(1);	// grid or grid system
+	Mosaic.Set_Parameter("TARGET_DEFINITION", 1);	// grid or grid system
 
-	CSG_Parameter_Grid_List	*pList_Grid	= Mosaic.Get_Parameters()->Get("GRIDS")->asGridList();
+	CSG_Parameter_Grid_List	*pList_Grid	= (*Mosaic.Get_Parameters())("GRIDS")->asGridList();
 
 	for(int z=0; z<pGrids->Get_NZ(); z++)
 	{
@@ -897,13 +935,13 @@ bool CGrids_Merge::On_Execute(void)
 			}
 			else if( z == pList_Grids->Get_Grids(i)->Get_NZ() )	// throw warning only once
 			{
-				Message_Add(CSG_String::Format("[%s] %s: [%d] %s", _TL("Warning"), _TL("incompatible input"), i + 1, pList_Grids->Get_Grids(i)->Get_Name()));
+				Message_Fmt("\n[%s] %s: [%d] %s", _TL("Warning"), _TL("incompatible input"), i + 1, pList_Grids->Get_Grids(i)->Get_Name());
 			}
 		}
 
 		pMosaic->Get_Attributes(z).Assign(&pGrids->Get_Attributes(z));
 
-		Mosaic.Get_Parameters()->Get("TARGET_OUT_GRID")->Set_Value(pMosaic->Get_Grid_Ptr(z));
+		Mosaic.Get_Parameters()->Set_Parameter("TARGET_OUT_GRID", (void *)pMosaic->Get_Grid_Ptr(z));
 
 		if( !Mosaic.Execute() )
 		{

@@ -200,7 +200,7 @@ CWKSP_Map::CWKSP_Map(void)
 	m_pLayout_Info	= new CVIEW_Layout_Info(this);
 
 	m_Img_bSave		= false;
-	m_Sync_bLock	= false;
+	m_Sync_bLock	= 0;
 
 	On_Create_Parameters();
 }
@@ -390,113 +390,119 @@ void CWKSP_Map::On_Create_Parameters(void)
 {
 	///////////////////////////////////////////////////////
 	//-----------------------------------------------------
-	m_Parameters.Add_Node(NULL,
+	m_Parameters.Add_Node("",
 		"NODE_GENERAL"	, _TL("General"),
 		_TL("")
 	);
 
-	m_Parameters.Add_String(m_Parameters("NODE_GENERAL"),
+	m_Parameters.Add_String("NODE_GENERAL",
 		"NAME"			, _TL("Name"),
 		_TL(""),
 		&m_Name
 	);
 
-	m_Parameters.Add_Bool(m_Parameters("NODE_GENERAL"),
+	m_Parameters.Add_Bool("NODE_GENERAL",
 		"GOTO_NEWLAYER"	, _TL("Zoom to Added Layer"),
 		_TL(""),
 		g_pMaps->Get_Parameter("GOTO_NEWLAYER")->asBool()
 	);
 
-	m_Parameters.Add_Bool(m_Parameters("NODE_GENERAL"),
+	m_Parameters.Add_Bool("NODE_GENERAL",
 		"SYNC_MAPS"		, _TL("Synchronize Map Extents"),
 		_TL(""),
 		false
 	);
 
+	m_Parameters.Add_Bool("NODE_GENERAL",
+		"CRS_CHECK"		, _TL("CRS Check"),
+		_TL("Perform a coordinate system compatibility check before a layer is added."),
+		g_pMaps->Get_Parameter("CRS_CHECK")->asBool()
+	);
+
 	//-----------------------------------------------------
-	m_Parameters.Add_Bool(m_Parameters("NODE_GENERAL"),
+	m_Parameters.Add_Bool("NODE_GENERAL",
 		"GCS_POSITION"	, _TL("Position as Geographic Coordinates"),
 		_TL("Display mouse position in status bar as geographic coordinates."),
 		false
 	);
 
 	//-----------------------------------------------------
-	m_Parameters.Add_Bool(m_Parameters("NODE_GENERAL"),
+	m_Parameters.Add_Bool("NODE_GENERAL",
 		"SEL_EXTENT"	, _TL("Show Extent"),
 		_TL("Display selected extent in map."),
 		false
 	);
 
-	m_Parameters.Add_Color(m_Parameters("SEL_EXTENT"),
+	m_Parameters.Add_Color("SEL_EXTENT",
 		"SEL_COLOUR"	, _TL("Colour"),
 		_TL(""),
 		SG_GET_RGB(222, 222, 222)
 	);
 
-	m_Parameters.Add_Double(m_Parameters("SEL_EXTENT"),
+	m_Parameters.Add_Double("SEL_EXTENT",
 		"SEL_TRANSP"	, _TL("Transparency [%]"),
 		_TL(""),
 		50.0, 0.0, true, 100.0, true
 	);
 
 	//-----------------------------------------------------
-	m_Parameters.Add_Bool(m_Parameters("NODE_GENERAL"),
+	m_Parameters.Add_Bool("NODE_GENERAL",
 		"FRAME_SHOW"	, _TL("Frame"),
 		_TL(""),
 		g_pMaps->Get_Parameter("FRAME_SHOW")->asBool()
 	);
 
-	m_Parameters.Add_Int(m_Parameters("FRAME_SHOW"),
+	m_Parameters.Add_Int("FRAME_SHOW",
 		"FRAME_WIDTH"	, _TL("Size"),
 		_TL(""),
 		g_pMaps->Get_Parameter("FRAME_WIDTH")->asInt(), 5, true
 	);
 
 	//-----------------------------------------------------
-	m_Parameters.Add_Bool(m_Parameters("NODE_GENERAL"),
+	m_Parameters.Add_Bool("NODE_GENERAL",
 		"NORTH_SHOW"	, _TL("North Arrow"),
 		_TL(""),
 		false
 	);
 
-	m_Parameters.Add_Double(m_Parameters("NORTH_SHOW"),
+	m_Parameters.Add_Double("NORTH_SHOW",
 		"NORTH_ANGLE"	, _TL("Direction"),
 		_TL(""),
 		0.0, -180.0, true, 360.0, true
 	);
 
-	m_Parameters.Add_Double(m_Parameters("NORTH_SHOW"),
+	m_Parameters.Add_Double("NORTH_SHOW",
 		"NORTH_SIZE"	, _TL("Size"),
 		_TL("Size given as percentage of map size"),
 		 5.0, 1.0, true, 100.0, true
 	);
 
-	m_Parameters.Add_Double(m_Parameters("NORTH_SHOW"),
+	m_Parameters.Add_Double("NORTH_SHOW",
 		"NORTH_OFFSET_X", _TL("Horizontal Offset"),
 		_TL("Offset given as percentage of map size"),
 		 5.0, 0.0, true, 100.0, true
 	);
 
-	m_Parameters.Add_Double(m_Parameters("NORTH_SHOW"),
+	m_Parameters.Add_Double("NORTH_SHOW",
 		"NORTH_OFFSET_Y", _TL("Vertical Offset"),
 		_TL("Offset given as percentage of map size"),
 		90.0, 0.0, true, 100.0, true
 	);
 
-	m_Parameters.Add_Bool(m_Parameters("NORTH_SHOW"),
+	m_Parameters.Add_Bool("NORTH_SHOW",
 		"NORTH_EXTENT"	, _TL("Relate to Extent"),
 		_TL("Relate position and size to selected map extent."),
 		false
 	);
 
 	//-----------------------------------------------------
-	m_Parameters.Add_Bool(m_Parameters("NODE_GENERAL"),
+	m_Parameters.Add_Bool("NODE_GENERAL",
 		"SCALE_SHOW"	, _TL("Scale Bar"),
 		_TL(""),
 		g_pMaps->Get_Parameter("SCALE_BAR")->asBool()
 	);
 
-	m_Parameters.Add_Choice(m_Parameters("SCALE_SHOW"),
+	m_Parameters.Add_Choice("SCALE_SHOW",
 		"SCALE_STYLE"	, _TL("Style"),
 		_TL(""),
 		CSG_String::Format("%s|%s|",
@@ -505,78 +511,73 @@ void CWKSP_Map::On_Create_Parameters(void)
 		), 1
 	);
 
-	m_Parameters.Add_Bool(m_Parameters("SCALE_SHOW"),
+	m_Parameters.Add_Bool("SCALE_SHOW",
 		"SCALE_UNIT"	, _TL("Unit"),
 		_TL(""),
 		true
 	);
 
-	m_Parameters.Add_Double(m_Parameters("SCALE_SHOW"),
+	m_Parameters.Add_Double("SCALE_SHOW",
 		"SCALE_WIDTH"	, _TL("Width"),
 		_TL("Width given as percentage of map size"),
 		40.0, 1.0, true, 100.0, true
 	);
 
-	m_Parameters.Add_Double(m_Parameters("SCALE_SHOW"),
+	m_Parameters.Add_Double("SCALE_SHOW",
 		"SCALE_HEIGHT"	, _TL("Height"),
 		_TL("Height given as percentage of map size"),
 		 4.0, 0.1, true, 100.0, true
 	);
 
-	m_Parameters.Add_Double(m_Parameters("SCALE_SHOW"),
+	m_Parameters.Add_Double("SCALE_SHOW",
 		"SCALE_OFFSET_X", _TL("Horizontal Offset"),
 		_TL("Offset given as percentage of map size"),
 		 5.0, 0.0, true, 100.0, true
 	);
 
-	m_Parameters.Add_Double(m_Parameters("SCALE_SHOW"),
+	m_Parameters.Add_Double("SCALE_SHOW",
 		"SCALE_OFFSET_Y", _TL("Vertical Offset"),
 		_TL("Offset given as percentage of map size"),
 		7.5, 0.0, true, 100.0, true
 	);
 
-	m_Parameters.Add_Bool(m_Parameters("SCALE_SHOW"),
+	m_Parameters.Add_Bool("SCALE_SHOW",
 		"SCALE_EXTENT"	, _TL("Relate to Extent"),
 		_TL("Relate position and size to selected map extent."),
 		false
 	);
 
 	//-----------------------------------------------------
-	m_Parameters.Add_Node(NULL,
+	m_Parameters.Add_Node("",
 		"NODE_PRINT"		, _TL("Print Layout"),
 		_TL("")
 	);
 
-	m_Parameters.Add_Bool(m_Parameters("NODE_PRINT"),
+	m_Parameters.Add_Bool("NODE_PRINT",
 		"PRINT_LEGEND"		, _TL("Legend"),
 		_TL(""),
 		true
 	);
 
-	m_Parameters.Add_Bool(m_Parameters("NODE_PRINT"),
+	m_Parameters.Add_Bool("NODE_PRINT",
 		"PRINT_SCALE_SHOW"	, _TL("Scale"),
 		_TL(""),
 		true
 	);
 
-	m_Parameters.Add_Int(m_Parameters("NODE_PRINT"),
+	m_Parameters.Add_Int("NODE_PRINT",
 		"PRINT_RESOLUTION"	, _TL("Display Resolution"),
 		_TL(""),
 		2, 1, true
 	);
 
-	m_Parameters.Add_Node(m_Parameters("NODE_PRINT"),
-		"NODE_PRINT_FRAME"	, _TL("Frame"),
-		_TL("")
-	);
-
-	m_Parameters.Add_Bool(m_Parameters("NODE_PRINT_FRAME"),
-		"PRINT_FRAME_SHOW"	, _TL("Show"),
+	m_Parameters.Add_Bool("NODE_PRINT",
+		"PRINT_FRAME_SHOW"	, _TL("Frame"),
 		_TL(""),
 		true
 	);
 
-	m_Parameters.Add_Int(m_Parameters("NODE_PRINT_FRAME"),
+	m_Parameters.Add_Int("PRINT_FRAME_SHOW",
 		"PRINT_FRAME_WIDTH"	, _TL("Width"),
 		_TL(""),
 		7, 5, true
@@ -586,53 +587,53 @@ void CWKSP_Map::On_Create_Parameters(void)
 	//-----------------------------------------------------
 	m_Img_Parms.Set_Name(_TL("Save Map as Image..."));
 
-	m_Img_Parms.Add_Node(NULL,
+	m_Img_Parms.Add_Node("",
 		"NODE_MAP"	, _TL("Map"),
 		_TL("")
 	);
 
-	m_Img_Parms.Add_Int(m_Img_Parms("NODE_MAP"),
+	m_Img_Parms.Add_Int("NODE_MAP",
 		"NX"		, _TL("Map Width [Pixels]"),
 		_TL(""),
 		800, 1, true
 	);
 
-	m_Img_Parms.Add_Int(m_Img_Parms("NODE_MAP"),
+	m_Img_Parms.Add_Int("NODE_MAP",
 		"NY"		, _TL("Map Height [Pixels]"),
 		_TL(""),
 		600, 1, true
 	);
 
-	m_Img_Parms.Add_Int(m_Img_Parms("NODE_MAP"),
+	m_Img_Parms.Add_Int("NODE_MAP",
 		"FR"		, _TL("Frame Width [Pixels]"),
 		_TL(""),
 		  20, 0, true
 	);
 
-	m_Img_Parms.Add_Bool(m_Img_Parms("NODE_MAP"),
+	m_Img_Parms.Add_Bool("NODE_MAP",
 		"REF"		, _TL("Save Georeference (world file)"),
 		_TL(""),
 		true
 	);
 
-	m_Img_Parms.Add_Bool(m_Img_Parms("NODE_MAP"),
+	m_Img_Parms.Add_Bool("NODE_MAP",
 		"KML"		, _TL("Save KML file"),
 		_TL(""),
 		true
 	);
 
-	m_Img_Parms.Add_Node(NULL,
+	m_Img_Parms.Add_Node("",
 		"NODE_LEGEND", _TL("Legend"),
 		_TL("")
 	);
 
-	m_Img_Parms.Add_Bool(m_Img_Parms("NODE_LEGEND"),
+	m_Img_Parms.Add_Bool("NODE_LEGEND",
 		"LG"		, _TL("Save"),
 		_TL(""),
 		true
 	);
 
-	m_Img_Parms.Add_Double(m_Img_Parms("NODE_LEGEND"),
+	m_Img_Parms.Add_Double("NODE_LEGEND",
 		"LZ"		, _TL("Zoom"),
 		_TL(""),
 		1.0, 0.0, true
@@ -668,35 +669,40 @@ int CWKSP_Map::On_Parameter_Changed(CSG_Parameters *pParameters, CSG_Parameter *
 {
 	if( Flags & PARAMETER_CHECK_ENABLE )
 	{
-		if(	!SG_STR_CMP(pParameter->Get_Identifier(), "SEL_EXTENT") )
+		if(	pParameter->Cmp_Identifier("SEL_EXTENT") )
 		{
-			pParameters->Get_Parameter("SEL_COLOUR"    )->Set_Enabled(pParameter->asBool());
-			pParameters->Get_Parameter("SEL_TRANSP"    )->Set_Enabled(pParameter->asBool());
+			pParameters->Set_Enabled("SEL_COLOUR"       , pParameter->asBool());
+			pParameters->Set_Enabled("SEL_TRANSP"       , pParameter->asBool());
 		}
 
-		if(	!SG_STR_CMP(pParameter->Get_Identifier(), "FRAME_SHOW") )
+		if(	pParameter->Cmp_Identifier("FRAME_SHOW") )
 		{
-			pParameters->Get_Parameter("FRAME_WIDTH"   )->Set_Enabled(pParameter->asBool());
+			pParameters->Set_Enabled("FRAME_WIDTH"      , pParameter->asBool());
 		}
 
-		if(	!SG_STR_CMP(pParameter->Get_Identifier(), "NORTH_SHOW") )
+		if(	pParameter->Cmp_Identifier("NORTH_SHOW") )
 		{
-			pParameters->Get_Parameter("NORTH_ANGLE"   )->Set_Enabled(pParameter->asBool());
-			pParameters->Get_Parameter("NORTH_SIZE"    )->Set_Enabled(pParameter->asBool());
-			pParameters->Get_Parameter("NORTH_OFFSET_X")->Set_Enabled(pParameter->asBool());
-			pParameters->Get_Parameter("NORTH_OFFSET_Y")->Set_Enabled(pParameter->asBool());
-			pParameters->Get_Parameter("NORTH_EXTENT"  )->Set_Enabled(pParameter->asBool());
+			pParameters->Set_Enabled("NORTH_ANGLE"      , pParameter->asBool());
+			pParameters->Set_Enabled("NORTH_SIZE"       , pParameter->asBool());
+			pParameters->Set_Enabled("NORTH_OFFSET_X"   , pParameter->asBool());
+			pParameters->Set_Enabled("NORTH_OFFSET_Y"   , pParameter->asBool());
+			pParameters->Set_Enabled("NORTH_EXTENT"     , pParameter->asBool());
 		}
 
-		if(	!SG_STR_CMP(pParameter->Get_Identifier(), "SCALE_SHOW") )
+		if(	pParameter->Cmp_Identifier("SCALE_SHOW") )
 		{
-			pParameters->Get_Parameter("SCALE_STYLE"   )->Set_Enabled(pParameter->asBool());
-			pParameters->Get_Parameter("SCALE_UNIT"    )->Set_Enabled(pParameter->asBool());
-			pParameters->Get_Parameter("SCALE_WIDTH"   )->Set_Enabled(pParameter->asBool());
-			pParameters->Get_Parameter("SCALE_HEIGHT"  )->Set_Enabled(pParameter->asBool());
-			pParameters->Get_Parameter("SCALE_OFFSET_X")->Set_Enabled(pParameter->asBool());
-			pParameters->Get_Parameter("SCALE_OFFSET_Y")->Set_Enabled(pParameter->asBool());
-			pParameters->Get_Parameter("SCALE_EXTENT"  )->Set_Enabled(pParameter->asBool());
+			pParameters->Set_Enabled("SCALE_STYLE"      , pParameter->asBool());
+			pParameters->Set_Enabled("SCALE_UNIT"       , pParameter->asBool());
+			pParameters->Set_Enabled("SCALE_WIDTH"      , pParameter->asBool());
+			pParameters->Set_Enabled("SCALE_HEIGHT"     , pParameter->asBool());
+			pParameters->Set_Enabled("SCALE_OFFSET_X"   , pParameter->asBool());
+			pParameters->Set_Enabled("SCALE_OFFSET_Y"   , pParameter->asBool());
+			pParameters->Set_Enabled("SCALE_EXTENT"     , pParameter->asBool());
+		}
+
+		if(	pParameter->Cmp_Identifier("PRINT_FRAME_SHOW") )
+		{
+			pParameters->Set_Enabled("PRINT_FRAME_WIDTH", pParameter->asBool());
 		}
 	}
 
@@ -791,47 +797,66 @@ CWKSP_Map_Layer * CWKSP_Map::Find_Layer(CWKSP_Layer *pLayer)
 //---------------------------------------------------------
 CWKSP_Map_Layer * CWKSP_Map::Add_Layer(CWKSP_Layer *pLayer)
 {
-	if( Get_Layer(pLayer) < 0 )
+	if( Get_Layer(pLayer) >= 0 )	// don't load a layer more than once
 	{
-		if( Get_Count() == 0 || (m_Parameters("GOTO_NEWLAYER")->asBool() && pLayer->Get_Object()->is_Valid()) )
-		{
-			switch( pLayer->Get_Object()->Get_ObjectType() )
-			{
-			case SG_DATAOBJECT_TYPE_Shapes:
-			case SG_DATAOBJECT_TYPE_PointCloud:
-			case SG_DATAOBJECT_TYPE_TIN:
-				if( ((CSG_Table *)pLayer->Get_Object())->Get_Count() <= 0 )
-				{
-					break;
-				}
-
-			default:
-				Set_Extent(pLayer->Get_Extent());
-				break;
-			}
-		}
-
-		if( Get_Count() == 0 )
-		{
-			m_Parameters("NAME")->Set_Value(pLayer->Get_Name().wx_str());
-
-			Parameters_Changed();
-		}
-
-		CWKSP_Map_Layer	*pItem	= new CWKSP_Map_Layer(pLayer);
-
-		Add_Item(pItem);
-		Move_Top(pItem);
-
-		if( !m_Projection.is_Okay() && pLayer->Get_Object()->Get_Projection().is_Okay() )
-		{
-			m_Projection	= pLayer->Get_Object()->Get_Projection();
-		}
-
-		return( pItem );
+		return( NULL );
 	}
 
-	return( NULL );
+	if( m_Parameters("CRS_CHECK")->asBool()
+	&&  m_Projection.is_Okay() && pLayer->Get_Object()->Get_Projection().is_Okay()
+	&&  m_Projection.is_Equal(    pLayer->Get_Object()->Get_Projection()) == false )
+	{
+		wxString	msg;
+
+		msg	+= _TL("The coordinate system used by the layer is not identical with the one of the map!");
+		msg	+= "\n";
+		msg	+= wxString::Format("\n%s:\n  [%s]", _TL("Map"  ),                         m_Projection  .Get_Proj4().c_str());
+		msg	+= wxString::Format("\n%s:\n  [%s]", _TL("Layer"), pLayer->Get_Object()->Get_Projection().Get_Proj4().c_str());
+		msg	+= "\n\n";
+		msg	+= _TL("Do you really want to proceed?");
+
+		if( DLG_Message_Confirm(msg, _TL("Add Layer to Map")) == false )
+		{
+			return( NULL );
+		}
+	}
+
+	if( Get_Count() == 0 || (m_Parameters("GOTO_NEWLAYER")->asBool() && pLayer->Get_Object()->is_Valid()) )
+	{
+		switch( pLayer->Get_Object()->Get_ObjectType() )
+		{
+		case SG_DATAOBJECT_TYPE_Shapes    :
+		case SG_DATAOBJECT_TYPE_PointCloud:
+		case SG_DATAOBJECT_TYPE_TIN       :
+			if( ((CSG_Table *)pLayer->Get_Object())->Get_Count() <= 0 )
+			{
+				break;
+			}
+
+		default:
+			Set_Extent(pLayer->Get_Extent());
+			break;
+		}
+	}
+
+	if( Get_Count() == 0 )
+	{
+		m_Parameters("NAME")->Set_Value(pLayer->Get_Name().wx_str());
+
+		Parameters_Changed();
+	}
+
+	CWKSP_Map_Layer	*pItem	= new CWKSP_Map_Layer(pLayer);
+
+	Add_Item(pItem);
+	Move_Top(pItem);
+
+	if( !m_Projection.is_Okay() && pLayer->Get_Object()->Get_Projection().is_Okay() )
+	{
+		m_Projection	= pLayer->Get_Object()->Get_Projection();
+	}
+
+	return( pItem );
 }
 
 //---------------------------------------------------------
@@ -1010,8 +1035,8 @@ bool CWKSP_Map::Set_Extent(void)
 	if( DLG_Parameters(&P) )
 	{
 		return( Set_Extent(CSG_Rect(
-			P("X")->asRange()->Get_LoVal(), P("Y")->asRange()->Get_LoVal(),
-			P("X")->asRange()->Get_HiVal(), P("Y")->asRange()->Get_HiVal())
+			P("X")->asRange()->Get_Min(), P("Y")->asRange()->Get_Min(),
+			P("X")->asRange()->Get_Max(), P("Y")->asRange()->Get_Max())
 		));
 	}
 
@@ -1113,7 +1138,14 @@ void CWKSP_Map::Set_Synchronising(bool bOn)
 
 void CWKSP_Map::Lock_Synchronising(bool bOn)
 {
-	m_Sync_bLock	= bOn;
+	if( bOn )
+	{
+		m_Sync_bLock++;
+	}
+	else if( m_Sync_bLock > 0 )
+	{
+		m_Sync_bLock--;
+	}
 }
 
 //---------------------------------------------------------
@@ -1171,21 +1203,15 @@ void CWKSP_Map::Set_CrossHair(const TSG_Point &Point, const CSG_Projection &Proj
 {
 	if( m_pView )
 	{
-		if( !Projection.is_Okay() )
+		TSG_Point	p;
+
+		if( !Projection.is_Okay() || !m_Projection.is_Okay() || Projection == m_Projection )
 		{
 			m_pView->Get_Map_Control()->Set_CrossHair(Point);
 		}
-		else if( m_Projection.is_Okay() )
+		else if( SG_Get_Projected(Projection, m_Projection, p = Point) )
 		{
-			TSG_Point	p	= Point;
-
-			if( SG_Get_Projected(Projection, m_Projection, p) )
-			{
-				if( m_pView )
-				{
-					m_pView->Get_Map_Control()->Set_CrossHair(p);
-				}
-			}
+			m_pView->Get_Map_Control()->Set_CrossHair(p);
 		}
 	}
 }
@@ -1207,24 +1233,21 @@ void CWKSP_Map::Set_CrossHair_Off(void)
 //---------------------------------------------------------
 void CWKSP_Map::Set_Projection(void)
 {
-	CSG_Tool	*pTool	= SG_Get_Tool_Library_Manager().Get_Tool("pj_proj4", 15);	// CCRS_Picker
+	CSG_Tool	*pTool	= SG_Get_Tool_Library_Manager().Create_Tool("pj_proj4", 15);	// CCRS_Picker
 
-	if(	pTool )
+	if(	pTool && pTool->Get_Parameters()->Set_Parameter("CRS_PROJ4", m_Projection.Get_Proj4())
+	&&	pTool->On_Before_Execution() && DLG_Parameters(pTool->Get_Parameters()) )
 	{
-		pTool->Settings_Push();
+		pTool->Set_Manager(NULL);
 
-		if( pTool->Get_Parameters()->Set_Parameter("CRS_PROJ4", m_Projection.Get_Proj4())
-		&&	pTool->On_Before_Execution() && DLG_Parameters(pTool->Get_Parameters()) )
-		{
-			pTool->Execute();
+		pTool->Execute();
 
-			m_Projection.Assign(pTool->Get_Parameters()->Get("CRS_PROJ4")->asString(), SG_PROJ_FMT_Proj4);
+		m_Projection.Create(pTool->Get_Parameter("CRS_PROJ4")->asString(), SG_PROJ_FMT_Proj4);
 
-			View_Refresh(false);
-		}
-
-		pTool->Settings_Pop();
+		View_Refresh(false);
 	}
+
+	SG_Get_Tool_Library_Manager().Delete_Tool(pTool);
 }
 
 
@@ -1257,13 +1280,13 @@ void CWKSP_Map::View_Refresh(bool bMapOnly)
 	if( m_pView_3D )	m_pView_3D->Do_Update();
 	if( m_pLayout  )	m_pLayout ->Do_Update();
 
-	if( !bMapOnly && g_pACTIVE )
+	if( !bMapOnly && g_pActive )
 	{
-		g_pACTIVE->Update_Description();
+		g_pActive->Update_Description();
 
-		if( g_pACTIVE->Get_Legend() )
+		if( g_pActive->Get_Legend() )
 		{
-			g_pACTIVE->Get_Legend()->Refresh(true);
+			g_pActive->Get_Legend()->Refresh(true);
 		}
 	}
 
@@ -1442,9 +1465,10 @@ void CWKSP_Map::SaveAs_Image_Clipboard(bool bLegend)
 	if( bLegend == false )
 	{
 		SaveAs_Image_Clipboard(
-			Get_Manager()->Get_Parameter("CLIP_NX"   )->asInt(),
-			Get_Manager()->Get_Parameter("CLIP_NY"   )->asInt(),
-			Get_Manager()->Get_Parameter("CLIP_FRAME")->asInt()
+			Get_Manager()->Get_Parameter("CLIP_NX")->asInt(),
+			Get_Manager()->Get_Parameter("CLIP_NY")->asInt(),
+			Get_Manager()->Get_Parameter("CLIP_FRAME_SHOW")->asBool() ?
+			Get_Manager()->Get_Parameter("CLIP_FRAME_WIDTH")->asInt() : 0
 		);
 
 		return;
@@ -1586,7 +1610,7 @@ void CWKSP_Map::SaveAs_Image_To_KMZ(int nx, int ny)
 	CSG_Grid	Map(SG_DATATYPE_Int, Image.GetWidth(), Image.GetHeight(), Extent.Get_XRange() / (double)Image.GetWidth(), Extent.Get_XMin(), Extent.Get_YMin());
 
 	Map.Set_Name(Get_Name().wx_str());
-	Map.Set_NoData_Value(16711935);
+	Map.Set_NoData_Value(SG_GET_RGB(MASK_R, MASK_G, MASK_B));
 	Map.Get_Projection().Create(m_Projection);
 
 	for(int y=0, yy=Map.Get_NY()-1; y<Map.Get_NY(); y++, yy--)
@@ -1654,7 +1678,7 @@ void CWKSP_Map::SaveAs_Image_To_Memory(int nx, int ny)
 
 		if( P("COLORS_TYPE") )
 		{
-			P("COLORS_TYPE")->Set_Value(6);	// RGB
+			P("COLORS_TYPE")->Set_Value(5);	// Color Classification Type: RGB Coded Values
 
 			g_pData->Set_Parameters(pGrid, &P);
 		}

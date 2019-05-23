@@ -61,6 +61,8 @@
 //---------------------------------------------------------
 #include "dataobject.h"
 
+#include <wx/string.h>
+
 
 ///////////////////////////////////////////////////////////
 //														 //
@@ -69,17 +71,23 @@
 ///////////////////////////////////////////////////////////
 
 //---------------------------------------------------------
+void *		SG_Get_Create_Pointer(void)
+{
+	return( DATAOBJECT_CREATE );
+}
+
+//---------------------------------------------------------
 CSG_String	SG_Get_DataObject_Identifier(TSG_Data_Object_Type Type)
 {
 	switch( Type )
 	{
-	default                           : return( "UNDEFINED");
-	case SG_DATAOBJECT_TYPE_Grid      : return( "GRID"     );
-	case SG_DATAOBJECT_TYPE_Grids     : return( "GRIDS"    );
-	case SG_DATAOBJECT_TYPE_Table     : return( "TABLE"    );
-	case SG_DATAOBJECT_TYPE_Shapes    : return( "SHAPES"   );
-	case SG_DATAOBJECT_TYPE_TIN       : return( "TIN"      );
-	case SG_DATAOBJECT_TYPE_PointCloud: return( "POINTS"   );
+	default                           : return( "UNDEFINED" );
+	case SG_DATAOBJECT_TYPE_Grid      : return( "GRID"      );
+	case SG_DATAOBJECT_TYPE_Grids     : return( "GRIDS"     );
+	case SG_DATAOBJECT_TYPE_Table     : return( "TABLE"     );
+	case SG_DATAOBJECT_TYPE_Shapes    : return( "SHAPES"    );
+	case SG_DATAOBJECT_TYPE_TIN       : return( "TIN"       );
+	case SG_DATAOBJECT_TYPE_PointCloud: return( "POINTS"    );
 	}
 }
 
@@ -220,9 +228,59 @@ bool CSG_Data_Object::Destroy(void)
 //---------------------------------------------------------
 void CSG_Data_Object::Set_Name(const CSG_String &Name)
 {
-	m_Name	= Name.Length() > 0 ? Name.c_str() : _TL("new");
+	if( Name.is_Empty() )
+	{
+		m_Name	= _TL("Data");
+	}
+	else
+	{
+		m_Name	= Name;
+	}
 }
 
+//---------------------------------------------------------
+void CSG_Data_Object::Fmt_Name(const char *Format, ...)
+{
+	wxString	_s;
+
+	va_list	argptr;
+	
+#ifdef _SAGA_LINUX
+	wxString _Format(Format); _Format.Replace("%s", "%ls");	// workaround as we only use wide characters since wx 2.9.4 so interpret strings as multibyte
+	va_start(argptr, _Format); _s.PrintfV(_Format, argptr);
+#else
+	va_start(argptr,  Format); _s.PrintfV( Format, argptr);
+#endif
+
+	va_end(argptr);
+
+	Set_Name(CSG_String(&_s));
+}
+
+//---------------------------------------------------------
+void CSG_Data_Object::Fmt_Name(const wchar_t *Format, ...)
+{
+	wxString	_s;
+
+	va_list	argptr;
+	
+#ifdef _SAGA_LINUX
+	// workaround as we only use wide characters
+	// since wx 2.9.4 so interpret strings as multibyte
+	wxString _Format(Format); _Format.Replace("%s", "%ls");	// workaround as we only use wide characters since wx 2.9.4 so interpret strings as multibyte
+	va_start(argptr, _Format); _s.PrintfV(_Format, argptr);
+#else
+	va_start(argptr,  Format); _s.PrintfV( Format, argptr);
+#endif
+
+	va_end(argptr);
+
+	CSG_String	s(&_s);
+
+	Set_Name(CSG_String(&_s));
+}
+
+//---------------------------------------------------------
 const SG_Char * CSG_Data_Object::Get_Name(void) const
 {
 	return( m_Name );
@@ -259,7 +317,20 @@ void CSG_Data_Object::Set_File_Name(const CSG_String &FileName, bool bNative)
 //---------------------------------------------------------
 const SG_Char * CSG_Data_Object::Get_File_Name(bool bNative)	const
 {
-	return( !bNative || m_File_bNative ? m_FileName.c_str() : SG_T("") );
+	if( bNative && !m_File_bNative )
+	{
+		return( SG_T("") );
+	}
+
+	if( m_pOwner )
+	{
+		if( m_pOwner->Get_ObjectType() == SG_DATAOBJECT_TYPE_Grids )
+		{
+			return( m_pOwner->m_FileName.c_str() );
+		}
+	}
+
+	return( m_FileName.c_str() );
 }
 
 //---------------------------------------------------------
@@ -340,11 +411,6 @@ bool CSG_Data_Object::Set_NoData_Value_Range(double loValue, double hiValue)
 
 	if( loValue != m_NoData_Value || hiValue != m_NoData_hiValue )
 	{
-		if( !Get_Update_Flag() )
-		{
-			Set_Update_Flag();
-		}
-
 		m_NoData_Value		= loValue;
 		m_NoData_hiValue	= hiValue;
 
@@ -354,6 +420,17 @@ bool CSG_Data_Object::Set_NoData_Value_Range(double loValue, double hiValue)
 	}
 
 	return( false );
+}
+
+//---------------------------------------------------------
+bool CSG_Data_Object::On_NoData_Changed(void)
+{
+	if( !Get_Update_Flag() )
+	{
+		Set_Update_Flag();
+	}
+
+	return( true );
 }
 
 

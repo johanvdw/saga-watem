@@ -1,6 +1,3 @@
-/**********************************************************
- * Version $Id$
- *********************************************************/
 
 ///////////////////////////////////////////////////////////
 //                                                       //
@@ -51,15 +48,6 @@
 ///////////////////////////////////////////////////////////
 
 //---------------------------------------------------------
-
-
-///////////////////////////////////////////////////////////
-//                                                       //
-//                                                       //
-//                                                       //
-///////////////////////////////////////////////////////////
-
-//---------------------------------------------------------
 #include <wx/datetime.h>
 
 #include "callback.h"
@@ -92,8 +80,6 @@ CCMD_Tool::~CCMD_Tool(void)
 
 
 ///////////////////////////////////////////////////////////
-//                                                       //
-//                                                       //
 //                                                       //
 ///////////////////////////////////////////////////////////
 
@@ -131,22 +117,18 @@ void CCMD_Tool::Usage(void)
 {
 	if( m_pTool )
 	{
-		CMD_Print("");
-
-		wxString	sUsage = wxString::Format("Usage: saga_cmd %s %s %s",
+		wxString	Usage	= wxString::Format("\nUsage: saga_cmd %s %s %s",
 			m_pTool->Get_Library().c_str(),
 			m_pTool->Get_ID     ().c_str(),
 			m_CMD.GetUsageString().AfterFirst(' ').AfterFirst(' ')
 		);
 
-		SG_PRINTF(sUsage);
+		SG_Printf(&Usage);
 	}
 }
 
 
 ///////////////////////////////////////////////////////////
-//                                                       //
-//                                                       //
 //                                                       //
 ///////////////////////////////////////////////////////////
 
@@ -242,8 +224,6 @@ bool CCMD_Tool::Execute(int argc, char *argv[])
 
 ///////////////////////////////////////////////////////////
 //                                                       //
-//                                                       //
-//                                                       //
 ///////////////////////////////////////////////////////////
 
 //---------------------------------------------------------
@@ -268,8 +248,6 @@ wxString CCMD_Tool::_Get_ID(CSG_Parameter *pParameter, const wxString &Modifier)
 
 
 ///////////////////////////////////////////////////////////
-//                                                       //
-//                                                       //
 //                                                       //
 ///////////////////////////////////////////////////////////
 
@@ -354,6 +332,14 @@ bool CCMD_Tool::_Set_Parameters(CSG_Parameters *pParameters)
 				m_CMD.AddOption(_Get_ID(pParameter, "MAX"), wxEmptyString, Description, wxCMD_LINE_VAL_DOUBLE, wxCMD_LINE_PARAM_OPTIONAL);
 				break;
 
+			case PARAMETER_TYPE_Color:
+				m_CMD.AddOption(_Get_ID(pParameter), wxEmptyString, Description, wxCMD_LINE_VAL_STRING, wxCMD_LINE_PARAM_OPTIONAL);
+				break;
+
+			case PARAMETER_TYPE_Colors:
+				m_CMD.AddOption(_Get_ID(pParameter), wxEmptyString, Description, wxCMD_LINE_VAL_STRING, wxCMD_LINE_PARAM_OPTIONAL);
+				break;
+
 			case PARAMETER_TYPE_String:
 			case PARAMETER_TYPE_Text:
 			case PARAMETER_TYPE_FilePath:
@@ -383,8 +369,6 @@ bool CCMD_Tool::_Set_Parameters(CSG_Parameters *pParameters)
 
 
 ///////////////////////////////////////////////////////////
-//                                                       //
-//                                                       //
 //                                                       //
 ///////////////////////////////////////////////////////////
 
@@ -446,6 +430,8 @@ bool CCMD_Tool::_Get_Options(CSG_Parameters *pParameters, bool bInitialize)
 
 			case PARAMETER_TYPE_Parameters:
 				_Get_Parameters(pParameter->asParameters(), bInitialize);
+
+				pParameter->has_Changed();
 				break;
 
 			case PARAMETER_TYPE_Bool:
@@ -518,12 +504,30 @@ bool CCMD_Tool::_Get_Options(CSG_Parameters *pParameters, bool bInitialize)
 			case PARAMETER_TYPE_Range:
 				if( m_CMD.Found(_Get_ID(pParameter, "MIN"), &d) )
 				{
-					pParameter->asRange()->Set_LoVal(d);
+					pParameter->asRange()->Set_Min(d);
+
+					pParameter->has_Changed();
 				}
 
 				if( m_CMD.Found(_Get_ID(pParameter, "MAX"), &d) )
 				{
-					pParameter->asRange()->Set_HiVal(d);
+					pParameter->asRange()->Set_Max(d);
+
+					pParameter->has_Changed();
+				}
+				break;
+
+			case PARAMETER_TYPE_Color:
+				if( m_CMD.Found(_Get_ID(pParameter), &s) )
+				{
+					pParameter->Set_Value(CSG_String(&s));
+				}
+				break;
+
+			case PARAMETER_TYPE_Colors:
+				if( m_CMD.Found(_Get_ID(pParameter), &s) )
+				{
+					pParameter->asColors()->Load(CSG_String(&s));
 				}
 				break;
 
@@ -572,7 +576,10 @@ bool CCMD_Tool::_Get_Options(CSG_Parameters *pParameters, bool bInitialize)
 				if( m_CMD.Found(_Get_ID(pParameter), &s) )
 				{
 					CSG_Table	Table(&s);
+
 					pParameter->asTable()->Assign_Values(&Table);
+
+					pParameter->has_Changed();
 				}
 				break;
 
@@ -615,9 +622,9 @@ bool CCMD_Tool::_Get_Input(CSG_Parameters *pParameters)
 
 		if( pParameter->is_Input() )
 		{
-			if( !_Load_Input(pParameters->Get_Parameter(i)) )
+			if( !_Load_Input(pParameter) )
 			{
-				CMD_Print_Error(pParameters->Get_Parameter(i)->Get_Name());
+				CMD_Print_Error(pParameter->Get_Name());
 
 				return( false );
 			}
@@ -630,6 +637,9 @@ bool CCMD_Tool::_Get_Input(CSG_Parameters *pParameters)
 
 			switch( pParameter->Get_Type() )
 			{
+			default:
+				break;
+
 			case PARAMETER_TYPE_Table_Field:
 				if( m_CMD.Found(_Get_ID(pParameter), &s) )
 				{
@@ -660,8 +670,6 @@ bool CCMD_Tool::_Get_Input(CSG_Parameters *pParameters)
 
 
 ///////////////////////////////////////////////////////////
-//                                                       //
-//                                                       //
 //                                                       //
 ///////////////////////////////////////////////////////////
 
@@ -735,8 +743,6 @@ bool CCMD_Tool::_Load_Input(CSG_Parameter *pParameter)
 
 ///////////////////////////////////////////////////////////
 //                                                       //
-//                                                       //
-//                                                       //
 ///////////////////////////////////////////////////////////
 
 //---------------------------------------------------------
@@ -788,21 +794,9 @@ bool CCMD_Tool::_Save_Output(CSG_Parameters *pParameters)
 
 			else if( pParameter->is_DataObject_List() )
 			{
-				CSG_Strings	FileNames;
+				CSG_Strings	FileNames	= SG_String_Tokenize(&FileName, ";", SG_TOKEN_STRTOK);	// do not return empty tokens
 
-				while( !FileName.IsEmpty() && FileNames.Get_Count() < pParameter->asList()->Get_Item_Count() )
-				{
-					wxString	s = FileName.BeforeFirst(';'); s.Trim(true); s.Trim(false);
-
-					if( !s.IsEmpty() )
-					{
-						FileNames	+= &s;
-					}
-
-					FileName = FileName.AfterFirst(';');
-				}
-
-				if( FileNames.Get_Count() > 0 )	// e.g.: GRIDS=" ;;"
+				if( FileNames.Get_Count() > 0 )
 				{
 					int	nFileNames	= pParameter->asList()->Get_Item_Count() <= FileNames.Get_Count() ? FileNames.Get_Count() : FileNames.Get_Count() - 1;
 
@@ -814,11 +808,12 @@ bool CCMD_Tool::_Save_Output(CSG_Parameters *pParameters)
 						}
 						else
 						{
-							_Save_Output(pParameter->asList()->Get_Item(i), CSG_String::Format("%s_%0*d",
-								FileNames[nFileNames].c_str(),
-								SG_Get_Digit_Count(pParameter->asList()->Get_Item_Count()),
-								1 + i - nFileNames
-							));
+							CSG_String	fPath	= SG_File_Get_Path     (FileNames[nFileNames]);
+							CSG_String	fName	= SG_File_Get_Name     (FileNames[nFileNames], false);
+							CSG_String	fExt	= SG_File_Get_Extension(FileNames[nFileNames]);
+							CSG_String	fNum	= CSG_String::Format("%0*d", SG_Get_Digit_Count(pParameter->asList()->Get_Item_Count()), 1 + i - nFileNames);
+
+							_Save_Output(pParameter->asList()->Get_Item(i), SG_File_Make_Path(fPath, fName + fNum, fExt));
 						}
 					}
 				}

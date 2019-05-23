@@ -106,28 +106,28 @@ CSim_Diffusion_Gradient::CSim_Diffusion_Gradient(void)
 
 	//-----------------------------------------------------
 	Parameters.Add_Grid(
-		NULL	, "MASK"		, _TL("Mask"),
+		"", "MASK"		, _TL("Mask"),
 		_TL(""),
 		PARAMETER_INPUT
 	);
 
 	Parameters.Add_Grid(
-		NULL	, "SURF"		, _TL("Surface"),
+		"", "SURF"		, _TL("Surface"),
 		_TL(""),
 		PARAMETER_OUTPUT
 	);
 
 	Parameters.Add_Grid(
-		NULL	, "GRAD"		, _TL("Gradient"),
+		"", "GRAD"		, _TL("Gradient"),
 		_TL(""),
 		PARAMETER_OUTPUT
 	);
 
 	//-----------------------------------------------------
-	Parameters.Add_Value(
-		NULL	, "SURF_E"		, _TL("Surface Approximation Threshold"),
+	Parameters.Add_Double(
+		"", "SURF_E"	, _TL("Surface Approximation Threshold"),
 		_TL(""),
-		PARAMETER_TYPE_Double, 0.001, 0.0, true
+		0.001, 0.0, true
 	);
 }
 
@@ -144,7 +144,7 @@ bool CSim_Diffusion_Gradient::On_Execute(void)
 	CSG_Grid	*pSurface	= Parameters("SURF")->asGrid();
 	CSG_Grid	*pGradient	= Parameters("GRAD")->asGrid();
 
-	m_Tmp.Create(*Get_System());
+	m_Tmp.Create(Get_System());
 
 	//-----------------------------------------------------
 	bool	bResult	= Surface_Initialise(pSurface);
@@ -221,12 +221,12 @@ bool CSim_Diffusion_Gradient::Surface_Interpolate(CSG_Grid *pSurface)
 	{
 		d	= Surface_Set_Means(pSurface);
 
-		Process_Set_Text(CSG_String::Format(SG_T("%d, %f"), n + 1, d));
+		Process_Set_Text(SG_T("%d, %f"), n + 1, d);
 
 		if( n % 25 == 0 )	DataObject_Update(pSurface, 0.0, 100.0);
 	}
 
-	Message_Add(CSG_String::Format("%d iterations", n));
+	Message_Fmt("\n%d iterations", n);
 
 	return( true );
 }
@@ -369,52 +369,52 @@ CSim_Diffusion_Concentration::CSim_Diffusion_Concentration(void)
 
 	//-----------------------------------------------------
 	Parameters.Add_Grid(
-		NULL	, "MASK"		, _TL("Mask"),
+		"", "MASK"		, _TL("Mask"),
 		_TL(""),
 		PARAMETER_INPUT
 	);
 
 	Parameters.Add_Grid(
-		NULL	, "GRAD"		, _TL("Gradient"),
+		"", "GRAD"		, _TL("Gradient"),
 		_TL(""),
 		PARAMETER_INPUT
 	);
 
 	Parameters.Add_Grid(
-		NULL	, "CONC"		, _TL("Concentration"),
+		"", "CONC"		, _TL("Concentration"),
 		_TL(""),
 		PARAMETER_OUTPUT
 	);
 
 	//-----------------------------------------------------
-	Parameters.Add_Value(
-		NULL	, "CONC_IN"		, _TL("Inlet Concentration"),
+	Parameters.Add_Double(
+		"", "CONC_IN"	, _TL("Inlet Concentration"),
 		_TL(""),
-		PARAMETER_TYPE_Double, 5.0, 0.0, true
+		 5.0, 0.0, true
 	);
 
-	Parameters.Add_Value(
-		NULL	, "CONC_OUT"	, _TL("Outlet Concentration"),
+	Parameters.Add_Double(
+		"", "CONC_OUT"	, _TL("Outlet Concentration"),
 		_TL(""),
-		PARAMETER_TYPE_Double, 3.0, 0.0, true
+		3.0, 0.0, true
 	);
 
-	Parameters.Add_Value(
-		NULL	, "CONC_E"		, _TL("Concentration Approximation Threshold"),
+	Parameters.Add_Double(
+		"", "CONC_E"	, _TL("Concentration Approximation Threshold"),
 		_TL(""),
-		PARAMETER_TYPE_Double, 0.001, 0.0, true
+		0.001, 0.0, true
 	);
 
-	Parameters.Add_Value(
-		NULL	, "GRAD_MIN"	, _TL("Minimum Gradient"),
+	Parameters.Add_Double(
+		"", "GRAD_MIN"	, _TL("Minimum Gradient"),
 		_TL(""),
-		PARAMETER_TYPE_Double, 0.0, 0.0, true
+		0.0, 0.0, true
 	);
 
 	Parameters.Add_Choice(
-		NULL	, "NEIGHBOURS"	, _TL("Neighbourhood"),
+		"", "NEIGHBOURS", _TL("Neighbourhood"),
 		_TL(""),
-		CSG_String::Format("%s|%s|%s|",
+		CSG_String::Format("%s|%s|%s",
 			_TL("Moore (8)"),
 			_TL("Neumann (4)"),
 			_TL("Optimised")
@@ -440,7 +440,7 @@ bool CSim_Diffusion_Concentration::On_Execute(void)
 	m_MinGradient	= Parameters("GRAD_MIN")->asDouble();
 
 	//-----------------------------------------------------
-	m_Tmp.Create(*Get_System());
+	m_Tmp.Create(Get_System());
 
 	Concentration_Interpolate(pConcentration, pGradient);
 
@@ -522,8 +522,8 @@ bool CSim_Diffusion_Concentration::_Concentration_Interpolate(CSG_Grid *pConcent
 	{
 		d	= _Concentration_Interpolate(pConcentration, pGradient, bNeumann, f = f_lo + 0.5 * (f_hi - f_lo));
 
-		Process_Set_Text(CSG_String::Format(SG_T("f: %f, AK: %f, dif: %f"), f, d, m_Conc_Out - d));
-		Message_Add		(CSG_String::Format(SG_T("f: %f, AK: %f, dif: %f"), f, d, m_Conc_Out - d));
+		Process_Set_Text("f: %f, AK: %f, dif: %f", f, d, m_Conc_Out - d);
+		Message_Fmt		("f: %f, AK: %f, dif: %f", f, d, m_Conc_Out - d);
 
 		DataObject_Update(pConcentration, m_Conc_Out, m_Conc_In);
 
@@ -547,7 +547,7 @@ bool CSim_Diffusion_Concentration::_Concentration_Interpolate(CSG_Grid *pConcent
 	}
 	while( fabs(d - m_Conc_Out) > d_Max && f_hi > f_lo && Process_Get_Okay(false) );
 
-	Message_Add(CSG_String::Format(SG_T("f: %f"), f));
+	Message_Fmt("\nf: %f", f);
 
 	//-----------------------------------------------------
 	_Concentration_Initialise(pConcentration);
@@ -693,64 +693,64 @@ CSim_Diffusion_Gradient_And_Concentration::CSim_Diffusion_Gradient_And_Concentra
 
 	//-----------------------------------------------------
 	Parameters.Add_Grid(
-		NULL	, "MASK"		, _TL("Mask"),
+		"", "MASK"		, _TL("Mask"),
 		_TL(""),
 		PARAMETER_INPUT
 	);
 
 	Parameters.Add_Grid(
-		NULL	, "SURF"		, _TL("Surface"),
+		"", "SURF"		, _TL("Surface"),
 		_TL(""),
 		PARAMETER_OUTPUT
 	);
 
 	Parameters.Add_Grid(
-		NULL	, "GRAD"		, _TL("Gradient"),
+		"", "GRAD"		, _TL("Gradient"),
 		_TL(""),
 		PARAMETER_OUTPUT
 	);
 
 	Parameters.Add_Grid(
-		NULL	, "CONC"		, _TL("Concentration"),
+		"", "CONC"		, _TL("Concentration"),
 		_TL(""),
 		PARAMETER_OUTPUT
 	);
 
 	//-----------------------------------------------------
-	Parameters.Add_Value(
-		NULL	, "SURF_E"		, _TL("Surface Approximation Threshold"),
+	Parameters.Add_Double(
+		"", "SURF_E"	, _TL("Surface Approximation Threshold"),
 		_TL(""),
-		PARAMETER_TYPE_Double, 0.001, 0.0, true
+		0.001, 0.0, true
 	);
 
-	Parameters.Add_Value(
-		NULL	, "CONC_IN"		, _TL("Inlet Concentration"),
+	Parameters.Add_Double(
+		"", "CONC_IN"	, _TL("Inlet Concentration"),
 		_TL(""),
-		PARAMETER_TYPE_Double, 5.0, 0.0, true
+		5.0, 0.0, true
 	);
 
-	Parameters.Add_Value(
-		NULL	, "CONC_OUT"	, _TL("Outlet Concentration"),
+	Parameters.Add_Double(
+		"", "CONC_OUT"	, _TL("Outlet Concentration"),
 		_TL(""),
-		PARAMETER_TYPE_Double, 3.0, 0.0, true
+		3.0, 0.0, true
 	);
 
-	Parameters.Add_Value(
-		NULL	, "CONC_E"		, _TL("Concentration Approximation Threshold"),
+	Parameters.Add_Double(
+		"", "CONC_E"	, _TL("Concentration Approximation Threshold"),
 		_TL(""),
-		PARAMETER_TYPE_Double, 0.001, 0.0, true
+		0.001, 0.0, true
 	);
 
-	Parameters.Add_Value(
-		NULL	, "GRAD_MIN"	, _TL("Minimum Gradient"),
+	Parameters.Add_Double(
+		"", "GRAD_MIN"	, _TL("Minimum Gradient"),
 		_TL(""),
-		PARAMETER_TYPE_Double, 0.0, 0.0, true
+		0.0, 0.0, true
 	);
 
 	Parameters.Add_Choice(
-		NULL	, "NEIGHBOURS"	, _TL("Neighbourhood"),
+		"", "NEIGHBOURS", _TL("Neighbourhood"),
 		_TL(""),
-		CSG_String::Format("%s|%s|%s|",
+		CSG_String::Format("%s|%s|%s",
 			_TL("Moore (8)"),
 			_TL("Neumann (4)"),
 			_TL("Optimised")
@@ -776,7 +776,7 @@ bool CSim_Diffusion_Gradient_And_Concentration::On_Execute(void)
 	m_Conc_Out		= Parameters("CONC_OUT")->asDouble();
 	m_MinGradient	= Parameters("GRAD_MIN")->asDouble();
 
-	m_Tmp.Create(*Get_System());
+	m_Tmp.Create(Get_System());
 
 	//-----------------------------------------------------
 	bool	bResult	= Surface_Initialise(pSurface);

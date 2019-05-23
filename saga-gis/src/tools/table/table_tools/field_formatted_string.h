@@ -1,6 +1,3 @@
-/**********************************************************
- * Version $Id: TLB_Interface.h 1921 2014-01-09 10:24:11Z oconrad $
- *********************************************************/
 
 ///////////////////////////////////////////////////////////
 //                                                       //
@@ -9,13 +6,13 @@
 //      System for Automated Geoscientific Analyses      //
 //                                                       //
 //                     Tool Library                      //
-//                     ta_hydrology                      //
+//                     table_tools                       //
 //                                                       //
 //-------------------------------------------------------//
 //                                                       //
-//                    TLB_Interface.h                    //
+//                field_formatted_string.h               //
 //                                                       //
-//                 Copyright (C) 2003 by                 //
+//                 Copyright (C) 2019 by                 //
 //                      Olaf Conrad                      //
 //                                                       //
 //-------------------------------------------------------//
@@ -43,25 +40,21 @@
 //                                                       //
 //    contact:    Olaf Conrad                            //
 //                Institute of Geography                 //
-//                University of Goettingen               //
-//                Goldschmidtstr. 5                      //
-//                37077 Goettingen                       //
+//                University of Hamburg                  //
 //                Germany                                //
 //                                                       //
 ///////////////////////////////////////////////////////////
 
 //---------------------------------------------------------
+#ifndef HEADER_INCLUDED__field_formatted_string_H
+#define HEADER_INCLUDED__field_formatted_string_H
 
 
 ///////////////////////////////////////////////////////////
-//														 //
-//				Include the SAGA-API here				 //
-//														 //
+//                                                       //												
+//                                                       //												
+//                                                       //
 ///////////////////////////////////////////////////////////
-
-//---------------------------------------------------------
-#ifndef HEADER_INCLUDED__ta_hydrology_H
-#define HEADER_INCLUDED__ta_hydrology_H
 
 //---------------------------------------------------------
 #include <saga_api/saga_api.h>
@@ -74,4 +67,74 @@
 ///////////////////////////////////////////////////////////
 
 //---------------------------------------------------------
-#endif // #ifndef HEADER_INCLUDED__ta_hydrology_H
+class CField_Formatted_String_Base : public CSG_Tool  
+{
+public:
+	CField_Formatted_String_Base(bool bShapes);
+
+
+protected:
+
+	virtual int				On_Parameters_Enable	(CSG_Parameters *pParameters, CSG_Parameter *pParameter);
+
+	virtual bool			On_Execute				(void);
+
+
+private:
+
+	typedef struct SFormat
+	{
+		CSG_String	format; int	type, field, option;
+	}
+	TFormat;
+
+	bool					m_bNoData;
+
+	int						m_Result, m_nFormats;
+
+	TFormat					*m_Formats;
+
+
+	bool					Get_Formats				(CSG_Table *pTable);
+
+	bool					Set_String				(CSG_Table_Record *pRecord);
+
+};
+
+
+///////////////////////////////////////////////////////////
+//														 //
+///////////////////////////////////////////////////////////
+
+//---------------------------------------------------------
+class CField_Formatted_String : public CField_Formatted_String_Base  
+{
+public:
+	CField_Formatted_String(void) : CField_Formatted_String_Base(false)	{}
+
+};
+
+
+///////////////////////////////////////////////////////////
+//														 //
+///////////////////////////////////////////////////////////
+
+//---------------------------------------------------------
+class CField_Formatted_String_Shapes : public CField_Formatted_String_Base  
+{
+public:
+	CField_Formatted_String_Shapes(void) : CField_Formatted_String_Base(true)	{}
+
+	virtual CSG_String		Get_MenuPath		(void)	{	return( _TL("A:Shapes|Table") );	}
+
+};
+
+
+///////////////////////////////////////////////////////////
+//														 //
+//														 //
+//														 //
+///////////////////////////////////////////////////////////
+
+//---------------------------------------------------------
+#endif // #ifndef HEADER_INCLUDED__field_formatted_string_H

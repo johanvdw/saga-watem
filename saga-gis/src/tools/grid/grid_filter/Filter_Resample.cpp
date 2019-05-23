@@ -128,7 +128,7 @@ bool CFilter_Resample::On_Execute(void)
 	double	Cellsize	= Parameters("SCALE" )->asDouble() * Get_Cellsize();
 
 	//-----------------------------------------------------
-	if( Cellsize > 0.5 * SG_Get_Length(Get_System()->Get_XRange(), Get_System()->Get_YRange()) )
+	if( Cellsize > 0.5 * SG_Get_Length(Get_System().Get_XRange(), Get_System().Get_YRange()) )
 	{
 		Error_Set(_TL("resampling cell size is too large"));
 
@@ -141,8 +141,8 @@ bool CFilter_Resample::On_Execute(void)
 	Grid.Assign(pGrid, GRID_RESAMPLING_Mean_Cells);
 
 	//-----------------------------------------------------
-	pLoPass->Set_Name(CSG_String::Format("%s [%s]", pGrid->Get_Name(), _TL("Low Pass")));
-	pHiPass->Set_Name(CSG_String::Format("%s [%s]", pGrid->Get_Name(), _TL("High Pass")));
+	pLoPass->Fmt_Name("%s [%s]", pGrid->Get_Name(), _TL("Low Pass" ));
+	pHiPass->Fmt_Name("%s [%s]", pGrid->Get_Name(), _TL("High Pass"));
 
 	CSG_Colors	Colors;
 

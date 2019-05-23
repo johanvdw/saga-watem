@@ -142,7 +142,7 @@ CGW_Multi_Regression::CGW_Multi_Regression(void)
 //---------------------------------------------------------
 int CGW_Multi_Regression::On_Parameter_Changed(CSG_Parameters *pParameters, CSG_Parameter *pParameter)
 {
-	if( !SG_STR_CMP(pParameter->Get_Identifier(), "POINTS") )
+	if( pParameter->Cmp_Identifier("POINTS") )
 	{
 		m_Grid_Target.Set_User_Defined(pParameters, pParameter->asShapes());
 
@@ -241,8 +241,8 @@ bool CGW_Multi_Regression::On_Execute(void)
 		return( false );
 	}
 
-	m_pQuality  ->Set_Name(CSG_String::Format(SG_T("%s (%s)"), Parameters("DEPENDENT")->asString(), _TL("GWR Quality")));
-	m_pIntercept->Set_Name(CSG_String::Format(SG_T("%s (%s)"), Parameters("DEPENDENT")->asString(), _TL("GWR Intercept")));
+	m_pQuality  ->Fmt_Name("%s (%s)", Parameters("DEPENDENT")->asString(), _TL("GWR Quality"  ));
+	m_pIntercept->Fmt_Name("%s (%s)", Parameters("DEPENDENT")->asString(), _TL("GWR Intercept"));
 
 	//-----------------------------------------------------
 	CSG_Parameter_Grid_List	*pSlopes	= Parameters("SLOPES")->asGridList();
@@ -253,7 +253,7 @@ bool CGW_Multi_Regression::On_Execute(void)
 	{
 		pSlopes->Add_Item(m_pSlopes[i] = SG_Create_Grid(m_pQuality->Get_System()));
 
-		m_pSlopes[i]->Set_Name(CSG_String::Format(SG_T("%s (%s)"), Parameters("DEPENDENT")->asString(), m_pPoints->Get_Field_Name(m_iPredictor[i])));
+		m_pSlopes[i]->Fmt_Name("%s (%s)", Parameters("DEPENDENT")->asString(), m_pPoints->Get_Field_Name(m_iPredictor[i]));
 	}
 
 	//-----------------------------------------------------

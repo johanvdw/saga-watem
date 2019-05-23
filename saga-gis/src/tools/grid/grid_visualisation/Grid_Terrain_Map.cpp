@@ -171,7 +171,7 @@ CGrid_Terrain_Map::~CGrid_Terrain_Map(void)
 int CGrid_Terrain_Map::On_Parameters_Enable(CSG_Parameters *pParameters, CSG_Parameter *pParameter)
 {
 	//-----------------------------------------------------
-	if(	!SG_STR_CMP(pParameter->Get_Identifier(), SG_T("METHOD")) )
+	if(	pParameter->Cmp_Identifier(SG_T("METHOD")) )
 	{
 		pParameters->Get_Parameter("SHADE")			->Set_Enabled(pParameter->asInt() == 0);
 
@@ -181,7 +181,7 @@ int CGrid_Terrain_Map::On_Parameters_Enable(CSG_Parameters *pParameters, CSG_Par
 	}
 
 	//-----------------------------------------------------
-	if(	!SG_STR_CMP(pParameter->Get_Identifier(), SG_T("CONTOUR_LINES")) )
+	if(	pParameter->Cmp_Identifier(SG_T("CONTOUR_LINES")) )
 	{
 		pParameters->Get_Parameter("CONTOURS")		->Set_Enabled(pParameter->asBool());
 		pParameters->Get_Parameter("EQUIDISTANCE")	->Set_Enabled(pParameter->asBool());
@@ -239,7 +239,7 @@ bool CGrid_Terrain_Map::Generate_Topography()
 	//-----------------------------------------------------
 	if( pShade == NULL )
 	{
-		pShade = SG_Create_Grid(*Get_System(), SG_DATATYPE_Float);
+		pShade = SG_Create_Grid(Get_System(), SG_DATATYPE_Float);
 		Parameters("SHADE")->Set_Value(pShade);
 		DataObject_Add(pShade);
 	}
@@ -292,19 +292,19 @@ bool CGrid_Terrain_Map::Generate_Morphology()
 	//-----------------------------------------------------
 	if( pOpenness == NULL )
 	{
-		pOpenness = new CSG_Grid(*Get_System(), SG_DATATYPE_Float);
+		pOpenness = new CSG_Grid(Get_System(), SG_DATATYPE_Float);
 		Parameters("OPENNESS")->Set_Value(pOpenness);
 		DataObject_Add(pOpenness);
 	}
 
 	if( pSlope == NULL )
 	{
-		pSlope = SG_Create_Grid(*Get_System(), SG_DATATYPE_Float);
+		pSlope = SG_Create_Grid(Get_System(), SG_DATATYPE_Float);
 		Parameters("SLOPE")->Set_Value(pSlope);
 		DataObject_Add(pSlope);
 	}
 
-	CSG_Grid	TMP1(*Get_System(), SG_DATATYPE_Float);
+	CSG_Grid	TMP1(Get_System(), SG_DATATYPE_Float);
 
 
 	//-----------------------------------------------------
@@ -389,7 +389,7 @@ bool CGrid_Terrain_Map::Generate_Contours()
 		DataObject_Set_Parameters(pContours, Parms);
 	}
 
-	pContours->Set_Name(CSG_String::Format(SG_T("Contours_%s"), Parameters("DEM")->asGrid()->Get_Name()));
+	pContours->Fmt_Name("%s (%s)", _TL("Contours"), Parameters("DEM")->asGrid()->Get_Name());
 	DataObject_Update(pContours, SG_UI_DATAOBJECT_SHOW_LAST_MAP);
 
 

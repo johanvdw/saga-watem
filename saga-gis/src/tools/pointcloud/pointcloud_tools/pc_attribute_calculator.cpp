@@ -289,7 +289,7 @@ bool CPC_Attribute_Calculator::On_Execute(void)
 	}
 	else
 	{
-		pPC_out->Set_Name(CSG_String::Format(SG_T("%s_%s"), pPC_in->Get_Name(), Parameters("NAME")->asString()));
+		pPC_out->Fmt_Name("%s_%s", pPC_in->Get_Name(), Parameters("NAME")->asString());
 	}
 
 	return (true);
@@ -342,7 +342,7 @@ CSG_String	CPC_Attribute_Calculator::Get_Formula(CSG_String sFormula, CSG_Table 
 int CPC_Attribute_Calculator::On_Parameter_Changed(CSG_Parameters *pParameters, CSG_Parameter *pParameter)
 {
 
-	if( !SG_STR_CMP(pParameter->Get_Identifier(), SG_T("FORMULA")) )
+	if( pParameter->Cmp_Identifier(SG_T("FORMULA")) )
 		pParameters->Get_Parameter(SG_T("NAME"))->Set_Value(pParameter->asString());
 
     return (true);

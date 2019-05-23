@@ -177,42 +177,42 @@ int CGDAL_Import_WMS::On_Parameter_Changed(CSG_Parameters *pParameters, CSG_Para
 	CSG_Parameter	*pNX	= pParameters->Get_Parameter("NX"  );
 	CSG_Parameter	*pNY	= pParameters->Get_Parameter("NY"  );
 
-	if( !SG_STR_CMP(pParameter->Get_Identifier(), "NX") )
+	if( pParameter->Cmp_Identifier("NX") )
 	{
 		double	d	= fabs(pXMax->asDouble() - pXMin->asDouble()) / pNX->asDouble();
 		pNY  ->Set_Value(fabs(pYMax->asDouble() - pYMin->asDouble()) / d);
 		pYMax->Set_Value(pYMin->asDouble() + d * pNY->asDouble());
 	}
 
-	if( !SG_STR_CMP(pParameter->Get_Identifier(), "NY") )
+	if( pParameter->Cmp_Identifier("NY") )
 	{
 		double	d	= fabs(pYMax->asDouble() - pYMin->asDouble()) / pNY->asDouble();
 		pNX  ->Set_Value(fabs(pXMax->asDouble() - pXMin->asDouble()) / d);
 		pXMax->Set_Value(pXMin->asDouble() + d * pNX->asDouble());
 	}
 
-	if( !SG_STR_CMP(pParameter->Get_Identifier(), "XMIN") )
+	if( pParameter->Cmp_Identifier("XMIN") )
 	{
 		double	d	= fabs(pYMax->asDouble() - pYMin->asDouble()) / pNY->asDouble();
 		pNX  ->Set_Value(fabs(pXMax->asDouble() - pXMin->asDouble()) / d);
 		pXMax->Set_Value(pXMin->asDouble() + d * pNX->asDouble());
 	}
 
-	if( !SG_STR_CMP(pParameter->Get_Identifier(), "YMIN") )
+	if( pParameter->Cmp_Identifier("YMIN") )
 	{
 		double	d	= fabs(pXMax->asDouble() - pXMin->asDouble()) / pNX->asDouble();
 		pNY  ->Set_Value(fabs(pYMax->asDouble() - pYMin->asDouble()) / d);
 		pYMax->Set_Value(pYMin->asDouble() + d * pNY->asDouble());
 	}
 
-	if( !SG_STR_CMP(pParameter->Get_Identifier(), "XMAX") )
+	if( pParameter->Cmp_Identifier("XMAX") )
 	{
 		double	d	= fabs(pYMax->asDouble() - pYMin->asDouble()) / pNY->asDouble();
 		pNX  ->Set_Value(fabs(pXMax->asDouble() - pXMin->asDouble()) / d);
 		pYMax->Set_Value(pYMax->asDouble() - d * pNY->asDouble());
 	}
 
-	if( !SG_STR_CMP(pParameter->Get_Identifier(), "YMAX") )
+	if( pParameter->Cmp_Identifier("YMAX") )
 	{
 		double	d	= fabs(pXMax->asDouble() - pXMin->asDouble()) / pNX->asDouble();
 		pNY  ->Set_Value(fabs(pYMax->asDouble() - pYMin->asDouble()) / d);
@@ -225,18 +225,18 @@ int CGDAL_Import_WMS::On_Parameter_Changed(CSG_Parameters *pParameters, CSG_Para
 //---------------------------------------------------------
 int CGDAL_Import_WMS::On_Parameters_Enable(CSG_Parameters *pParameters, CSG_Parameter *pParameter)
 {
-	if( !SG_STR_CMP(pParameter->Get_Identifier(), "TARGET") )
+	if( pParameter->Cmp_Identifier("TARGET") )
 	{
 		pParameters->Set_Enabled("TARGET_MAP" , pParameter->asPointer() != NULL);
 		pParameters->Set_Enabled("TARGET_NODE", pParameter->asPointer() == NULL);
 	}
 
-	if( !SG_STR_CMP(pParameter->Get_Identifier(), "SERVER") )
+	if( pParameter->Cmp_Identifier("SERVER") )
 	{
 		pParameters->Set_Enabled("SERVER_USER", pParameter->asInt() >= pParameter->asChoice()->Get_Count() - 1);
 	}
 
-	if( !SG_STR_CMP(pParameter->Get_Identifier(), "CACHE") )
+	if( pParameter->Cmp_Identifier("CACHE") )
 	{
 		pParameters->Set_Enabled("CACHE_DIR", pParameter->asBool());
 	}
@@ -323,19 +323,18 @@ bool CGDAL_Import_WMS::Get_System(CSG_Grid_System &System, CSG_Grid *pTarget)
 	rTarget.Add_Shape()->Add_Point(Extent.Get_XCenter(), Extent.Get_YMin   ());
 
 	//-----------------------------------------------------
-	CSG_Tool	*pTool	= SG_Get_Tool_Library_Manager().Get_Tool("pj_proj4", 2);	// Coordinate Transformation (Shapes);
+	CSG_Tool	*pTool	= SG_Get_Tool_Library_Manager().Create_Tool("pj_proj4", 2);	// Coordinate Transformation (Shapes);
 
 	if(	!pTool )
 	{
 		return( false );
 	}
 
-	pTool->Settings_Push();
+	pTool->Set_Manager(NULL);
 
 	if( SG_TOOL_PARAMETER_SET("CRS_PROJ4", SG_T("+proj=merc +a=6378137 +b=6378137 +lat_ts=0.0 +k=1.0"))
 	&&  SG_TOOL_PARAMETER_SET("SOURCE"   , &rTarget)
 	&&  SG_TOOL_PARAMETER_SET("TARGET"   , &rSource)
-	&&  SG_TOOL_PARAMETER_SET("PRECISE"  , true)
 	&&  pTool->Execute() )
 	{
 		Extent	= rSource.Get_Extent();
@@ -345,12 +344,12 @@ bool CGDAL_Import_WMS::Get_System(CSG_Grid_System &System, CSG_Grid *pTarget)
 
 		System.Assign(Cellsize, Extent);
 
-		pTool->Settings_Pop();
+		SG_Get_Tool_Library_Manager().Delete_Tool(pTool);
 
 		return( true );
 	}
 
-	pTool->Settings_Pop();
+	SG_Get_Tool_Library_Manager().Delete_Tool(pTool);
 
 	return( false );
 }
@@ -363,7 +362,7 @@ bool CGDAL_Import_WMS::Get_System(CSG_Grid_System &System, CSG_Grid *pTarget)
 //---------------------------------------------------------
 bool CGDAL_Import_WMS::Get_Projected(CSG_Grid *pBands[3], CSG_Grid *pTarget)
 {
-	CSG_Tool	*pTool	= SG_Get_Tool_Library_Manager().Get_Tool("pj_proj4", 3);	// Coordinate Transformation (Grid List);
+	CSG_Tool	*pTool	= SG_Get_Tool_Library_Manager().Create_Tool("pj_proj4", 3);	// Coordinate Transformation (Grid List);
 
 	if(	!pTool )
 	{
@@ -371,7 +370,7 @@ bool CGDAL_Import_WMS::Get_Projected(CSG_Grid *pBands[3], CSG_Grid *pTarget)
 	}
 
 	//-----------------------------------------------------
-	pTool->Settings_Push();
+	pTool->Set_Manager(NULL);
 
 	if( SG_TOOL_PARAMETER_SET("CRS_PROJ4"        , pTarget->Get_Projection().Get_Proj4())
 	&&  SG_TOOL_PARAMETER_SET("RESAMPLING"       , 3)
@@ -389,12 +388,12 @@ bool CGDAL_Import_WMS::Get_Projected(CSG_Grid *pBands[3], CSG_Grid *pTarget)
 		delete(pBands[1]);	pBands[1]	= pGrids->Get_Grid(1);
 		delete(pBands[2]);	pBands[2]	= pGrids->Get_Grid(2);
 
-		pTool->Settings_Pop();
+		SG_Get_Tool_Library_Manager().Delete_Tool(pTool);
 
 		return( true );
 	}
 
-	pTool->Settings_Pop();
+	SG_Get_Tool_Library_Manager().Delete_Tool(pTool);
 
 	return( false );
 }
@@ -449,7 +448,7 @@ bool CGDAL_Import_WMS::Set_Image(CSG_Grid *pBands[3])
 	Parameters("MAP")->Set_Value(pMap);
 
 	DataObject_Add(pMap);
-	DataObject_Set_Parameter(pMap, "COLORS_TYPE", 6);	// RGB Coded Values
+	DataObject_Set_Parameter(pMap, "COLORS_TYPE", 5);	// Color Classification Type: RGB Coded Values
 
 	return( true );
 }
@@ -471,10 +470,10 @@ bool CGDAL_Import_WMS::Get_Bands(CSG_Grid *pBands[3], const CSG_Grid_System &Sys
 	}
 
 	Message_Add("\n", false);
-	Message_Add(CSG_String::Format("\n%s: %s", _TL("Driver" ), DataSet.Get_DriverID().c_str()), false);
-	Message_Add(CSG_String::Format("\n%s: %d", _TL("Bands"  ), DataSet.Get_Count()           ), false);
-	Message_Add(CSG_String::Format("\n%s: %d", _TL("Rows"   ), DataSet.Get_NX()              ), false);
-	Message_Add(CSG_String::Format("\n%s: %d", _TL("Columns"), DataSet.Get_NY()              ), false);
+	Message_Fmt("\n%s: %s", _TL("Driver" ), DataSet.Get_DriverID().c_str());
+	Message_Fmt("\n%s: %d", _TL("Bands"  ), DataSet.Get_Count()           );
+	Message_Fmt("\n%s: %d", _TL("Rows"   ), DataSet.Get_NX()              );
+	Message_Fmt("\n%s: %d", _TL("Columns"), DataSet.Get_NY()              );
 	Message_Add("\n", false);
 
 	//-----------------------------------------------------

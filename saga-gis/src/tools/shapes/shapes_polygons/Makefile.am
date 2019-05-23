@@ -5,7 +5,7 @@ if DEBUG
 DBGFLAGS = -g -DDEBUG
 endif
 
-DEF_SAGA           = -D_SAGA_LINUX -D_TYPEDEF_BYTE -D_TYPEDEF_WORD -D_SAGA_UNICODE
+DEF_SAGA           = -D_SAGA_LINUX -D_TYPEDEF_BYTE -D_TYPEDEF_WORD
 CXX_INCS           = -I$(top_srcdir)/src/saga_core
 AM_CXXFLAGS        = -fPIC $(CXX_INCS) $(DEF_SAGA) $(DBGFLAGS) $(GOMPFLAGS)
 AM_LDFLAGS         = -fPIC -shared -avoid-version
@@ -16,6 +16,7 @@ MLB_Interface.cpp\
 Polygon_Centroids.cpp\
 Polygon_Clip.cpp\
 polygon_flatten.cpp\
+polygon_generalization.cpp\
 Polygon_Geometrics.cpp\
 Polygon_Intersection.cpp\
 Polygon_SelfIntersection.cpp\
@@ -33,6 +34,7 @@ MLB_Interface.h\
 Polygon_Centroids.h\
 Polygon_Clip.h\
 polygon_flatten.h\
+polygon_generalization.h\
 Polygon_Geometrics.h\
 Polygon_Intersection.h\
 Polygon_SelfIntersection.h\

@@ -131,7 +131,7 @@ CGrid_Random_Field::CGrid_Random_Field(void)
 //---------------------------------------------------------
 int CGrid_Random_Field::On_Parameters_Enable(CSG_Parameters *pParameters, CSG_Parameter *pParameter)
 {
-	if( !SG_STR_CMP(pParameter->Get_Identifier(), "METHOD") )
+	if( pParameter->Cmp_Identifier("METHOD") )
 	{
 		pParameters->Set_Enabled("UNIFORM" , pParameter->asInt() == 0);
 		pParameters->Set_Enabled("GAUSSIAN", pParameter->asInt() == 1);
@@ -162,11 +162,11 @@ bool CGrid_Random_Field::On_Execute(void)
 	int		Method	= Parameters("METHOD")->asInt();
 
 	double	a	= Method == 0
-		? Parameters("RANGE" )->asRange()->Get_LoVal()
+		? Parameters("RANGE" )->asRange()->Get_Min()
 		: Parameters("MEAN"  )->asDouble();
 
 	double	b	= Method == 0
-		? Parameters("RANGE" )->asRange()->Get_HiVal()
+		? Parameters("RANGE" )->asRange()->Get_Max()
 		: Parameters("STDDEV")->asDouble();
 
 	//-----------------------------------------------------
@@ -258,7 +258,7 @@ CGrid_Fractal_Brownian_Noise::CGrid_Fractal_Brownian_Noise(void)
 //---------------------------------------------------------
 int CGrid_Fractal_Brownian_Noise::On_Parameter_Changed(CSG_Parameters *pParameters, CSG_Parameter *pParameter)
 {
-	if( !SG_STR_CMP(pParameter->Get_Identifier(), "SYSTEM") )
+	if( pParameter->Cmp_Identifier("SYSTEM") )
 	{
 		CSG_Grid_System	System(*pParameter->asGrid_System());
 
@@ -266,7 +266,7 @@ int CGrid_Fractal_Brownian_Noise::On_Parameter_Changed(CSG_Parameters *pParamete
 		{
 			double	d	= 0.5 * SG_Get_Length(System.Get_XRange(), System.Get_YRange());
 
-			pParameters->Get("MAX_SCALE")->Set_Value(System.Get_Cellsize() * (int)(d / System.Get_Cellsize()));
+			pParameters->Set_Parameter("MAX_SCALE", System.Get_Cellsize() * (int)(d / System.Get_Cellsize()));
 		}
 	}
 
@@ -324,7 +324,7 @@ bool CGrid_Fractal_Brownian_Noise::On_Execute(void)
 	//-----------------------------------------------------
 	for(int i=0; i<=nSteps && Set_Progress(i, nSteps); i++)
 	{
-		Message_Add(CSG_String::Format("\n%s: [%d] %f", _TL("Scale"), i, Scale), false);
+		Message_Fmt("\n%s: [%d] %f", _TL("Scale"), i, Scale);
 
 		Add_Noise(pGrid, Scale);
 
@@ -336,8 +336,8 @@ bool CGrid_Fractal_Brownian_Noise::On_Execute(void)
 	}
 
 	//-----------------------------------------------------
-	Offset	= Parameters("RANGE")->asRange()->Get_LoVal();	
-	Scale	= Parameters("RANGE")->asRange()->Get_HiVal() - Offset;
+	Offset	= Parameters("RANGE")->asRange()->Get_Min();	
+	Scale	= Parameters("RANGE")->asRange()->Get_Max() - Offset;
 
 	if( Scale <= 0.0 || pGrid->Get_Range() <= 0.0 )
 	{

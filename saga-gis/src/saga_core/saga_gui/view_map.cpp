@@ -222,6 +222,7 @@ wxToolBarBase * CVIEW_Map::_Create_ToolBar(void)
 	CMD_ToolBar_Add_Separator(pToolBar);
 	CMD_ToolBar_Add_Item(pToolBar, true , ID_CMD_MAP_3D_SHOW);
 	CMD_ToolBar_Add_Item(pToolBar, true , ID_CMD_MAP_LAYOUT_SHOW);
+	CMD_ToolBar_Add_Item(pToolBar, false, ID_CMD_MAPS_SAVE_TO_CLIPBOARD);
 	CMD_ToolBar_Add_Separator(pToolBar);
 	CMD_ToolBar_Add_Item(pToolBar, true , ID_CMD_MAP_SCALEBAR);
 	CMD_ToolBar_Add_Item(pToolBar, true , ID_CMD_MAP_NORTH_ARROW);
@@ -440,13 +441,13 @@ void CVIEW_Map::On_Command_UI(wxUpdateUIEvent &event)
 		break;
 
 	case ID_CMD_MAP_ZOOM_ACTIVE:
-		event.Enable(g_pACTIVE->Get_Active_Layer() != NULL);
+		event.Enable(g_pActive->Get_Active_Layer() != NULL);
 		break;
 
 	case ID_CMD_MAP_ZOOM_SELECTION:
-		event.Enable(g_pACTIVE->Get_Active_Layer()
-			&& g_pACTIVE->Get_Active_Layer()->Get_Object()->asShapes()
-			&& g_pACTIVE->Get_Active_Layer()->Get_Object()->asShapes()->Get_Selection_Count() > 0
+		event.Enable(g_pActive->Get_Active_Layer()
+			&& g_pActive->Get_Active_Layer()->Get_Object()->asShapes()
+			&& g_pActive->Get_Active_Layer()->Get_Object()->asShapes()->Get_Selection_Count() > 0
 		);
 		break;
 

@@ -140,8 +140,11 @@ public:		///////////////////////////////////////////////
 
 
 	//-----------------------------------------------------
-	virtual bool					Load				(const CSG_String &FileName, bool bLoadData = true);
-	virtual bool					Save				(const CSG_String &FileName, int Format = GRIDS_FILE_FORMAT_Undefined);
+	virtual bool					Load				(const CSG_String &File, bool bLoadData = true);
+
+	virtual bool					Save				(const CSG_String &File, int Format = 0);
+	virtual bool					Save				(const char       *File, int Format = 0)	{	return( Save(CSG_String(File), Format) );	}
+	virtual bool					Save				(const wchar_t    *File, int Format = 0)	{	return( Save(CSG_String(File), Format) );	}
 
 
 	//-----------------------------------------------------
@@ -250,10 +253,14 @@ public:		///////////////////////////////////////////////
 	double							Get_Range			(void);
 	double							Get_StdDev			(void);
 	double							Get_Variance		(void);
-	double							Get_Quantile		(double Quantile);
+	double							Get_Quantile		(double   Quantile, bool bFromHistogram = true);
+	double							Get_Percentile		(double Percentile, bool bFromHistogram = true);
 
 	const CSG_Simple_Statistics &	Get_Statistics		(void);
 	bool							Get_Statistics		(const CSG_Rect &rWorld, CSG_Simple_Statistics &Statistics, bool bHoldValues = false)	const;
+
+	const CSG_Histogram &			Get_Histogram		(size_t nClasses = 0);
+	bool							Get_Histogram		(const CSG_Rect &rWorld, CSG_Histogram &Histogram, size_t nClasses = 0)	const;
 
 	virtual bool					Set_Max_Samples		(sLong Max_Samples);
 
@@ -411,12 +418,12 @@ public:		///////////////////////////////////////////////
 			return( true );
 		}
 
-		return( m_Index || _Set_Index() );
+		return( _Get_Index() );
 	}
 
 	sLong							Get_Sorted		(sLong Position, bool bDown = true, bool bCheckNoData = true)
 	{
-		if( Position >= 0 && Position < Get_NCells() && (m_Index || _Set_Index()) )
+		if( Position >= 0 && Position < Get_NCells() && _Get_Index() )
 		{
 			Position	= m_Index[bDown ? Get_NCells() - Position - 1 : Position];
 
@@ -431,12 +438,12 @@ public:		///////////////////////////////////////////////
 
 	bool							Get_Sorted		(sLong Position, sLong &i, bool bDown = true, bool bCheckNoData = true)
 	{
-		return( (i = Get_Sorted(Position, bDown, false)) >= 0 && (!bCheckNoData || !is_NoData(i)) );
+		return( (i = Get_Sorted(Position, bDown, bCheckNoData)) >= 0 );
 	}
 
 	bool							Get_Sorted		(sLong Position, int &x, int &y, int &z, bool bDown = true, bool bCheckNoData = true)
 	{
-		if( (Position = Get_Sorted(Position, bDown, false)) >= 0 )
+		if( (Position = Get_Sorted(Position, bDown, bCheckNoData)) >= 0 )
 		{
 			z	= (int)(Position / m_pGrids[0]->Get_NCells());
 
@@ -445,7 +452,7 @@ public:		///////////////////////////////////////////////
 			x	= (int)(Position % Get_NX());
 			y	= (int)(Position / Get_NX());
 
-			return( !bCheckNoData || !is_NoData(x, y, z) );
+			return( true );
 		}
 
 		return( false );
@@ -475,6 +482,8 @@ private:	///////////////////////////////////////////////
 
 	CSG_Simple_Statistics			m_Statistics;
 
+	CSG_Histogram					m_Histogram;
+
 
 	//-----------------------------------------------------
 	void							_On_Construction		(void);
@@ -486,6 +495,15 @@ private:	///////////////////////////////////////////////
 
 	//-----------------------------------------------------
 	bool							_Set_Index				(void);
+	bool							_Get_Index				(void)
+	{
+		if( Get_Update_Flag() )
+		{
+			Update();
+		}
+
+		return( m_Index || _Set_Index() );
+	}
 
 	//-----------------------------------------------------
 	bool							_Load_External			(const CSG_String &FileName);
@@ -508,7 +526,7 @@ private:	///////////////////////////////////////////////
 
 	//-----------------------------------------------------
 	bool							_Assign_Interpolated	(CSG_Grids *pSource, TSG_Grid_Resampling Interpolation);
-	bool							_Assign_MeanValue		(CSG_Grids *pSource, bool bAreaProportional);
+	bool							_Assign_MeanValue		(CSG_Grids *pSource, bool bVolumeProportional);
 	bool							_Assign_ExtremeValue	(CSG_Grids *pSource, bool bMaximum);
 	bool							_Assign_Majority		(CSG_Grids *pSource);
 

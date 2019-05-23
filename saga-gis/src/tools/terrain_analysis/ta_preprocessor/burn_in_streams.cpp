@@ -137,7 +137,7 @@ CBurnIn_Streams::CBurnIn_Streams(void)
 //---------------------------------------------------------
 int CBurnIn_Streams::On_Parameters_Enable(CSG_Parameters *pParameters, CSG_Parameter *pParameter)
 {
-	if( !SG_STR_CMP(pParameter->Get_Identifier(), "METHOD") )
+	if( pParameter->Cmp_Identifier("METHOD") )
 	{
 		pParameters->Get_Parameter("FLOWDIR")->Set_Enabled(pParameter->asInt() == 2);
 	}
@@ -169,7 +169,7 @@ bool CBurnIn_Streams::On_Execute(void)
 	else
 	{
 		m_pDEM->Assign(Parameters("DEM")->asGrid());
-		m_pDEM->Set_Name(CSG_String::Format(SG_T("%s [%s]"), Parameters("DEM")->asGrid()->Get_Name(), _TL("Burned Streams")));
+		m_pDEM->Fmt_Name("%s [%s]", Parameters("DEM")->asGrid()->Get_Name(), _TL("Burned Streams"));
 	}
 
 	//-----------------------------------------------------
@@ -245,8 +245,8 @@ bool CBurnIn_Streams::Burn_Trace(void)
 	int			y;
 
 	//-----------------------------------------------------
-	CSG_Grid	Count (*Get_System(), SG_DATATYPE_Char);
-	CSG_Grid	Stream(*Get_System(), SG_DATATYPE_Char);
+	CSG_Grid	Count (Get_System(), SG_DATATYPE_Char);
+	CSG_Grid	Stream(Get_System(), SG_DATATYPE_Char);
 	CSG_Grid	*pDir	= Parameters("FLOWDIR")->asGrid();
 
 	//-----------------------------------------------------
@@ -260,7 +260,7 @@ bool CBurnIn_Streams::Burn_Trace(void)
 
 				Stream.Set_Value(x, y, i);
 
-				if( i >= 0 && Get_System()->Get_Neighbor_Pos(i, x, y, ix, iy) )
+				if( i >= 0 && Get_System().Get_Neighbor_Pos(i, x, y, ix, iy) )
 				{
 					Count.Add_Value(ix, iy, 1);
 				}
@@ -301,7 +301,7 @@ void CBurnIn_Streams::Burn_Trace(int x, int y)
 
 		int	ix, iy;
 
-		if( Get_System()->Get_Neighbor_Pos(m_pStream->asInt(x, y), x, y, ix, iy) && !m_pStream->is_NoData(ix, iy) )
+		if( Get_System().Get_Neighbor_Pos(m_pStream->asInt(x, y), x, y, ix, iy) && !m_pStream->is_NoData(ix, iy) )
 		{
 			if( m_pDEM->asDouble(ix, iy) >= m_pDEM->asDouble(x, y) )
 			{

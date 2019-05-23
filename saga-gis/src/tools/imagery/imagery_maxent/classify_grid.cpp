@@ -244,7 +244,7 @@ int CClassify_Grid::On_Parameters_Enable(CSG_Parameters *pParameters, CSG_Parame
 	pParameters->Set_Enabled("DL_THRESHOLD" , Method == 1);
 	pParameters->Set_Enabled("DL_ITERATIONS", Method == 1);
 
-	return( 1 );
+	return( CSG_Tool_Grid::On_Parameters_Enable(pParameters, pParameter) );
 }
 
 
@@ -477,7 +477,7 @@ bool CClassify_Grid::Get_Training(void)
 
 				if( !pGrid )
 				{
-					m_pProbs->Add_Item(pGrid = SG_Create_Grid(*Get_System()));
+					m_pProbs->Add_Item(pGrid = SG_Create_Grid(Get_System()));
 
 					DataObject_Set_Colors(pGrid, 11, SG_COLORS_YELLOW_GREEN);
 				}
@@ -561,9 +561,7 @@ bool CClassify_Grid::Get_Training(void)
 
 			for(list< pair< pair<string, string>, double> >::const_iterator i=Features.begin(); i!=Features.end(); i++)
 			{
-				Message_Add(CSG_String::Format("\n%10.3f  %-10s %s",
-					i->second, i->first.first.c_str(), i->first.second.c_str()
-				), false);
+				Message_Fmt("\n%10.3f  %-10s %s", i->second, i->first.first.c_str(), i->first.second.c_str());
 			}/**/
 
 			CSG_String	File(Parameters("YT_FILE_SAVE")->asString());
@@ -602,10 +600,10 @@ bool CClassify_Grid::Get_Training(void)
 //---------------------------------------------------------
 void CClassify_Grid::Get_Training(const CSG_String &ID, CSG_Shape_Polygon *pArea)
 {
-	int	xMin	= Get_System()->Get_xWorld_to_Grid(pArea->Get_Extent().Get_XMin());
-	int	xMax	= Get_System()->Get_xWorld_to_Grid(pArea->Get_Extent().Get_XMax());
-	int	yMin	= Get_System()->Get_yWorld_to_Grid(pArea->Get_Extent().Get_YMin());
-	int	yMax	= Get_System()->Get_yWorld_to_Grid(pArea->Get_Extent().Get_YMax());
+	int	xMin	= Get_System().Get_xWorld_to_Grid(pArea->Get_Extent().Get_XMin());
+	int	xMax	= Get_System().Get_xWorld_to_Grid(pArea->Get_Extent().Get_XMax());
+	int	yMin	= Get_System().Get_yWorld_to_Grid(pArea->Get_Extent().Get_YMin());
+	int	yMax	= Get_System().Get_yWorld_to_Grid(pArea->Get_Extent().Get_YMax());
 
 	if( xMin < 0 ) xMin = 0; else if( xMin >= Get_NX() ) xMin = Get_NX() - 1;
 	if( xMax < 0 ) xMax = 0; else if( xMax >= Get_NX() ) xMax = Get_NX() - 1;
@@ -617,7 +615,7 @@ void CClassify_Grid::Get_Training(const CSG_String &ID, CSG_Shape_Polygon *pArea
 	{
 		for(int x=xMin; x<=xMax; x++)
 		{
-			if( pArea->Contains(Get_System()->Get_Grid_to_World(x, y)) )
+			if( pArea->Contains(Get_System().Get_Grid_to_World(x, y)) )
 			{
 				int			i;
 				CSG_Strings	Values;
@@ -727,7 +725,7 @@ bool CClassify_Grid::Get_File(const CSG_String &File)
 
 			if( !pGrid )
 			{
-				m_pProbs->Add_Item(pGrid = SG_Create_Grid(*Get_System()));
+				m_pProbs->Add_Item(pGrid = SG_Create_Grid(Get_System()));
 
 				DataObject_Set_Colors(pGrid, 11, SG_COLORS_YELLOW_GREEN);
 			}

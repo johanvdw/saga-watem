@@ -3,7 +3,7 @@
 # Process this file with autoconf to produce a configure script.
 
 AC_PREREQ(2.59)
-AC_INIT(saga, 6.4.0, BUG-REPORT-ADDRESS)
+AC_INIT(saga, 7.3.0, BUG-REPORT-ADDRESS)
 AC_CONFIG_SRCDIR([src/saga_core/saga_gui/wksp_data_menu_files.cpp])
 AC_CONFIG_HEADER([config.h])
 AC_CONFIG_MACRO_DIR([m4])
@@ -23,12 +23,18 @@ AC_CHECK_LIB([fftw3],[fftw_execute],FFTWFOUND=1,)
 AC_CHECK_LIB([las], [LAS_GetVersion], LASFOUND=1,,)
 AC_CHECK_LIB(hpdf, HPDF_Pages_New, HARUFOUND=1,,)
 AC_CHECK_LIB([odbc], [SQLFetch], ODBCFOUND=1,[ODBC \(libodbc\) library not found])
-AC_CHECK_LIB([proj], [pj_is_latlong], PROJFOUND=1,,)
+# PROJ4 has projects.h and old API function:
+AC_CHECK_HEADER([projects.h],[AC_CHECK_LIB([proj], [pj_get_release], PROJ4FOUND=1,,)])
+# PROJ5 still has projects.h but also new proj.h and new API function:
+AC_CHECK_HEADER([projects.h],[AC_CHECK_HEADER([proj.h],[AC_CHECK_LIB([proj], [proj_info], PROJ5FOUND=1,,)])])
+# PROJ6 has dropped projects.h in favour of proj.h and has new API function:
+AC_CHECK_HEADER([proj.h],[AC_CHECK_LIB([proj], [proj_info], PROJ6FOUND=1,,)])
 AC_CHECK_LIB([vigraimpex], [VIGRA_RGBE_ReadPixels_Raw],VIGRAFOUND=1,)
 AC_CHECK_LIB([gomp], [omp_get_num_threads], GOMPFOUND=1,,)
 AC_CHECK_HEADER([libsvm/svm.h],[AC_CHECK_LIB([svm], [svm_get_svm_type], SVMFOUND=1,,)])
 PKG_CHECK_MODULES([DXFLIB], [dxflib], [LIBDXFFOUND=1],[LIBDXFFOUND=0])
 PKG_CHECK_MODULES([HDF5],[hdf5],LIBHDF5FOUND=1,LIBHDF5FOUND=0)
+LIBCURL_CHECK_CONFIG([yes], [7.7.2],,)
 
 # Checks for header files.
 AC_HEADER_STDC
@@ -168,6 +174,52 @@ AC_ARG_ENABLE(openmp,
 AC_SUBST(GOMPFLAGS)
 
 
+# proj.4
+PROJ_INC_DIR=
+PROJ_LIB_DIR=
+
+AC_ARG_WITH(
+  [proj-includes],
+  [AS_HELP_STRING([--with-proj-includes=DIR],[set custom path to PROJ includes)])],
+  AC_CHECK_FILE([${withval}/proj_api.h], [PROJ_INC_DIR="$withval"], AC_MSG_ERROR([Custom PROJ include path not found]))
+)
+
+AC_ARG_WITH(
+  [proj-libraries],
+  [AS_HELP_STRING([--with-proj-libraries=DIR],[set custom path to PROJ libraries)])],
+  AC_CHECK_FILE([${withval}/libproj.so], [PROJ_LIB_DIR="-L$withval"], AC_MSG_ERROR([Custom PROJ library path not found]))
+)
+
+if test -n "$PROJ_INC_DIR"; then
+  AC_CHECK_FILE([${PROJ_INC_DIR}/projects.h], [PROJ4FOUND=1], [PROJ4FOUND=])
+  AC_CHECK_FILE([${PROJ_INC_DIR}/projects.h], AC_CHECK_FILE([${PROJ_INC_DIR}/proj.h], [PROJ5FOUND=1], [PROJ5FOUND=]), [PROJ5FOUND=])
+  AC_CHECK_FILE([${PROJ_INC_DIR}/proj.h], AC_CHECK_FILE([${PROJ_INC_DIR}/projects.h], [PROJ6FOUND=], [PROJ6FOUND=1]))
+  PROJ_INC_DIR="-I$PROJ_INC_DIR"
+fi
+
+if test -n "$PROJ5FOUND" ; then 
+  AC_MSG_RESULT([        using PROJ version 5])
+  PROJ6FLAGS=""
+else
+  if test -n "$PROJ6FOUND" ; then 
+    AC_MSG_RESULT([        using PROJ version 6]) 
+    PROJ6FLAGS="-DPROJ6 -std=c++0x"
+  else
+    if test -n "$PROJ4FOUND" ; then 
+      AC_MSG_RESULT([        using PROJ version 4]) 
+      PROJ6FLAGS=""
+    else
+      AC_MSG_ERROR(SAGA requires the PROJ library)
+      exit
+    fi
+  fi
+fi
+
+AC_SUBST(PROJ_INC_DIR)
+AC_SUBST(PROJ_LIB_DIR)
+AC_SUBST(PROJ6FLAGS)
+
+
 # gdal
 AX_LIB_GDAL([1.7])
 if test `echo $GDAL_VERSION|cut -d. -f1` -ge 2; then
@@ -232,38 +284,40 @@ fi
 AM_CONDITIONAL([SYSTEM_SVM], [test x$SYSTEM_SVM = xyes])
 
 #AM_CONDITIONAL(X86_64, test "`uname -m`" = "x86_64")
-    AM_CONDITIONAL(HAVE_CV, test -n "$CVFOUND")
-    AM_CONDITIONAL(HAVE_LLAS, test -n "$LASFOUND")
-    AM_CONDITIONAL(HAVE_VIGRA, test -n "$VIGRAFOUND" -a -n "$FFTWFOUND")
-    AM_CONDITIONAL(HAVE_HARU, test -n "$HARUFOUND")
-    AM_CONDITIONAL(HAVE_HDF5, test -n "$LIBHDF5FOUND")
+AM_CONDITIONAL(HAVE_CV, test -n "$CVFOUND")
+AM_CONDITIONAL(HAVE_LLAS, test -n "$LASFOUND")
+AM_CONDITIONAL(HAVE_VIGRA, test -n "$VIGRAFOUND" -a -n "$FFTWFOUND")
+AM_CONDITIONAL(HAVE_HARU, test -n "$HARUFOUND")
+AM_CONDITIONAL(HAVE_HDF5, test -n "$LIBHDF5FOUND")
 
 
-  if test -n "$CVFOUND" ; then 
-    AC_MSG_RESULT([        Building with OpenCV])
-  fi
+if test -n "$CVFOUND" ; then 
+  AC_MSG_RESULT([        Building with OpenCV])
+fi
 
-  if test -n "$LASFOUND" ; then 
-    AC_MSG_RESULT([        Building with libLAS])
-  fi
+if test -n "$LASFOUND" ; then 
+  AC_MSG_RESULT([        Building with libLAS])
+fi
 
-  if test -n "$VIGRAFOUND" -a -n "$FFTWFOUND" ; then 
-    AC_MSG_RESULT([        Building with VIGRA])
-  fi
+if test -n "$VIGRAFOUND" -a -n "$FFTWFOUND" ; then 
+  AC_MSG_RESULT([        Building with VIGRA])
+fi
 
-  if test -n "$HARUFOUND" ; then 
-    AC_MSG_RESULT([        using lhpdf (libharu) from system libs.])
-    DISABLELIBHARU=""
-    HARU_LIB="-lhpdf"
-  else 
-    AC_MSG_RESULT([        libharu was not found, pdf creation will be disabled]) 
-    DISABLELIBHARU="-D_SAGA_DONOTUSE_HARU"
-    HARU_LIB=""
-  fi
-
+if test -n "$HARUFOUND" ; then 
+  AC_MSG_RESULT([        using lhpdf (libharu) from system libs])
+  DISABLELIBHARU=""
+  HARU_LIB="-lhpdf"
+else 
+  AC_MSG_RESULT([        libharu was not found, pdf creation will be disabled]) 
+  DISABLELIBHARU="-D_SAGA_DONOTUSE_HARU"
+  HARU_LIB=""
+fi
 
 AC_SUBST(HARU_LIB)
 AC_SUBST(DISABLELIBHARU)
+
+AC_CHECK_DEFINE(HAVE_LIBCURL, AC_MSG_RESULT([        Building with libcurl]), AC_MSG_RESULT([        libcurl was not found: garden webservices will be build without https support]))
+
 
 AC_ARG_ENABLE(python,
     [  --enable-python    Build python bindings for the saga api],

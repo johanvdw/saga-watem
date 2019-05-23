@@ -90,52 +90,73 @@ enum
 //---------------------------------------------------------
 COpenCV_ML::COpenCV_ML(bool bProbability)
 {
-	CSG_Parameter	*pNode;
-
 	//-----------------------------------------------------
-	pNode	= Parameters.Add_Grid_List(
-		NULL	, "FEATURES"	, _TL("Features"),
+	Parameters.Add_Grid_List("",
+		"FEATURES"		, _TL("Features"),
 		_TL(""),
 		PARAMETER_INPUT
 	);
 
-	Parameters.Add_Bool(
-		pNode	, "NORMALIZE"	, _TL("Normalize"),
+	Parameters.Add_Bool("FEATURES",
+		"NORMALIZE"		, _TL("Normalize"),
 		_TL(""),
 		false
 	);
 
+	Parameters.Add_Value("FEATURES",
+		"RGB_COLORS"	, _TL("Update Colors from Features"),
+		_TL("Use the first three features in list to obtain blue, green, red components for class colour in look-up table."),
+		PARAMETER_TYPE_Bool, true
+	)->Set_UseInCMD(false);
+
 	if( bProbability )
 	{
-		Parameters.Add_Grid(
-			NULL	, "PROBABILITY"	, _TL("Probability"),
+		Parameters.Add_Grid("",
+			"PROBABILITY"	, _TL("Probability"),
 			_TL(""),
 			PARAMETER_OUTPUT_OPTIONAL
 		);
 	}
 
-	pNode	= Parameters.Add_Shapes(
-		NULL	, "TRAIN_AREAS"	, _TL("Training Areas"),
-		_TL(""),
-		PARAMETER_INPUT, SHAPE_TYPE_Polygon
-	);
-
-	Parameters.Add_Table_Field(
-		pNode	, "TRAIN_CLASS"	, _TL("Class Identifier"),
-		_TL("")
-	);
-
-	pNode	= Parameters.Add_Grid(
-		NULL	, "CLASSES"		, _TL("Classification"),
+	Parameters.Add_Grid("",
+		"CLASSES"		, _TL("Classification"),
 		_TL(""),
 		PARAMETER_OUTPUT, true, SG_DATATYPE_Short
 	);
 
-	Parameters.Add_Value(
-		pNode	, "RGB_COLORS"	, _TL("Update Colors from Features"),
-		_TL("Use the first three features in list to obtain blue, green, red components for class colour in look-up table."),
-		PARAMETER_TYPE_Bool, true
-	)->Set_UseInCMD(false);
+	Parameters.Add_FilePath("",
+		"MODEL_LOAD"	, _TL("Load Model"),
+		_TL("Use a model previously stored to file."),
+		CSG_String::Format("%s (*.xml)|*.xml|%s|*.*",
+			_TL("XML Files"),
+			_TL("All Files")
+		)
+	);
+
+	Parameters.Add_Node("",
+		"MODEL_TRAIN"	, _TL("Model Training"),
+		_TL("")
+	);
+
+	Parameters.Add_Shapes("MODEL_TRAIN",
+		"TRAIN_AREAS"	, _TL("Training Areas"),
+		_TL(""),
+		PARAMETER_INPUT, SHAPE_TYPE_Polygon
+	);
+
+	Parameters.Add_Table_Field("TRAIN_AREAS",
+		"TRAIN_CLASS"	, _TL("Class Identifier"),
+		_TL("")
+	);
+
+	Parameters.Add_FilePath("MODEL_TRAIN",
+		"MODEL_SAVE"	, _TL("Save Model"),
+		_TL("Stores model to file to be used for subsequent classifications instead of training areas."),
+		CSG_String::Format("%s (*.xml)|*.xml|%s|*.*",
+			_TL("XML Files"),
+			_TL("All Files")
+		), NULL, true
+	);
 }
 
 
@@ -149,13 +170,26 @@ int COpenCV_ML::On_Parameter_Changed(CSG_Parameters *pParameters, CSG_Parameter 
 	//-----------------------------------------------------
 	return( CSG_Tool_Grid::On_Parameter_Changed(pParameters, pParameter) );
 }
-
+	
 //---------------------------------------------------------
 int COpenCV_ML::On_Parameters_Enable(CSG_Parameters *pParameters, CSG_Parameter *pParameter)
 {
-	if( !SG_STR_CMP(pParameter->Get_Identifier(), "FEATURES") )
+	if( pParameter->Cmp_Identifier("FEATURES") )
 	{
-		pParameters->Set_Enabled("RGB_COLORS"     , pParameter->asGridList()->Get_Grid_Count() >= 3);
+		pParameters->Set_Enabled("RGB_COLORS", pParameter->asGridList()->Get_Grid_Count() >= 3);
+	}
+
+	if( pParameter->Cmp_Identifier("MODEL_LOAD") )
+	{
+		bool	bOkay	= Check_Model_File(pParameter->asString());
+
+		if( !bOkay )
+		{
+			pParameter->Set_Value("");
+		}
+
+		pParameters->Set_Enabled("MODEL_TRAIN", !bOkay);
+		pParameters->Set_Enabled("RGB_COLORS" , !bOkay);
 	}
 
 	//-----------------------------------------------------
@@ -201,6 +235,7 @@ bool COpenCV_ML::_Initialize(void)
 //---------------------------------------------------------
 bool COpenCV_ML::_Finalize(void)
 {
+	//-----------------------------------------------------
 	CSG_Parameter	*pLUT	= DataObject_Get_Parameter(m_pClasses, "LUT");
 
 	if( pLUT && m_Classes.Get_Count() > 0 )
@@ -248,6 +283,31 @@ bool COpenCV_ML::_Finalize(void)
 	if( m_pProbability )
 	{
 		m_pProbability->Set_Name(Get_Name() + " [" + _TL("Probability") + "]");
+	}
+
+	return( true );
+}
+
+
+///////////////////////////////////////////////////////////
+//														 //
+///////////////////////////////////////////////////////////
+
+//---------------------------------------------------------
+bool COpenCV_ML::Check_Model_File(const CSG_String &File)
+{
+	if( !SG_File_Exists(File) )
+	{
+		return( false );
+	}
+	
+	CSG_MetaData	Model(File);
+
+	if( !Model.Load(File) || !Model.Cmp_Name("opencv_storage") || !Model("opencv_ml_" + CSG_String(Get_Model_ID())) )
+	{
+		Error_Fmt("%s: %s", _TL("failed to load model"), File.c_str());
+
+		return( false);
 	}
 
 	return( true );
@@ -327,7 +387,6 @@ bool COpenCV_ML::_Get_Training(CSG_Matrix &Data)
 
 	CSG_Shapes	*pPolygons	= Parameters("TRAIN_AREAS")->asShapes();
 	int			Field		= Parameters("TRAIN_CLASS")->asInt();
-	bool		bLabelAsId	= false;//Parameters("LABEL_AS_ID")->asBool();
 
 	pPolygons->Set_Index(Field, TABLE_INDEX_Ascending);
 
@@ -337,33 +396,29 @@ bool COpenCV_ML::_Get_Training(CSG_Matrix &Data)
 	//-----------------------------------------------------
 	for(int iPolygon=0, ID=0; iPolygon<pPolygons->Get_Count(); iPolygon++)
 	{
-		CSG_Shape_Polygon	*pPolygon	= (CSG_Shape_Polygon *)pPolygons->Get_Shape(iPolygon);
+		CSG_Shape_Polygon	*pPolygon	= (CSG_Shape_Polygon *)pPolygons->Get_Shape_byIndex(iPolygon);
 
-		if( !pClass || (bLabelAsId && ID != pPolygon->asInt(Field)) || Label.Cmp(pPolygon->asString(Field)) )
+		if( !pClass || Label.Cmp(pPolygon->asString(Field)) )
 		{
-			Label	= pPolygon->asString(Field);
+			pClass	= m_Classes.Add_Record();
 
-			if( !pClass || pClass->asInt(CLASS_COUNT) > 0 )
-			{
-				pClass	= m_Classes.Add_Record();
-
-				ID	= bLabelAsId ? pPolygon->asInt(Field) : ID + 1;
-			}
-
-			pClass->Set_Value(CLASS_ID  , ID   );
-			pClass->Set_Value(CLASS_NAME, Label);
+			pClass->Set_Value(CLASS_ID  , ID++);
+			pClass->Set_Value(CLASS_NAME, Label = pPolygon->asString(Field));
 		}
 
 		_Get_Training(Data, pClass, pPolygon);
 	}
 
 	//-----------------------------------------------------
-	if( m_Classes.Get_Count() > 0 && m_Classes[m_Classes.Get_Count() - 1].asInt(CLASS_COUNT) <= 0 )
+	for(int iClass=m_Classes.Get_Count()-1; iClass>=0; iClass--)
 	{
-		m_Classes.Del_Record(m_Classes.Get_Count() - 1);
+		if( m_Classes[iClass].asInt(CLASS_COUNT) < 1 )
+		{
+			m_Classes.Del_Record(iClass);
+		}
 	}
 
-	return( m_Classes.Get_Count() > 0 );
+	return( m_Classes.Get_Count() > 1 );
 }
 
 //---------------------------------------------------------
@@ -372,16 +427,16 @@ bool COpenCV_ML::_Get_Training(CSG_Matrix &Data, CSG_Table_Record *pClass, CSG_S
 	int		ID	= pClass->asInt(CLASS_ID), n	= 0;
 	double	r	= 0.0, g	= 0.0, b	= 0.0;
 
-	int	xMin	= Get_System()->Get_xWorld_to_Grid(pArea->Get_Extent().Get_XMin());	if( xMin <  0        ) xMin = 0;
-	int	xMax	= Get_System()->Get_xWorld_to_Grid(pArea->Get_Extent().Get_XMax());	if( xMax >= Get_NX() ) xMax = Get_NX() - 1;
-	int	yMin	= Get_System()->Get_yWorld_to_Grid(pArea->Get_Extent().Get_YMin());	if( yMin <  0        ) yMin = 0;
-	int	yMax	= Get_System()->Get_yWorld_to_Grid(pArea->Get_Extent().Get_YMax());	if( yMax >= Get_NY() ) yMax = Get_NY() - 1;
+	int	xMin	= Get_System().Get_xWorld_to_Grid(pArea->Get_Extent().Get_XMin());	if( xMin <  0        ) xMin = 0;
+	int	xMax	= Get_System().Get_xWorld_to_Grid(pArea->Get_Extent().Get_XMax());	if( xMax >= Get_NX() ) xMax = Get_NX() - 1;
+	int	yMin	= Get_System().Get_yWorld_to_Grid(pArea->Get_Extent().Get_YMin());	if( yMin <  0        ) yMin = 0;
+	int	yMax	= Get_System().Get_yWorld_to_Grid(pArea->Get_Extent().Get_YMax());	if( yMax >= Get_NY() ) yMax = Get_NY() - 1;
 
 	for(int y=yMin; y<=yMax; y++)
 	{
 		for(int x=xMin; x<=xMax; x++)
 		{
-			if( !m_pClasses->is_NoData(x, y) && pArea->Contains(Get_System()->Get_Grid_to_World(x, y)) )
+			if( !m_pClasses->is_NoData(x, y) && pArea->Contains(Get_System().Get_Grid_to_World(x, y)) )
 			{
 				CSG_Vector	z(1 + m_pFeatures->Get_Grid_Count());
 
@@ -458,26 +513,57 @@ bool COpenCV_ML::On_Execute(void)
 		return( false );
 	}
 
+	Ptr<StatModel>	Model;
+
 	//-----------------------------------------------------
-	Process_Set_Text(_TL("preparing"));
-
-	CSG_Matrix	Data;
-
-	if( !_Get_Training(Data) )
+	if( SG_File_Exists(Parameters("MODEL_LOAD")->asString()) )
 	{
+		Model	= Get_Model(Parameters("MODEL_LOAD")->asString());
+	}
+	else
+	{
+		Process_Set_Text(_TL("preparing training"));
+
+		CSG_Matrix	Data;
+
+		if( !_Get_Training(Data) )
+		{
+			return( false );
+		}
+
+		Ptr<TrainData>	tData	= Get_Training(Data);	Data.Destroy();
+
+		Process_Set_Text(_TL("training"));
+
+		Model	= Get_Model();
+
+		try
+		{
+			Model->train(tData);
+		}
+		catch(...)
+		{
+			Error_Set(_TL("Failed to train the model."));
+
+			return( false );
+		}
+
+		if( *Parameters("MODEL_SAVE")->asString() )
+		{
+			CSG_String	File(Parameters("MODEL_SAVE")->asString());
+
+			Model->save(File.b_str());
+		}
+	}
+
+	//-----------------------------------------------------
+	if( !Model->isTrained() )
+	{
+		Error_Set(_TL("Model is not trained"));
+
 		return( false );
 	}
 
-	Ptr<TrainData>	tData	= Get_Training(Data);	Data.Destroy();
-
-	Ptr<StatModel>	Model	= Get_Model();
-
-	//-----------------------------------------------------
-	Process_Set_Text(_TL("training"));
-
-	Model->train(tData);
-
-	//-----------------------------------------------------
 	Process_Set_Text(_TL("prediction"));
 
 	_Get_Prediction(Model);

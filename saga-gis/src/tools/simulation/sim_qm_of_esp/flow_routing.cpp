@@ -128,7 +128,7 @@ CFlow_Routing::CFlow_Routing(void)
 //---------------------------------------------------------
 int CFlow_Routing::On_Parameters_Enable(CSG_Parameters *pParameters, CSG_Parameter *pParameter)
 {
-	if( !SG_STR_CMP(pParameter->Get_Identifier(), "PREPROC") )
+	if( pParameter->Cmp_Identifier("PREPROC") )
 	{
 		pParameters->Set_Enabled("DZFILL", pParameter->asInt() != 0);
 	}
@@ -147,13 +147,17 @@ bool CFlow_Routing::On_Execute(void)
 	m_pDEM	= Parameters("DEM" )->asGrid();
 	m_pFlow	= Parameters("FLOW")->asGrid();
 
+	DataObject_Set_Colors   (m_pFlow, 11, SG_COLORS_WHITE_BLUE);
+	DataObject_Set_Parameter(m_pFlow, "METRIC_SCALE_MODE",   1);	// increasing geometrical intervals
+	DataObject_Set_Parameter(m_pFlow, "METRIC_SCALE_LOG" , 100);	// Geometrical Interval Factor
+
 	return( Set_Flow(Parameters("PREPROC")->asInt(), Parameters("DZFILL")->asDouble()) );
 }
 
 //---------------------------------------------------------
 bool CFlow_Routing::Set_Flow(CSG_Grid *pDEM, CSG_Grid *pFlow, int Preprocess, double dzFill)
 {
-	if( is_Executing() || !pDEM || !pFlow || !pDEM->is_Compatible(pFlow) || !Get_System()->Assign(pDEM->Get_System()) )
+	if( is_Executing() || !pDEM || !pFlow || !pDEM->is_Compatible(pFlow) || !Set_System(pDEM->Get_System()) )
 	{
 		return( false );
 	}

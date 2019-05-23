@@ -139,7 +139,7 @@ CLandsat_Import::CLandsat_Import(void)
 //---------------------------------------------------------
 int CLandsat_Import::On_Parameters_Enable(CSG_Parameters *pParameters, CSG_Parameter *pParameter)
 {
-	if( !SG_STR_CMP(pParameter->Get_Identifier(), "FILES") )
+	if( pParameter->Cmp_Identifier("FILES") )
 	{
 		CSG_Strings	Files;	pParameter->asFilePath()->Get_FilePaths(Files);
 
@@ -168,12 +168,12 @@ int CLandsat_Import::On_Parameters_Enable(CSG_Parameters *pParameters, CSG_Param
 		}
 	}
 
-	if( !SG_STR_CMP(pParameter->Get_Identifier(), "PROJECTION") )
+	if( pParameter->Cmp_Identifier("PROJECTION") )
 	{
 		pParameters->Set_Enabled("RESAMPLING", pParameter->asInt() == 2);
 	}
 
-	if( !SG_STR_CMP(pParameter->Get_Identifier(), "SHOW_RGB") )
+	if( pParameter->Cmp_Identifier("SHOW_RGB") )
 	{
 		pParameters->Set_Enabled("SHOW_R", pParameter->asBool());
 		pParameters->Set_Enabled("SHOW_G", pParameter->asBool());
@@ -205,7 +205,7 @@ bool CLandsat_Import::On_Execute(void)
 
 	for(int i=0; i<Files.Get_Count(); i++)
 	{
-		Message_Add(CSG_String::Format("%s: %s", _TL("loading"), SG_File_Get_Name(Files[i], false).c_str()));
+		Message_Fmt("\n%s: %s", _TL("loading"), SG_File_Get_Name(Files[i], false).c_str());
 
 		CSG_Grid	*pBand	= Get_Band(Files[i]);
 
@@ -227,7 +227,7 @@ bool CLandsat_Import::On_Execute(void)
 
 		if( pR && pG && pB )
 		{
-			DataObject_Set_Parameter(pR, "COLORS_TYPE" , 5);	// _TL("RGB Overlay")	// CLASSIFY_OVERLAY
+			DataObject_Set_Parameter(pR, "COLORS_TYPE" , 4);	// _TL("RGB Overlay")	// CLASSIFY_OVERLAY
 			DataObject_Set_Parameter(pR, "OVERLAY_MODE", 0);	// _TL("red=this, green=1, blue=2")
 			DataObject_Set_Parameter(pR, "OVERLAY_G"   , pG);
 			DataObject_Set_Parameter(pR, "OVERLAY_B"   , pB);
@@ -334,16 +334,16 @@ CSG_Grid * CLandsat_Import::Get_Projection(CSG_Grid *pGrid, const CSG_String &Pr
 		return( NULL );
 	}
 
-	CSG_Tool	*pTool	= SG_Get_Tool_Library_Manager().Get_Tool("pj_proj4", 4);	// Coordinate Transformation (Grid)
+	CSG_Tool	*pTool	= SG_Get_Tool_Library_Manager().Create_Tool("pj_proj4", 4);	// Coordinate Transformation (Grid)
 
 	if(	pTool == NULL )
 	{
 		return( NULL );
 	}
 
-	Message_Add(CSG_String::Format("\n%s (%s: %s)\n", _TL("re-projection to geographic coordinates"), _TL("original"), pGrid->Get_Projection().Get_Name().c_str()), false);
+	Message_Fmt("\n%s (%s: %s)\n", _TL("re-projection to geographic coordinates"), _TL("original"), pGrid->Get_Projection().Get_Name().c_str());
 
-	pTool->Settings_Push(NULL);
+	pTool->Set_Manager(NULL);
 
 	if( pTool->Set_Parameter("CRS_PROJ4" , Proj4)
 	&&  pTool->Set_Parameter("SOURCE"    , pGrid)
@@ -353,14 +353,14 @@ CSG_Grid * CLandsat_Import::Get_Projection(CSG_Grid *pGrid, const CSG_String &Pr
 	{
 		pGrid	= pTool->Get_Parameters()->Get_Parameter("GRID")->asGrid();
 
-		pTool->Settings_Pop();
+		SG_Get_Tool_Library_Manager().Delete_Tool(pTool);
 
 		return( pGrid );
 	}
 
-	pTool->Settings_Pop();
+	SG_Get_Tool_Library_Manager().Delete_Tool(pTool);
 
-	Message_Add(CSG_String::Format("\n%s: %s\n", _TL("re-projection"), _TL("failed")), false);
+	Message_Fmt("\n%s: %s\n", _TL("re-projection"), _TL("failed"));
 
 	return( NULL );
 }

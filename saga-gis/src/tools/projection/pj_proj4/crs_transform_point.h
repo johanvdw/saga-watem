@@ -1,6 +1,3 @@
-/**********************************************************
- * Version $Id: table.cpp 911 2011-02-14 16:38:15Z reklov_w $
- *********************************************************/
 
 ///////////////////////////////////////////////////////////
 //                                                       //
@@ -9,13 +6,13 @@
 //      System for Automated Geoscientific Analyses      //
 //                                                       //
 //                     Tool Library                      //
-//                   garden_webservices                  //
+//                       pj_proj4                        //
 //                                                       //
 //-------------------------------------------------------//
 //                                                       //
-//                   TLB_Interface.h                     //
+//                 crs_transform_point.h                 //
 //                                                       //
-//                 Copyright (C) 2011 by                 //
+//                 Copyright (C) 2015 by                 //
 //                      Olaf Conrad                      //
 //                                                       //
 //-------------------------------------------------------//
@@ -49,21 +46,54 @@
 ///////////////////////////////////////////////////////////
 
 //---------------------------------------------------------
+#ifndef HEADER_INCLUDED__crs_transform_point_H
+#define HEADER_INCLUDED__crs_transform_point_H
 
 
 ///////////////////////////////////////////////////////////
 //														 //
-//				Include the SAGA-API here				 //
+//														 //
 //														 //
 ///////////////////////////////////////////////////////////
 
 //---------------------------------------------------------
-#ifndef HEADER_INCLUDED__TLB_INTERFACE_H
-#define HEADER_INCLUDED__TLB_INTERFACE_H
+#include "crs_base.h"
+
+
+///////////////////////////////////////////////////////////
+//														 //
+//														 //
+//														 //
+///////////////////////////////////////////////////////////
 
 //---------------------------------------------------------
-#include <saga_api/saga_api.h>
+class CCRS_Transform_Point : public CSG_Tool
+{
+public:
+	CCRS_Transform_Point(void);
 
+	virtual CSG_String		Get_MenuPath			(void)	{	return( _TL("Tools") );	}
+
+
+protected:
+
+	virtual int				On_Parameter_Changed	(CSG_Parameters *pParameters, CSG_Parameter *pParameter);
+
+	virtual bool			On_Execute				(void);
+
+
+private:
+
+	bool					Transform				(double &x, double &y, const CSG_Projection &Source, const CSG_Projection &Target);
+
+};
+
+
+///////////////////////////////////////////////////////////
+//														 //
+//														 //
+//														 //
+///////////////////////////////////////////////////////////
 
 //---------------------------------------------------------
-#endif // #ifndef HEADER_INCLUDED__TLB_INTERFACE_H
+#endif // #ifndef HEADER_INCLUDED__crs_transform_point_H

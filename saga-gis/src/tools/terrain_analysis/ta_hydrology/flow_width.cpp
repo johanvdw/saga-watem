@@ -137,7 +137,7 @@ CFlow_Width::CFlow_Width(void)
 //---------------------------------------------------------
 int CFlow_Width::On_Parameters_Enable(CSG_Parameters *pParameters, CSG_Parameter *pParameter)
 {
-	if( !SG_STR_CMP(pParameter->Get_Identifier(), "TCA") )
+	if( pParameter->Cmp_Identifier("TCA") )
 	{
 		pParameters->Set_Enabled("SCA", pParameter->asGrid() != NULL);
 	}
@@ -250,7 +250,7 @@ inline double CFlow_Width::Get_MFD(int x, int y)
 
 			if( m_pDEM->is_InGrid(ix, iy, true) && z > m_pDEM->asDouble(ix, iy) )
 			{
-				Width	+= 0.5 * Get_Cellsize() / Get_System()->Get_UnitLength(i);
+				Width	+= 0.5 * Get_Cellsize() / Get_UnitLength(i);
 			}
 		}
 

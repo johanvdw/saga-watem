@@ -522,16 +522,16 @@ void CPointCloud_Get_Subset_SPCVF_Base::Write_Subset(CSG_PointCloud *pPC_out, in
 	{
 		if( m_iFieldName > -1 )
 		{
-			pPC_out->Set_Name(CSG_String::Format(SG_T("%s%s"), sPath.c_str(), m_pShapes->Get_Record(iAOI)->asString(m_iFieldName)));
+			pPC_out->Fmt_Name("%s%s", sPath.c_str(), m_pShapes->Get_Record(iAOI)->asString(m_iFieldName));
 		}
 		else
 		{
-			pPC_out->Set_Name(CSG_String::Format(SG_T("%s%d_%d"), sPath.c_str(), (int)(m_AOI.Get_XMin() + m_dOverlap), (int)(m_AOI.Get_YMin() + m_dOverlap)));
+			pPC_out->Fmt_Name("%s%d_%d", sPath.c_str(), (int)(m_AOI.Get_XMin() + m_dOverlap), (int)(m_AOI.Get_YMin() + m_dOverlap));
 		}
 	}
 	else
 	{
-		pPC_out->Set_Name(CSG_String::Format(SG_T("%spc_subset_%s"), sPath.c_str(), SG_File_Get_Name(m_sFileName, false).c_str()));
+		pPC_out->Fmt_Name("%spc_subset_%s", sPath.c_str(), SG_File_Get_Name(m_sFileName, false).c_str());
 	}
 
 	//-----------------------------------------------------
@@ -770,15 +770,15 @@ bool CPointCloud_Get_Subset_SPCVF::On_Execute(void)
 	pFilePath			= Parameters("FILEPATH")->asFilePath();
 	bConstrain			= Parameters("CONSTRAIN_QUERY")->asBool();
 	iField				= Parameters("ATTR_FIELD")->asInt() - 1;
-	dMinAttrRange		= Parameters("VALUE_RANGE")->asRange()->Get_LoVal();
-	dMaxAttrRange		= Parameters("VALUE_RANGE")->asRange()->Get_HiVal();
+	dMinAttrRange		= Parameters("VALUE_RANGE")->asRange()->Get_Min();
+	dMaxAttrRange		= Parameters("VALUE_RANGE")->asRange()->Get_Max();
 	pShapes				= Parameters("AOI_SHP")->asShapes();
 	iFieldName			= Parameters("FIELD_TILENAME")->asInt();
 	pGrid				= Parameters("AOI_GRID")->asGrid();
-	dAoiXMin			= Parameters("AOI_XRANGE")->asRange()->Get_LoVal();
-	dAoiXMax			= Parameters("AOI_XRANGE")->asRange()->Get_HiVal();
-	dAoiYMin			= Parameters("AOI_YRANGE")->asRange()->Get_LoVal();
-	dAoiYMax			= Parameters("AOI_YRANGE")->asRange()->Get_HiVal();
+	dAoiXMin			= Parameters("AOI_XRANGE")->asRange()->Get_Min();
+	dAoiXMax			= Parameters("AOI_XRANGE")->asRange()->Get_Max();
+	dAoiYMin			= Parameters("AOI_YRANGE")->asRange()->Get_Min();
+	dAoiYMax			= Parameters("AOI_YRANGE")->asRange()->Get_Max();
 
 	bAddOverlap			= Parameters("AOI_ADD_OVERLAP")->asBool();
 	dOverlap			= Parameters("OVERLAP")->asDouble();
@@ -859,24 +859,24 @@ bool CPointCloud_Get_Subset_SPCVF::On_Execute(void)
 //---------------------------------------------------------
 int CPointCloud_Get_Subset_SPCVF::On_Parameters_Enable(CSG_Parameters *pParameters, CSG_Parameter *pParameter)
 {
-	if(	!SG_STR_CMP(pParameter->Get_Identifier(), SG_T("COPY_ATTR")) )
+	if(	pParameter->Cmp_Identifier(SG_T("COPY_ATTR")) )
 	{
 		pParameters->Get_Parameter("ATTRIBUTE_LIST"		)->Set_Enabled(pParameter->asBool() == false);
 	}
 
-	if(	!SG_STR_CMP(pParameter->Get_Identifier(), SG_T("CONSTRAIN_QUERY")) )
+	if(	pParameter->Cmp_Identifier(SG_T("CONSTRAIN_QUERY")) )
 	{
 		pParameters->Get_Parameter("ATTR_FIELD"			)->Set_Enabled(pParameter->asBool());
 		pParameters->Get_Parameter("VALUE_RANGE"		)->Set_Enabled(pParameter->asBool());
 	}
 
-	if(	!SG_STR_CMP(pParameter->Get_Identifier(), SG_T("AOI_ADD_OVERLAP")) )
+	if(	pParameter->Cmp_Identifier(SG_T("AOI_ADD_OVERLAP")) )
 	{
 		pParameters->Get_Parameter("OVERLAP"			)->Set_Enabled(pParameter->asBool());
 		pParameters->Get_Parameter("FILENAME_TILE_INFO"	)->Set_Enabled(pParameter->asBool());
 	}
 
-	if(	!SG_STR_CMP(pParameter->Get_Identifier(), SG_T("AOI_SHP")) )
+	if(	pParameter->Cmp_Identifier(SG_T("AOI_SHP")) )
 	{
 		pParameters->Get_Parameter("FIELD_TILENAME"		)->Set_Enabled(pParameter->asShapes() != NULL);
 		pParameters->Get_Parameter("ONE_PC_PER_POLYGON"	)->Set_Enabled(pParameter->asShapes() != NULL);
@@ -991,13 +991,13 @@ bool CPointCloud_Get_Subset_SPCVF_Interactive::On_Execute_Position(CSG_Point ptW
 
 		CSG_Rect	AOI(m_ptDown.Get_X(), m_ptDown.Get_Y(), ptWorld.Get_X(), ptWorld.Get_Y());
 
-		CSG_Parameter_PointCloud_List	PointCloudList(NULL, PARAMETER_INFORMATION);
+		CSG_Parameters P; CSG_Parameter_PointCloud_List	&PointCloudList	= *P.Add_PointCloud_List("", "PCL", "", "", PARAMETER_INPUT_OPTIONAL)->asPointCloudList();
 
 		// as long as this tool only supports to drag a box, we initialize it with a fake overlap in order
 		// to use CSG_Rect instead of CSG_Shape for point in polygon check in Get_Subset():
 		if( !m_Get_Subset_SPCVF.Initialise(1, AOI, NULL, -1, false, true, 0.0, SG_T(""), Parameters("FILENAME")->asString(), NULL, &PointCloudList,
 									  Parameters("CONSTRAIN_QUERY")->asBool(), Parameters("ATTR_FIELD")->asInt()-1,
-									  Parameters("VALUE_RANGE")->asRange()->Get_LoVal(), Parameters("VALUE_RANGE")->asRange()->Get_HiVal(),
+									  Parameters("VALUE_RANGE")->asRange()->Get_Min(), Parameters("VALUE_RANGE")->asRange()->Get_Max(),
 									  Parameters("COPY_ATTR")->asBool(), Parameters("ATTRIBUTE_LIST")->asString()) )
 		{
 			return( false );
@@ -1035,12 +1035,12 @@ bool CPointCloud_Get_Subset_SPCVF_Interactive::On_Execute_Position(CSG_Point ptW
 //---------------------------------------------------------
 int CPointCloud_Get_Subset_SPCVF_Interactive::On_Parameters_Enable(CSG_Parameters *pParameters, CSG_Parameter *pParameter)
 {
-	if(	!SG_STR_CMP(pParameter->Get_Identifier(), SG_T("COPY_ATTR")) )
+	if(	pParameter->Cmp_Identifier(SG_T("COPY_ATTR")) )
 	{
 		pParameters->Get_Parameter("ATTRIBUTE_LIST"		)->Set_Enabled(pParameter->asBool() == false);
 	}
 
-	if(	!SG_STR_CMP(pParameter->Get_Identifier(), SG_T("CONSTRAIN_QUERY")) )
+	if(	pParameter->Cmp_Identifier(SG_T("CONSTRAIN_QUERY")) )
 	{
 		pParameters->Get_Parameter("ATTR_FIELD"			)->Set_Enabled(pParameter->asBool());
 		pParameters->Get_Parameter("VALUE_RANGE"		)->Set_Enabled(pParameter->asBool());

@@ -164,21 +164,21 @@ CChange_Detection::CChange_Detection(void)
 //---------------------------------------------------------
 int CChange_Detection::On_Parameters_Enable(CSG_Parameters *pParameters, CSG_Parameter *pParameter)
 {
-	if(	!SG_STR_CMP(pParameter->Get_Identifier(), "ONE_LUT") )
+	if(	pParameter->Cmp_Identifier("ONE_LUT") )
 	{
 		pParameters->Set_Enabled("ONE_LUT_MIN", pParameter->asTable() != NULL);
 		pParameters->Set_Enabled("ONE_LUT_MAX", pParameter->asTable() != NULL);
 		pParameters->Set_Enabled("ONE_LUT_NAM", pParameter->asTable() != NULL);
 	}
 
-	if(	!SG_STR_CMP(pParameter->Get_Identifier(), "TWO_LUT") )
+	if(	pParameter->Cmp_Identifier("TWO_LUT") )
 	{
 		pParameters->Set_Enabled("TWO_LUT_MIN", pParameter->asTable() != NULL);
 		pParameters->Set_Enabled("TWO_LUT_MAX", pParameter->asTable() != NULL);
 		pParameters->Set_Enabled("TWO_LUT_NAM", pParameter->asTable() != NULL);
 	}
 
-	if(	!SG_STR_CMP(pParameter->Get_Identifier(), "NOCHANGE") )
+	if(	pParameter->Cmp_Identifier("NOCHANGE") )
 	{
 		pParameters->Set_Enabled("CLASSES"    , pParameter->asBool());
 		pParameters->Set_Enabled("SUMMARY"    , pParameter->asBool());
@@ -326,13 +326,13 @@ bool CChange_Detection::On_Execute(void)
 
 		Get_Quality(*pConfusion, *pClasses, *pSummary);
 
-		pClasses->Set_Name(CSG_String::Format("%s [%s - %s]", _TL("Class Values"), pOne->Get_Name(), pTwo->Get_Name()));
-		pSummary->Set_Name(CSG_String::Format("%s [%s - %s]", _TL("Summary"     ), pOne->Get_Name(), pTwo->Get_Name()));
+		pClasses->Fmt_Name("%s [%s - %s]", _TL("Class Values"), pOne->Get_Name(), pTwo->Get_Name());
+		pSummary->Fmt_Name("%s [%s - %s]", _TL("Summary"     ), pOne->Get_Name(), pTwo->Get_Name());
 	}
 
 	//-----------------------------------------------------
-	pConfusion->Set_Name(CSG_String::Format("%s [%s - %s]", _TL("Confusion"   ), pOne->Get_Name(), pTwo->Get_Name()));
-	pCombined ->Set_Name(CSG_String::Format("%s [%s - %s]", _TL("Combination" ), pOne->Get_Name(), pTwo->Get_Name()));
+	pConfusion->Fmt_Name("%s [%s - %s]", _TL("Confusion"   ), pOne->Get_Name(), pTwo->Get_Name());
+	pCombined ->Fmt_Name("%s [%s - %s]", _TL("Combination" ), pOne->Get_Name(), pTwo->Get_Name());
 	pCombined ->Set_NoData_Value(-1);
 
 	return( true );
@@ -426,8 +426,8 @@ bool CChange_Detection::Get_Quality(CSG_Table &Confusion, CSG_Table &Classes, CS
 		Summary[0].Set_Value(0, "Kappa"           ); Summary[0].Set_Value(1, k  = (nTotal * nTrue - nProd) / k);
 		Summary[1].Set_Value(0, "Overall Accuracy"); Summary[1].Set_Value(1, OA = nTrue / (double)nTotal);
 
-		Message_Add(CSG_String::Format("\n%s: %f", _TL("Kappa"           ), k ), false);
-		Message_Add(CSG_String::Format("\n%s: %f", _TL("Overall Accuracy"), OA), false);
+		Message_Fmt("\n%s: %f", _TL("Kappa"           ), k );
+		Message_Fmt("\n%s: %f", _TL("Overall Accuracy"), OA);
 
 		return( true );
 	}

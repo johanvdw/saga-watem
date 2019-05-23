@@ -227,10 +227,7 @@ bool CPolygon_Shared_Edges::On_Execute(void)
 	//-----------------------------------------------------
 	if( nAdded > 0 || nRemoved > 0 )
 	{
-		Message_Add(CSG_String::Format(SG_T("\n%s: %d %s, %d %s\n"), _TL("Vertices"),
-			nAdded  , _TL("added"  ),
-			nRemoved, _TL("removed")
-		), false);
+		Message_Fmt("\n%s: %d %s, %d %s\n", _TL("Vertices"), nAdded, _TL("added"), nRemoved, _TL("removed"));
 
 		DataObject_Update(pPolygons);
 	}
@@ -446,7 +443,7 @@ bool CPolygon_Vertex_Check::On_Execute(void)
 		CSG_Shapes	*pCopy	= Parameters("CHECKED")->asShapes();
 
 		pCopy->Create(*pPolygons);
-		pCopy->Set_Name(CSG_String::Format(SG_T("%s [%s]"), pPolygons->Get_Name(), _TL("checked")));
+		pCopy->Fmt_Name("%s [%s]", pPolygons->Get_Name(), _TL("checked"));
 
 		pPolygons	= pCopy;
 	}

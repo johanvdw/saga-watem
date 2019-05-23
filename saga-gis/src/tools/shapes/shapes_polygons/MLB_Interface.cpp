@@ -1,6 +1,3 @@
-/**********************************************************
- * Version $Id$
- *********************************************************/
 
 ///////////////////////////////////////////////////////////
 //                                                       //
@@ -112,6 +109,7 @@ CSG_String Get_Info(int i)
 #include "add_point_attributes.h"
 #include "polygon_flatten.h"
 #include "polygon_shared_edges.h"
+#include "polygon_generalization.h"
 
 
 //---------------------------------------------------------
@@ -146,8 +144,10 @@ CSG_Tool *		Create_Tool(int i)
 
 	case 22:	return( new CPolygon_Shared_Edges );
 
+	case 23:	return( new CPolygon_Generalization );
+
 	//-----------------------------------------------------
-	case 23:	return( NULL );
+	case 24:	return( NULL );
 	default:	return( TLB_INTERFACE_SKIP_TOOL );
 	}
 

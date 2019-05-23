@@ -653,9 +653,9 @@ bool CSaLEM_Tracers::Add_Parameters(CSG_Parameters &Parameters, const CSG_String
 //---------------------------------------------------------
 int CSaLEM_Tracers::On_Parameters_Enable(CSG_Parameters *pParameters, CSG_Parameter *pParameter)
 {
-	if( !SG_STR_CMP(pParameters->Get_Identifier(), "TRACERS") )
+	if( pParameters->Cmp_Identifier("TRACERS") )
 	{
-		if( !SG_STR_CMP(pParameter->Get_Identifier(), "POINTS") )
+		if( pParameter->Cmp_Identifier("POINTS") )
 		{
 			pParameters->Set_Enabled("LINES"    , pParameter->asDataObject() != NULL);
 			pParameters->Set_Enabled("TRIM"     , pParameter->asDataObject() != NULL);
@@ -951,6 +951,13 @@ CSaLEM::CSaLEM(void)
 	));
 
 	Add_Reference(
+		"Bock, M., Conrad, O., Guenther, A., Gehrt, E., Baritz, R., and Boehner, J.", "2018",
+		"SaLEM (v1.0) - the Soil and Landscape Evolution Model (SaLEM) for simulation of regolith depth in periglacial environments",
+		"Geosci. Model Dev., 11, 1641-1652.",
+		SG_T("https://doi.org/10.5194/gmd-11-1641-2018")
+	);
+
+	Add_Reference(
 		"Alley, R.", "2000",
 		"The Younger Dryas cold interval as viewed from central Greenland",
 		"Quaternary Science Reviews 19: 213-226."
@@ -1055,13 +1062,13 @@ int CSaLEM::On_Parameters_Enable(CSG_Parameters *pParameters, CSG_Parameter *pPa
 {
 	m_Tracers.On_Parameters_Enable(pParameters, pParameter);
 
-	if( !SG_STR_CMP(pParameter->Get_Identifier(), "UPDATE") )
+	if( pParameter->Cmp_Identifier("UPDATE") )
 	{
 		pParameters->Set_Enabled("UPDATE_ADJ", pParameter->asInt() > 0);
 		pParameters->Set_Enabled("UPDATE_VEC", pParameter->asInt() > 0);
 	}
 
-	if( !SG_STR_CMP(pParameter->Get_Identifier(), "UPDATE_ADJ") )
+	if( pParameter->Cmp_Identifier("UPDATE_ADJ") )
 	{
 		pParameters->Set_Enabled("UPDATE_MIN", pParameter->asBool());
 		pParameters->Set_Enabled("UPDATE_MAX", pParameter->asBool());
@@ -1107,7 +1114,7 @@ bool CSaLEM::On_Execute(void)
 	//-----------------------------------------------------
 	for(m_Time=time_start; m_Time<=time_stop && Set_Progress(m_Time-time_start, time_stop-time_start); m_Time+=m_dTime)
 	{
-		Process_Set_Text(CSG_String::Format("%s: %d", _TL("Years BP"), -m_Time));
+		Process_Set_Text("%s: %d", _TL("Years BP"), -m_Time);
 
 		SG_UI_Progress_Lock(true);
 
@@ -1228,11 +1235,11 @@ bool CSaLEM::Finalize(void)
 //---------------------------------------------------------
 bool CSaLEM::Set_Gradient(void)
 {
-	if( !Get_System()->is_Equal(m_Gradient[0].Get_System()) )
+	if( !Get_System().is_Equal(m_Gradient[0].Get_System()) )
 	{
-		m_Gradient[0].Create(*Get_System());	// slope gradient [radians]
-		m_Gradient[1].Create(*Get_System());	// sine of aspect
-		m_Gradient[2].Create(*Get_System());	// cosine of aspect
+		m_Gradient[0].Create(Get_System());	// slope gradient [radians]
+		m_Gradient[1].Create(Get_System());	// sine of aspect
+		m_Gradient[2].Create(Get_System());	// cosine of aspect
 	}
 
 	#pragma omp parallel for
@@ -1344,11 +1351,11 @@ bool CSaLEM::Set_Weathering(void)
 //---------------------------------------------------------
 bool CSaLEM::Set_Diffusive(void)
 {
-	double	k		= Parameters("DIFFUSIVE_KD")->asDouble() * m_dTime / Get_System()->Get_Cellarea();	// Diffusivity coefficient Kd [m^2/a]
+	double	k		= Parameters("DIFFUSIVE_KD")->asDouble() * m_dTime / Get_Cellarea();	// Diffusivity coefficient Kd [m^2/a]
 	int	y, iStep	= Parameters("DIFFUSIVE_NEIGHBOURS")->asInt() == 1 ? 1 : 2;
 
-	CSG_Grid	dHin (*Get_System());	// dHin.Assign(0.0);
-	CSG_Grid	dHout(*Get_System());
+	CSG_Grid	dHin (Get_System());	// dHin.Assign(0.0);
+	CSG_Grid	dHout(Get_System());
 
 	//-----------------------------------------------------
 	for(y=0; y<Get_NY(); y++)
@@ -1374,7 +1381,7 @@ bool CSaLEM::Set_Diffusive(void)
 
 						if( dz > 0.0 )
 						{
-							dHout_Sum	+= (qs[i] = dz * k / Get_System()->Get_UnitLength(i));
+							dHout_Sum	+= (qs[i] = dz * k / Get_UnitLength(i));
 						}
 					}
 					else if( m_pSurface->is_InGrid(ix = Get_xFrom(i, x), iy = Get_yFrom(i, y)) )
@@ -1383,7 +1390,7 @@ bool CSaLEM::Set_Diffusive(void)
 
 						if( dz > 0.0 )
 						{
-							dHout_Sum	+= dz * k / Get_System()->Get_UnitLength(i);
+							dHout_Sum	+= dz * k / Get_UnitLength(i);
 						}
 					}
 				}

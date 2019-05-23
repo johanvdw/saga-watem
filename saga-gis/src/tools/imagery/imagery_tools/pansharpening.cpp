@@ -162,17 +162,17 @@ bool CPanSharp_IHS::On_Execute(void)
 	CSG_Grid	*pPan	= Parameters("PAN")->asGrid();
 
 	//-----------------------------------------------------
-	Process_Set_Text(CSG_String::Format("%s: %s ...", _TL("Resampling"), Parameters("R")->asGrid()->Get_Name()));
+	Process_Set_Text("%s: %s ...", _TL("Resampling"), Parameters("R")->asGrid()->Get_Name());
 	CSG_Grid	*pR	= Parameters("R_SHARP")->asGrid();
 	pR->Assign  (Parameters("R")->asGrid(), Resampling);
 	pR->Set_Name(Parameters("R")->asGrid()->Get_Name());
 
-	Process_Set_Text(CSG_String::Format("%s: %s ...", _TL("Resampling"), Parameters("G")->asGrid()->Get_Name()));
+	Process_Set_Text("%s: %s ...", _TL("Resampling"), Parameters("G")->asGrid()->Get_Name());
 	CSG_Grid	*pG	= Parameters("G_SHARP")->asGrid();
 	pG->Assign  (Parameters("G")->asGrid(), Resampling);
 	pG->Set_Name(Parameters("G")->asGrid()->Get_Name());
 
-	Process_Set_Text(CSG_String::Format("%s: %s ...", _TL("Resampling"), Parameters("B")->asGrid()->Get_Name()));
+	Process_Set_Text("%s: %s ...", _TL("Resampling"), Parameters("B")->asGrid()->Get_Name());
 	CSG_Grid	*pB	= Parameters("B_SHARP")->asGrid();
 	pB->Assign  (Parameters("B")->asGrid(), Resampling);
 	pB->Set_Name(Parameters("B")->asGrid()->Get_Name());
@@ -367,17 +367,17 @@ bool CPanSharp_Brovey::On_Execute(void)
 	CSG_Grid	*pPan	= Parameters("PAN")->asGrid();
 
 	//-----------------------------------------------------
-	Process_Set_Text(CSG_String::Format("%s: %s ...", _TL("Resampling"), Parameters("R")->asGrid()->Get_Name()));
+	Process_Set_Text("%s: %s ...", _TL("Resampling"), Parameters("R")->asGrid()->Get_Name());
 	CSG_Grid	*pR	= Parameters("R_SHARP")->asGrid();
 	pR->Assign  (Parameters("R")->asGrid(), Resampling);
 	pR->Set_Name(Parameters("R")->asGrid()->Get_Name());
 
-	Process_Set_Text(CSG_String::Format("%s: %s ...", _TL("Resampling"), Parameters("G")->asGrid()->Get_Name()));
+	Process_Set_Text("%s: %s ...", _TL("Resampling"), Parameters("G")->asGrid()->Get_Name());
 	CSG_Grid	*pG	= Parameters("G_SHARP")->asGrid();
 	pG->Assign  (Parameters("G")->asGrid(), Resampling);
 	pG->Set_Name(Parameters("G")->asGrid()->Get_Name());
 
-	Process_Set_Text(CSG_String::Format("%s: %s ...", _TL("Resampling"), Parameters("B")->asGrid()->Get_Name()));
+	Process_Set_Text("%s: %s ...", _TL("Resampling"), Parameters("B")->asGrid()->Get_Name());
 	CSG_Grid	*pB	= Parameters("B_SHARP")->asGrid();
 	pB->Assign  (Parameters("B")->asGrid(), Resampling);
 	pB->Set_Name(Parameters("B")->asGrid()->Get_Name());
@@ -504,9 +504,9 @@ bool CPanSharp_CN::On_Execute(void)
 
 	for(i=0; i<pGrids->Get_Grid_Count(); i++)
 	{
-		Process_Set_Text(CSG_String::Format("%s: %s ...", _TL("Resampling"), pGrids->Get_Grid(i)->Get_Name()));
+		Process_Set_Text("%s: %s ...", _TL("Resampling"), pGrids->Get_Grid(i)->Get_Name());
 
-		CSG_Grid	*pGrid	= SG_Create_Grid(*Get_System());
+		CSG_Grid	*pGrid	= SG_Create_Grid(Get_System());
 
 		pGrid->Set_Name (pGrids->Get_Grid(i)->Get_Name());
 		pGrid->Assign   (pGrids->Get_Grid(i), Resampling);
@@ -573,12 +573,12 @@ bool CPanSharp_CN::On_Execute(void)
 CPanSharp_PCA::CPanSharp_PCA(void)
 {
 	//-----------------------------------------------------
-	Set_Name		(_TL("Principle Components Based Image Sharpening"));
+	Set_Name		(_TL("Principal Component Based Image Sharpening"));
 
 	Set_Author		("O.Conrad (c) 2011");
 
 	Set_Description	(_TW(
-		"Principle components based image sharpening."
+		"Principal component based image sharpening."
 	));
 
 	//-----------------------------------------------------
@@ -655,7 +655,7 @@ bool CPanSharp_PCA::On_Execute(void)
 	CSG_Table		Eigen;
 
 	//-----------------------------------------------------
-	// get the principle components for the low resolution bands
+	// get the principal components for the low resolution bands
 
 	SG_RUN_TOOL_KEEP_PARMS(bResult, "statistics_grid", 8, Tool_Parms,
 			SG_TOOL_PARAMETER_SET("GRIDS"     , Parameters("GRIDS" ))
@@ -678,7 +678,7 @@ bool CPanSharp_PCA::On_Execute(void)
 	CSG_Grid	*pPan	= Parameters("PAN")->asGrid();
 
 	//-----------------------------------------------------
-	// replace first principle component with the high resolution panchromatic band
+	// replace first principal component with the high resolution panchromatic band
 
 	Process_Set_Text(_TL("Replace first PC with PAN"));
 
@@ -697,7 +697,7 @@ bool CPanSharp_PCA::On_Execute(void)
 		Scale		= pPCA->Get_Grid(0)->Get_StdDev() / pPan->Get_StdDev();
 	}
 
-	PCA[0].Create(*Get_System());
+	PCA[0].Create(Get_System());
 
 	for(int y=0; y<Get_NY() && Set_Progress(y); y++)
 	{
@@ -722,9 +722,9 @@ bool CPanSharp_PCA::On_Execute(void)
 
 	for(i=1; i<n; i++)
 	{
-		Process_Set_Text(CSG_String::Format("%s: %s ...", _TL("Resampling"), pPCA->Get_Grid(i)->Get_Name()));
+		Process_Set_Text("%s: %s ...", _TL("Resampling"), pPCA->Get_Grid(i)->Get_Name());
 
-		PCA[i].Create(*Get_System());
+		PCA[i].Create(Get_System());
 		PCA[i].Assign(pPCA->Get_Grid(i), Resampling);
 
 		delete(pPCA->Get_Grid(i));	// PCA tool was unmanaged, so we have to delete the output
@@ -740,7 +740,7 @@ bool CPanSharp_PCA::On_Execute(void)
 	}
 
 	//-----------------------------------------------------
-	// inverse principle component rotation for the high resolution bands
+	// inverse principal component rotation for the high resolution bands
 
 	SG_RUN_TOOL_KEEP_PARMS(bResult, "statistics_grid", 10, Tool_Parms,
 			SG_TOOL_PARAMETER_SET("PCA"  , Tool_Parms("PCA"))

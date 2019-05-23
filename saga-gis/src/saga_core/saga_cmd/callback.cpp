@@ -70,6 +70,9 @@
 
 #include "tool.h"
 
+#include <iostream>
+#include <stdio.h>
+
 
 ///////////////////////////////////////////////////////////
 //														 //
@@ -142,38 +145,42 @@ bool			CMD_Get_XML			(void)			{	return( g_bXML );				}
 ///////////////////////////////////////////////////////////
 
 //---------------------------------------------------------
-void			CMD_Print			(const CSG_String &Text, const SG_Char *XML_Tag)
+void			CMD_Print			(const CSG_String &Text, const CSG_String &XML_Tag)
 {
 	if( g_bXML )
 	{
-		if( XML_Tag && XML_Tag[0] )
+		if( !XML_Tag.is_Empty() )
 		{
-			SG_PRINTF(SG_T("<%s>%s</%s>\n"), XML_Tag, Text.c_str(), XML_Tag);
+			SG_Printf("<%s>%s</%s>\n", XML_Tag.c_str(), Text.c_str(), XML_Tag.c_str());
 		}
 	}
 	else
 	{
-		SG_PRINTF(SG_T("%s\n"), Text.c_str());
+		SG_Printf("%s\n", Text.c_str());
 	}
+
+	std::cout << std::flush;
 }
 
 //---------------------------------------------------------
-void			CMD_Print			(FILE *Stream, const CSG_String &Text, const SG_Char *XML_Tag)
+void			CMD_Print			(FILE *Stream, const CSG_String &Text, const CSG_String &XML_Tag)
 {
 	if( Stream )
 	{
 		if( g_bXML )
 		{
-			if( XML_Tag && XML_Tag[0] )
+			if( !XML_Tag.is_Empty() )
 			{
-				SG_FPRINTF(Stream, SG_T("<%s>%s</%s>\n"), XML_Tag, Text.c_str(), XML_Tag);
+				SG_FPrintf(Stream, "<%s>%s</%s>\n", XML_Tag.c_str(), Text.c_str(), XML_Tag.c_str());
 			}
 		}
 		else
 		{
-			SG_FPRINTF(Stream, SG_T("%s\n"), Text.c_str());
+			SG_FPrintf(Stream, "%s\n", Text.c_str());
 		}
 	}
+
+	fflush(Stream);
 }
 
 //---------------------------------------------------------
@@ -200,7 +207,7 @@ void			CMD_Get_Pause		(void)
 {
 	if( g_bInteractive )
 	{
-		SG_PRINTF(SG_T("%s...\n"), _TL("press any key"));
+		SG_Printf("%s...\n", _TL("press any key"));
 
 #ifdef _SAGA_MSW
 		_getch();
@@ -216,9 +223,9 @@ bool			CMD_Get_YesNo		(const CSG_String &Caption, const CSG_String &Message)
 #ifdef _SAGA_MSW
 		CSG_String	sKey, sYes("y"), sNo("n");
 
-		SG_PRINTF(SG_T("%s: %s\n"), Caption.c_str(), Message.c_str());
+		SG_Printf("%s: %s\n", Caption.c_str(), Message.c_str());
 
-		SG_PRINTF(SG_T("%s? (%s/%s)\n"), _TL("continue"), sYes.c_str(), sNo.c_str());
+		SG_Printf("%s? (%s/%s)\n", _TL("continue"), sYes.c_str(), sNo.c_str());
 
 		do
 		{
@@ -266,9 +273,9 @@ int		Callback(TSG_UI_Callback_ID ID, CSG_UI_Parameter &Param_1, CSG_UI_Parameter
 	//-----------------------------------------------------
 	case CALLBACK_PROCESS_GET_OKAY:
 
-		if( g_bShow_Progress && Param_1.True )
+		if( g_bShow_Progress && Param_1.Boolean )
 		{
-			SG_PRINTF(SG_T("\r%c   "), Buisy[iBuisy++]);
+			SG_Printf("\r%c   ", Buisy[iBuisy++]);
 
 			iBuisy	%= 4;
 		}
@@ -293,17 +300,19 @@ int		Callback(TSG_UI_Callback_ID ID, CSG_UI_Parameter &Param_1, CSG_UI_Parameter
 			{
 				if( g_bXML )
 				{
-					SG_PRINTF(SG_T("<%s>%d</%s>\n"), SG_XML_PROGRESS, iPercent = i, SG_XML_PROGRESS);
+					SG_Printf("<%s>%d</%s>\n", SG_XML_PROGRESS, iPercent = i, SG_XML_PROGRESS);
 				}
 				else
 				{
 					if( iPercent < 0 || i < iPercent )
 					{
-						SG_PRINTF(SG_T("\n"));
+						SG_Printf("\n");
 					}
 
-					SG_PRINTF(SG_T("\r%3d%%"), iPercent = i);
+					SG_Printf("\r%3d%%", iPercent = i);
 				}
+
+				std::cout << std::flush;
 			}
 		}
 
@@ -371,7 +380,7 @@ int		Callback(TSG_UI_Callback_ID ID, CSG_UI_Parameter &Param_1, CSG_UI_Parameter
 
 		if( g_bShow_Messages )
 		{
-			CMD_Print(Param_2.String + ": " + Param_1.String, NULL);
+			CMD_Print(Param_2.String + ": " + Param_1.String);
 		}
 
 		break;

@@ -174,7 +174,6 @@ public:
     virtual void				Tile						(wxOrientation orient = wxHORIZONTAL);
 
 	void						Close_Children				(void);
-	int							Get_Children_Count			(void);
 	void						On_Child_Activates			(int View_ID);
 
 	void						Set_Pane_Caption			(wxWindow *pWindow, const wxString &Caption);
@@ -201,12 +200,14 @@ private:
 
 	class CData_Source			*m_pData_Source;
 
-	class CACTIVE				*m_pActive;
+	class CActive				*m_pActive;
 
 	class CWKSP					*m_pWKSP;
 
 	class wxAuiManager			*m_pLayout;
 
+
+	int							_Get_MDI_Children_Count		(void);
 
 	class wxMenuBar *			_Create_MenuBar				(void);
 

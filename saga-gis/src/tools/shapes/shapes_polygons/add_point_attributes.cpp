@@ -70,7 +70,7 @@ CAdd_Point_Attributes::CAdd_Point_Attributes(void)
 {
 	Set_Name		(_TL("Add Point Attributes to Polygons"));
 
-	Set_Author		(SG_T("V. Wichmann (c) 2014"));
+	Set_Author		("V. Wichmann (c) 2014");
 
 	Set_Description	(_TW(
 		"Spatial join for polygons. Retrieves for each polygon the selected "
@@ -152,7 +152,7 @@ bool CAdd_Point_Attributes::On_Execute(void)
 
 		for(int iField=0; iField<pPoints->Get_Field_Count(); iField++)
 		{
-			sFields += CSG_String::Format(SG_T("%d,"), iField);
+			sFields += CSG_String::Format("%d,", iField);
 		}
 
 		pFields->Set_Value(sFields);
@@ -170,7 +170,7 @@ bool CAdd_Point_Attributes::On_Execute(void)
 		Parameters("OUTPUT")->Set_Value(pOutput	= pInput);
 	}
 
-	pOutput->Set_Name(CSG_String::Format(SG_T("%s_%s"), pInput->Get_Name(), pPoints->Get_Name()));
+	pOutput->Fmt_Name("%s_%s", pInput->Get_Name(), pPoints->Get_Name());
 
 	//-----------------------------------------------------
 	int	outField	= pOutput->Get_Field_Count();
@@ -185,18 +185,18 @@ bool CAdd_Point_Attributes::On_Execute(void)
 
 	if( bAddLocInfo )
 	{
-		pOutput->Add_Field(SG_T("X"), SG_DATATYPE_Float);
+		pOutput->Add_Field("X", SG_DATATYPE_Float);
 		iXField = pOutput->Get_Field_Count() - 1;
 
-		pOutput->Add_Field(SG_T("Y"), SG_DATATYPE_Float);
+		pOutput->Add_Field("Y", SG_DATATYPE_Float);
 
 		if( pPoints->Get_Vertex_Type() != SG_VERTEX_TYPE_XY )
 		{
-			pOutput->Add_Field(SG_T("Z"), SG_DATATYPE_Float);
+			pOutput->Add_Field("Z", SG_DATATYPE_Float);
 
 			if( pPoints->Get_Vertex_Type() == SG_VERTEX_TYPE_XYZM )
 			{
-				pOutput->Add_Field(SG_T("M"), SG_DATATYPE_Float);
+				pOutput->Add_Field("M", SG_DATATYPE_Float);
 			}
 		}
 	}

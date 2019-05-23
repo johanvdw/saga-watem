@@ -1,6 +1,3 @@
-/**********************************************************
- * Version $Id$
- *********************************************************/
 
 ///////////////////////////////////////////////////////////
 //                                                       //
@@ -9,15 +6,14 @@
 //      System for Automated Geoscientific Analyses      //
 //                                                       //
 //                     Tool Library                      //
-//                   Projection_Proj4                    //
+//                  garden_webservices                   //
 //                                                       //
 //-------------------------------------------------------//
 //                                                       //
-//               crs_transform_pointcloud.h              //
+//                      sg_curl.h                        //
 //                                                       //
-//                 Copyright (C) 2014 by                 //
-//                    Volker Wichmann                    //
-//                      Olaf Conrad                      //
+//                 Copyrights (C) 2018                   //
+//                     Olaf Conrad                       //
 //                                                       //
 //-------------------------------------------------------//
 //                                                       //
@@ -40,13 +36,12 @@
 //                                                       //
 //-------------------------------------------------------//
 //                                                       //
-//    e-mail:     wichmann@laserdata.at                  //
+//    e-mail:     oconrad@saga-gis.org                   //
 //                                                       //
-//    contact:    Volker Wichmann                        //
-//                LASERDATA GmbH                         //
-//                Management and analysis of             //
-//                laserscanning data                     //
-//                Innsbruck, Austria                     //
+//    contact:    Olaf Conrad                            //
+//                Institute of Geography                 //
+//                University of Hamburg                  //
+//                Germany                                //
 //                                                       //
 ///////////////////////////////////////////////////////////
 
@@ -55,16 +50,13 @@
 
 ///////////////////////////////////////////////////////////
 //														 //
-//														 //
+//                                                       //
 //														 //
 ///////////////////////////////////////////////////////////
 
 //---------------------------------------------------------
-#ifndef HEADER_INCLUDED__crs_transform_pointcloud_H
-#define HEADER_INCLUDED__crs_transform_pointcloud_H
-
-//---------------------------------------------------------
-#include "crs_base.h"
+#ifndef HEADER_INCLUDED__sg_curl_H
+#define HEADER_INCLUDED__sg_curl_H
 
 
 ///////////////////////////////////////////////////////////
@@ -74,24 +66,65 @@
 ///////////////////////////////////////////////////////////
 
 //---------------------------------------------------------
-class pj_proj4_EXPORT CCRS_Transform_PointCloud : public CCRS_Transform
+#include <saga_api/saga_api.h>
+
+
+///////////////////////////////////////////////////////////
+//														 //
+//														 //
+//														 //
+///////////////////////////////////////////////////////////
+
+//---------------------------------------------------------
+#if defined(_SAGA_MSW) || defined(HAVE_LIBCURL)
+#define SG_USE_CURL
+#endif
+
+#ifndef SG_USE_CURL
+	#define CWebClient	CSG_HTTP
+#else
+	#define CWebClient	CSG_CURL
+
+//---------------------------------------------------------
+class CSG_CURL
 {
 public:
-	CCRS_Transform_PointCloud(bool bList);
+								CSG_CURL		(void);
+	bool						Create			(void);
 
+								CSG_CURL		(const CSG_String &Server, const SG_Char *Username = NULL, const SG_Char *Password = NULL);
+	bool						Create			(const CSG_String &Server, const SG_Char *Username = NULL, const SG_Char *Password = NULL);
 
-protected:
+	virtual						~CSG_CURL		(void);
+	bool						Destroy			(void);
 
-	virtual bool			On_Execute_Transformation	(void);
+	bool						is_Connected	(void)	const;
 
-	bool					Transform					(CSG_PointCloud *pSource, CSG_PointCloud *pTarget);
+	const CSG_String &			Get_Error		(void)	const	{	return( m_Error );	}
+
+	bool						Request			(const CSG_String &Request, CSG_Bytes    &Answer);
+	bool						Request			(const CSG_String &Request, CSG_MetaData &Answer);
+	bool						Request			(const CSG_String &Request, CSG_String   &Answer);
+	bool						Request			(const CSG_String &Request, const SG_Char *File);
 
 
 private:
 
-	bool					m_bList;
+	CSG_String					m_Server, m_Error;
+
+	void						*m_pCURL;
+
+
+	bool						_Perform		(void);
+
+	static size_t				_Callback_Write_Bytes	(char *Bytes, size_t Size, size_t nBytes, void *pBuffer);
+	static size_t				_Callback_Write_String	(char *Bytes, size_t Size, size_t nBytes, void *pBuffer);
+	static size_t				_Callback_Write_File	(char *Bytes, size_t Size, size_t nBytes, void *pBuffer);
 
 };
+
+//---------------------------------------------------------
+#endif // #ifdef SG_USE_CURL
 
 
 ///////////////////////////////////////////////////////////
@@ -101,4 +134,4 @@ private:
 ///////////////////////////////////////////////////////////
 
 //---------------------------------------------------------
-#endif // #ifndef HEADER_INCLUDED__crs_transform_pointcloud_H
+#endif // #ifndef HEADER_INCLUDED__sg_curl_H
