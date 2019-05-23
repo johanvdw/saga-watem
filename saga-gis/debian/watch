@@ -1,0 +1,7 @@
+version=3
+opts=\
+dversionmangle=s/\+(debian|dfsg|ds|deb)\d*$//,\
+uversionmangle=s/(\d)[_\.\-\+]?((RC|rc|pre|dev|beta|alpha)\d*)$/$1~$2/;s/RC/rc/,\
+repacksuffix=+dfsg \
+http://sf.net/saga-gis/ \
+saga[_-]?(2\.3\.\d+(?:[_\.\-\+]?(?:(?:RC|rc|pre|dev|beta|alpha)\d*)?)?)\.(?:tgz|tbz|txz|(?:tar\.(?:gz|bz2|xz)))
