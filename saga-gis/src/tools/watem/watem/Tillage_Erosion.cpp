@@ -44,13 +44,13 @@ bool Tillage_Erosion::On_Execute() {
 
 	int teller, i, j;
 	double ADJUST, outflow, PART1, PART2, SN, CSN, asp;
-	CSG_Grid * INFLOW = new CSG_Grid(*Get_System(), SG_DATATYPE_Double);
+	CSG_Grid * INFLOW = new CSG_Grid(Get_System(), SG_DATATYPE_Double);
 	CSG_Grid * DTM = Parameters("DEM")->asGrid();
 	CSG_Grid * PRC = Parameters("PRC")->asGrid();
 	CSG_Grid * TILL = Parameters("TILL")->asGrid();
 
 
-	CSG_Grid * FINISH = new CSG_Grid(*Get_System(), SG_DATATYPE_Bit);
+	CSG_Grid * FINISH = new CSG_Grid(Get_System(), SG_DATATYPE_Bit);
 
 	int k1, k2, l1, l2;
 
