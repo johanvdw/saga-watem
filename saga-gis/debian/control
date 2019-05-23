@@ -62,8 +62,8 @@ Package: libsaga-dev
 Architecture: any
 Multi-Arch: same
 Section: libdevel
-Depends: libsaga-api- (= ${binary:Version}),
-         libsaga-gdi- (= ${binary:Version}),
+Depends: libsaga-api-7.3.0 (= ${binary:Version}),
+         libsaga-gdi-7.3.0 (= ${binary:Version}),
          ${misc:Depends}
 Suggests: saga (= ${binary:Version})
 Description: SAGA GIS development files
@@ -73,7 +73,7 @@ Description: SAGA GIS development files
  This package contains the header files for developing with SAGA.
  Install this package if you wish to develop software that uses the SAGA API.
 
-Package: libsaga-api-
+Package: libsaga-api-7.3.0
 Architecture: any
 Multi-Arch: same
 Section: libs
@@ -86,7 +86,7 @@ Description: SAGA GIS shared libraries
  .
  This package contains the library files for developing with SAGA.
 
-Package: libsaga-gdi-
+Package: libsaga-gdi-7.3.0
 Architecture: any
 Multi-Arch: same
 Section: libs
@@ -102,15 +102,15 @@ Description: SAGA GIS shared library (graphical models)
 Package: libsaga
 Architecture: all
 Section: oldlibs
-Depends: libsaga-api-,
-         libsaga-gdi-,
+Depends: libsaga-api-7.3.0,
+         libsaga-gdi-7.3.0,
          ${misc:Depends}
 Description: SAGA GIS shared libraries - transitional package
  SAGA GIS (System for Automated Geoscientific Analyses) is a geographic
  information system used for editing and analysing spatial data.
  .
  This package is a transitional package from libsaga to
- libsaga-api- and libsaga-gdi-.
+ libsaga-api-7.3.0 and libsaga-gdi-7.3.0.
  It can safely be removed.
 
 Package: python-saga

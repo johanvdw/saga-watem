@@ -1,7 +1,0 @@
-# Symbols are problematic for C++ libraries
-libsaga-gdi-2.3.1: no-symbols-control-file *
-
-# Build uses -D_FORTIFY_SOURCE=2, but hardening-check reports:
-#  Fortify Source functions: no, only unprotected functions found!
-libsaga-gdi-2.3.1: hardening-no-fortify-functions *
-
