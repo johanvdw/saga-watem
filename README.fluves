@@ -32,9 +32,9 @@ Momenteel gehost op percy.gisky.be
 
 volgens userguide op https://help.ubuntu.com/community/CreateAuthenticatedRepository
 
-apt-ftparchive packages . &gt; Packages
-gzip -c Packages &gt; Packages.gz
-apt-ftparchive release . &gt; Release
+apt-ftparchive packages amd64 > Packages
+gzip -c Packages > Packages.gz
+apt-ftparchive release amd64 > Release
 gpg --clearsign -o InRelease Release
 gpg -abs -o Release.gpg Release
 
