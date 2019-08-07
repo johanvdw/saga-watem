@@ -34,7 +34,7 @@ volgens userguide op https://help.ubuntu.com/community/CreateAuthenticatedReposi
 
 apt-ftparchive packages amd64 > Packages
 gzip -c Packages > Packages.gz
-apt-ftparchive release amd64 > Release
+apt-ftparchive release . > Release
 gpg --clearsign -o InRelease Release
 gpg -abs -o Release.gpg Release
 
