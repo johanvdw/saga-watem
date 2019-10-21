@@ -105,6 +105,8 @@ CLineDirection::CLineDirection(void)
 		PARAMETER_INPUT
 	);
 
+    Parameters.Add_Table_Field("INPUT", "ORDER_FIELD", "Order Field", "Field for order in which the shape will be sorted prior to rasterization.", false);
+
 	//-----------------------------------------------------
 	m_Grid_Target.Create(&Parameters, false, NULL, "TARGET_");
 
@@ -171,10 +173,17 @@ bool CLineDirection::On_Execute(void)
 	m_pGrid->Set_Name(CSG_String::Format("%s [Direction]", pShapes->Get_Name()));
 	m_pGrid->Assign_NoData();
 
+    // sort shape if necessary
+    int sort_field=-1;
+    sort_field = Parameters("ORDER_FIELD")->asInt();
+
+    pShapes->Set_Index(sort_field, TABLE_INDEX_Ascending);
+
 	//-----------------------------------------------------
 	for(int i=0; i<pShapes->Get_Count() && Set_Progress(i, pShapes->Get_Count()); i++)
 	{
-		CSG_Shape	*pShape	= pShapes->Get_Shape(i);
+        CSG_Shape	*pShape;
+        pShape	= sort_field>-1?pShapes->Get_Shape_byIndex(i):pShapes->Get_Shape(i);
 
 		if( pShape->Intersects(m_pGrid->Get_Extent()) )
 		{
