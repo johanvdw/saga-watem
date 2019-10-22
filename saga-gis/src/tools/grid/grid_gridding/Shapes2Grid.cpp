@@ -130,6 +130,8 @@ CShapes2Grid::CShapes2Grid(void)
 		), 1
 	);
 
+    Parameters.Add_Table_Field("INPUT", "ORDER_FIELD", "Order Field", "Field for order in which the shape will be sorted prior to rasterization.", false);
+
 	Parameters.Add_Choice("",
 		"LINE_TYPE"	, _TL("Lines"),
 		_TL(""),
@@ -268,6 +270,9 @@ bool CShapes2Grid::On_Execute(void)
 
 	m_Multiple	= Parameters("MULTIPLE")->asInt();
 
+    int sort_field = Parameters("ORDER_FIELD")->asInt();
+    if (sort_field > -1) pShapes->Set_Index(sort_field, TABLE_INDEX_Ascending);
+
 	//-----------------------------------------------------
 	bool	bFat;
 
@@ -333,7 +338,7 @@ bool CShapes2Grid::On_Execute(void)
 	//-----------------------------------------------------
 	for(int i=0; i<pShapes->Get_Count() && Set_Progress(i, pShapes->Get_Count()); i++)
 	{
-		CSG_Shape	*pShape	= pShapes->Get_Shape(i);
+        CSG_Shape	*pShape	= sort_field>-1?pShapes->Get_Shape_byIndex(i):pShapes->Get_Shape(i);
 
 		if( pShapes->Get_Selection_Count() <= 0 || pShape->is_Selected() )
 		{
