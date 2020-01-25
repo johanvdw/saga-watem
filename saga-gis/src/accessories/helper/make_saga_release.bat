@@ -1,27 +1,16 @@
 @ECHO OFF
 
 REM ___________________________________
-SET SAGA_VER_MAJOR=6
-SET SAGA_VER_MINOR=4
-SET SAGA_VER_RELEASE=0
-SET SAGA_VER_TEXT=%SAGA_VER_MAJOR%.%SAGA_VER_MINOR%.%SAGA_VER_RELEASE%
-SET SAGA_VERSION=saga-%SAGA_VER_TEXT%
-
-SET SAGA_ROOT=%SAGA%
-
-SET ZIPEXE="C:\Program Files\7-Zip\7z.exe" a -r -y -mx5
-SET ISETUP="C:\Program Files (x86)\Inno Setup 5\ISCC.exe"
-SET GITEXE=git
-SET DOXEXE=doxygen.exe
-SET SWIGEXE="D:\libs\swigwin-3.0.7\swig.exe"
-SET PYTHONDIR=D:\libs\Python-2.7
-SET PYTHONVER=27
-
-
-REM ___________________________________
 REM ###################################
 REM PRE-RELEASE STEPS
 REM ###################################
+
+REM ___________________________________
+SET SAGA_VER_MAJOR=7
+SET SAGA_VER_MINOR=3
+SET SAGA_VER_RELEASE=0
+SET SAGA_VER_TEXT=%SAGA_VER_MAJOR%.%SAGA_VER_MINOR%.%SAGA_VER_RELEASE%
+SET SAGA_VERSION=saga-%SAGA_VER_TEXT%
 
 ECHO __________________________________
 ECHO ##################################
@@ -46,8 +35,26 @@ REM MAKE RELEASE
 REM ###################################
 
 REM ___________________________________
+SET SAGA_ROOT=%SAGA%
+
+SET ZIPEXE="C:\Program Files\7-Zip\7z.exe" a -r -y -mx5
+SET ISETUP="C:\Program Files (x86)\Inno Setup 5\ISCC.exe"
+SET GITEXE=git
+SET DOXEXE=doxygen.exe
+SET SWIGEXE="D:\libs\swigwin-3.0.7\swig.exe"
+SET PYTHONVER=27
+SET PYTHONx32=D:\libs\Python\Python27_win32
+SET PYTHONx64=D:\libs\Python\Python27_x64
+
+REM ___________________________________
 MKDIR "%SAGA_VERSION%"
 PUSHD "%SAGA_VERSION%"
+
+
+REM ___________________________________
+REM ###################################
+REM PACKAGE BINARIES
+REM ###################################
 
 REM ___________________________________
 REM win32 Binaries
@@ -85,6 +92,12 @@ MOVE "%SAGA_VERSION%_%SAGA_CONFIG%\%SAGA_VERSION%_%SAGA_CONFIG%_setup.exe"
 
 RMDIR /S/Q "%SAGA_VERSION%_%SAGA_CONFIG%"
 
+
+REM ___________________________________
+REM ###################################
+REM SOURCE AND HELP
+REM ###################################
+
 REM ___________________________________
 REM GIT Source Code Repository
 %GITEXE% clone git://git.code.sf.net/p/saga-gis/code %SAGA_VERSION%_src -q
@@ -94,6 +107,9 @@ REM %GITEXE% branch release-%SAGA_VER_TEXT%
 %GITEXE% checkout release-%SAGA_VER_TEXT%
 RMDIR /S/Q .git
 POPD
+
+REM ___________________________________
+REM Source Code
 %ZIPEXE% %SAGA_VERSION%_src.zip %SAGA_VERSION%_src
 
 REM ___________________________________
@@ -105,34 +121,66 @@ POPD
 RMDIR /S/Q "%SAGA_VERSION%_api_doc"
 
 REM ___________________________________
+REM Drop Sources
+RMDIR /S/Q %SAGA_VERSION%_src
+
+
+REM ___________________________________
+REM ###################################
+REM PYTHON API
+REM ###################################
+
+REM ___________________________________
 REM SWIG/Python (win32)
 SET WXWINLIB="%WXWIN%\lib\vc_dll"
 SET SAGA_LIB="%SAGA_ROOT%\bin\saga_vc_Win32"
+
 PUSHD "%SAGA_ROOT%\src\saga_core\saga_api"
-%SWIGEXE% -c++ -python -includeall -I. -D_SAGA_PYTHON -D_SAGA_UNICODE saga_api.h
-"%PYTHONDIR%\python.exe" saga_api_to_python_win.py install
-MOVE saga_api.py "%PYTHONDIR%\Lib\site-packages\saga_api.py"
+%SWIGEXE% -c++ -python -includeall -I. -D_SAGA_PYTHON saga_api.h
+"%PYTHONx32%\python.exe" saga_api_to_python_win.py install
+MOVE saga_api.py "%PYTHONx32%\Lib\site-packages\saga_api.py"
 DEL /F saga_api_wrap.cxx
 RMDIR /S/Q build
 POPD
 SET PYTHONOUT=Python%PYTHONVER%
-XCOPY /C/Q/Y/H "%PYTHONDIR%\Lib\site-packages\*saga*.*" "%PYTHONOUT%\Lib\site-packages\"
+XCOPY /C/Q/Y/H "%PYTHONx32%\Lib\site-packages\*saga*.*" "%PYTHONOUT%\Lib\site-packages\"
 COPY "%SAGA_ROOT%\src\accessories\python\saga_python_api.txt" "%PYTHONOUT%\Lib\site-packages\"
 XCOPY /C/Q/Y/H "%SAGA_ROOT%\src\accessories\python\examples" "%PYTHONOUT%\Lib\site-packages\saga_api_examples\"
 %ZIPEXE% %SAGA_VERSION%_win32_python%PYTHONVER%.zip "%PYTHONOUT%"
 RMDIR /S/Q "%PYTHONOUT%"
 
+
 REM ___________________________________
-REM The End
-RMDIR /S/Q %SAGA_VERSION%_src
+REM SWIG/Python (x64)
+SET DISTUTILS_USE_SDK=1
+SET MSSDK=1
+SET WXWINLIB="%WXWIN%\lib\vc_x64_dll"
+SET SAGA_LIB="%SAGA_ROOT%\bin\saga_vc_x64"
+
+PUSHD "%SAGA_ROOT%\src\saga_core\saga_api"
+%SWIGEXE% -c++ -python -includeall -I. -D_SAGA_PYTHON saga_api.h
+"%PYTHONx64%\python.exe" saga_api_to_python_win.py install
+MOVE saga_api.py "%PYTHONx64%\Lib\site-packages\saga_api.py"
+DEL /F saga_api_wrap.cxx
+RMDIR /S/Q build
+POPD
+SET PYTHONOUT=Python%PYTHONVER%
+XCOPY /C/Q/Y/H "%PYTHONx64%\Lib\site-packages\*saga*.*" "%PYTHONOUT%\Lib\site-packages\"
+COPY "%SAGA_ROOT%\src\accessories\python\saga_python_api.txt" "%PYTHONOUT%\Lib\site-packages\"
+XCOPY /C/Q/Y/H "%SAGA_ROOT%\src\accessories\python\examples" "%PYTHONOUT%\Lib\site-packages\saga_api_examples\"
+%ZIPEXE% %SAGA_VERSION%_x64_python%PYTHONVER%.zip "%PYTHONOUT%"
+RMDIR /S/Q "%PYTHONOUT%"
+
+
+REM ___________________________________
+REM ###################################
+REM END: MAKE RELEASE
+REM ###################################
+
+REM ___________________________________
 POPD
 
-
-REM ___________________________________
 REM ###################################
-REM POST-RELEASE STEPS
-REM ###################################
-
 ECHO __________________________________
 ECHO ##################################
 ECHO #

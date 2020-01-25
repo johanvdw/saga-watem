@@ -1,6 +1,3 @@
-/**********************************************************
- * Version $Id$
- *********************************************************/
 
 ///////////////////////////////////////////////////////////
 //                                                       //
@@ -53,14 +50,6 @@
 ///////////////////////////////////////////////////////////
 
 //---------------------------------------------------------
-
-///////////////////////////////////////////////////////////
-//														 //
-//														 //
-//														 //
-///////////////////////////////////////////////////////////
-
-//---------------------------------------------------------
 #ifndef HEADER_INCLUDED__SAGA_API__tool_H
 #define HEADER_INCLUDED__SAGA_API__tool_H
 
@@ -84,7 +73,7 @@
 //---------------------------------------------------------
 typedef enum ESG_Summary_Format
 {
-	SG_SUMMARY_FMT_FLAT	= 0,
+	SG_SUMMARY_FMT_FLAT		= 0,
 	SG_SUMMARY_FMT_HTML,
 	SG_SUMMARY_FMT_XML
 }
@@ -138,7 +127,7 @@ public:
 
 	virtual void				Destroy						(void);
 
-	virtual TSG_Tool_Type		Get_Type					(void)	{	return( TOOL_TYPE_Base );	}
+	virtual TSG_Tool_Type		Get_Type					(void)	const	{	return( TOOL_TYPE_Base );	}
 
 	const CSG_String &			Get_ID						(void)	const	{	return( m_ID );	}
 
@@ -160,11 +149,17 @@ public:
 	CSG_Parameters *			Get_Parameters				(int i)	{	return( i >= 0 && i < m_npParameters ? m_pParameters[i] : NULL );	}
 	CSG_Parameters *			Get_Parameters				(const CSG_String &Identifier);
 
-	bool						Set_Parameter				(const CSG_String &Identifier, CSG_Parameter *pSource);
-	bool						Set_Parameter				(const CSG_String &Identifier, int            Value, int Type = PARAMETER_TYPE_Undefined);
-	bool						Set_Parameter				(const CSG_String &Identifier, double         Value, int Type = PARAMETER_TYPE_Undefined);
-	bool						Set_Parameter				(const CSG_String &Identifier, void          *Value, int Type = PARAMETER_TYPE_Undefined);
-	bool						Set_Parameter				(const CSG_String &Identifier, const SG_Char *Value, int Type = PARAMETER_TYPE_Undefined);
+	CSG_Parameter *				Get_Parameter				(const CSG_String &Identifier)	const	{	return( Parameters(Identifier) );	}
+	bool						Set_Parameter				(const CSG_String &Identifier, CSG_Parameter   *pValue);
+	bool						Set_Parameter				(const CSG_String &Identifier, int               Value, int Type = PARAMETER_TYPE_Undefined);
+	bool						Set_Parameter				(const CSG_String &Identifier, double            Value, int Type = PARAMETER_TYPE_Undefined);
+	bool						Set_Parameter				(const CSG_String &Identifier, void             *Value, int Type = PARAMETER_TYPE_Undefined);
+	bool						Set_Parameter				(const CSG_String &Identifier, const CSG_String &Value, int Type = PARAMETER_TYPE_Undefined);
+	bool						Set_Parameter				(const CSG_String &Identifier, const char       *Value, int Type = PARAMETER_TYPE_Undefined);
+	bool						Set_Parameter				(const CSG_String &Identifier, const wchar_t    *Value, int Type = PARAMETER_TYPE_Undefined);
+
+	bool						Set_Grid_System				(const CSG_Grid_System &System);
+	bool						Reset_Grid_System			(void);
 
 	bool						Update_Parameter_States		(void);
 
@@ -174,14 +169,14 @@ public:
 	bool						Settings_Push				(class CSG_Data_Manager *pManager = NULL);
 	bool						Settings_Pop				(void);
 
-	virtual bool				do_Sync_Projections			(void)	{	return( true  );	}
+	virtual bool				do_Sync_Projections			(void)	const	{	return( true  );	}
 
-	virtual bool				needs_GUI					(void)	{	return( false );	}
+	virtual bool				needs_GUI					(void)	const	{	return( false );	}
 
-	virtual bool				is_Grid						(void)	{	return( false );	}
-	virtual bool				is_Interactive				(void)	{	return( false );	}
-	bool						is_Progress					(void)	{	return( SG_UI_Process_Get_Okay(false) );	}
-	bool						is_Executing				(void)	{	return( m_bExecutes );	}
+	virtual bool				is_Grid						(void)	const	{	return( false );	}
+	virtual bool				is_Interactive				(void)	const	{	return( false );	}
+	bool						is_Progress					(void)	const	{	return( SG_UI_Process_Get_Okay(false) );	}
+	bool						is_Executing				(void)	const	{	return( m_bExecutes );	}
 
 	void						Set_Show_Progress			(bool bOn = true);
 
@@ -222,17 +217,21 @@ protected:
 
 
 	//-----------------------------------------------------
-	virtual bool				Process_Get_Okay			(bool bBlink = false);
-	virtual void				Process_Set_Text			(const CSG_String &Text);
+	static bool					Process_Get_Okay			(bool bBlink = false);
+	static void					Process_Set_Text			(const CSG_String &Text);
+	static void					Process_Set_Text			(const char    *Format, ...);
+	static void					Process_Set_Text			(const wchar_t *Format, ...);
 
-	virtual bool				Set_Progress				(double Percent);
-	virtual bool				Set_Progress				(double Position, double Range);
+	virtual bool				Set_Progress				(double Percent)				const;
+	virtual bool				Set_Progress				(double Position, double Range)	const;
 
 	bool						Stop_Execution				(bool bDialog = true);
 
-	void						Message_Add					(const CSG_String &Text, bool bNewLine = true);
 	void						Message_Dlg					(const CSG_String &Text, const SG_Char *Caption = NULL);
 	bool						Message_Dlg_Confirm			(const CSG_String &Text, const SG_Char *Caption = NULL);
+	static void					Message_Add					(const CSG_String &Text, bool bNewLine = true);
+	static void					Message_Fmt					(const char    *Format, ...);
+	static void					Message_Fmt					(const wchar_t *Format, ...);
 
 	bool						Error_Set					(TSG_Tool_Error Error_ID = TOOL_ERROR_Unknown);
 	bool						Error_Set					(const CSG_String &Error_Text);
@@ -242,8 +241,8 @@ protected:
 
 	//-----------------------------------------------------
 	bool						DataObject_Add				(CSG_Data_Object *pDataObject, bool bUpdate = false);
-	bool						DataObject_Update			(CSG_Data_Object *pDataObject, int Show = SG_UI_DATAOBJECT_UPDATE_ONLY);
-	bool						DataObject_Update			(CSG_Data_Object *pDataObject, double Parm_1, double Parm_2, int Show = SG_UI_DATAOBJECT_UPDATE_ONLY);
+	bool						DataObject_Update			(CSG_Data_Object *pDataObject                                , int Show = SG_UI_DATAOBJECT_UPDATE_ONLY);
+	bool						DataObject_Update			(CSG_Data_Object *pDataObject, double Minimum, double Maximum, int Show = SG_UI_DATAOBJECT_UPDATE_ONLY);
 
 	void						DataObject_Update_All		(void);
 
@@ -311,48 +310,51 @@ public:
 	CSG_Tool_Grid(void);
 	virtual ~CSG_Tool_Grid(void);
 
-	virtual TSG_Tool_Type		Get_Type				(void)			{	return( TOOL_TYPE_Grid );	}
+	virtual TSG_Tool_Type		Get_Type				(void)	const	{	return( TOOL_TYPE_Grid );	}
 
-	CSG_Grid_System *			Get_System				(void)			{	return( Parameters.Get_Grid_System() );	}
+	const CSG_Grid_System &		Get_System				(void)	const	{	return( *Parameters.Get_Grid_System() );	}
+	bool						Set_System				(const CSG_Grid_System &System);
 
-	virtual bool				is_Grid					(void)			{	return( true );	}
+	virtual bool				is_Grid					(void)	const	{	return( true );	}
 
 
 protected:
 
-	virtual bool				Set_Progress_NCells		(sLong iCell);
-	virtual bool				Set_Progress			(int  iRow);
-	virtual bool				Set_Progress			(double Position, double Range);
+	virtual bool				Set_Progress_NCells		(sLong iCell)					const;
+	virtual bool				Set_Progress			(int    iRow)					const;
+	virtual bool				Set_Progress			(double Position, double Range)	const;
 
 	//-----------------------------------------------------
-	int							Get_NX					(void)						{	return( Get_System()->Get_NX() );				}
-	int							Get_NY					(void)						{	return( Get_System()->Get_NY() );				}
-	sLong						Get_NCells				(void)						{	return( Get_System()->Get_NCells() );			}
-	double						Get_Cellsize			(void)						{	return( Get_System()->Get_Cellsize() );			}
-	double						Get_Cellarea			(void)						{	return( Get_System()->Get_Cellarea() );			}
-	double						Get_XMin				(void)						{	return( Get_System()->Get_XMin() );				}
-	double						Get_YMin				(void)						{	return( Get_System()->Get_YMin() );				}
-	double						Get_XMax				(void)						{	return( Get_System()->Get_XMax() );				}
-	double						Get_YMax				(void)						{	return( Get_System()->Get_YMax() );				}
-	int							Get_xTo					(int Dir, int x = 0)		{	return( Get_System()->Get_xTo(Dir, x) );		}
-	int							Get_yTo					(int Dir, int y = 0)		{	return( Get_System()->Get_yTo(Dir, y) );		}
-	int							Get_xFrom				(int Dir, int x = 0)		{	return( Get_System()->Get_xFrom(Dir, x) );		}
-	int							Get_yFrom				(int Dir, int y = 0)		{	return( Get_System()->Get_yFrom(Dir, y) );		}
-	double						Get_Length				(int Dir)					{	return( Get_System()->Get_Length(Dir) );		}
-	double						Get_UnitLength			(int Dir)					{	return( Get_System()->Get_UnitLength(Dir) );	}
-	bool						is_InGrid				(int x, int y)				{	return(	Get_System()->is_InGrid(x, y) );		}
-	bool						is_InGrid				(int x, int y, int Rand)	{	return(	Get_System()->is_InGrid(x, y, Rand) );	}
+	int							Get_NX					(void)						const	{	return( Get_System().Get_NX      () );	}
+	int							Get_NY					(void)						const	{	return( Get_System().Get_NY      () );	}
+	sLong						Get_NCells				(void)						const	{	return( Get_System().Get_NCells  () );	}
+	double						Get_XMin				(void)						const	{	return( Get_System().Get_XMin    () );	}
+	double						Get_YMin				(void)						const	{	return( Get_System().Get_YMin    () );	}
+	double						Get_XMax				(void)						const	{	return( Get_System().Get_XMax    () );	}
+	double						Get_YMax				(void)						const	{	return( Get_System().Get_YMax    () );	}
+	double						Get_Cellsize			(void)						const	{	return( Get_System().Get_Cellsize() );	}
+	double						Get_Cellarea			(void)						const	{	return( Get_System().Get_Cellarea() );	}
+
+	double						Get_Length				(int i)						const	{	return( Get_System().Get_Length    (i)     );	}
+	double						Get_UnitLength			(int i)						const	{	return( Get_System().Get_UnitLength(i)     );	}
+	bool						is_InGrid				(int x, int y)				const	{	return(	Get_System().is_InGrid(x, y)       );	}
+	bool						is_InGrid				(int x, int y, int Rand)	const	{	return(	Get_System().is_InGrid(x, y, Rand) );	}
+
+	static int					Get_xTo					(int i, int x = 0)	{	return( CSG_Grid_System::Get_xTo  (i, x) );	}
+	static int					Get_yTo					(int i, int y = 0)	{	return( CSG_Grid_System::Get_yTo  (i, y) );	}
+	static int					Get_xFrom				(int i, int x = 0)	{	return( CSG_Grid_System::Get_xFrom(i, x) );	}
+	static int					Get_yFrom				(int i, int y = 0)	{	return( CSG_Grid_System::Get_yFrom(i, y) );	}
 
 	//-----------------------------------------------------
 	void						Lock_Create				(void);
 	void						Lock_Destroy			(void);
 
 	bool						is_Locked				(int x, int y)	{	return( Lock_Get(x, y) != 0 );	}
-	char						Lock_Get				(int x, int y)	{	return( m_pLock && x >= 0 && x < Get_System()->Get_NX() && y >= 0 && y < Get_System()->Get_NY() ? m_pLock->asChar(x, y) : 0 );	}
+	char						Lock_Get				(int x, int y)	{	return( m_pLock && x >= 0 && x < Get_NX() && y >= 0 && y < Get_NY() ? m_pLock->asChar(x, y) : 0 );	}
 
 	void						Lock_Set				(int x, int y, char Value = 1)
 	{
-		if( m_pLock && x >= 0 && x < Get_System()->Get_NX() && y >= 0 && y < Get_System()->Get_NY() )
+		if( m_pLock && x >= 0 && x < Get_NX() && y >= 0 && y < Get_NY() )
 		{
 			m_pLock->Set_Value(x, y, Value);
 		}
@@ -403,12 +405,12 @@ typedef enum ESG_Tool_Interactive_DragMode
 TSG_Tool_Interactive_DragMode;
 
 //---------------------------------------------------------
-#define TOOL_INTERACTIVE_KEY_LEFT		0x01
+#define TOOL_INTERACTIVE_KEY_LEFT	0x01
 #define TOOL_INTERACTIVE_KEY_MIDDLE	0x02
 #define TOOL_INTERACTIVE_KEY_RIGHT	0x04
 #define TOOL_INTERACTIVE_KEY_SHIFT	0x08
-#define TOOL_INTERACTIVE_KEY_ALT		0x10
-#define TOOL_INTERACTIVE_KEY_CTRL		0x20
+#define TOOL_INTERACTIVE_KEY_ALT	0x10
+#define TOOL_INTERACTIVE_KEY_CTRL	0x20
 
 //---------------------------------------------------------
 /**
@@ -480,11 +482,11 @@ public:
 	CSG_Tool_Interactive(void);
 	virtual ~CSG_Tool_Interactive(void);
 
-	virtual TSG_Tool_Type		Get_Type				(void)	{	return( TOOL_TYPE_Interactive );	}
+	virtual TSG_Tool_Type		Get_Type				(void)	const	{	return( TOOL_TYPE_Interactive );	}
 
-	virtual bool				needs_GUI				(void)	{	return( true );	}
+	virtual bool				needs_GUI				(void)	const	{	return( true );	}
 
-	virtual bool				is_Interactive			(void)	{	return( true );	}
+	virtual bool				is_Interactive			(void)	const	{	return( true );	}
 
 };
 
@@ -506,11 +508,11 @@ public:
 	CSG_Tool_Grid_Interactive(void);
 	virtual ~CSG_Tool_Grid_Interactive(void);
 
-	virtual TSG_Tool_Type		Get_Type				(void)	{	return( TOOL_TYPE_Grid_Interactive );	}
+	virtual TSG_Tool_Type		Get_Type				(void)	const	{	return( TOOL_TYPE_Grid_Interactive );	}
 
-	virtual bool				needs_GUI				(void)	{	return( true );	}
+	virtual bool				needs_GUI				(void)	const	{	return( true );	}
 
-	virtual bool				is_Interactive			(void)	{	return( true );	}
+	virtual bool				is_Interactive			(void)	const	{	return( true );	}
 
 
 protected:
@@ -541,9 +543,14 @@ typedef enum ESG_TLB_Info
 	TLB_INFO_User,
 	TLB_INFO_File,
 	TLB_INFO_Library,
+	TLB_INFO_SAGA_Version,
 	TLB_INFO_Count
 }
 TSG_TLB_Info;
+
+//---------------------------------------------------------
+typedef CSG_Tool *	(* TSG_PFNC_TLB_Create_Tool)	(int i);
+typedef CSG_String	(* TSG_PFNC_TLB_Get_Info   )	(int i);
 
 //---------------------------------------------------------
 class SAGA_API_DLL_EXPORT CSG_Tool_Library_Interface
@@ -552,68 +559,53 @@ public:
 	CSG_Tool_Library_Interface(void);
 	virtual ~CSG_Tool_Library_Interface(void);
 
-	void						Set_Info				(int ID, const CSG_String &Info);
+	bool						Create					(const CSG_String &Version, const CSG_String &TLB_Path, TSG_PFNC_TLB_Get_Info Fnc_Info, TSG_PFNC_TLB_Create_Tool Fnc_Create_Tool);
+	bool						Destroy					(void);
+
 	const CSG_String &			Get_Info				(int ID);
 
 	int							Get_Count				(void);
-	bool						Add_Tool				(CSG_Tool *pTool, int ID);
-	CSG_Tool *					Get_Tool				(int iTool);
+	CSG_Tool *					Get_Tool				(int i);
 
-	void						Set_File_Name			(const CSG_String &File_Name);
+	CSG_Tool *					Create_Tool				(int i);
+	bool						Delete_Tool				(CSG_Tool *pTool);
+	bool						Delete_Tools			(void);
 
 
 private:
 
-	CSG_String					m_Info[TLB_INFO_Count];
+	CSG_Strings					m_Info;
 
-	int							m_nTools;
+	CSG_Array_Pointer			m_Tools, m_xTools;
 
-	CSG_Tool					**m_Tools;
+	TSG_PFNC_TLB_Create_Tool	m_Fnc_Create_Tool;
 
 };
 
 //---------------------------------------------------------
-#define SYMBOL_TLB_Initialize			SG_T("TLB_Initialize")
+#define SYMBOL_TLB_Initialize			"TLB_Initialize"
 typedef bool							(* TSG_PFNC_TLB_Initialize)		(const SG_Char *);
 
-#define SYMBOL_TLB_Finalize				SG_T("TLB_Finalize")
+#define SYMBOL_TLB_Finalize				"TLB_Finalize"
 typedef bool							(* TSG_PFNC_TLB_Finalize)		(void);
 
-#define SYMBOL_TLB_Get_Interface		SG_T("TLB_Get_Interface")
+#define SYMBOL_TLB_Get_Interface		"TLB_Get_Interface"
 typedef CSG_Tool_Library_Interface *	(* TSG_PFNC_TLB_Get_Interface)	(void);
 
 //---------------------------------------------------------
-#define TLB_INTERFACE_SKIP_TOOL		((CSG_Tool *)0x1)
+#define TLB_INTERFACE_SKIP_TOOL			((CSG_Tool *)0x1)
 
 //---------------------------------------------------------
-#define TLB_INTERFACE_CORE	CSG_Tool_Library_Interface	TLB_Interface;\
+#define TLB_INTERFACE_INITIALIZE	CSG_Tool_Library_Interface	TLB_Interface;\
 \
 extern "C" _SAGA_DLL_EXPORT CSG_Tool_Library_Interface *	TLB_Get_Interface   (void)\
 {\
 	return( &TLB_Interface );\
 }\
 \
-extern "C" _SAGA_DLL_EXPORT const SG_Char *					Get_Version			(void)\
+extern "C" _SAGA_DLL_EXPORT bool TLB_Initialize	(const SG_Char *TLB_Path)\
 {\
-	return( SAGA_VERSION );\
-}\
-
-//---------------------------------------------------------
-#define TLB_INTERFACE_INITIALIZE	extern "C" _SAGA_DLL_EXPORT bool TLB_Initialize	(const SG_Char *File_Name)\
-{\
-	int		i;\
-\
-	TLB_Interface.Set_File_Name(File_Name);\
-\
-	for(i=0; i<TLB_INFO_User; i++)\
-	{\
-		TLB_Interface.Set_Info(i, Get_Info(i));\
-	}\
-\
-	for(i=0; TLB_Interface.Add_Tool(Create_Tool(i), i); i++)\
-	{}\
-\
-	return( TLB_Interface.Get_Count() > 0 );\
+	return( TLB_Interface.Create(SAGA_VERSION, TLB_Path, Get_Info, Create_Tool) );\
 }\
 
 //---------------------------------------------------------
@@ -623,7 +615,7 @@ extern "C" _SAGA_DLL_EXPORT const SG_Char *					Get_Version			(void)\
 }\
 
 //---------------------------------------------------------
-#define TLB_INTERFACE	TLB_INTERFACE_CORE TLB_INTERFACE_INITIALIZE TLB_INTERFACE_FINALIZE
+#define TLB_INTERFACE	TLB_INTERFACE_INITIALIZE TLB_INTERFACE_FINALIZE
 
 //---------------------------------------------------------
 #ifndef SWIG

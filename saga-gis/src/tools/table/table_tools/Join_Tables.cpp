@@ -122,7 +122,7 @@ void CJoin_Tables_Base::Initialise(void)
 //---------------------------------------------------------
 int CJoin_Tables_Base::On_Parameters_Enable(CSG_Parameters *pParameters, CSG_Parameter *pParameter)
 {
-	if(	!SG_STR_CMP(pParameter->Get_Identifier(), "FIELDS_ALL") )
+	if(	pParameter->Cmp_Identifier("FIELDS_ALL") )
 	{
 		pParameters->Set_Enabled("FIELDS", pParameter->asBool() == false);
 	}
@@ -213,7 +213,7 @@ bool CJoin_Tables_Base::On_Execute(void)
 		}
 	}
 
-	pT_A->Set_Name(CSG_String::Format("%s [%s]", pT_A->Get_Name(), pT_B->Get_Name()));
+	pT_A->Fmt_Name("%s [%s]", pT_A->Get_Name(), pT_B->Get_Name());
 
 	//-----------------------------------------------------
 	m_bCmpNoCase	= Parameters("CMP_CASE")->asBool() == false;
@@ -274,7 +274,7 @@ bool CJoin_Tables_Base::On_Execute(void)
 			pT_A->Del_Record(Delete[i].asInt(0));
 		}
 
-		Message_Add(CSG_String::Format("%d %s", pT_A->Get_Selection_Count(), _TL("unjoined records have been removed")));
+		Message_Fmt("\n%d %s", pT_A->Get_Selection_Count(), _TL("unjoined records have been removed"));
 	}
 
 	if( pT_A == Parameters("TABLE_A")->asTable() )

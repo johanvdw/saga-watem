@@ -123,6 +123,7 @@ public:
 
 	int							Get_Field_Value			(void)	{	return( m_fValue  );	}
 	int							Get_Field_Normal		(void)	{	return( m_fNormal );	}
+	int							Get_Field_Info			(void)	{	return( m_fInfo   );	}
 	int							Get_Field_Label			(void)	{	return( m_fLabel  );	}
 
 	wxString					Get_Name_Attribute		(void);
@@ -141,9 +142,9 @@ public:
 
 protected:
 
-	bool						m_bNoData;
+	bool						m_bNoData, m_Edit_bGleam;
 
-	int							m_fValue, m_fNormal, m_bVertices,
+	int							m_fValue, m_fNormal, m_bVertices, m_fInfo,
 								m_fLabel, m_Label_Prec, m_Label_Eff, m_Label_Eff_Size,
 								m_Edit_Mode, m_Edit_iPart, m_Edit_iPoint;
 
@@ -170,7 +171,6 @@ protected:
 
 	bool						Get_Class_Color			(CSG_Shape *pShape, int &Color);
 
-	CSG_Parameter *				AttributeList_Add		(const CSG_String &ParentID, const CSG_String &Identifier, const CSG_String &Name, const CSG_String &Description);
 	void						AttributeList_Set		(CSG_Parameter *pFields, bool bAddNoField);
 
 	CSG_Parameter *				BrushList_Add			(const CSG_String &ParentID, const CSG_String &Identifier, const CSG_String &Name, const CSG_String &Description);
@@ -193,6 +193,7 @@ protected:
 private:
 
 	void						_LUT_Create				(void);
+	void						_LUT_Import				(void);
 
 	void						_Draw_Shape				(CWKSP_Map_DC &dc_Map, CSG_Shape *pShape, int Selection = 0);
 	void						_Draw_Label				(CWKSP_Map_DC &dc_Map, CSG_Shape *pShape, int PointSize = 0);

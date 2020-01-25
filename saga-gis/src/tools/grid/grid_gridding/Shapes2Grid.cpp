@@ -111,7 +111,7 @@ CShapes2Grid::CShapes2Grid(void)
 	Parameters.Add_Choice("",
 		"OUTPUT"	, _TL("Output Values"),
 		_TL(""),
-		CSG_String::Format("%s|%s|%s|",
+		CSG_String::Format("%s|%s|%s",
 			_TL("data / no-data"),
 			_TL("index number"),
 			_TL("attribute")
@@ -121,7 +121,7 @@ CShapes2Grid::CShapes2Grid(void)
 	Parameters.Add_Choice("",
 		"MULTIPLE"	, _TL("Method for Multiple Values"),
 		_TL(""),
-		CSG_String::Format("%s|%s|%s|%s|%s|",
+		CSG_String::Format("%s|%s|%s|%s|%s",
 			_TL("first"),
 			_TL("last"),
 			_TL("minimum"),
@@ -130,10 +130,12 @@ CShapes2Grid::CShapes2Grid(void)
 		), 1
 	);
 
+    Parameters.Add_Table_Field("INPUT", "ORDER_FIELD", "Order Field", "Field for order in which the shape will be sorted prior to rasterization.", false);
+
 	Parameters.Add_Choice("",
 		"LINE_TYPE"	, _TL("Lines"),
 		_TL(""),
-		CSG_String::Format("%s|%s|",
+		CSG_String::Format("%s|%s",
 			_TL("thin"),
 			_TL("thick")
 		), 1
@@ -142,7 +144,7 @@ CShapes2Grid::CShapes2Grid(void)
 	Parameters.Add_Choice("",
 		"POLY_TYPE"	, _TL("Polygon"),
 		_TL(""),
-		CSG_String::Format("%s|%s|",
+		CSG_String::Format("%s|%s",
 			_TL("node"),
 			_TL("cell")
 		), 1
@@ -151,7 +153,7 @@ CShapes2Grid::CShapes2Grid(void)
 	Parameters.Add_Choice("",
 		"GRID_TYPE"	, _TL("Data Type"),
 		_TL(""),
-		CSG_String::Format("%s|%s|%s|%s|%s|%s|%s|%s|%s|%s|",
+		CSG_String::Format("%s|%s|%s|%s|%s|%s|%s|%s|%s|%s",
 			_TL("1 bit"),
 			_TL("1 byte unsigned integer"),
 			_TL("1 byte signed integer"),
@@ -180,7 +182,7 @@ CShapes2Grid::CShapes2Grid(void)
 //---------------------------------------------------------
 int CShapes2Grid::On_Parameter_Changed(CSG_Parameters *pParameters, CSG_Parameter *pParameter)
 {
-	if(	!SG_STR_CMP(pParameter->Get_Identifier(), "INPUT") )
+	if(	pParameter->Cmp_Identifier("INPUT") )
 	{
 		m_Grid_Target.Set_User_Defined(pParameters, pParameter->asShapes());
 	}
@@ -193,13 +195,13 @@ int CShapes2Grid::On_Parameter_Changed(CSG_Parameters *pParameters, CSG_Paramete
 //---------------------------------------------------------
 int CShapes2Grid::On_Parameters_Enable(CSG_Parameters *pParameters, CSG_Parameter *pParameter)
 {
-	if(	!SG_STR_CMP(pParameter->Get_Identifier(), "INPUT") )
+	if(	pParameter->Cmp_Identifier("INPUT") )
 	{
 		pParameters->Set_Enabled("LINE_TYPE", pParameter->asShapes() && pParameter->asShapes()->Get_Type() == SHAPE_TYPE_Line);
 		pParameters->Set_Enabled("POLY_TYPE", pParameter->asShapes() && pParameter->asShapes()->Get_Type() == SHAPE_TYPE_Polygon);
 	}
 
-	if(	!SG_STR_CMP(pParameter->Get_Identifier(), "OUTPUT") )
+	if(	pParameter->Cmp_Identifier("OUTPUT") )
 	{
 		pParameters->Set_Enabled("FIELD"    , pParameter->asInt() == 2);
 		pParameters->Set_Enabled("MULTIPLE" , pParameter->asInt() != 0);
@@ -266,6 +268,11 @@ bool CShapes2Grid::On_Execute(void)
 	//-----------------------------------------------------
 	CSG_Shapes	*pShapes	= Parameters("INPUT")->asShapes();
 
+	m_Multiple	= Parameters("MULTIPLE")->asInt();
+
+    int sort_field = Parameters("ORDER_FIELD")->asInt();
+    if (sort_field > -1) pShapes->Set_Index(sort_field, TABLE_INDEX_Ascending);
+
 	//-----------------------------------------------------
 	bool	bFat;
 
@@ -309,7 +316,7 @@ bool CShapes2Grid::On_Execute(void)
 		m_pGrid->Set_NoData_Value(0.);
 	}
 
-	m_pGrid->Set_Name(CSG_String::Format("%s [%s]", pShapes->Get_Name(), Field < 0 ? _TL("ID") : pShapes->Get_Field_Name(Field)));
+	m_pGrid->Fmt_Name("%s [%s]", pShapes->Get_Name(), Field < 0 ? _TL("ID") : pShapes->Get_Field_Name(Field));
 	m_pGrid->Assign_NoData();
 
 	//-------------------------------------------------
@@ -324,14 +331,14 @@ bool CShapes2Grid::On_Execute(void)
 		m_pCount	= &Count;
 	}
 
-	m_pCount->Set_Name(CSG_String::Format("%s [%s]", pShapes->Get_Name(), _TL("Count")));
+	m_pCount->Fmt_Name("%s [%s]", pShapes->Get_Name(), _TL("Count"));
 	m_pCount->Set_NoData_Value(0.);
 	m_pCount->Assign(0.);
 
 	//-----------------------------------------------------
 	for(int i=0; i<pShapes->Get_Count() && Set_Progress(i, pShapes->Get_Count()); i++)
 	{
-		CSG_Shape	*pShape	= pShapes->Get_Shape(i);
+        CSG_Shape	*pShape	= sort_field>-1?pShapes->Get_Shape_byIndex(i):pShapes->Get_Shape(i);
 
 		if( pShapes->Get_Selection_Count() <= 0 || pShape->is_Selected() )
 		{
@@ -395,28 +402,28 @@ inline void CShapes2Grid::Set_Value(int x, int y, double Value)
 		}
 		else switch( m_Multiple )
 		{
-		case 0:	// first
+		default:	// first
 			break;
 
-		case 1:	// last
+		case  1:	// last
 			m_pGrid->Set_Value(x, y, Value);
 			break;
 
-		case 2:	// minimum
+		case  2:	// minimum
 			if( m_pGrid->asDouble(x, y) > Value )
 			{
 				m_pGrid->Set_Value(x, y, Value);
 			}
 			break;
 
-		case 3:	// maximum
+		case  3:	// maximum
 			if( m_pGrid->asDouble(x, y) < Value )
 			{
 				m_pGrid->Set_Value(x, y, Value);
 			}
 			break;
 
-		case 4:	// mean
+		case  4:	// mean
 			m_pGrid->Add_Value(x, y, Value);
 			break;
 		}
@@ -457,27 +464,32 @@ void CShapes2Grid::Set_Line(CSG_Shape *pShape, bool bFat, double Value)
 {
 	for(int iPart=0; iPart<pShape->Get_Part_Count(); iPart++)
 	{
+		if( !((CSG_Shape_Line *)pShape)->Get_Part(iPart)->Get_Extent().Intersects(m_pGrid->Get_Extent()) )
+		{
+			continue;
+		}
+
 		int	iPoint	= pShape->Get_Type() == SHAPE_TYPE_Polygon ? 0 : 1;
 
-		TSG_Point	a, b	= pShape->Get_Point(0, iPart, iPoint != 0);
+		TSG_Point	A	= pShape->Get_Point(0, iPart, iPoint != 0);
 
-		b.x	= X_WORLD_TO_GRID(b.x);
-		b.y	= Y_WORLD_TO_GRID(b.y);
+		A.x	= X_WORLD_TO_GRID(A.x);
+		A.y	= Y_WORLD_TO_GRID(A.y);
 
 		for( ; iPoint<pShape->Get_Point_Count(iPart); iPoint++)
 		{
-			a	= b;	b	= pShape->Get_Point(iPoint, iPart);
+			TSG_Point B = A; A = pShape->Get_Point(iPoint, iPart);
 
-			b.x	= X_WORLD_TO_GRID(b.x);
-			b.y	= Y_WORLD_TO_GRID(b.y);
+			A.x	= X_WORLD_TO_GRID(A.x);
+			A.y	= Y_WORLD_TO_GRID(A.y);
 
 			if( bFat )
 			{
-				Set_Line_Fat(a, b, Value);
+				Set_Line_Fat(A, B, Value);
 			}
 			else
 			{
-				Set_Line_Thin(a, b, Value);
+				Set_Line_Thin(A, B, Value);
 			}
 		}
 	}
@@ -760,7 +772,7 @@ CPolygons2Grid::CPolygons2Grid(void)
 	Parameters.Add_Choice("",
 		"OUTPUT"	, _TL("Output Values"),
 		_TL(""),
-		CSG_String::Format("%s|%s|",
+		CSG_String::Format("%s|%s",
 			_TL("index number"),
 			_TL("attribute")
 		), 2
@@ -768,8 +780,8 @@ CPolygons2Grid::CPolygons2Grid(void)
 
 	Parameters.Add_Choice("",
 		"MULTIPLE"	, _TL("Multiple Polygons"),
-		_TL("Output value for cells that intersect wiht more than one polygon."),
-		CSG_String::Format("%s|%s|%s|",
+		_TL("Output value for cells that intersect with more than one polygon."),
+		CSG_String::Format("%s|%s|%s",
 			_TL("minimum coverage"),
 			_TL("maximum coverage"),
 			_TL("average proportional to area coverage")
@@ -779,7 +791,7 @@ CPolygons2Grid::CPolygons2Grid(void)
 	Parameters.Add_Choice("",
 		"GRID_TYPE"	, _TL("Data Type"),
 		_TL(""),
-		CSG_String::Format("%s|%s|%s|%s|%s|%s|%s|%s|%s|%s|",
+		CSG_String::Format("%s|%s|%s|%s|%s|%s|%s|%s|%s|%s",
 			_TL("1 bit"),
 			_TL("1 byte unsigned integer"),
 			_TL("1 byte signed integer"),
@@ -808,7 +820,7 @@ CPolygons2Grid::CPolygons2Grid(void)
 //---------------------------------------------------------
 int CPolygons2Grid::On_Parameter_Changed(CSG_Parameters *pParameters, CSG_Parameter *pParameter)
 {
-	if(	!SG_STR_CMP(pParameter->Get_Identifier(), "POLYGONS") )
+	if(	pParameter->Cmp_Identifier("POLYGONS") )
 	{
 		m_Grid_Target.Set_User_Defined(pParameters, pParameter->asShapes());
 	}
@@ -821,7 +833,7 @@ int CPolygons2Grid::On_Parameter_Changed(CSG_Parameters *pParameters, CSG_Parame
 //---------------------------------------------------------
 int CPolygons2Grid::On_Parameters_Enable(CSG_Parameters *pParameters, CSG_Parameter *pParameter)
 {
-	if(	!SG_STR_CMP(pParameter->Get_Identifier(), "OUTPUT") )
+	if(	pParameter->Cmp_Identifier("OUTPUT") )
 	{
 		pParameters->Set_Enabled("FIELD"    , pParameter->asInt() == 1);
 		pParameters->Set_Enabled("GRID_TYPE", pParameter->asInt() == 1);
@@ -916,7 +928,7 @@ bool CPolygons2Grid::On_Execute(void)
 		m_pGrid->Set_NoData_Value(0.);
 	}
 
-	m_pGrid->Set_Name(CSG_String::Format("%s [%s]", pPolygons->Get_Name(), Field < 0 ? _TL("ID") : pPolygons->Get_Field_Name(Field)));
+	m_pGrid->Fmt_Name("%s [%s]", pPolygons->Get_Name(), Field < 0 ? _TL("ID") : pPolygons->Get_Field_Name(Field));
 	m_pGrid->Assign_NoData();
 
 	//-------------------------------------------------
@@ -931,7 +943,7 @@ bool CPolygons2Grid::On_Execute(void)
 		m_pCoverage	= &Coverage;
 	}
 
-	m_pCoverage->Set_Name(CSG_String::Format("%s [%s]", pPolygons->Get_Name(), _TL("Coverage")));
+	m_pCoverage->Fmt_Name("%s [%s]", pPolygons->Get_Name(), _TL("Coverage"));
 	m_pCoverage->Set_NoData_Value(0.);
 	m_pCoverage->Assign(0.);
 
@@ -991,7 +1003,7 @@ inline void CPolygons2Grid::Set_Value(int x, int y, double Value, double Coverag
 		else switch( m_Multiple )
 		{
 		case  0:	// minimum
-			if( m_pCoverage->asDouble(x, y) > Value )
+			if( m_pCoverage->asDouble(x, y) > Coverage )
 			{
 				m_pGrid    ->Set_Value(x, y, Value   );
 				m_pCoverage->Set_Value(x, y, Coverage);
@@ -999,7 +1011,7 @@ inline void CPolygons2Grid::Set_Value(int x, int y, double Value, double Coverag
 			break;
 
 		default:	// maximum
-			if( m_pCoverage->asDouble(x, y) < Value )
+			if( m_pCoverage->asDouble(x, y) < Coverage )
 			{
 				m_pGrid    ->Set_Value(x, y, Value   );
 				m_pCoverage->Set_Value(x, y, Coverage);
@@ -1007,8 +1019,10 @@ inline void CPolygons2Grid::Set_Value(int x, int y, double Value, double Coverag
 			break;
 
 		case  2:	// average
-			m_pGrid    ->Add_Value(x, y, Coverage * Value);
-			m_pCoverage->Add_Value(x, y, Coverage);
+			{
+				m_pGrid    ->Add_Value(x, y, Coverage * Value);
+				m_pCoverage->Add_Value(x, y, Coverage);
+			}
 			break;
 		}
 	}

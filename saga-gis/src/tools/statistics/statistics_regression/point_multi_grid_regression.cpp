@@ -225,17 +225,17 @@ CPoint_Multi_Grid_Regression::CPoint_Multi_Grid_Regression(void)
 //---------------------------------------------------------
 int CPoint_Multi_Grid_Regression::On_Parameters_Enable(CSG_Parameters *pParameters, CSG_Parameter *pParameter)
 {
-	if(	!SG_STR_CMP(pParameter->Get_Identifier(), "CROSSVAL") )
+	if(	pParameter->Cmp_Identifier("CROSSVAL") )
 	{
 		pParameters->Set_Enabled("CROSSVAL_K", pParameter->asInt() == 3);	// k-fold
 	}
 
-	if(	!SG_STR_CMP(pParameter->Get_Identifier(), "METHOD") )
+	if(	pParameter->Cmp_Identifier("METHOD") )
 	{
 		pParameters->Set_Enabled("P_VALUE", pParameter->asInt() > 0);
 	}
 
-	if(	!SG_STR_CMP(pParameter->Get_Identifier(), "REGRESCORR") )
+	if(	pParameter->Cmp_Identifier("REGRESCORR") )
 	{
 		pParameters->Set_Enabled("RESIDUAL_COR", pParameter->asPointer() != NULL);
 	}
@@ -307,12 +307,12 @@ bool CPoint_Multi_Grid_Regression::On_Execute(void)
 
 	if( CrossVal > 0 && m_Regression.Get_CrossValidation(CrossVal) )
 	{
-		Message_Add(CSG_String::Format("\n%s:\n"      , _TL("Cross Validation")), false);
-		Message_Add(CSG_String::Format("\t%s:\t%s\n"  , _TL("Type"   ), Parameters("CROSSVAL")->asString() ), false);
-		Message_Add(CSG_String::Format("\t%s:\t%d\n"  , _TL("Samples"), m_Regression.Get_CV_nSamples()     ), false);
-		Message_Add(CSG_String::Format("\t%s:\t%f\n"  , _TL("RMSE"   ), m_Regression.Get_CV_RMSE()         ), false);
-		Message_Add(CSG_String::Format("\t%s:\t%.2f\n", _TL("NRMSE"  ), m_Regression.Get_CV_NRMSE() * 100.0), false);
-		Message_Add(CSG_String::Format("\t%s:\t%.2f\n", _TL("R2"     ), m_Regression.Get_CV_R2()    * 100.0), false);
+		Message_Fmt("\n%s:", _TL("Cross Validation"));
+		Message_Fmt("\n\t%s:\t%s"  , _TL("Type"   ), Parameters("CROSSVAL")->asString() );
+		Message_Fmt("\n\t%s:\t%d"  , _TL("Samples"), m_Regression.Get_CV_nSamples()     );
+		Message_Fmt("\n\t%s:\t%f"  , _TL("RMSE"   ), m_Regression.Get_CV_RMSE()         );
+		Message_Fmt("\n\t%s:\t%.2f", _TL("NRMSE"  ), m_Regression.Get_CV_NRMSE() * 100.0);
+		Message_Fmt("\n\t%s:\t%.2f", _TL("R2"     ), m_Regression.Get_CV_R2()    * 100.0);
 	}
 
 	//-----------------------------------------------------
@@ -660,7 +660,7 @@ bool CPoint_Multi_Grid_Regression::Set_Residual_Corr(CSG_Grid *pRegression, CSG_
 		}
 	}
 
-	pCorrection->Set_Name(CSG_String::Format("%s.%s [%s]", Parameters("POINTS")->asShapes()->Get_Name(), Parameters("ATTRIBUTE")->asString(), _TL("Residual Corrected Regression")));
+	pCorrection->Fmt_Name("%s.%s [%s]", Parameters("POINTS")->asShapes()->Get_Name(), Parameters("ATTRIBUTE")->asString(), _TL("Residual Corrected Regression"));
 
 	//-----------------------------------------------------
 	return( true );

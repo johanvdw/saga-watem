@@ -202,7 +202,7 @@ CHillShade::CHillShade(void)
 //---------------------------------------------------------
 int CHillShade::On_Parameters_Enable(CSG_Parameters *pParameters, CSG_Parameter *pParameter)
 {
-	if(	!SG_STR_CMP(pParameter->Get_Identifier(), "METHOD") )
+	if(	pParameter->Cmp_Identifier("METHOD") )
 	{
 		pParameters->Set_Enabled("POSITION"    , pParameter->asInt() != 4);
 		pParameters->Set_Enabled("EXAGGERATION", pParameter->asInt() != 4 && pParameter->asInt() != 3);
@@ -212,7 +212,7 @@ int CHillShade::On_Parameters_Enable(CSG_Parameters *pParameters, CSG_Parameter 
 		pParameters->Set_Enabled("RADIUS"      , pParameter->asInt() == 4);
 	}
 
-	if(	!SG_STR_CMP(pParameter->Get_Identifier(), "POSITION") )
+	if(	pParameter->Cmp_Identifier("POSITION") )
 	{
 		pParameters->Set_Enabled("AZIMUTH"     , pParameter->asInt() == 0);
 		pParameters->Set_Enabled("DECLINATION" , pParameter->asInt() == 0);
@@ -321,11 +321,10 @@ bool CHillShade::Get_Position(double &Azimuth, double &Decline)
 
 		SG_Get_Sun_Position(Date, 0.0, Center.y * M_DEG_TO_RAD, Decline, Azimuth);
 
-		Message_Add(CSG_String::Format("\n%s: %f", _TL("Longitude"), Center.x), false);
-		Message_Add(CSG_String::Format("\n%s: %f", _TL("Latitude" ), Center.y), false);
-
-		Message_Add(CSG_String::Format("\n%s: %f", _TL("Azimuth"  ), Azimuth * M_RAD_TO_DEG), false);
-		Message_Add(CSG_String::Format("\n%s: %f", _TL("Height"   ), Decline * M_RAD_TO_DEG), false);
+		Message_Fmt("\n%s: %f", _TL("Longitude"), Center.x);
+		Message_Fmt("\n%s: %f", _TL("Latitude" ), Center.y);
+		Message_Fmt("\n%s: %f", _TL("Azimuth"  ), Azimuth * M_RAD_TO_DEG);
+		Message_Fmt("\n%s: %f", _TL("Height"   ), Decline * M_RAD_TO_DEG);
 	}
 
 	return( Decline >= 0.0 );

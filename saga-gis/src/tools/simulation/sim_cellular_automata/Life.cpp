@@ -156,7 +156,7 @@ bool CLife::On_Execute(void)
 
 	for(i=1; Process_Get_Okay(true) && Next_Cycle(i > m_nColors); i++)
 	{
-		Process_Set_Text(CSG_String::Format("%s: %d", _TL("Life Cycle"), i));
+		Process_Set_Text("%s: %d", _TL("Life Cycle"), i);
 
 		DataObject_Update(m_pLife, 0, m_nColors);
 	}
@@ -166,7 +166,7 @@ bool CLife::On_Execute(void)
 	//-----------------------------------------------------
 	if( is_Progress() )
 	{
-		Message_Add(CSG_String::Format("\n%s %d %s\n", _TL("Dead after"), i, _TL("Life Cycles")), false);
+		Message_Fmt("\n%s %d %s\n", _TL("Dead after"), i, _TL("Life Cycles"));
 	}
 
 	return( true );

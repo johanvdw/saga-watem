@@ -117,8 +117,8 @@ bool COpenCV_SVD::On_Execute(void)
 
 	pInput	= Parameters("INPUT")	->asGrid();
 	pOutput	= Parameters("OUTPUT")	->asGrid();
-	sMin	= (int)(Parameters("RANGE")	->asRange()->Get_LoVal() * n);
-	sMax	= (int)(Parameters("RANGE")	->asRange()->Get_HiVal() * n);
+	sMin	= (int)(Parameters("RANGE")	->asRange()->Get_Min() * n);
+	sMax	= (int)(Parameters("RANGE")	->asRange()->Get_Max() * n);
 
 	//-----------------------------------------------------
 	IplImage	*cv_pInput	= Get_CVImage(pInput, SG_DATATYPE_Double);
@@ -166,7 +166,7 @@ bool COpenCV_SVD::On_Execute(void)
     cvReleaseImage(&cv_pInput);
     cvReleaseImage(&cv_pOutput);
 
-	pOutput->Set_Name(CSG_String::Format(SG_T("%s [%s]"), pInput->Get_Name(), Get_Name().c_str()));
+	pOutput->Fmt_Name("%s [%s]", pInput->Get_Name(), Get_Name().c_str());
 
 	return( true );
 }

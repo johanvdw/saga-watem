@@ -129,7 +129,7 @@ CTable_Aggregate_by_Field::CTable_Aggregate_by_Field(void)
 //---------------------------------------------------------
 int CTable_Aggregate_by_Field::On_Parameters_Enable(CSG_Parameters *pParameters, CSG_Parameter *pParameter)
 {
-	if(	!SG_STR_CMP(pParameter->Get_Identifier(), "STATISTICS") )
+	if(	pParameter->Cmp_Identifier("STATISTICS") )
 	{
 		pParameters->Set_Enabled("STAT_SUM", pParameter->asInt() > 0);
 		pParameters->Set_Enabled("STAT_AVG", pParameter->asInt() > 0);
@@ -222,7 +222,7 @@ bool CTable_Aggregate_by_Field::On_Execute(void)
 		);
 	}
 
-	pAggregated->Set_Name(CSG_String::Format("%s [%s: %s]", pTable->Get_Name(), _TL("Aggregated"), Name.c_str()));
+	pAggregated->Fmt_Name("%s [%s: %s]", pTable->Get_Name(), _TL("Aggregated"), Name.c_str());
 
 	//-----------------------------------------------------
 	Statistics_Initialize(pAggregated, pTable);

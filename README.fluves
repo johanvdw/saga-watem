@@ -1,0 +1,54 @@
+Builden saga:
+
+Onder windows met Visual Studio 2015 of recenter.
+
+
+Onder linux:
+apt-get build-dep saga
+apt-get devscripts
+
+fakeroot debian/rules binary
+
+--
+Op schelde staat een vagrant instance die gebruikt kan worden:
+cd /home/johan/nashome/armbian/build
+vagrant up # start een bionic vm (origineel voor iets anders)
+vagrant ssh #log in op de bionic machine
+## in ubuntu:
+cd saga-watem
+git pull
+# dch -r
+fakeroot debian/rules binary
+
+exit
+vagrant halt
+
+
+---
+
+# repo opzetten
+
+Momenteel gehost op percy.gisky.be
+
+volgens userguide op https://help.ubuntu.com/community/CreateAuthenticatedRepository
+
+
+# copy deb to /var/www/html/repo-saga-cnws/amd64
+
+apt-ftparchive packages amd64 > Packages
+gzip -c Packages > Packages.gz
+apt-ftparchive release . > Release
+
+scp percy:/var/www/html/repo-saga-cnws/Release .
+gpg --clearsign -o InRelease Release
+gpg -abs -o Release.gpg Release
+scp  Release.gpg InRelease percy:/var/www/html/repo-saga-cnws/
+
+# Gebruik in ubuntu bionic:
+
+wget -q -O - https://gisky.be/repo-saga-cnws/A33358C5.pub | apt-key add -
+echo "deb https://gisky.be/repo-saga-cnws/ /">>/etc/apt/sources.list
+apt update
+apt install saga
+
+

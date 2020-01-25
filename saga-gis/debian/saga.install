@@ -1,0 +1,7 @@
+usr/bin
+usr/lib/*/saga/*.so
+usr/share/man/man1
+usr/share/applications
+usr/share/icons
+usr/share/metainfo
+usr/share/pixmaps

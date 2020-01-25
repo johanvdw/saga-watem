@@ -79,45 +79,45 @@ CSG_Grid_System Fit_Extent(const CSG_Grid_System &System, const CSG_Rect &Extent
 		System.Fit_yto_Grid_System(Extent.Get_YMax())
 	);
 
-	r.Intersect(System.Get_Extent(true));
+	r.Intersect(System.Get_Extent());
 
 	return( CSG_Grid_System(System.Get_Cellsize(), r) );
 }
 
 //---------------------------------------------------------
-void Fit_Extent(CSG_Parameters *pParameters, CSG_Parameter *pParameter, CSG_Grid_System *pSystem)
+void Fit_Extent(CSG_Parameters *pParameters, CSG_Parameter *pParameter, const CSG_Grid_System &_System)
 {
-	if( pSystem && pSystem->is_Valid() )
+	if( _System.is_Valid() )
 	{
-		CSG_Grid_System	System(Fit_Extent(*pSystem, CSG_Rect(
-			pParameters->Get_Parameter("XMIN")->asDouble(),
-			pParameters->Get_Parameter("YMIN")->asDouble(),
-			pParameters->Get_Parameter("XMAX")->asDouble(),
-			pParameters->Get_Parameter("YMAX")->asDouble()
+		CSG_Grid_System	System(Fit_Extent(_System, CSG_Rect(
+			(*pParameters)("XMIN")->asDouble(),
+			(*pParameters)("YMIN")->asDouble(),
+			(*pParameters)("XMAX")->asDouble(),
+			(*pParameters)("YMAX")->asDouble()
 		)));
 
-		if( !SG_STR_CMP(pParameter->Get_Identifier(), "NX") )
+		if( pParameter->Cmp_Identifier("NX") )
 		{
 			System.Assign(System.Get_Cellsize(), System.Get_XMin(), System.Get_YMin(),
-				pParameters->Get_Parameter("NX")->asInt(), System.Get_NY()
+				(*pParameters)("NX")->asInt(), System.Get_NY()
 			);
 		}
 
-		if( !SG_STR_CMP(pParameter->Get_Identifier(), "NY") )
+		if( pParameter->Cmp_Identifier("NY") )
 		{
 			System.Assign(System.Get_Cellsize(), System.Get_XMin(), System.Get_YMin(),
-				System.Get_NX(), pParameters->Get_Parameter("NY")->asInt()
+				System.Get_NX(), (*pParameters)("NY")->asInt()
 			);
 		}
 
 		if( System.is_Valid() )
 		{
-			pParameters->Get_Parameter("XMIN")->Set_Value(System.Get_XMin());
-			pParameters->Get_Parameter("XMAX")->Set_Value(System.Get_XMax());
-			pParameters->Get_Parameter("YMIN")->Set_Value(System.Get_YMin());
-			pParameters->Get_Parameter("YMAX")->Set_Value(System.Get_YMax());
-			pParameters->Get_Parameter("NX"  )->Set_Value(System.Get_NX  ());
-			pParameters->Get_Parameter("NY"  )->Set_Value(System.Get_NY  ());
+			(*pParameters)("XMIN")->Set_Value(System.Get_XMin());
+			(*pParameters)("XMAX")->Set_Value(System.Get_XMax());
+			(*pParameters)("YMIN")->Set_Value(System.Get_YMin());
+			(*pParameters)("YMAX")->Set_Value(System.Get_YMax());
+			(*pParameters)("NX"  )->Set_Value(System.Get_NX  ());
+			(*pParameters)("NY"  )->Set_Value(System.Get_NY  ());
 		}
 	}
 }
@@ -179,7 +179,7 @@ CGrid_Clip_Interactive::CGrid_Clip_Interactive(void)
 //---------------------------------------------------------
 int CGrid_Clip_Interactive::On_Parameter_Changed(CSG_Parameters *pParameters, CSG_Parameter *pParameter)
 {
-	if( is_Executing() && !SG_STR_CMP(pParameters->Get_Identifier(), "EXTENT") )
+	if( is_Executing() && pParameters->Cmp_Identifier("EXTENT") )
 	{
 		Fit_Extent(pParameters, pParameter, Get_System());
 	}
@@ -229,19 +229,19 @@ bool CGrid_Clip_Interactive::On_Execute_Position(CSG_Point ptWorld, TSG_Tool_Int
 			m_bDown		= false;
 			ptWorld		= ptWorld;
 
-			CSG_Grid_System	System	= Fit_Extent(*Get_System(), CSG_Rect(
+			CSG_Grid_System	System	= Fit_Extent(Get_System(), CSG_Rect(
 				m_ptDown.Get_X(), m_ptDown.Get_Y(), ptWorld.Get_X(), ptWorld.Get_Y()
 			));
 
 			CSG_Parameters	*pParameters	= Get_Parameters("EXTENT");
 
 			pParameters->Set_Callback(false);
-			pParameters->Get("XMIN")->Set_Value(System.Get_XMin());
-			pParameters->Get("XMAX")->Set_Value(System.Get_XMax());
-			pParameters->Get("YMIN")->Set_Value(System.Get_YMin());
-			pParameters->Get("YMAX")->Set_Value(System.Get_YMax());
-			pParameters->Get("NX"  )->Set_Value(System.Get_NX  ());
-			pParameters->Get("NY"  )->Set_Value(System.Get_NY  ());
+			(*pParameters)("XMIN")->Set_Value(System.Get_XMin());
+			(*pParameters)("XMAX")->Set_Value(System.Get_XMax());
+			(*pParameters)("YMIN")->Set_Value(System.Get_YMin());
+			(*pParameters)("YMAX")->Set_Value(System.Get_YMax());
+			(*pParameters)("NX"  )->Set_Value(System.Get_NX  ());
+			(*pParameters)("NY"  )->Set_Value(System.Get_NY  ());
 			pParameters->Set_Callback(true);
 
 			if( !Dlg_Parameters(pParameters, _TL("Clip to Extent")) )
@@ -249,11 +249,11 @@ bool CGrid_Clip_Interactive::On_Execute_Position(CSG_Point ptWorld, TSG_Tool_Int
 				return( false );
 			}
 
-			System	= Fit_Extent(*Get_System(), CSG_Rect(
-				pParameters->Get("XMIN")->asDouble(),
-				pParameters->Get("YMIN")->asDouble(),
-				pParameters->Get("XMAX")->asDouble(),
-				pParameters->Get("YMAX")->asDouble()
+			System	= Fit_Extent(Get_System(), CSG_Rect(
+				(*pParameters)("XMIN")->asDouble(),
+				(*pParameters)("YMIN")->asDouble(),
+				(*pParameters)("XMAX")->asDouble(),
+				(*pParameters)("YMAX")->asDouble()
 			));
 
 			if( !System.is_Valid() )
@@ -362,7 +362,7 @@ CGrid_Clip::CGrid_Clip(void)
 	Parameters.Add_Choice("",
 		"EXTENT"	, _TL("Extent"),
 		_TL(""),
-		CSG_String::Format("%s|%s|%s|%s|",
+		CSG_String::Format("%s|%s|%s|%s",
 			_TL("user defined"),
 			_TL("grid system"),
 			_TL("shapes extent"),
@@ -382,9 +382,15 @@ CGrid_Clip::CGrid_Clip(void)
 	);
 
 	Parameters.Add_Shapes("EXTENT",
-		"POLYGONS"	, _TL("Polygon"),
+		"POLYGONS"	, _TL("Polygons"),
 		_TL(""),
 		PARAMETER_INPUT, SHAPE_TYPE_Polygon
+	);
+
+	Parameters.Add_Bool("POLYGONS",
+		"INTERIOR"	, _TL("Interior"),
+		_TL("Clip those cells that are covered by the polygons instead of those that are not."),
+		false
 	);
 
 	Parameters.Add_Double("EXTENT", "XMIN", _TL("Left"   ), _TL(""));
@@ -409,17 +415,17 @@ CGrid_Clip::CGrid_Clip(void)
 //---------------------------------------------------------
 int CGrid_Clip::On_Parameter_Changed(CSG_Parameters *pParameters, CSG_Parameter *pParameter)
 {
-	CSG_Grid_System	*pSystem	= pParameters->Get_Parameter("PARAMETERS_GRID_SYSTEM")->asGrid_System();
+	CSG_Grid_System	*pSystem	= pParameters->Get_Grid_System();
 
-	if( !SG_STR_CMP(pParameter->Get_Identifier(), "PARAMETERS_GRID_SYSTEM") && pSystem && pSystem->is_Valid() )
+	if( pParameter->asGrid_System() == pSystem && pSystem && pSystem->is_Valid() )
 	{
-		pParameters->Get("XMIN")->Set_Value(pSystem->Get_XMin());
-		pParameters->Get("XMAX")->Set_Value(pSystem->Get_XMax());
-		pParameters->Get("YMIN")->Set_Value(pSystem->Get_YMin());
-		pParameters->Get("YMAX")->Set_Value(pSystem->Get_YMax());
+		pParameters->Set_Parameter("XMIN", pSystem->Get_XMin());
+		pParameters->Set_Parameter("XMAX", pSystem->Get_XMax());
+		pParameters->Set_Parameter("YMIN", pSystem->Get_YMin());
+		pParameters->Set_Parameter("YMAX", pSystem->Get_YMax());
 	}
 
-	Fit_Extent(pParameters, pParameter, pSystem);
+	Fit_Extent(pParameters, pParameter, *pSystem);
 
 	return( CSG_Tool_Grid::On_Parameter_Changed(pParameters, pParameter) );
 }
@@ -427,7 +433,7 @@ int CGrid_Clip::On_Parameter_Changed(CSG_Parameters *pParameters, CSG_Parameter 
 //---------------------------------------------------------
 int CGrid_Clip::On_Parameters_Enable(CSG_Parameters *pParameters, CSG_Parameter *pParameter)
 {
-	if( !SG_STR_CMP(pParameter->Get_Identifier(), "EXTENT") )
+	if( pParameter->Cmp_Identifier("EXTENT") )
 	{
 		pParameters->Set_Enabled("XMIN"      , pParameter->asInt() == 0);
 		pParameters->Set_Enabled("XMAX"      , pParameter->asInt() == 0);
@@ -469,11 +475,14 @@ bool CGrid_Clip::On_Execute(void)
 		break;
 
 	case 2:	// shapes extent
-		Extent.Assign(Parameters("SHAPES"  )->asShapes()->Get_Extent());
+		Extent.Assign(Parameters("SHAPES")->asShapes()->Get_Extent());
 		break;
 
 	case 3:	// polygon
-		Extent.Assign(Parameters("POLYGONS")->asShapes()->Get_Extent());
+		Extent.Assign(Parameters("INTERIOR")->asBool()
+			? Get_System().Get_Extent()
+			: Parameters("POLYGONS")->asShapes()->Get_Extent()
+		);
 		break;
 	}
 
@@ -483,7 +492,7 @@ bool CGrid_Clip::On_Execute(void)
 	}
 
 	//--------------------------------------------------------
-	CSG_Grid_System	System	= Fit_Extent(*Get_System(), Extent);
+	CSG_Grid_System	System	= Fit_Extent(Get_System(), Extent);
 
 	if( !System.is_Valid() )
 	{
@@ -517,7 +526,12 @@ bool CGrid_Clip::On_Execute(void)
 			{
 				CSG_Grid	*pGrid	= (CSG_Grid  *)pObject;
 
-				pClip	= SG_Create_Grid(System, pGrid->Get_Type());
+				if( !(pClip = SG_Create_Grid(System, pGrid->Get_Type())) )
+				{
+					Error_Set(_TL("failed to allocate memory"));
+
+					return( false );
+				}
 
 				((CSG_Grid  *)pClip)->Set_Unit   (pGrid ->Get_Unit());
 				((CSG_Grid  *)pClip)->Set_Scaling(pGrid ->Get_Scaling(), pGrid ->Get_Offset());
@@ -532,7 +546,12 @@ bool CGrid_Clip::On_Execute(void)
 			{
 				CSG_Grids	*pGrids	= (CSG_Grids *)pObject;
 
-				pClip	= SG_Create_Grids(System, pGrids->Get_Attributes(), pGrids->Get_Z_Attribute(), pGrids->Get_Type(), true);
+				if( !(pClip = SG_Create_Grids(System, pGrids->Get_Attributes(), pGrids->Get_Z_Attribute(), pGrids->Get_Type(), true)) )
+				{
+					Error_Set(_TL("failed to allocate memory"));
+
+					return( false );
+				}
 
 				((CSG_Grids *)pClip)->Set_Unit   (pGrids->Get_Unit());
 				((CSG_Grids *)pClip)->Set_Scaling(pGrids->Get_Scaling(), pGrids->Get_Offset());
@@ -604,6 +623,13 @@ bool CGrid_Clip::Get_Mask(CSG_Grid &Mask, CSG_Grid_System &System, CSG_Shapes *p
 
 	Mask.Set_NoData_Value(0);
 
+	bool	bInterior	= Parameters("INTERIOR")->asBool();
+
+	if( bInterior )
+	{
+		Mask.Assign(1.);
+	}
+
 	//-----------------------------------------------------
 	for(int i=0; i<pPolygons->Get_Count() && Set_Progress(i, pPolygons->Get_Count()); i++)
 	{
@@ -648,10 +674,15 @@ bool CGrid_Clip::Get_Mask(CSG_Grid &Mask, CSG_Grid_System &System, CSG_Shapes *p
 						{
 							SG_Get_Crossing(C, A, B, Row[0], Row[1], false);
 
-							int x	= System.Get_xWorld_to_Grid(C.x);	if( x < 0 )	x	= 0;
+							int	x	= (int)floor(1. + (C.x - System.Get_XMin()) / System.Get_Cellsize());
 
-							if( x >= 0 && x < System.Get_NX() )
+							if( x < System.Get_NX() )
 							{
+								if( x < 0 )
+								{
+									x	= 0;
+								}
+
 								nCrossings[x]	= nCrossings[x] ? 0 : 1;
 							}
 						}
@@ -668,7 +699,7 @@ bool CGrid_Clip::Get_Mask(CSG_Grid &Mask, CSG_Grid_System &System, CSG_Shapes *p
 
 					if( Fill )
 					{
-						Mask.Set_Value(x, y, 1);
+						Mask.Set_Value(x, y, bInterior ? 0 : 1);
 					}
 				}
 

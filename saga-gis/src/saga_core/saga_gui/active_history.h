@@ -1,6 +1,3 @@
-/**********************************************************
- * Version $Id$
- *********************************************************/
 
 ///////////////////////////////////////////////////////////
 //                                                       //
@@ -51,15 +48,6 @@
 ///////////////////////////////////////////////////////////
 
 //---------------------------------------------------------
-
-
-///////////////////////////////////////////////////////////
-//														 //
-//														 //
-//														 //
-///////////////////////////////////////////////////////////
-
-//---------------------------------------------------------
 #ifndef _HEADER_INCLUDED__SAGA_GUI__ACTIVE_History_H
 #define _HEADER_INCLUDED__SAGA_GUI__ACTIVE_History_H
 
@@ -81,19 +69,19 @@
 ///////////////////////////////////////////////////////////
 
 //---------------------------------------------------------
-class CACTIVE_History : public wxTreeCtrl
+class CActive_History : public wxTreeCtrl
 {
-	DECLARE_CLASS(CACTIVE_History)
+	DECLARE_CLASS(CActive_History)
 
 public:
-	CACTIVE_History(wxWindow *pParent);
+	CActive_History(wxWindow *pParent);
 
-	bool					Set_Item				(class CWKSP_Base_Item *pItem);
+	bool					Set_Item				(class CWKSP_Data_Item *pItem);
 
 
 private:
 
-	class CWKSP_Base_Item	*m_pItem;
+	class CWKSP_Data_Item	*m_pItem;
 
 
 	void					On_Mouse_RDown			(wxMouseEvent   &event);
@@ -113,8 +101,8 @@ private:
 	bool					_Add_History_OLD		(wxTreeItemId Parent, CSG_MetaData &History);
 
 
-//---------------------------------------------------------
-DECLARE_EVENT_TABLE()
+	DECLARE_EVENT_TABLE()
+
 };
 
 

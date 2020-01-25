@@ -146,7 +146,7 @@ CKriging_Base::CKriging_Base(void)
 
 	Parameters.Add_Double("BLOCK",
 		"DBLOCK"	, _TL("Block Size"),
-		_TL(""),
+		_TL("Edge length [map units]"),
 		100.0, 0.0, true
 	);
 
@@ -218,7 +218,7 @@ CKriging_Base::~CKriging_Base(void)
 //---------------------------------------------------------
 int CKriging_Base::On_Parameter_Changed(CSG_Parameters *pParameters, CSG_Parameter *pParameter)
 {
-	if( !SG_STR_CMP(pParameter->Get_Identifier(), "POINTS") )
+	if( pParameter->Cmp_Identifier("POINTS") )
 	{
 		m_Search.On_Parameter_Changed(pParameters, pParameter);
 
@@ -233,12 +233,12 @@ int CKriging_Base::On_Parameter_Changed(CSG_Parameters *pParameters, CSG_Paramet
 //---------------------------------------------------------
 int CKriging_Base::On_Parameters_Enable(CSG_Parameters *pParameters, CSG_Parameter *pParameter)
 {
-	if(	!SG_STR_CMP(pParameter->Get_Identifier(), "BLOCK") )
+	if(	pParameter->Cmp_Identifier("BLOCK") )
 	{
 		pParameters->Set_Enabled("DBLOCK"      , pParameter->asBool());	// block size
 	}
 
-	if(	!SG_STR_CMP(pParameter->Get_Identifier(), "CV_METHOD") )
+	if(	pParameter->Cmp_Identifier("CV_METHOD") )
 	{
 		pParameters->Set_Enabled("CV_SUMMARY"  , pParameter->asInt() != 0);	// !none
 		pParameters->Set_Enabled("CV_RESIDUALS", pParameter->asInt() == 1);	// leave one out
@@ -312,7 +312,7 @@ bool CKriging_Base::On_Execute(void)
 	//-----------------------------------------------------
 	if( bResult && (bResult = _Initialise_Grids() && On_Initialize()) )
 	{
-		Message_Add(CSG_String::Format("%s: %s", _TL("Variogram Model"), m_Model.Get_Formula(SG_TREND_STRING_Formula_Parameters).c_str()), false);
+		Message_Fmt("\n%s: %s", _TL("Variogram Model"), m_Model.Get_Formula(SG_TREND_STRING_Formula_Parameters).c_str());
 
 		for(int y=0; y<m_pGrid->Get_NY() && Set_Progress(y, m_pGrid->Get_NY()); y++)
 		{
@@ -354,11 +354,11 @@ bool CKriging_Base::_Initialise_Grids(void)
 {
 	if( (m_pGrid = m_Grid_Target.Get_Grid("PREDICTION")) != NULL )
 	{
-		m_pGrid->Set_Name(CSG_String::Format("%s.%s [%s]", Parameters("POINTS")->asShapes()->Get_Name(), Parameters("FIELD")->asString(), Get_Name().c_str()));
+		m_pGrid->Fmt_Name("%s.%s [%s]", Parameters("POINTS")->asShapes()->Get_Name(), Parameters("FIELD")->asString(), Get_Name().c_str());
 
 		if( (m_pVariance = m_Grid_Target.Get_Grid("VARIANCE")) != NULL )
 		{
-			m_pVariance->Set_Name(CSG_String::Format("%s.%s [%s %s]", Parameters("POINTS")->asShapes()->Get_Name(), Parameters("FIELD")->asString(), Get_Name().c_str(), m_bStdDev ? _TL("Standard Deviation") : _TL("Variance")));
+			m_pVariance->Fmt_Name("%s.%s [%s %s]", Parameters("POINTS")->asShapes()->Get_Name(), Parameters("FIELD")->asString(), Get_Name().c_str(), m_bStdDev ? _TL("Standard Deviation") : _TL("Variance"));
 		}
 
 		return( true );

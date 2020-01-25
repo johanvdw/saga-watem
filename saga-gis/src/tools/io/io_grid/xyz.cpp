@@ -261,7 +261,7 @@ CXYZ_Import::CXYZ_Import(void)
 //---------------------------------------------------------
 int CXYZ_Import::On_Parameters_Enable(CSG_Parameters *pParameters, CSG_Parameter *pParameter)
 {
-	if( !SG_STR_CMP(pParameter->Get_Identifier(), "SEPARATOR") )
+	if( pParameter->Cmp_Identifier("SEPARATOR") )
 	{
 		pParameters->Set_Enabled("USER", pParameter->asInt() == 5);
 	}
@@ -365,7 +365,7 @@ bool CXYZ_Import::On_Execute(void)
 
 	Parameters("COUNT")->Set_Value(pCount);
 
-	pCount->Set_Name(CSG_String::Format("%s [%s]", pGrid->Get_Name(), _TL("Count")));
+	pCount->Fmt_Name("%s [%s]", pGrid->Get_Name(), _TL("Count"));
 
 	//-----------------------------------------------------
 	Stream.Seek_Start();

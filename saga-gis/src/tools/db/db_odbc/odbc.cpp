@@ -439,7 +439,7 @@ CSG_Table CSG_ODBC_Connection::Get_Field_Desc(const CSG_String &Table_Name) cons
 {
 	CSG_Table	Fields;
 
-	Fields.Set_Name(CSG_String::Format(SG_T("%s [%s]"), Table_Name.c_str(), _TL("Field Description")));
+	Fields.Fmt_Name("%s [%s]", Table_Name.c_str(), _TL("Field Description"));
 
 	if( is_Connected() )
 	{
@@ -1537,7 +1537,7 @@ bool CSG_ODBC_Tool::On_After_Execution(void)
 //---------------------------------------------------------
 int CSG_ODBC_Tool::On_Parameter_Changed(CSG_Parameters *pParameters, CSG_Parameter *pParameter)
 {
-	if( SG_UI_Get_Window_Main() && !SG_STR_CMP(pParameter->Get_Identifier(), "CONNECTION") )
+	if( SG_UI_Get_Window_Main() && pParameter->Cmp_Identifier("CONNECTION") )
 	{
 		m_pConnection	= SG_ODBC_Get_Connection_Manager().Get_Connection(pParameter->asString());
 

@@ -217,7 +217,7 @@ bool CPointCloud_Get_Grid_SPCVF_Base::Get_Subset(int iFieldToGrid)
 	{
 		if( m_iOutputs > 1 )
 		{
-			SG_UI_Process_Set_Text(CSG_String::Format(_TL("Processing AOI %d ..."), iAOI + 1));
+			SG_UI_Process_Set_Text(CSG_String::Format("%s %d...", _TL("processing AOI"), iAOI + 1));
 		}
 		else
 		{
@@ -426,16 +426,16 @@ void CPointCloud_Get_Grid_SPCVF_Base::Write_Subset(CSG_Grid *pGrid, int iAOI, in
 	{
 		if( m_iFieldName > -1 )
 		{
-			pGrid->Set_Name(CSG_String::Format(SG_T("%s%s"), sPath.c_str(), m_pShapes->Get_Record(iAOI)->asString(m_iFieldName)));
+			pGrid->Fmt_Name("%s%s", sPath.c_str(), m_pShapes->Get_Record(iAOI)->asString(m_iFieldName));
 		}
 		else
 		{
-			pGrid->Set_Name(CSG_String::Format(SG_T("%s%d_%d"), sPath.c_str(), (int)(m_AOI.Get_XMin() + m_dOverlap), (int)(m_AOI.Get_YMin() + m_dOverlap)));
+			pGrid->Fmt_Name("%s%d_%d", sPath.c_str(), (int)(m_AOI.Get_XMin() + m_dOverlap), (int)(m_AOI.Get_YMin() + m_dOverlap));
 		}
 	}
 	else
 	{
-		pGrid->Set_Name(CSG_String::Format(SG_T("%spc_subset_%s"), sPath.c_str(), SG_File_Get_Name(m_sFileName, false).c_str()));
+		pGrid->Fmt_Name("%spc_subset_%s", sPath.c_str(), SG_File_Get_Name(m_sFileName, false).c_str());
 	}
 
 	SG_UI_Msg_Add(CSG_String::Format(_TL("%.0f points from %d dataset(s) written to output grid %s."), dPoints, iDatasets, pGrid->Get_Name()), true);
@@ -650,15 +650,15 @@ bool CPointCloud_Get_Grid_SPCVF::On_Execute(void)
 	iMethod			= Parameters("METHOD")->asInt();
 	bConstrain		= Parameters("CONSTRAIN_QUERY")->asBool();
 	iField			= Parameters("ATTR_FIELD")->asInt() - 1;
-	dMinAttrRange	= Parameters("VALUE_RANGE")->asRange()->Get_LoVal();
-	dMaxAttrRange	= Parameters("VALUE_RANGE")->asRange()->Get_HiVal();
+	dMinAttrRange	= Parameters("VALUE_RANGE")->asRange()->Get_Min();
+	dMaxAttrRange	= Parameters("VALUE_RANGE")->asRange()->Get_Max();
 	pShapes			= Parameters("AOI_SHP")->asShapes();
 	iFieldName		= Parameters("FIELD_TILENAME")->asInt();
 	pAOIGrid		= Parameters("AOI_GRID")->asGrid();
-	dAoiXMin		= Parameters("AOI_XRANGE")->asRange()->Get_LoVal();
-	dAoiXMax		= Parameters("AOI_XRANGE")->asRange()->Get_HiVal();
-	dAoiYMin		= Parameters("AOI_YRANGE")->asRange()->Get_LoVal();
-	dAoiYMax		= Parameters("AOI_YRANGE")->asRange()->Get_HiVal();
+	dAoiXMin		= Parameters("AOI_XRANGE")->asRange()->Get_Min();
+	dAoiXMax		= Parameters("AOI_XRANGE")->asRange()->Get_Max();
+	dAoiYMin		= Parameters("AOI_YRANGE")->asRange()->Get_Min();
+	dAoiYMax		= Parameters("AOI_YRANGE")->asRange()->Get_Max();
 
 	bAddOverlap		= Parameters("AOI_ADD_OVERLAP")->asBool();
 	dOverlap		= Parameters("OVERLAP")->asDouble();
@@ -719,18 +719,18 @@ bool CPointCloud_Get_Grid_SPCVF::On_Execute(void)
 //---------------------------------------------------------
 int CPointCloud_Get_Grid_SPCVF::On_Parameters_Enable(CSG_Parameters *pParameters, CSG_Parameter *pParameter)
 {
-	if(	!SG_STR_CMP(pParameter->Get_Identifier(), SG_T("CONSTRAIN_QUERY")) )
+	if(	pParameter->Cmp_Identifier(SG_T("CONSTRAIN_QUERY")) )
 	{
 		pParameters->Get_Parameter("ATTR_FIELD"			)->Set_Enabled(pParameter->asBool());
 		pParameters->Get_Parameter("VALUE_RANGE"		)->Set_Enabled(pParameter->asBool());
 	}
 
-	if(	!SG_STR_CMP(pParameter->Get_Identifier(), SG_T("AOI_ADD_OVERLAP")) )
+	if(	pParameter->Cmp_Identifier(SG_T("AOI_ADD_OVERLAP")) )
 	{
 		pParameters->Get_Parameter("OVERLAP"			)->Set_Enabled(pParameter->asBool());
 	}
 
-	if(	!SG_STR_CMP(pParameter->Get_Identifier(), SG_T("AOI_SHP")) )
+	if(	pParameter->Cmp_Identifier(SG_T("AOI_SHP")) )
 	{
 		pParameters->Get_Parameter("FIELD_TILENAME"		)->Set_Enabled(pParameter->asShapes() != NULL);
 	}
@@ -869,7 +869,7 @@ bool CPointCloud_Get_Grid_SPCVF_Interactive::On_Execute_Position(CSG_Point ptWor
 									NULL, Parameters("GRID_OUT")->asGridList(), Parameters("CELL_SIZE")->asDouble(),
 									Parameters("GRID_SYSTEM_FIT")->asBool(), Parameters("METHOD")->asInt(),
 									Parameters("CONSTRAIN_QUERY")->asBool(), Parameters("ATTR_FIELD")->asInt()-1,
-									Parameters("VALUE_RANGE")->asRange()->Get_LoVal(), Parameters("VALUE_RANGE")->asRange()->Get_HiVal());
+									Parameters("VALUE_RANGE")->asRange()->Get_Min(), Parameters("VALUE_RANGE")->asRange()->Get_Max());
 
 		bool bResult = m_Get_Grid_SPCVF.Get_Subset(Parameters("ATTR_FIELD_GRID")->asInt()-1);
 
@@ -892,7 +892,7 @@ bool CPointCloud_Get_Grid_SPCVF_Interactive::On_Execute_Position(CSG_Point ptWor
 //---------------------------------------------------------
 int CPointCloud_Get_Grid_SPCVF_Interactive::On_Parameters_Enable(CSG_Parameters *pParameters, CSG_Parameter *pParameter)
 {
-	if(	!SG_STR_CMP(pParameter->Get_Identifier(), SG_T("CONSTRAIN_QUERY")) )
+	if(	pParameter->Cmp_Identifier(SG_T("CONSTRAIN_QUERY")) )
 	{
 		pParameters->Get_Parameter("ATTR_FIELD"			)->Set_Enabled(pParameter->asBool());
 		pParameters->Get_Parameter("VALUE_RANGE"		)->Set_Enabled(pParameter->asBool());

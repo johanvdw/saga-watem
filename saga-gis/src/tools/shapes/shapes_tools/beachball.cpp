@@ -154,9 +154,9 @@ CBeachball::CBeachball(void)
 //---------------------------------------------------------
 int CBeachball::On_Parameters_Enable(CSG_Parameters *pParameters, CSG_Parameter *pParameter)
 {
-	if( !SG_STR_CMP(pParameter->Get_Identifier(), "SIZE") )
+	if( pParameter->Cmp_Identifier("SIZE") )
 	{
-		if( pParameters->Get("POINTS")->asShapes() )
+		if( (*pParameters)("POINTS")->asShapes() )
 		{
 			bool	None	= pParameter->asInt() < 0;
 
@@ -200,8 +200,8 @@ bool CBeachball::On_Execute(void)
 	}
 	else
 	{
-		Scale_Min	=  Parameters("SIZE_RANGE")->asRange()->Get_LoVal();
-		Scale_Range	= (Parameters("SIZE_RANGE")->asRange()->Get_HiVal() - Scale_Min) / pPoints->Get_Range(fSize);
+		Scale_Min	=  Parameters("SIZE_RANGE")->asRange()->Get_Min();
+		Scale_Range	= (Parameters("SIZE_RANGE")->asRange()->Get_Max() - Scale_Min) / pPoints->Get_Range(fSize);
 	}
 
 	m_dArc	= Parameters("DARC" )->asDouble();

@@ -68,7 +68,7 @@
 ///////////////////////////////////////////////////////////
 
 //---------------------------------------------------------
-#define GRID_INIT(g, s)		if( g ) { g->Set_Name(CSG_String::Format(SG_T("%s (%s - %s)"), Parameters("DEPENDENT")->asString(), s, m_pPredictor->Get_Name())); }
+#define GRID_INIT(g, s)		if( g ) { g->Fmt_Name("%s (%s - %s)", Parameters("DEPENDENT")->asString(), s, m_pPredictor->Get_Name()); }
 
 
 ///////////////////////////////////////////////////////////
@@ -161,7 +161,7 @@ CGW_Regression_Grid::CGW_Regression_Grid(void)
 //---------------------------------------------------------
 int CGW_Regression_Grid::On_Parameter_Changed(CSG_Parameters *pParameters, CSG_Parameter *pParameter)
 {
-	if( !SG_STR_CMP(pParameter->Get_Identifier(), "POINTS") )
+	if( pParameter->Cmp_Identifier("POINTS") )
 	{
 		m_Search.On_Parameter_Changed(pParameters, pParameter);
 
@@ -257,7 +257,7 @@ bool CGW_Regression_Grid::On_Execute(void)
 bool CGW_Regression_Grid::Get_Model(int x, int y, CSG_Regression_Weighted &Model)
 {
 	//-----------------------------------------------------
-	TSG_Point	Point	= Get_System()->Get_Grid_to_World(x, y);
+	TSG_Point	Point	= Get_System().Get_Grid_to_World(x, y);
 	int			nPoints = m_Search.Set_Location(Point);
 
 	Model.Destroy();

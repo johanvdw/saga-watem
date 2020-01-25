@@ -129,9 +129,9 @@ bool CGridsFromTableAndGrid::On_Execute(void)
 		{
 			Attribute[nAttributes++]	= iAttribute;
 
-			CSG_Grid	*pGrid	= SG_Create_Grid(*Get_System());
+			CSG_Grid	*pGrid	= SG_Create_Grid(Get_System());
 
-			pGrid->Set_Name(CSG_String::Format(SG_T("%s [%s]"), pClasses->Get_Name(), pTable->Get_Field_Name(iAttribute)));
+			pGrid->Fmt_Name("%s [%s]", pClasses->Get_Name(), pTable->Get_Field_Name(iAttribute));
 
 			pGrids->Add_Item(pGrid);
 		}

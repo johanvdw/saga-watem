@@ -253,19 +253,19 @@ C3D_Viewer_Globe_Grid_Panel::~C3D_Viewer_Globe_Grid_Panel(void)
 //---------------------------------------------------------
 int C3D_Viewer_Globe_Grid_Panel::On_Parameters_Enable(CSG_Parameters *pParameters, CSG_Parameter *pParameter)
 {
-	if( !SG_STR_CMP(pParameter->Get_Identifier(), "COLOR_ASRGB") )
+	if( pParameter->Cmp_Identifier("COLOR_ASRGB") )
 	{
 		pParameters->Get_Parameter("COLORS"      )->Set_Enabled(pParameter->asBool() == false);
 		pParameters->Get_Parameter("COLORS_RANGE")->Set_Enabled(pParameter->asBool() == false);
 	}
 
-	if( !SG_STR_CMP(pParameter->Get_Identifier(), "SHADING") )
+	if( pParameter->Cmp_Identifier("SHADING") )
 	{
 		pParameters->Get_Parameter("SHADE_DEC")->Set_Enabled(pParameter->asBool());
 		pParameters->Get_Parameter("SHADE_AZI")->Set_Enabled(pParameter->asBool());
 	}
 
-	if( !SG_STR_CMP(pParameter->Get_Identifier(), "DRAW_EDGES") )
+	if( pParameter->Cmp_Identifier("DRAW_EDGES") )
 	{
 		pParameters->Get_Parameter("EDGE_COLOR")->Set_Enabled(pParameter->asBool());
 	}
@@ -409,8 +409,8 @@ inline bool C3D_Viewer_Globe_Grid_Panel::Get_Node(int x, int y, TSG_Triangle_Nod
 bool C3D_Viewer_Globe_Grid_Panel::On_Draw(void)
 {
 	//-----------------------------------------------------
-	if( m_Parameters("COLORS_RANGE")->asRange()->Get_LoVal()
-	>=  m_Parameters("COLORS_RANGE")->asRange()->Get_HiVal() )
+	if( m_Parameters("COLORS_RANGE")->asRange()->Get_Min()
+	>=  m_Parameters("COLORS_RANGE")->asRange()->Get_Max() )
 	{
 		m_Parameters("COLORS_RANGE")->asRange()->Set_Range(
 			m_pGrid->Get_Mean() - 1.5 * m_pGrid->Get_StdDev(),
@@ -422,8 +422,8 @@ bool C3D_Viewer_Globe_Grid_Panel::On_Draw(void)
 
 	m_Colors		= *m_Parameters("COLORS")->asColors();
 	m_Color_bGrad	= m_Parameters("COLORS_GRAD")->asBool();
-	m_Color_Min		= m_Parameters("COLORS_RANGE")->asRange()->Get_LoVal();
-	m_Color_Scale	= m_Colors.Get_Count() / (m_Parameters("COLORS_RANGE")->asRange()->Get_HiVal() - m_Color_Min);
+	m_Color_Min		= m_Parameters("COLORS_RANGE")->asRange()->Get_Min();
+	m_Color_Scale	= m_Colors.Get_Count() / (m_Parameters("COLORS_RANGE")->asRange()->Get_Max() - m_Color_Min);
 
 	//-----------------------------------------------------
 	if( m_Parameters("DRAW_FACES")->asBool() )	// Faces

@@ -570,6 +570,7 @@ public:
 	bool						Create				(const CSG_Vector &Values, bool bHoldValues = false);
 
 	void						Invalidate			(void);
+	bool						Evaluate			(void);
 
 	int							is_Evaluated		(void)	const	{	return( m_bEvaluated );	}
 
@@ -837,20 +838,20 @@ public:
 
 	bool			Destroy				(void);
 
-	CSG_Histogram						(int nClasses, double Minimum, double Maximum);
-	bool			Create				(int nClasses, double Minimum, double Maximum);
+	CSG_Histogram						(size_t nClasses, double Minimum, double Maximum);
+	bool			Create				(size_t nClasses, double Minimum, double Maximum);
 
-	CSG_Histogram						(int nClasses, double Minimum, double Maximum, const CSG_Vector &Values          , unsigned int maxSamples = 0);
-	bool			Create				(int nClasses, double Minimum, double Maximum, const CSG_Vector &Values          , unsigned int maxSamples = 0);
+	CSG_Histogram						(size_t nClasses, double Minimum, double Maximum, const CSG_Vector &Values          , size_t maxSamples = 0);
+	bool			Create				(size_t nClasses, double Minimum, double Maximum, const CSG_Vector &Values          , size_t maxSamples = 0);
 
-	CSG_Histogram						(int nClasses, double Minimum, double Maximum, class CSG_Table *pTable, int Field, unsigned int maxSamples = 0);
-	bool			Create				(int nClasses, double Minimum, double Maximum, class CSG_Table *pTable, int Field, unsigned int maxSamples = 0);
+	CSG_Histogram						(size_t nClasses, double Minimum, double Maximum, class CSG_Table *pTable, int Field, size_t maxSamples = 0);
+	bool			Create				(size_t nClasses, double Minimum, double Maximum, class CSG_Table *pTable, int Field, size_t maxSamples = 0);
 
-	CSG_Histogram						(int nClasses, double Minimum, double Maximum, class CSG_Grid  *pGrid            , unsigned int maxSamples = 0);
-	bool			Create				(int nClasses, double Minimum, double Maximum, class CSG_Grid  *pGrid            , unsigned int maxSamples = 0);
+	CSG_Histogram						(size_t nClasses, double Minimum, double Maximum, class CSG_Grid  *pGrid            , size_t maxSamples = 0);
+	bool			Create				(size_t nClasses, double Minimum, double Maximum, class CSG_Grid  *pGrid            , size_t maxSamples = 0);
 
-	CSG_Histogram						(int nClasses, double Minimum, double Maximum, class CSG_Grids *pGrids           , unsigned int maxSamples = 0);
-	bool			Create				(int nClasses, double Minimum, double Maximum, class CSG_Grids *pGrids           , unsigned int maxSamples = 0);
+	CSG_Histogram						(size_t nClasses, double Minimum, double Maximum, class CSG_Grids *pGrids           , size_t maxSamples = 0);
+	bool			Create				(size_t nClasses, double Minimum, double Maximum, class CSG_Grids *pGrids           , size_t maxSamples = 0);
 
 	//-----------------------------------------------------
 	void			Add_Value			(double Value);
@@ -859,18 +860,18 @@ public:
 
 	bool			Update				(void);
 
-	unsigned int	Get_Class_Count		(void)		const	{	return( m_nClasses );	}
+	size_t			Get_Class_Count		(void)		const	{	return( m_nClasses );	}
 
-	unsigned int	Get_Element_Count	(void)		const	{	return( m_nClasses > 0 ? m_Cumulative[m_nClasses - 1] : 0 );	}
-	unsigned int	Get_Element_Maximum	(void)		const	{	return( m_nMaximum );	}
+	size_t			Get_Element_Count	(void)		const	{	return( m_nClasses > 0 ? m_Cumulative[m_nClasses - 1] : 0 );	}
+	size_t			Get_Element_Maximum	(void)		const	{	return( m_nMaximum );	}
 
-	unsigned int	Get_Elements		(int    i)	const	{	return( Get_Elements((size_t)i) );	}
-	unsigned int	Get_Elements		(size_t i)	const	{	return( i < m_nClasses ? m_Elements[i] : 0 );	}
+	size_t			Get_Elements		(int    i)	const	{	return( Get_Elements((size_t)i) );	}
+	size_t			Get_Elements		(size_t i)	const	{	return( i < m_nClasses ? m_Elements[i] : 0 );	}
 
-	unsigned int	Get_Cumulative		(int    i)	const	{	return( Get_Cumulative((size_t)i) );	}
-	unsigned int	Get_Cumulative		(size_t i)	const	{	return( i < m_nClasses ? m_Cumulative[i] : 0 );	}
+	size_t			Get_Cumulative		(int    i)	const	{	return( Get_Cumulative((size_t)i) );	}
+	size_t			Get_Cumulative		(size_t i)	const	{	return( i < m_nClasses ? m_Cumulative[i] : 0 );	}
 
-	double			Get_Value			(double i)	const	{	return( m_nClasses > 0 ? m_Minimum + i * (m_Maximum - m_Minimum) / m_nClasses : m_Minimum );	}
+	double			Get_Value			(double i)	const	{	return( m_nClasses < 1 ? m_Minimum : m_Minimum + i * m_ClassWidth );	}
 
 	double			Get_Break			(int    i)	const	{	return( Get_Value((double)(i)) );	}
 	double			Get_Break			(size_t i)	const	{	return( Get_Value((double)(i)) );	}
@@ -881,26 +882,30 @@ public:
 	//-----------------------------------------------------
 	void			operator +=			(double Value)		{	Add_Value(Value);	}
 
-	unsigned int	operator []			(int    i)	const	{	return( Get_Elements(i) );	}
-	unsigned int	operator []			(size_t i)	const	{	return( Get_Elements(i) );	}
+	size_t			operator []			(int    i)	const	{	return( Get_Elements(i) );	}
+	size_t			operator []			(size_t i)	const	{	return( Get_Elements(i) );	}
+
+	double			Get_Quantile		(double   Quantile)	const;
+	double			Get_Quantile_Value	(double      Value)	const;
 
 	double			Get_Percentile		(double Percentile)	const;
+	double			Get_Percentile_Value(double      Value)	const;
 
 	const CSG_Simple_Statistics &	Get_Statistics	(void)	const	{	return( m_Statistics );	}
 
 
 private:
 
-	unsigned int			m_nClasses, m_nMaximum, *m_Elements, *m_Cumulative;
+	size_t					m_nClasses, m_nMaximum, *m_Elements, *m_Cumulative;
 
-	double					m_Minimum, m_Maximum;
+	double					m_Minimum, m_Maximum, m_ClassWidth;
 
 	CSG_Simple_Statistics	m_Statistics;
 
 
 	void					_On_Construction	(void);
 
-	bool					_Create				(int nClasses, double Minimum, double Maximum);
+	bool					_Create				(size_t nClasses, double Minimum, double Maximum);
 
 	bool					_Update				(sLong nElements);
 
@@ -981,13 +986,13 @@ public:
 	bool					Add_Element			(void);
 	bool					Set_Feature			(int iElement, int iFeature, double Value);
 
-	int						Get_Cluster			(int iElement)	const	{	return( iElement >= 0 && iElement < Get_nElements() ? m_Cluster[iElement] : -1 );	}
+	int						Get_Cluster			(int iElement)	const	{	return( iElement >= 0 && iElement < Get_nElements() ? m_Clusters[iElement] : -1 );	}
 
-	bool					Execute				(int Method, int nClusters, int nMaxIterations = 0);
+	bool					Execute				(int Method, int nClusters, int nMaxIterations = 0, int Initialization = 0);
 
 	int						Get_nElements		(void)	const	{	return( (int)m_Features.Get_Size() );	}
-	int						Get_nFeatures		(void)	const	{	return( m_nFeatures );	}
-	int						Get_nClusters		(void)	const	{	return( m_nClusters );	}
+	int						Get_nFeatures		(void)	const	{	return(      m_nFeatures           );	}
+	int						Get_nClusters		(void)	const	{	return( (int)m_nMembers.Get_Size() );	}
 
 	int						Get_Iteration		(void)	const	{	return( m_Iteration );	}
 
@@ -1000,15 +1005,22 @@ public:
 
 private:
 
-	int						*m_Cluster, m_Iteration, m_nFeatures, m_nClusters, *m_nMembers;
+	int						m_Iteration, m_nFeatures;
 
-	double					*m_Variance, **m_Centroid, m_SP;
+	double					m_SP;
+
+	CSG_Array_Int			m_Clusters, m_nMembers;
 
 	CSG_Array				m_Features;
 
+	CSG_Vector				m_Variance;
 
-	bool					Minimum_Distance	(bool bInitialize, int nMaxIterations);
-	bool					Hill_Climbing		(bool bInitialize, int nMaxIterations);
+	CSG_Matrix				m_Centroid;
+
+
+	bool					_Minimum_Distance	(bool bInitialize, int nMaxIterations);
+
+	bool					_Hill_Climbing		(bool bInitialize, int nMaxIterations);
 
 };
 
@@ -1762,7 +1774,8 @@ enum ESG_Trend_String
 	SG_TREND_STRING_Formula	= 0,
 	SG_TREND_STRING_Function,
 	SG_TREND_STRING_Formula_Parameters,
-	SG_TREND_STRING_Complete
+	SG_TREND_STRING_Complete,
+	SG_TREND_STRING_Compact
 };
 
 //---------------------------------------------------------
@@ -1782,13 +1795,15 @@ public:
 	bool						Add_Data			(double  x, double  y);
 	void						Set_Data			(double *x, double *y, int n, bool bAdd = false);
 	void						Set_Data			(const CSG_Points &Data     , bool bAdd = false);
-	int							Get_Data_Count		(void)	const	{	return( m_Data.Get_NCols() );	}
+	int							Get_Data_Count		(void)	const	{	return( (int)m_Data[0].Get_Count() );	}
 	double						Get_Data_X			(int i)	const	{	return( m_Data[0][i] );	}
+	double						Get_Data_XMin		(void)			{	return( m_Data[0].Get_Minimum() );	}
+	double						Get_Data_XMax		(void)			{	return( m_Data[0].Get_Maximum() );	}
+	CSG_Simple_Statistics &		Get_Data_XStats		(void)			{	return( m_Data[0] );	}
 	double						Get_Data_Y			(int i)	const	{	return( m_Data[1][i] );	}
-	double						Get_Data_XMin		(void)	const	{	return( m_xMin );	}
-	double						Get_Data_XMax		(void)	const	{	return( m_xMax );	}
-	double						Get_Data_YMin		(void)	const	{	return( m_yMin );	}
-	double						Get_Data_YMax		(void)	const	{	return( m_yMax );	}
+	double						Get_Data_YMin		(void)			{	return( m_Data[1].Get_Minimum() );	}
+	double						Get_Data_YMax		(void)			{	return( m_Data[1].Get_Maximum() );	}
+	CSG_Simple_Statistics &		Get_Data_YStats		(void)			{	return( m_Data[1] );	}
 
 	bool						Set_Max_Iterations	(int Iterations);
 	int							Get_Max_Iterations	(void)	const	{	return( m_Iter_Max);	}
@@ -1838,11 +1853,11 @@ private:
 
 	int							m_Iter_Max;
 
-	double						m_ChiSqr, m_ChiSqr_o, m_Lambda, m_Lambda_Max, m_xMin, m_xMax, m_yMin, m_yMax;
+	double						m_ChiSqr, m_ChiSqr_o, m_Lambda, m_Lambda_Max;
 
 	CParams						m_Params;
 
-	CSG_Matrix					m_Data;
+	CSG_Simple_Statistics		m_Data[2];
 
 	CSG_Formula					m_Formula;
 

@@ -121,32 +121,41 @@ int		main	(int argc, char *argv[])
 	wxTheApp->SetVendorName("www.saga-gis.org");
 	wxTheApp->SetAppName   ("saga_cmd");
 
+//---------------------------------------------------------
 #if !defined(_DEBUG)
 	wxSetAssertHandler(NULL);		// disable all wx asserts in SAGA release builds
-#endif
 
+	#if !defined(_OPENMP) && defined(_SAGA_MSW)
+		#define _TOOL_EXCEPTION
+	#endif
+#endif
 //---------------------------------------------------------
-#if !defined(_DEBUG) && defined(_SAGA_VC)
-#define _TOOL_EXCEPTION
+
+	bool bResult	= false;
+
+///////////////////////////////////////////////////////////
+#ifdef _TOOL_EXCEPTION
 _try
 {
 #endif
-//---------------------------------------------------------
+///////////////////////////////////////////////////////////
 
-	bool bResult	= Run(argc, argv);
+	bResult	= Run(argc, argv);
+
+///////////////////////////////////////////////////////////
+#ifdef _TOOL_EXCEPTION
+}
+_except(1)
+{
+	CMD_Print_Error(_TL("access violation"));
+}
+#endif
+///////////////////////////////////////////////////////////
 
 //---------------------------------------------------------
 #ifdef _DEBUG
 	CMD_Set_Interactive(true);
 	CMD_Get_Pause();
-#endif
-
-#ifdef _TOOL_EXCEPTION
-}
-_except(1)
-{
-	Print_Error(_TL("access violation"));
-}
 #endif
 //---------------------------------------------------------
 
@@ -226,7 +235,7 @@ bool		Execute(int argc, char *argv[])
 	}
 
 	//-----------------------------------------------------
-	CSG_Tool	*pTool	= argc <= 2 ? NULL : SG_Get_Tool_Library_Manager().Get_Tool(Library, argv[2]);
+	CSG_Tool	*pTool	= argc <= 2 ? NULL : SG_Get_Tool_Library_Manager().Get_Tool(Library, CSG_String(argv[2]));
 
 	if( pTool == NULL )
 	{
@@ -238,7 +247,7 @@ bool		Execute(int argc, char *argv[])
 	//-----------------------------------------------------
 	if( argc == 3 && CMD_Get_XML() )
 	{	// Just output tool synopsis as XML-tagged text, then return.
-		SG_PRINTF(pTool->Get_Summary(true, "", "", SG_SUMMARY_FMT_XML).c_str());
+		SG_Printf(pTool->Get_Summary(true, "", "", SG_SUMMARY_FMT_XML).c_str());
 
 		return( true );
 	}
@@ -399,7 +408,7 @@ bool		Load_Libraries(void)
 	#else
 		wxString	DLL_Path	= SG_File_Make_Path(&CMD_Path, "dll").c_str();
 
-		if( wxGetEnv("PATH", &Path) && Path.Length() > 0 )
+		if( wxGetEnv("PATH", &Path) && !Path.IsEmpty() )
 		{
 			wxSetEnv("PATH", DLL_Path + wxT(";") + Path);
 		}
@@ -414,9 +423,13 @@ bool		Load_Libraries(void)
 		Load_Libraries(SG_File_Make_Path(&CMD_Path, "tools"));
     #endif
 
-	if( wxGetEnv("SAGA_MLB", &Path) )
+	if( (wxGetEnv("SAGA_TLB", &Path) || wxGetEnv("SAGA_MLB", &Path)) && !Path.IsEmpty() )
 	{
-		CSG_String_Tokenizer	Paths(&Path, ";");
+		#if defined(_SAGA_MSW)
+			CSG_String_Tokenizer	Paths(&Path, ";");	// colon (':') would split drive from paths!
+		#else
+			CSG_String_Tokenizer	Paths(&Path, ";:");	// colon (':') is more native to non-windows os than semi-colon (';'), we support both...
+		#endif
 
 		while( Paths.Has_More_Tokens() )
 		{
@@ -586,7 +599,7 @@ void		Print_Libraries	(void)
 	{
 		if( CMD_Get_XML() )
 		{
-			SG_PRINTF(SG_Get_Tool_Library_Manager().Get_Summary(SG_SUMMARY_FMT_XML).c_str());
+			SG_Printf(SG_Get_Tool_Library_Manager().Get_Summary(SG_SUMMARY_FMT_XML).c_str());
 		}
 		else
 		{
@@ -612,7 +625,7 @@ void		Print_Tools		(const CSG_String &Library)
 
 				if( !pLibrary->Get_Library_Name().Cmp(Library) )
 				{
-					SG_PRINTF(pLibrary->Get_Summary(SG_SUMMARY_FMT_XML , false).c_str());
+					SG_Printf(pLibrary->Get_Summary(SG_SUMMARY_FMT_XML , false).c_str());
 				}
 			}
 		}
@@ -646,25 +659,25 @@ void		Print_Execution	(CSG_Tool *pTool)
 			#define SG_XML_LIBRARY_PATH	SG_T("path")
 			#define SG_XML_LIBRARY_NAME	SG_T("name")
 
-			SG_PRINTF(SG_T("<?xml version='1.0' encoding='UTF-8' standalone='yes' ?>\n"));
-			SG_PRINTF(SG_T("<%s>\n"), SG_XML_LIBRARY);
-			SG_PRINTF(SG_T("\t<%s>%s</%s>\n"), SG_XML_LIBRARY_PATH, pTool->Get_File_Name().c_str(), SG_XML_LIBRARY_PATH);
-			SG_PRINTF(SG_T("\t<%s>%s</%s>\n"), SG_XML_LIBRARY_NAME, pTool->Get_Library  ().c_str(), SG_XML_LIBRARY_NAME);
-			SG_PRINTF(SG_T("</%s>\n"), SG_XML_LIBRARY);
+			SG_Printf("<?xml version='1.0' encoding='UTF-8' standalone='yes' ?>\n");
+			SG_Printf("<%s>\n", SG_XML_LIBRARY);
+			SG_Printf("\t<%s>%s</%s>\n", SG_XML_LIBRARY_PATH, pTool->Get_File_Name().c_str(), SG_XML_LIBRARY_PATH);
+			SG_Printf("\t<%s>%s</%s>\n", SG_XML_LIBRARY_NAME, pTool->Get_Library  ().c_str(), SG_XML_LIBRARY_NAME);
+			SG_Printf("</%s>\n", SG_XML_LIBRARY);
 		}
 		else
 		{
-			SG_PRINTF(SG_T("____________________________\n"));
-			SG_PRINTF(SG_T("%s: %s\n"), _TL("library path"), SG_File_Get_Path(pTool->Get_File_Name()       ).c_str());
-			SG_PRINTF(SG_T("%s: %s\n"), _TL("library name"), SG_File_Get_Name(pTool->Get_File_Name(), false).c_str());
-			SG_PRINTF(SG_T("%s: %s\n"), _TL("library     "), pTool->Get_Library().c_str());
-			SG_PRINTF(SG_T("%s: %s\n"), _TL("tool        "), pTool->Get_Name   ().c_str());
-			SG_PRINTF(SG_T("%s: %s\n"), _TL("identifier  "), pTool->Get_ID     ().c_str());
-			SG_PRINTF(SG_T("%s: %s\n"), _TL("author      "), pTool->Get_Author ().c_str());
+			SG_Printf("____________________________\n");
+			SG_Printf("%s: %s\n", _TL("library path"), SG_File_Get_Path(pTool->Get_File_Name()       ).c_str());
+			SG_Printf("%s: %s\n", _TL("library name"), SG_File_Get_Name(pTool->Get_File_Name(), false).c_str());
+			SG_Printf("%s: %s\n", _TL("library     "), pTool->Get_Library().c_str());
+			SG_Printf("%s: %s\n", _TL("tool        "), pTool->Get_Name   ().c_str());
+			SG_Printf("%s: %s\n", _TL("identifier  "), pTool->Get_ID     ().c_str());
+			SG_Printf("%s: %s\n", _TL("author      "), pTool->Get_Author ().c_str());
 		#ifdef _OPENMP
-			SG_PRINTF(SG_T("%s: %d [%d]\n"), _TL("processors  "), SG_OMP_Get_Max_Num_Threads(), SG_OMP_Get_Max_Num_Procs());
+			SG_Printf("%s: %d [%d]\n", _TL("processors  "), SG_OMP_Get_Max_Num_Threads(), SG_OMP_Get_Max_Num_Procs());
 		#endif // _OPENMP
-			SG_PRINTF(SG_T("____________________________\n\n"));
+			SG_Printf("____________________________\n\n");
 		}
 	}
 }
@@ -786,7 +799,7 @@ void		Print_Help		(void)
 		"\n"
 		"Tool libraries in the \'tools\' subdirectory of the SAGA installation\n"
 		"will be loaded automatically. Additional directories can be specified\n"
-		"by adding the environment variable \'SAGA_MLB\' and let it point to one\n"
+		"by adding the environment variable \'SAGA_TLB\' and let it point to one\n"
 		"or more directories, just the way it is done with the DOS \'PATH\' variable.\n"
 		"\n"
 		"A more convenient way to set various saga_cmd options is to edit a\n"
@@ -891,7 +904,7 @@ void		Create_Batch	(const CSG_String &File)
 		"\n"
 		"SET FLAGS=-f=s\n"
 		"REM SET SAGA=.\n"
-		"REM SET SAGA_MLB=%%SAGA%%\\_private\n"
+		"REM SET SAGA_TLB=%%SAGA%%\\_private\n"
 		"REM PATH=PATH;%%SAGA%%\n"
 		"\n"
 		"IF EXIST dem.sgrd GOTO :GO\n"

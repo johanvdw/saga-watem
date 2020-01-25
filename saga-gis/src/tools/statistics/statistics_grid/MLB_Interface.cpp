@@ -40,9 +40,7 @@
 //                                                       //
 //    contact:    Olaf Conrad                            //
 //                Institute of Geography                 //
-//                University of Goettingen               //
-//                Goldschmidtstr. 5                      //
-//                37077 Goettingen                       //
+//                University of Hamburg                  //
 //                Germany                                //
 //                                                       //
 ///////////////////////////////////////////////////////////
@@ -59,7 +57,7 @@
 //---------------------------------------------------------
 // 1. Include the appropriate SAGA-API header...
 
-#include "MLB_Interface.h"
+#include <saga_api/saga_api.h>
 
 
 //---------------------------------------------------------
@@ -106,6 +104,8 @@ CSG_String Get_Info(int i)
 #include "grid_latlon_statistics.h"
 #include "categorical_variation.h"
 #include "grid_pca_focal.h"
+#include "grid_statistics_from_files.h"
+#include "grid_statistics_successive.h"
 
 
 //---------------------------------------------------------
@@ -131,8 +131,12 @@ CSG_Tool *		Create_Tool(int i)
 	case 13:	return( new CGSGrid_Statistics_To_Table );
 	case 14:	return( new CCategorical_Variation );
 	case 15:	return( new CGrid_PCA_Focal );
+	case 16:	return( new CGrid_Statistics_from_Files );
+	case 17:	return( new CGrid_Statistics_Build );
+	case 19:	return( new CGrid_Statistics_Add );
+	case 18:	return( new CGrid_Statistics_Evaluate );
 
-	case 16:	return( NULL );
+	case 20:	return( NULL );
 	default:	return( TLB_INTERFACE_SKIP_TOOL );
 	}
 }

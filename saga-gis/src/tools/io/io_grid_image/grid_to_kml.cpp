@@ -99,19 +99,19 @@ CGrid_to_KML::CGrid_to_KML(void)
 	Parameters.Add_FilePath("",
 		"FILE"		, _TL("Image File"),
 		_TL(""),
-		CSG_String::Format("%s|%s|%s|%s|%s|%s|%s|%s|%s|%s",
-			_TL("Portable Network Graphics (*.png)"           ), SG_T("*.png"),
-			_TL("JPEG - JFIF Compliant (*.jpg, *.jif, *.jpeg)"), SG_T("*.jpg;*.jif;*.jpeg"),
-			_TL("Tagged Image File Format (*.tif, *.tiff)"    ), SG_T("*.tif;*.tiff"),
-			_TL("Windows or OS/2 Bitmap (*.bmp)"              ), SG_T("*.bmp"),
-			_TL("Zsoft Paintbrush (*.pcx)"                    ), SG_T("*.pcx")
+		CSG_String::Format("%s (*.png)|*.png|%s (*.jpg, *.jif, *.jpeg)|*.jpg;*.jif;*.jpeg|%s (*.tif, *.tiff)|*.tif;*.tiff|%s (*.bmp)|*.bmp|%s (*.pcx)|*.pcx",
+			_TL("Portable Network Graphics"),
+			_TL("JPEG - JFIF Compliant"    ),
+			_TL("Tagged Image File Format" ),
+			_TL("Windows or OS/2 Bitmap"   ),
+			_TL("Zsoft Paintbrush"         )
 		), NULL, true
 	);
 
 	Parameters.Add_Choice("",
 		"OUTPUT"	, _TL("Output"),
 		_TL(""),
-		CSG_String::Format("%s|%s|%s|",
+		CSG_String::Format("%s|%s|%s",
 			_TL("kml and image files"),
 			_TL("kmz, kml and image files"),
 			_TL("kmz file")
@@ -191,12 +191,20 @@ CGrid_to_KML::CGrid_to_KML(void)
         0.0, 100.0
     );
 
-	Parameters.Add_Table("",
-		"LUT"		, _TL("Lookup Table"),
-		_TL(""),
-		PARAMETER_INPUT_OPTIONAL
-	);
+	//-----------------------------------------------------
+	CSG_Table	*pLUT	= Parameters.Add_FixedTable("", "LUT", _TL("Lookup Table"), _TL(""))->asTable();
 
+	pLUT->Set_Name(_TL("Table"));
+
+	pLUT->Add_Field("Color"      , SG_DATATYPE_Color );
+	pLUT->Add_Field("Name"       , SG_DATATYPE_String);
+	pLUT->Add_Field("Description", SG_DATATYPE_String);
+	pLUT->Add_Field("Minimum"    , SG_DATATYPE_Double);
+	pLUT->Add_Field("Maximum"    , SG_DATATYPE_Double);
+
+	pLUT->Add_Record();
+
+	//-----------------------------------------------------
 	Parameters.Add_Bool("",
 		"RESAMPLING", _TL("Interpolation"),
 		_TL("Resampling method used when projection is needed"),
@@ -221,7 +229,7 @@ CGrid_to_KML::CGrid_to_KML(void)
 //---------------------------------------------------------
 int CGrid_to_KML::On_Parameters_Enable(CSG_Parameters *pParameters, CSG_Parameter *pParameter)
 {
-	if(	!SG_STR_CMP(pParameter->Get_Identifier(), "COLOURING") )
+	if(	pParameter->Cmp_Identifier("COLOURING") )
 	{
 		pParameters->Set_Enabled("COL_PALETTE", pParameter->asInt() <= 2);
 		pParameters->Set_Enabled("STDDEV"     , pParameter->asInt() == 0);
@@ -229,12 +237,12 @@ int CGrid_to_KML::On_Parameters_Enable(CSG_Parameters *pParameters, CSG_Paramete
 		pParameters->Set_Enabled("LUT"        , pParameter->asInt() == 3);
 	}
 
-	if(	!SG_STR_CMP(pParameter->Get_Identifier(), "SHADE") && pParameters->Get_Parameter("SHADE_BRIGHT") )
+	if(	pParameter->Cmp_Identifier("SHADE") && pParameters->Get_Parameter("SHADE_BRIGHT") )
 	{
 		pParameters->Set_Enabled("SHADE_BRIGHT", pParameter->asPointer() != NULL);
 	}
 
-	if(	!SG_STR_CMP(pParameter->Get_Identifier(), "GRID") || !SG_STR_CMP(pParameter->Get_Identifier(), "COLOURING") )
+	if(	pParameter->Cmp_Identifier("GRID") || pParameter->Cmp_Identifier("COLOURING") )
 	{
 		CSG_Grid	*pGrid	= pParameters->Get_Parameter("GRID")->asGrid();
 
@@ -288,27 +296,27 @@ bool CGrid_to_KML::On_Execute(void)
 	}
 	else if( pGrid->Get_Projection().Get_Type() != SG_PROJ_TYPE_CS_Geographic )
 	{
-		Message_Add(CSG_String::Format("\n%s (%s: %s)\n", _TL("re-projection to geographic coordinates"), _TL("original"), pGrid->Get_Projection().Get_Name().c_str()), false);
+		Message_Fmt("\n%s (%s: %s)\n", _TL("re-projection to geographic coordinates"), _TL("original"), pGrid->Get_Projection().Get_Name().c_str());
 
-		if(	(pTool = SG_Get_Tool_Library_Manager().Get_Tool("pj_proj4", 4)) == NULL )	// Coordinate Transformation (Grid)
+		if(	(pTool = SG_Get_Tool_Library_Manager().Create_Tool("pj_proj4", 4)) == NULL )	// Coordinate Transformation (Grid)
 		{
 			return( false );
 		}
 
-		pTool->Settings_Push();
+		pTool->Set_Manager(NULL);
 
-		if( pTool->Set_Parameter("CRS_PROJ4" , SG_T("+proj=longlat +ellps=WGS84 +datum=WGS84"))
+		if( pTool->Set_Parameter("CRS_PROJ4" , "+proj=longlat +ellps=WGS84 +datum=WGS84")
 		&&  pTool->Set_Parameter("RESAMPLING", Method < 4 && Parameters("RESAMPLING")->asBool() ? 4 : 0)
 		&&  pTool->Set_Parameter("SOURCE"    , pGrid)
 		&&  pTool->Execute() )
 		{
 			bDelete	= true;
 
-			pGrid	= pTool->Get_Parameters()->Get_Parameter("GRID")->asGrid();
+			pGrid	= pTool->Get_Parameter("GRID")->asGrid();
 
 			if( pShade && pTool->Set_Parameter("SOURCE", pShade) && pTool->Execute() )
 			{
-				pShade	= pTool->Get_Parameters()->Get_Parameter("GRID")->asGrid();
+				pShade	= pTool->Get_Parameter("GRID")->asGrid();
 			}
 			else
 			{
@@ -316,42 +324,43 @@ bool CGrid_to_KML::On_Execute(void)
 			}
 		}
 
-		pTool->Settings_Pop();
+		SG_Get_Tool_Library_Manager().Delete_Tool(pTool);
 
 		if( !bDelete )
 		{
-			Message_Add(CSG_String::Format("\n%s: %s\n", _TL("re-projection"), _TL("failed")), false);
+			Message_Fmt("\n%s: %s\n", _TL("re-projection"), _TL("failed"));
 
 			return( false );
 		}
 	}
 
 	//-----------------------------------------------------
-	if(	(pTool = SG_Get_Tool_Library_Manager().Get_Tool("io_grid_image", 0)) == NULL )	// Export Image
+	if(	(pTool = SG_Get_Tool_Library_Manager().Create_Tool("io_grid_image", 0)) == NULL )	// Export Image
 	{
 		return( false );
 	}
 
 	bool	bResult	= false;
 
-	pTool->Settings_Push();
+	pTool->Set_Manager(NULL);
 
-	if( pTool->Set_Parameter("GRID"        , pGrid)
+	if( pTool->Set_Parameter("GRID"        , pGrid )
 	&&  pTool->Set_Parameter("SHADE"       , pShade)
-	&&  pTool->Set_Parameter("FILE_KML"    , true)
-	&&  pTool->Set_Parameter("FILE"        , Parameters("FILE"))
 	&&  pTool->Set_Parameter("COLOURING"   , Method)
-	&&  pTool->Set_Parameter("COL_PALETTE" , Parameters("COL_PALETTE"))
-	&&  pTool->Set_Parameter("STDDEV"      , Parameters("STDDEV"))
-	&&  pTool->Set_Parameter("STRETCH"     , Parameters("STRETCH"))
-	&&  pTool->Set_Parameter("LUT"         , Parameters("LUT"))
-	&&  (SG_UI_Get_Window_Main() || pTool->Set_Parameter("SHADE_BRIGHT", Parameters("SHADE_BRIGHT")))
+	&&  pTool->Set_Parameter("FILE_KML"    , true  )
+	&&  pTool->Set_Parameter("FILE"        , Parameters("FILE"        ))
+	&&  pTool->Set_Parameter("COL_PALETTE" , Parameters("COL_PALETTE" ))
+	&&  pTool->Set_Parameter("STDDEV"      , Parameters("STDDEV"      ))
+	&&  pTool->Set_Parameter("STRETCH"     , Parameters("STRETCH"     ))
+	&&  pTool->Set_Parameter("LUT"         , Parameters("LUT"         ))
+	&&  (SG_UI_Get_Window_Main()
+	||  pTool->Set_Parameter("SHADE_BRIGHT", Parameters("SHADE_BRIGHT")))
 	&&  pTool->Execute() )
 	{
 		bResult	= true;
 	}
 
-	pTool->Settings_Pop();
+	SG_Get_Tool_Library_Manager().Delete_Tool(pTool);
 
 	//-----------------------------------------------------
 	if( bDelete )
@@ -614,7 +623,7 @@ bool CGrid_from_KML::Load_Overlay(const SG_Char *Dir, const CSG_MetaData &KML)
 	m_pGrids->Add_Item(pGrid);
 
 	DataObject_Add(pGrid);
-	DataObject_Set_Parameter(pGrid, "COLORS_TYPE", 6);	// Color Classification Type: RGB
+	DataObject_Set_Parameter(pGrid, "COLORS_TYPE", 5);	// Color Classification Type: RGB Coded Values
 
 	//-----------------------------------------------------
 	return( true );

@@ -117,7 +117,7 @@ bool CPolygon_Flatten::On_Execute(void)
 	{
 		pShapes	= Parameters("OUTPUT")->asShapes();
 		pShapes->Create(*Parameters("INPUT")->asShapes());
-		pShapes->Set_Name(CSG_String::Format(SG_T("%s [%s]"), pShapes->Get_Name(), _TL("dissolved inner rings")));
+		pShapes->Fmt_Name("%s [%s]", pShapes->Get_Name(), _TL("dissolved inner rings"));
 	}
 
 	//-----------------------------------------------------
@@ -156,7 +156,7 @@ bool CPolygon_Flatten::On_Execute(void)
 		}
 	}
 
-	Message_Add(CSG_String::Format(SG_T("%s: %d"), _TL("number of inner rings"), n));
+	Message_Fmt("\n%s: %d", _TL("number of inner rings"), n);
 
 	if( n == 0 )
 	{

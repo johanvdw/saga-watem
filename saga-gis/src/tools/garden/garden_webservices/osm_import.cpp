@@ -76,58 +76,42 @@ COSM_Import::COSM_Import(void)
 {
 	Set_Name		(_TL("Import from Open Street Map"));
 
-	Set_Author		(SG_T("O. Conrad (c) 2010"));
+	Set_Author		("O. Conrad (c) 2010");
 
 	Set_Description	(_TW(
 		"This tool works as Web Map Service (WMS) client. "
 		"More information on the WMS specifications can be obtained from the "
-		"Open Geospatial Consortium (OGC) at "
-		"<a href=\"http://www.opengeospatial.org/\">http://www.opengeospatial.org/</a>. "
+		"OpenStreetMap project. "
 	));
+
+	Add_Reference("http://openstreetmap.org/",
+		SG_T("OpenStreetMap")
+	);
+
+//	https://api.openstreetmap.org/api/0.6/map?bbox=10.0,53.0,10.1,53.1
 
 	//-----------------------------------------------------
 	Parameters.Add_Shapes(
-		NULL	, "POINTS"			, _TL("OSM Locations"),
+		"", "POINTS"	, _TL("OSM Locations"),
 		_TL(""),
 		PARAMETER_OUTPUT, SHAPE_TYPE_Point
 	);
 
 	Parameters.Add_Shapes(
-		NULL	, "WAYS"			, _TL("OSM Ways"),
+		"", "WAYS"		, _TL("OSM Ways"),
 		_TL(""),
 		PARAMETER_OUTPUT, SHAPE_TYPE_Line
 	);
 
 	Parameters.Add_Shapes(
-		NULL	, "RELATIONS"		, _TL("OSM Relations"),
-		_TL(""),
-		PARAMETER_OUTPUT, SHAPE_TYPE_Line
-	);
-
-	Parameters.Add_Shapes(
-		NULL	, "AREAS"			, _TL("OSM Areas"),
+		"", "AREAS"		, _TL("OSM Areas"),
 		_TL(""),
 		PARAMETER_OUTPUT, SHAPE_TYPE_Polygon
-	);
-
-	//-----------------------------------------------------
-	Parameters.Add_String(
-		NULL	, "USERNAME"		, _TL("User Name"),
-		_TL(""),
-		SG_T("")
-	);
-
-	Parameters.Add_String(
-		NULL	, "PASSWORD"		, _TL("Password"),
-		_TL(""),
-		SG_T(""), false, true
 	);
 }
 
 
 ///////////////////////////////////////////////////////////
-//														 //
-//														 //
 //														 //
 ///////////////////////////////////////////////////////////
 
@@ -135,19 +119,7 @@ COSM_Import::COSM_Import(void)
 bool COSM_Import::On_Execute(void)
 {
 	//-----------------------------------------------------
-	m_pPoints	= Parameters("POINTS")		->asShapes();
-	m_pWays		= Parameters("WAYS")		->asShapes();
-	m_pAreas	= Parameters("AREAS")		->asShapes();
-
-	m_bDown		= false;
-
-	//-----------------------------------------------------
-	wxHTTP		Server;
-
-	Server.SetUser		(Parameters("USERNAME")->asString());
-	Server.SetPassword	(Parameters("PASSWORD")->asString());
-
-	if( Server.Connect(SG_T("api.openstreetmap.org")) == false )
+	if( !m_Connection.Create("https://api.openstreetmap.org") )
 	{
 		Message_Add(_TL("Unable to connect to server."));
 
@@ -155,13 +127,27 @@ bool COSM_Import::On_Execute(void)
 	}
 
 	//-----------------------------------------------------
+	m_Nodes.Create(NULL);
+
+	m_Nodes.Add_Field("ID" , SG_DATATYPE_DWord );
+	m_Nodes.Add_Field("LON", SG_DATATYPE_Double);
+	m_Nodes.Add_Field("LAT", SG_DATATYPE_Double);
+
 	//-----------------------------------------------------
-// <osm version="0.6" generator="OpenStreetMap server"></osm>
-//	Request.Set_Name(SG_T("osm"));
-//	Request.Add_Property(SG_T("version")	, SG_T("0.6"));
-//	Request.Add_Property(SG_T("generator")	, SG_T("OpenStreetMap server"));
-//	SG_T("api/capabilities");
-//	http://api.openstreetmap.org/api/0.6/map?bbox=10.0,53.0,10.1,53.1
+	m_pPoints	= Parameters("POINTS")->asShapes();
+	m_pWays		= Parameters("WAYS"  )->asShapes();
+	m_pAreas	= Parameters("AREAS" )->asShapes();
+
+	m_pPoints->Create(SHAPE_TYPE_Point  , _TL("Locations"));
+	m_pWays  ->Create(SHAPE_TYPE_Line   , _TL("Ways"     ));
+	m_pAreas ->Create(SHAPE_TYPE_Polygon, _TL("Areas"    ));
+
+	m_pPoints->Add_Field("ID", SG_DATATYPE_DWord);
+	m_pWays  ->Add_Field("ID", SG_DATATYPE_DWord);
+	m_pAreas ->Add_Field("ID", SG_DATATYPE_DWord);
+
+	//-----------------------------------------------------
+	m_bDown		= false;
 
 	return( true );
 }
@@ -169,7 +155,7 @@ bool COSM_Import::On_Execute(void)
 //---------------------------------------------------------
 bool COSM_Import::On_Execute_Finish(void)
 {
-	return( true );
+	return( CSG_Tool_Interactive::On_Execute_Finish() );
 }
 
 //---------------------------------------------------------
@@ -184,7 +170,6 @@ bool COSM_Import::On_Execute_Position(CSG_Point ptWorld, TSG_Tool_Interactive_Mo
 			m_bDown		= true;
 			m_ptDown	= ptWorld;
 		}
-
 		break;
 
 	//-----------------------------------------------------
@@ -193,57 +178,46 @@ bool COSM_Import::On_Execute_Position(CSG_Point ptWorld, TSG_Tool_Interactive_Mo
 		{
 			m_bDown		= false;
 
-			wxHTTP		Server;
+			CSG_Rect	r(m_ptDown, ptWorld);
 
-		//	Server.SetUser		(Parameters("USERNAME")->asString());
-		//	Server.SetPassword	(Parameters("PASSWORD")->asString());
-			Server.SetUser		(SG_T(""));
-			Server.SetPassword	(SG_T(""));
-
-			if( Server.Connect(SG_T("api.openstreetmap.org")) == false )
-			{
-				Message_Add(_TL("Unable to connect to server."));
-
-				return( false );
-			}
-
-			CSG_Rect		r(m_ptDown, ptWorld);
-			wxInputStream	*pStream	= Server.GetInputStream(wxString::Format(SG_T("/api/0.6/map?bbox=%f,%f,%f,%f"),
-				r.Get_XMin(), r.Get_YMin(), r.Get_XMax(), r.Get_YMax())
+			CSG_String	Request(CSG_String::Format("/api/0.6/map?bbox=%f,%f,%f,%f",
+				r.Get_XMin(), r.Get_YMin(),
+				r.Get_XMax(), r.Get_YMax())
 			);
 
-			if( (pStream ) == NULL )
+			CSG_MetaData	Answer;
+
+			if( m_Connection.Request(Request, Answer) == false )
 			{
 				Message_Add(_TL("received empty stream."));
 
 				return( false );
 			}
 
-			Process_Set_Text(_TL("loading OSM data"));
-
-			wxXmlDocument	XML;
-
-			if( !XML.Load(*pStream) )
+			if( !Load_Nodes(Answer) )
 			{
+				Message_Add("\n___\n" + Request, false);
+				Message_Add("\n___\n" + Answer.asText(1), false);
+
 				return( false );
 			}
 
-			Process_Set_Text(_TL("ready"));
+			#ifdef _DEBUG
+				Message_Add("\n___\n" + Answer.asText(1), false);
 
-			if( !Load_Nodes(XML.GetRoot()) )
-			{
-				return( false );
-			}
+				m_pPoints->Get_MetaData().Del_Children();
+				m_pPoints->Get_MetaData().Add_Child(Answer);
+			#endif
 
-			Load_Ways(XML.GetRoot());
+			m_pWays ->Del_Shapes();
+			m_pAreas->Del_Shapes();
+
+			Load_Ways(Answer);
 
 			DataObject_Update(m_pPoints);
-			DataObject_Update(m_pWays);
-			DataObject_Update(m_pAreas);
-
-			m_Nodes.Destroy();
+			DataObject_Update(m_pWays  );
+			DataObject_Update(m_pAreas );
 		}
-
 		break;
 	}
 
@@ -253,189 +227,104 @@ bool COSM_Import::On_Execute_Position(CSG_Point ptWorld, TSG_Tool_Interactive_Mo
 
 ///////////////////////////////////////////////////////////
 //														 //
-//														 //
-//														 //
 ///////////////////////////////////////////////////////////
 
 //---------------------------------------------------------
-bool COSM_Import::Load_Nodes(wxXmlNode *pRoot)
+bool COSM_Import::Load_Nodes(const CSG_MetaData &Root)
 {
-	long		id;
-	double		lon, lat;
-	wxString	sValue;
+	//-----------------------------------------------------
+	m_Nodes.Del_Records();
+
+	m_pPoints->Del_Shapes();
 
 	//-----------------------------------------------------
-	m_Nodes.Destroy();
-
-	m_Nodes.Add_Field(SG_T("ID")	, SG_DATATYPE_DWord);
-	m_Nodes.Add_Field(SG_T("LON")	, SG_DATATYPE_Double);
-	m_Nodes.Add_Field(SG_T("LAT")	, SG_DATATYPE_Double);
-
-	m_pPoints->Create(SHAPE_TYPE_Point, SG_T("OSM Locations"));
-	m_pPoints->Add_Field(SG_T("ID"), SG_DATATYPE_DWord);
-
-	//-----------------------------------------------------
-	wxXmlNode	*pNode	= pRoot->GetChildren();
-
-	while( pNode )
+	for(int i=0; i<Root.Get_Children_Count(); i++)
 	{
-		if( !pNode->GetName().CmpNoCase(SG_T("node")) )
-		{
-			if(	pNode->GetAttribute(SG_T("id" ), &sValue) && sValue.ToLong  (&id)
-			&&	pNode->GetAttribute(SG_T("lon"), &sValue) && sValue.ToDouble(&lon)
-			&&	pNode->GetAttribute(SG_T("lat"), &sValue) && sValue.ToDouble(&lat) )
-			{
-				wxXmlNode	*pTag	= pNode->GetChildren();
+		const CSG_MetaData	&Node	= Root[i];
 
-				if( !pTag || !pTag->GetName().CmpNoCase(SG_T("created_by")) )
+		if( Node.Cmp_Name("node") )
+		{
+			int	id;	double	lon, lat;
+
+			if(	Node.Get_Property("id" , id )
+			&&	Node.Get_Property("lon", lon)
+			&&	Node.Get_Property("lat", lat) )
+			{
+				if( !Node("created_by") )
 				{
 					CSG_Table_Record	*pRecord	= m_Nodes.Add_Record();
 
-					pRecord->Set_Value(0, id);
+					pRecord->Set_Value(0, id );
 					pRecord->Set_Value(1, lon);
 					pRecord->Set_Value(2, lat);
 				}
 				else
 				{
-					CSG_Shape	*pShape	= m_pPoints->Add_Shape();
+					CSG_Shape	*pPoint	= m_pPoints->Add_Shape();
 
-					pShape->Add_Point(lon, lat);
-					pShape->Set_Value(0, id);
+					pPoint->Add_Point(lon, lat);
+					pPoint->Set_Value(0, id);
 				}
 			}
 		}
-
-		pNode	= pNode->GetNext();
 	}
 
+	//-----------------------------------------------------
 	m_Nodes.Set_Index(0, TABLE_INDEX_Ascending);
 
-	//-----------------------------------------------------
 	return( m_Nodes.Get_Count() > 0 );
 }
 
-//---------------------------------------------------------
-bool COSM_Import::Find_Node(long id, double &lon, double &lat)
-{
-	CSG_Table_Record	*pRecord	= Find_Node(id);
-
-	if( pRecord )
-	{
-		lon	= pRecord->asDouble(1);
-		lat	= pRecord->asDouble(2);
-
-		return( true );
-	}
-
-	return( false );
-}
-
-//---------------------------------------------------------
-CSG_Table_Record * COSM_Import::Find_Node(long id)
-{
-	int		a, b, d, i;
-
-	if( m_Nodes.Get_Count() == 1 )
-	{
-		if( m_Nodes.Get_Record_byIndex(0)->asInt(0) == id )
-		{
-			return( m_Nodes.Get_Record_byIndex(0) );
-		}
-	}
-
-	else if( m_Nodes.Get_Count() > 1 )
-	{
-		a	= 0;
-		if( id < (d = m_Nodes.Get_Record_byIndex(a)->asInt(0)) )	return( NULL );		if( id == d )	return( m_Nodes.Get_Record_byIndex(a) );
-
-		b	= m_Nodes.Get_Count() - 1;
-		if( id > (d = m_Nodes.Get_Record_byIndex(b)->asInt(0)) )	return( NULL );		if( id == d )	return( m_Nodes.Get_Record_byIndex(b) );
-
-		for( ; b - a > 1; )
-		{
-			i	= a + (b - a) / 2;
-			d	= m_Nodes.Get_Record_byIndex(i)->asInt(0);
-
-			if( id > d )
-			{
-				a	= i;
-			}
-			else if( id < d )
-			{
-				b	= i;
-			}
-			else
-			{
-				return( m_Nodes.Get_Record_byIndex(i) );
-			}
-		}
-	}
-
-	return( NULL );
-}
-
 
 ///////////////////////////////////////////////////////////
-//														 //
-//														 //
 //														 //
 ///////////////////////////////////////////////////////////
 
 //---------------------------------------------------------
-bool COSM_Import::Load_Ways(wxXmlNode *pRoot)
+bool COSM_Import::Load_Ways(const CSG_MetaData &Root)
 {
-	long		id, idnode, Nodes[2000], nNodes;
-	wxString	sValue;
-
 	//-----------------------------------------------------
-	m_pWays		->Create(SHAPE_TYPE_Line	, SG_T("OSM Ways"));
-	m_pWays		->Add_Field(SG_T("ID"), SG_DATATYPE_DWord);
-
-	m_pAreas	->Create(SHAPE_TYPE_Polygon	, SG_T("OSM Areas"));
-	m_pAreas	->Add_Field(SG_T("ID"), SG_DATATYPE_DWord);
-
-	//-----------------------------------------------------
-	wxXmlNode	*pNode	= pRoot->GetChildren();
-
-	while( pNode )
+	for(int i=0, WayID; i<Root.Get_Children_Count(); i++)
 	{
-		if( !pNode->GetName().CmpNoCase(SG_T("way")) )
+		const CSG_MetaData	&Node	= Root[i];
+
+		if( Node.Cmp_Name("way") &&	Node.Get_Property("id", WayID) )
 		{
-			if(	pNode->GetAttribute(SG_T("id" ), &sValue) && sValue.ToLong  (&id) )
+			CSG_Array_Int	NodeIDs;
+
+			for(int iChild=0, NodeID; iChild<Node.Get_Children_Count(); iChild++)
 			{
-				wxXmlNode	*pChild	= pNode->GetChildren();
+				const CSG_MetaData	&Child	= Node[iChild];
 
-				nNodes	= 0;
-
-				while( pChild )
+				if( Child.Cmp_Name("nd") && Child.Get_Property("ref", NodeID) )
 				{
-					if( !pChild->GetName().CmpNoCase(SG_T("nd")) && pChild->GetAttribute(SG_T("ref"), &sValue) && sValue.ToLong(&idnode) )
-					{
-						Nodes[nNodes++]	= idnode;
-					}
-
-					pChild	= pChild->GetNext();
+					NodeIDs	+= NodeID;
 				}
+			}
 
-				if( nNodes > 1 )
+			if( NodeIDs.Get_Size() > 1 )
+			{
+				CSG_Shape	*pWay	= NodeIDs[0] == NodeIDs[NodeIDs.Get_Size() - 1]
+					? m_pAreas->Add_Shape()
+					: m_pWays ->Add_Shape();
+
+				pWay->Set_Value(0, WayID);
+
+				for(size_t iNode=0; iNode<NodeIDs.Get_Size(); iNode++)
 				{
-					CSG_Shape	*pShape	= Nodes[0] == Nodes[nNodes - 1] ? m_pAreas->Add_Shape() : m_pWays->Add_Shape();
+					CSG_Table_Record	*pNode	= m_Nodes.Find_Record(0, NodeIDs[iNode], true);
 
-					for(int i=0; i<nNodes; i++)
+					if( pNode )
 					{
-						double	lon, lat;
-
-						if( Find_Node(Nodes[i], lon, lat) )
-						{
-							pShape->Add_Point(lon, lat);
-						}
+						pWay->Add_Point(pNode->asDouble(1), pNode->asDouble(2));
 					}
 				}
 			}
 		}
-
-		pNode	= pNode->GetNext();
 	}
+
+	//-----------------------------------------------------
+	m_Nodes.Del_Records();
 
 	return( true );
 }

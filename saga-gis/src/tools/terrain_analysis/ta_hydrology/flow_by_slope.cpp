@@ -141,7 +141,7 @@ CFlow_by_Slope::CFlow_by_Slope(void)
 //---------------------------------------------------------
 int CFlow_by_Slope::On_Parameters_Enable(CSG_Parameters *pParameters, CSG_Parameter *pParameter)
 {
-	if( !SG_STR_CMP(pParameter->Get_Identifier(), "B_FLOW") )
+	if( pParameter->Cmp_Identifier("B_FLOW") )
 	{
 		pParameters->Get_Parameter("T_FLOW")->Set_Enabled(pParameter->asBool());
 	}
@@ -169,8 +169,8 @@ bool CFlow_by_Slope::On_Execute(void)
 
 	if( Parameters("B_FLOW")->asBool() )
 	{
-		m_Flow_Min	= Parameters("T_FLOW")->asRange()->Get_LoVal() * Get_Cellarea();
-		m_Flow_Max	= Parameters("T_FLOW")->asRange()->Get_HiVal() * Get_Cellarea();
+		m_Flow_Min	= Parameters("T_FLOW")->asRange()->Get_Min() * Get_Cellarea();
+		m_Flow_Max	= Parameters("T_FLOW")->asRange()->Get_Max() * Get_Cellarea();
 	}
 	else
 	{

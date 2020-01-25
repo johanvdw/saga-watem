@@ -139,7 +139,7 @@ CKernel_Density::CKernel_Density(void)
 //---------------------------------------------------------
 int CKernel_Density::On_Parameter_Changed(CSG_Parameters *pParameters, CSG_Parameter *pParameter)
 {
-	if( (!SG_STR_CMP(pParameter->Get_Identifier(), "POINTS") || !SG_STR_CMP(pParameter->Get_Identifier(), "RADIUS"))
+	if( (pParameter->Cmp_Identifier("POINTS") || pParameter->Cmp_Identifier("RADIUS"))
 	&&  pParameters->Get_Parameter("POINTS")->asShapes() )
 	{
 		CSG_Rect	Extent(pParameters->Get_Parameter("POINTS")->asShapes()->Get_Extent());
@@ -193,7 +193,7 @@ bool CKernel_Density::On_Execute(void)
 		return( false );
 	}
 
-	m_pGrid->Set_Name(CSG_String::Format(SG_T("%s [%s]"), pPoints->Get_Name(), _TL("Kernel Density")));
+	m_pGrid->Fmt_Name("%s [%s]", pPoints->Get_Name(), _TL("Kernel Density"));
 	m_pGrid->Set_NoData_Value(0.0);
 	m_pGrid->Assign(0.0);
 

@@ -123,13 +123,13 @@ bool CNewton::On_Execute(void)
 	int		x, y;
 		
 	x				= Parameters("NX")->asInt();
-	xMin			= Parameters("XRANGE")->asRange()->Get_LoVal();
-	dx	 =	xMax	= Parameters("XRANGE")->asRange()->Get_HiVal();
+	xMin			= Parameters("XRANGE")->asRange()->Get_Min();
+	dx	 =	xMax	= Parameters("XRANGE")->asRange()->Get_Max();
 	dx				= (dx - xMin) / (x - 1.0);
 
 	y				= Parameters("NY")->asInt();
-	yMin			= Parameters("YRANGE")->asRange()->Get_LoVal();
-	dy	=	yMax	= Parameters("YRANGE")->asRange()->Get_HiVal();
+	yMin			= Parameters("YRANGE")->asRange()->Get_Min();
+	dy	=	yMax	= Parameters("YRANGE")->asRange()->Get_Max();
 	dy				= (dy - yMin) / (y - 1.0);
 
 	method			= Parameters("METHOD")->asInt();
@@ -142,7 +142,7 @@ bool CNewton::On_Execute(void)
 	pShade->Set_Name(_TL("Newton [B]"));
 	Parameters("SHADE")	->Set_Value(pShade);
 
-	Get_System()->Assign(pShade->Get_System());
+	Set_System(pShade->Get_System());
 
 	//-----------------------------------------------------
 	iMax		= Parameters("MAXITER")->asInt();
@@ -175,7 +175,7 @@ bool CNewton::doNewton()
 // MinGW ERROR:
 // Newton.cpp:181: error: no matching function for call to `std::complex<double>::real(double&)'
 // error: candidates are: double std::complex<double>::real() const
-#ifdef _SAGA_VC
+#ifdef _SAGA_MSW
 			z.real(r);
 			z.imag(i);
 #endif

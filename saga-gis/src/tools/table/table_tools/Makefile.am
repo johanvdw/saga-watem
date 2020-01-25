@@ -5,12 +5,13 @@ if DEBUG
 DBGFLAGS = -g -DDEBUG
 endif
 
-DEF_SAGA           = -D_SAGA_LINUX -D_TYPEDEF_BYTE -D_TYPEDEF_WORD -D_SAGA_UNICODE
+DEF_SAGA           = -D_SAGA_LINUX -D_TYPEDEF_BYTE -D_TYPEDEF_WORD
 CXX_INCS           = -I$(top_srcdir)/src/saga_core
 AM_CXXFLAGS        = -fPIC $(CXX_INCS) $(DEF_SAGA) $(DBGFLAGS) $(GOMPFLAGS)
 AM_LDFLAGS         = -fPIC -shared -avoid-version
 pkglib_LTLIBRARIES = libtable_tools.la
 libtable_tools_la_SOURCES =\
+field_formatted_string.cpp\
 Join_Tables.cpp\
 MLB_Interface.cpp\
 table_categories_to_indicators.cpp\
@@ -23,6 +24,7 @@ table_field_deletion.cpp\
 Table_Rotate.cpp\
 table_selection.cpp\
 table_text_replacer.cpp\
+field_formatted_string.h\
 Join_Tables.h\
 MLB_Interface.h\
 table_categories_to_indicators.h\

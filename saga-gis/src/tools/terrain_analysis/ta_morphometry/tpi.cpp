@@ -156,8 +156,8 @@ bool CTPI::On_Execute(void)
 	DataObject_Set_Colors(m_pTPI, 11, SG_COLORS_RED_GREY_BLUE, true);
 
 	//-----------------------------------------------------
-	double	r_inner	= Parameters("RADIUS")->asRange()->Get_LoVal() / Get_Cellsize();
-	double	r_outer	= Parameters("RADIUS")->asRange()->Get_HiVal() / Get_Cellsize();
+	double	r_inner	= Parameters("RADIUS")->asRange()->Get_Min() / Get_Cellsize();
+	double	r_outer	= Parameters("RADIUS")->asRange()->Get_Max() / Get_Cellsize();
 
 	m_Kernel.Get_Weighting().Set_Parameters(&Parameters);
 	m_Kernel.Get_Weighting().Set_BandWidth(r_outer * m_Kernel.Get_Weighting().Get_BandWidth() / 100.0);
@@ -348,7 +348,7 @@ bool CTPI_Classification::On_Execute(void)
 	Calculator.Set_Parameter("STANDARD", true);
 
 	//-----------------------------------------------------
-	CSG_Grid	gA(*Get_System());
+	CSG_Grid	gA(Get_System());
 
 	Calculator.Set_Parameter("TPI"   , &gA);
 	Calculator.Set_Parameter("RADIUS", Parameters("RADIUS_A"));
@@ -359,7 +359,7 @@ bool CTPI_Classification::On_Execute(void)
 	}
 
 	//-----------------------------------------------------
-	CSG_Grid	gB(*Get_System());
+	CSG_Grid	gB(Get_System());
 
 	Calculator.Set_Parameter("TPI"   , &gB);
 	Calculator.Set_Parameter("RADIUS", Parameters("RADIUS_B"));
@@ -596,7 +596,7 @@ CTPI_MultiScale::CTPI_MultiScale(void)
 //---------------------------------------------------------
 int CTPI_MultiScale::On_Parameter_Changed(CSG_Parameters *pParameters, CSG_Parameter *pParameter)
 {
-	if( !SG_STR_CMP(pParameter->Get_Identifier(), "SCALE_MIN") )
+	if( pParameter->Cmp_Identifier("SCALE_MIN") )
 	{
 		if( pParameter->asInt() > pParameters->Get_Parameter("SCALE_MAX")->asInt() )
 		{
@@ -604,7 +604,7 @@ int CTPI_MultiScale::On_Parameter_Changed(CSG_Parameters *pParameters, CSG_Param
 		}
 	}
 
-	if( !SG_STR_CMP(pParameter->Get_Identifier(), "SCALE_MAX") )
+	if( pParameter->Cmp_Identifier("SCALE_MAX") )
 	{
 		if( pParameter->asInt() < pParameters->Get_Parameter("SCALE_MIN")->asInt() )
 		{
@@ -666,7 +666,7 @@ bool CTPI_MultiScale::On_Execute(void)
 	}
 
 	//-----------------------------------------------------
-	CSG_Grid	TPI(*Get_System()), *pTPI	= Parameters("TPI")->asGrid();
+	CSG_Grid	TPI(Get_System()), *pTPI	= Parameters("TPI")->asGrid();
 
 	CTPI	Calculator;	Calculator.Set_Manager(NULL);
 
@@ -674,11 +674,11 @@ bool CTPI_MultiScale::On_Execute(void)
 	Calculator.Set_Parameter("TPI"     , pTPI);
 	Calculator.Set_Parameter("STANDARD", true);
 
-	Calculator.Get_Parameters()->Get_Parameter("RADIUS")->asRange()->Set_LoVal(  0.0);
-	Calculator.Get_Parameters()->Get_Parameter("RADIUS")->asRange()->Set_HiVal(Scale);
+	Calculator.Get_Parameters()->Get_Parameter("RADIUS")->asRange()->Set_Min(  0.0);
+	Calculator.Get_Parameters()->Get_Parameter("RADIUS")->asRange()->Set_Max(Scale);
 
-	Process_Set_Text(CSG_String::Format(  "%s: %.*f [%d/%d]", _TL("Scale"), SG_Get_Significant_Decimals(Scale), Scale, 1, nScales));
-	Message_Add     (CSG_String::Format("\n%s: %.*f [%d/%d]", _TL("Scale"), SG_Get_Significant_Decimals(Scale), Scale, 1, nScales), false);
+	Process_Set_Text(  "%s: %.*f [%d/%d]", _TL("Scale"), SG_Get_Significant_Decimals(Scale), Scale, 1, nScales);
+	Message_Fmt     ("\n%s: %.*f [%d/%d]", _TL("Scale"), SG_Get_Significant_Decimals(Scale), Scale, 1, nScales);
 
 	SG_UI_Msg_Lock(true);
 	Calculator.Execute();
@@ -694,10 +694,10 @@ bool CTPI_MultiScale::On_Execute(void)
 			DataObject_Update(pTPI);
 		}
 
-		Calculator.Get_Parameters()->Get_Parameter("RADIUS")->asRange()->Set_HiVal(Scale = Scale - dScale);
+		(*Calculator.Get_Parameters())("RADIUS")->asRange()->Set_Max(Scale = Scale - dScale);
 
-		Process_Set_Text(CSG_String::Format(  "%s: %.*f [%d/%d]", _TL("Scale"), SG_Get_Significant_Decimals(Scale), Scale, 1 + iScale, nScales));
-		Message_Add     (CSG_String::Format("\n%s: %.*f [%d/%d]", _TL("Scale"), SG_Get_Significant_Decimals(Scale), Scale, 1 + iScale, nScales), false);
+		Process_Set_Text(  "%s: %.*f [%d/%d]", _TL("Scale"), SG_Get_Significant_Decimals(Scale), Scale, 1 + iScale, nScales);
+		Message_Fmt     ("\n%s: %.*f [%d/%d]", _TL("Scale"), SG_Get_Significant_Decimals(Scale), Scale, 1 + iScale, nScales);
 
 		SG_UI_Msg_Lock(true);
 		Calculator.Execute();

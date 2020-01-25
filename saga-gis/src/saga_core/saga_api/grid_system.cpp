@@ -99,110 +99,46 @@ int CSG_Grid_System::Get_Precision(void)
 //---------------------------------------------------------
 CSG_Grid_System::CSG_Grid_System(void)
 {
-	Assign(0.0, 0.0, 0.0, 0, 0);
+	Destroy();
 }
 
 //---------------------------------------------------------
 CSG_Grid_System::CSG_Grid_System(const CSG_Grid_System &System)
 {
-	Assign(System);
+	Create(System);
 }
 
 //---------------------------------------------------------
 CSG_Grid_System::CSG_Grid_System(double Cellsize, const CSG_Rect &Extent)
 {
-	Assign(Cellsize, Extent);
+	Create(Cellsize, Extent);
 }
 
 //---------------------------------------------------------
 CSG_Grid_System::CSG_Grid_System(double Cellsize, double xMin, double yMin, double xMax, double yMax)
 {
-	Assign(Cellsize, xMin, yMin, xMax, yMax);
+	Create(Cellsize, xMin, yMin, xMax, yMax);
 }
 
 //---------------------------------------------------------
 CSG_Grid_System::CSG_Grid_System(double Cellsize, double xMin, double yMin, int NX, int NY)
 {
-	Assign(Cellsize, xMin, yMin, NX, NY);
+	Create(Cellsize, xMin, yMin, NX, NY);
 }
 
 //---------------------------------------------------------
 CSG_Grid_System::~CSG_Grid_System(void)
 {
+	Destroy();
 }
 
 
 ///////////////////////////////////////////////////////////
 //														 //
-//														 //
-//														 //
 ///////////////////////////////////////////////////////////
 
 //---------------------------------------------------------
-bool CSG_Grid_System::is_Valid(void) const
-{
-	return( m_Cellsize > 0.0 );
-}
-
-//---------------------------------------------------------
-const SG_Char * CSG_Grid_System::Get_Name(bool bShort)
-{
-	if( is_Valid() )
-	{
-		if( bShort )
-		{
-			m_Name.Printf(SG_T("%.*f; %dx %dy; %.*fx %.*fy"),
-				SG_Get_Significant_Decimals(Get_Cellsize()), Get_Cellsize(),
-				Get_NX(), Get_NY(),
-				SG_Get_Significant_Decimals(Get_XMin    ()), Get_XMin    (),
-				SG_Get_Significant_Decimals(Get_YMin    ()), Get_YMin    ()
-			);
-		}
-		else
-		{
-			m_Name.Printf(SG_T("%s: %f, %s: %dx/%dy, %s: %fx/%fy"),
-				_TL("Cell size"        ), Get_Cellsize(),
-				_TL("Number of cells"  ), Get_NX(), Get_NY(),
-				_TL("Lower left corner"), Get_XMin(), Get_YMin()
-			);
-		}
-	}
-	else
-	{
-		m_Name	= _TL("<not set>");
-	}
-
-	return( m_Name );
-}
-
-
-///////////////////////////////////////////////////////////
-//														 //
-//														 //
-//														 //
-///////////////////////////////////////////////////////////
-
-//---------------------------------------------------------
-bool CSG_Grid_System::operator == (const CSG_Grid_System &System) const
-{
-	return( is_Equal(System) );
-}
-
-//---------------------------------------------------------
-void CSG_Grid_System::operator = (const CSG_Grid_System &System)
-{
-	Assign(System);
-}
-
-
-///////////////////////////////////////////////////////////
-//														 //
-//														 //
-//														 //
-///////////////////////////////////////////////////////////
-
-//---------------------------------------------------------
-bool CSG_Grid_System::Assign(const CSG_Grid_System &System)
+bool CSG_Grid_System::Create(const CSG_Grid_System &System)
 {
 	m_NX			= System.m_NX;
 	m_NY			= System.m_NY;
@@ -219,7 +155,7 @@ bool CSG_Grid_System::Assign(const CSG_Grid_System &System)
 }
 
 //---------------------------------------------------------
-bool CSG_Grid_System::Assign(double Cellsize, const CSG_Rect &Extent)
+bool CSG_Grid_System::Create(double Cellsize, const CSG_Rect &Extent)
 {
 	if( Cellsize > 0.0 && Extent.Get_XRange() >= 0.0 && Extent.Get_YRange() >= 0.0 )
 	{
@@ -229,20 +165,22 @@ bool CSG_Grid_System::Assign(double Cellsize, const CSG_Rect &Extent)
 		double	x	= !fmod(Extent.Get_XRange(), Cellsize) ? Extent.Get_XMin() : Extent.Get_Center().Get_X() - Cellsize * nx / 2.;
 		double	y	= !fmod(Extent.Get_YRange(), Cellsize) ? Extent.Get_YMin() : Extent.Get_Center().Get_Y() - Cellsize * ny / 2.;
 
-		return( Assign(Cellsize, x, y, nx, ny) );
+		return( Create(Cellsize, x, y, nx, ny) );
 	}
 
-	return( Assign(0.0, 0.0, 0.0, 0, 0) );
+	Destroy();
+
+	return( false );
 }
 
 //---------------------------------------------------------
-bool CSG_Grid_System::Assign(double Cellsize, double xMin, double yMin, double xMax, double yMax)
+bool CSG_Grid_System::Create(double Cellsize, double xMin, double yMin, double xMax, double yMax)
 {
-	return( Assign(Cellsize, CSG_Rect(xMin, yMin, xMax, yMax)) );
+	return( Create(Cellsize, CSG_Rect(xMin, yMin, xMax, yMax)) );
 }
 
 //---------------------------------------------------------
-bool CSG_Grid_System::Assign(double Cellsize, double xMin, double yMin, int NX, int NY)
+bool CSG_Grid_System::Create(double Cellsize, double xMin, double yMin, int NX, int NY)
 {
 	if( Cellsize > 0.0 && NX > 0 && NY > 0 )
 	{
@@ -285,6 +223,88 @@ bool CSG_Grid_System::Assign(double Cellsize, double xMin, double yMin, int NX, 
 	m_Extent_Cells	.Assign(0.0, 0.0, 0.0, 0.0);
 
 	return( false );
+}
+
+//---------------------------------------------------------
+bool CSG_Grid_System::Destroy(void)
+{
+	Create(0.0, 0.0, 0.0, 0, 0);
+
+	return( true );
+}
+
+//---------------------------------------------------------
+bool CSG_Grid_System::Assign(const CSG_Grid_System &System)
+{	return( Create(System) );	}
+
+bool CSG_Grid_System::Assign(double Cellsize, const CSG_Rect &Extent)
+{	return( Create(Cellsize, Extent) );	}
+
+bool CSG_Grid_System::Assign(double Cellsize, double xMin, double yMin, double xMax, double yMax)
+{	return( Create(Cellsize, xMin, yMin, xMax, yMax) );	}
+
+bool CSG_Grid_System::Assign(double Cellsize, double xMin, double yMin, int NX, int NY)
+{	return( Create(Cellsize, xMin, yMin, NX, NY) );	}
+
+
+///////////////////////////////////////////////////////////
+//														 //
+///////////////////////////////////////////////////////////
+
+//---------------------------------------------------------
+bool CSG_Grid_System::is_Valid(void) const
+{
+	return( m_Cellsize > 0.0 );
+}
+
+//---------------------------------------------------------
+const SG_Char * CSG_Grid_System::Get_Name(bool bShort)
+{
+	if( is_Valid() )
+	{
+		if( bShort )
+		{
+			m_Name.Printf("%.*f; %dx %dy; %.*fx %.*fy",
+				SG_Get_Significant_Decimals(Get_Cellsize()), Get_Cellsize(),
+				Get_NX(), Get_NY(),
+				SG_Get_Significant_Decimals(Get_XMin    ()), Get_XMin    (),
+				SG_Get_Significant_Decimals(Get_YMin    ()), Get_YMin    ()
+			);
+		}
+		else
+		{
+			m_Name.Printf("%s: %f, %s: %dx/%dy, %s: %fx/%fy",
+				_TL("Cell size"        ), Get_Cellsize(),
+				_TL("Number of cells"  ), Get_NX(), Get_NY(),
+				_TL("Lower left corner"), Get_XMin(), Get_YMin()
+			);
+		}
+	}
+	else
+	{
+		m_Name	= _TL("<not set>");
+	}
+
+	return( m_Name );
+}
+
+
+///////////////////////////////////////////////////////////
+//														 //
+//														 //
+//														 //
+///////////////////////////////////////////////////////////
+
+//---------------------------------------------------------
+bool CSG_Grid_System::operator == (const CSG_Grid_System &System) const
+{
+	return( is_Equal(System) );
+}
+
+//---------------------------------------------------------
+void CSG_Grid_System::operator = (const CSG_Grid_System &System)
+{
+	Create(System);
 }
 
 
@@ -445,7 +465,7 @@ bool CSG_Grid_Cell_Addressor::Set_Sector (CSG_Parameters &Parameters)	{	return( 
 ///////////////////////////////////////////////////////////
 
 //---------------------------------------------------------
-bool CSG_Grid_Cell_Addressor::On_Parameters_Enable(CSG_Parameters &Parameters)
+bool CSG_Grid_Cell_Addressor::Enable_Parameters(CSG_Parameters &Parameters)
 {
 	if( Parameters("KERNEL_TYPE") )
 	{
@@ -454,6 +474,15 @@ bool CSG_Grid_Cell_Addressor::On_Parameters_Enable(CSG_Parameters &Parameters)
 		Parameters.Set_Enabled("KERNEL_INNER"    , Type == SG_GRIDCELLADDR_PARM_ANNULUS);
 		Parameters.Set_Enabled("KERNEL_DIRECTION", Type == SG_GRIDCELLADDR_PARM_SECTOR );
 		Parameters.Set_Enabled("KERNEL_TOLERANCE", Type == SG_GRIDCELLADDR_PARM_SECTOR );
+	}
+
+	if( Parameters("DW_WEIGHTING") )
+	{
+		int	Method	= Parameters("DW_WEIGHTING")->asInt();
+
+		Parameters.Set_Enabled("DW_IDW_OFFSET", Method == 1);
+		Parameters.Set_Enabled("DW_IDW_POWER" , Method == 1);
+		Parameters.Set_Enabled("DW_BANDWIDTH" , Method >= 2);
 	}
 
 	return( true );
@@ -572,11 +601,9 @@ bool CSG_Grid_Cell_Addressor::Set_Sector(double Radius, double Direction, double
 	//-----------------------------------------------------
 	if( Radius > 0.0 )
 	{
-		TSG_Point			a, b;
-		CSG_Shapes			Polygons(SHAPE_TYPE_Polygon);	// Polygons.Add_Field(SG_T("ID"), SG_DATATYPE_Int);
-		CSG_Shape_Polygon	*pPolygon	= (CSG_Shape_Polygon *)Polygons.Add_Shape();
+		TSG_Point	a, b;
 
-		Direction	= fmod(Direction, M_PI_360);	if( Direction < 0.0 )	Direction	+= M_PI_360;
+		Direction	= fmod(Direction, M_PI_360); if( Direction < 0.0 ) Direction += M_PI_360;
 
 		if( Direction < M_PI_090 )
 		{
@@ -601,6 +628,9 @@ bool CSG_Grid_Cell_Addressor::Set_Sector(double Radius, double Direction, double
 
 		double	d	= 10.0 * SG_Get_Length(Radius, Radius);
 
+		CSG_Shapes	Polygons(SHAPE_TYPE_Polygon);
+		CSG_Shape_Polygon	*pPolygon	= (CSG_Shape_Polygon *)Polygons.Add_Shape();
+
 		pPolygon->Add_Point(b.x, b.y);
 		pPolygon->Add_Point(a.x, a.y);
 		pPolygon->Add_Point(a.x + d * sin(Direction - Tolerance), a.y + d * cos(Direction - Tolerance));
@@ -614,10 +644,10 @@ bool CSG_Grid_Cell_Addressor::Set_Sector(double Radius, double Direction, double
 			{
 				if( (d = SG_Get_Length(x, y)) <= Radius )
 				{
-					if( pPolygon->Contains( x,  y) )	ADD_CELL( x,  y, d);
-					if( pPolygon->Contains( y, -x) )	ADD_CELL( y, -x, d);
-					if( pPolygon->Contains(-x, -y) )	ADD_CELL(-x, -y, d);
-					if( pPolygon->Contains(-y,  x) )	ADD_CELL(-y,  x, d);
+					if( pPolygon->Contains( x,  y) ) ADD_CELL( x,  y, d);
+					if( pPolygon->Contains( y, -x) ) ADD_CELL( y, -x, d);
+					if( pPolygon->Contains(-x, -y) ) ADD_CELL(-x, -y, d);
+					if( pPolygon->Contains(-y,  x) ) ADD_CELL(-y,  x, d);
 				}
 			}
 		}

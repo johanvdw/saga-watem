@@ -1,0 +1,6 @@
+# Not worth the effort
+testsuite-autopkgtest-missing
+
+# Only a single Python version is supported during the build
+python-foo-but-no-python3-foo python-saga
+

@@ -152,12 +152,12 @@ CClassification_Quality::CClassification_Quality(void)
 //---------------------------------------------------------
 int CClassification_Quality::On_Parameters_Enable(CSG_Parameters *pParameters, CSG_Parameter *pParameter)
 {
-	if(	!SG_STR_CMP(pParameter->Get_Identifier(), "GRID_VALUES") )
+	if(	pParameter->Cmp_Identifier("GRID_VALUES") )
 	{
 		pParameters->Set_Enabled("GRID_LUT", pParameter->asInt() == 1);
 	}
 
-	if(	!SG_STR_CMP(pParameter->Get_Identifier(), "GRID_LUT") )
+	if(	pParameter->Cmp_Identifier("GRID_LUT") )
 	{
 		pParameters->Set_Enabled("GRID_LUT_MIN", pParameter->asTable() != NULL);
 		pParameters->Set_Enabled("GRID_LUT_MAX", pParameter->asTable() != NULL);
@@ -226,7 +226,7 @@ bool CClassification_Quality::On_Execute(void)
 	Confusion[Confusion.Get_Count() - 2].Set_NoData(Confusion.Get_Field_Count() - 1);
 	Confusion[Confusion.Get_Count() - 2].Set_NoData(Confusion.Get_Field_Count() - 2);
 
-	Confusion.Set_Name(CSG_String::Format("%s [%s - %s]", _TL("Confusion Matrix"), pPolygons->Get_Name(), pGrid->Get_Name()));
+	Confusion.Fmt_Name("%s [%s - %s]", _TL("Confusion Matrix"), pPolygons->Get_Name(), pGrid->Get_Name());
 
 	//-----------------------------------------------------
 	TSG_Point	p;	p.y	= Get_YMin();
@@ -263,7 +263,7 @@ bool CClassification_Quality::On_Execute(void)
 	CSG_Table	&Classes	= *Parameters("CLASSES")->asTable();
 
 	Classes.Destroy();
-	Classes.Set_Name(CSG_String::Format("%s [%s - %s]", _TL("Class Values"), pPolygons->Get_Name(), pGrid->Get_Name()));
+	Classes.Fmt_Name("%s [%s - %s]", _TL("Class Values"), pPolygons->Get_Name(), pGrid->Get_Name());
 	Classes.Add_Field("Class"        , SG_DATATYPE_String);
 	Classes.Add_Field("SumRef"       , SG_DATATYPE_Int);
 	Classes.Add_Field("AccProd"      , SG_DATATYPE_Double);
@@ -312,7 +312,7 @@ bool CClassification_Quality::On_Execute(void)
 	CSG_Table	&Summary	= *Parameters("SUMMARY")->asTable();
 
 	Summary.Destroy();
-	Summary.Set_Name(CSG_String::Format("%s [%s - %s]", _TL("Summary"), pPolygons->Get_Name(), pGrid->Get_Name()));
+	Summary.Fmt_Name("%s [%s - %s]", _TL("Summary"), pPolygons->Get_Name(), pGrid->Get_Name());
 	Summary.Add_Field("NAME" , SG_DATATYPE_String);
 	Summary.Add_Field("VALUE", SG_DATATYPE_Double);
 	Summary.Set_Record_Count(2);
@@ -324,8 +324,8 @@ bool CClassification_Quality::On_Execute(void)
 		Summary[0].Set_Value(0, "Kappa"           ); Summary[0].Set_Value(1, k  = (nTotal * nTrue - nProd) / k);
 		Summary[1].Set_Value(0, "Overall Accuracy"); Summary[1].Set_Value(1, OA = nTrue / (double)nTotal);
 
-		Message_Add(CSG_String::Format("\n%s: %f", _TL("Kappa"           ), k ), false);
-		Message_Add(CSG_String::Format("\n%s: %f", _TL("Overall Accuracy"), OA), false);
+		Message_Fmt("\n%s: %f", _TL("Kappa"           ), k );
+		Message_Fmt("\n%s: %f", _TL("Overall Accuracy"), OA);
 	}
 
 	//-----------------------------------------------------

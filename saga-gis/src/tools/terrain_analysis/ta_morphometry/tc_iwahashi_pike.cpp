@@ -102,7 +102,7 @@ void CTC_Parameter_Base::On_Construction(void)
 //---------------------------------------------------------
 int CTC_Parameter_Base::On_Parameters_Enable(CSG_Parameters *pParameters, CSG_Parameter *pParameter)
 {
-	if( !SG_STR_CMP(pParameter->Get_Identifier(), "METHOD") )
+	if( pParameter->Cmp_Identifier("METHOD") )
 	{
 		pParameters->Set_Enabled("DISTANCE_WEIGHTING", pParameter->asInt() == 0);
 	}
@@ -168,7 +168,7 @@ bool CTC_Parameter_Base::Get_Parameter(CSG_Grid *pValues, CSG_Grid *pParameter)
 	{
 		double		Cellsize	= Parameters("SCALE")->asInt() * Get_Cellsize();
 
-		if( Cellsize > 0.5 * SG_Get_Length(Get_System()->Get_XRange(), Get_System()->Get_YRange()) )
+		if( Cellsize > 0.5 * SG_Get_Length(Get_System().Get_XRange(), Get_System().Get_YRange()) )
 		{
 			Error_Set(_TL("resampling cell size is too large"));
 
@@ -261,7 +261,7 @@ CTC_Texture::CTC_Texture(void)
 bool CTC_Texture::On_Execute(void)
 {
 	//-----------------------------------------------------
-	CSG_Grid	Noise(*Get_System(), SG_DATATYPE_Char);
+	CSG_Grid	Noise(Get_System(), SG_DATATYPE_Char);
 
 	double	Epsilon	= Parameters("EPSILON")->asDouble();
 
@@ -397,7 +397,7 @@ bool CTC_Convexity::On_Execute(void)
 	int	Kernel	= Parameters("KERNEL")->asInt();
 
 	//-----------------------------------------------------
-	CSG_Grid	Laplace(*Get_System(), SG_DATATYPE_Char);
+	CSG_Grid	Laplace(Get_System(), SG_DATATYPE_Char);
 
 	double	Epsilon	= Parameters("EPSILON")->asDouble();
 	int		Type	= Parameters("TYPE"   )->asInt   ();
@@ -607,7 +607,7 @@ int CTC_Classification::On_Parameters_Enable(CSG_Parameters *pParameters, CSG_Pa
 	||	pParameters->Get_Parameter("TEXTURE"    )->asGrid() == NULL
 	);
 
-	if( !SG_STR_CMP(pParameter->Get_Identifier(), "CONVEXITY") )
+	if( pParameter->Cmp_Identifier("CONVEXITY") )
 	{
 		pParameters->Set_Enabled("CONV_RECALC", pParameter->asGrid() != NULL);
 	}
@@ -617,7 +617,7 @@ int CTC_Classification::On_Parameters_Enable(CSG_Parameters *pParameters, CSG_Pa
 	||	pParameters->Get_Parameter("CONV_RECALC")->asBool()
 	);
 
-	if( !SG_STR_CMP(pParameter->Get_Identifier(), "TEXTURE") )
+	if( pParameter->Cmp_Identifier("TEXTURE") )
 	{
 		pParameters->Set_Enabled("TEXT_RECALC" , pParameter->asGrid() != NULL);
 	}
@@ -653,7 +653,7 @@ bool CTC_Classification::On_Execute(void)
 
 	if( !m_pSlope )
 	{
-		Slope.Create(*Get_System());	m_pSlope	= &Slope;
+		Slope.Create(Get_System());	m_pSlope	= &Slope;
 
 		CSG_Grid	*pDEM	= Parameters("DEM")->asGrid();
 
@@ -739,7 +739,7 @@ bool CTC_Classification::Get_Classes(void)
 	//-----------------------------------------------------
 	for(Level=1; Level<=nLevels && Process_Get_Okay(); Level++)
 	{
-		Process_Set_Text(CSG_String::Format("%s: %d", _TL("Level"), Level));
+		Process_Set_Text("%s: %d", _TL("Level"), Level);
 
 		m_Mean_Slope		= Level == 1 ? m_pSlope    ->Get_Mean() : m_Stat_Slope    .Get_Mean();
 		m_Mean_Convexity	= Level == 1 ? m_pConvexity->Get_Mean() : m_Stat_Convexity.Get_Mean();

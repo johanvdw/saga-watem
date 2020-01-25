@@ -1,0 +1,123 @@
+=head1 NAME
+
+B<saga_cmd> - command-line interface to the System for Automated Geoscientific Analyses
+
+=head1 SYNOPSIS
+
+B<saga_cmd> [B<-d, --docs>]
+
+B<saga_cmd> [B<-b, --batch>]
+
+B<saga_cmd> [B<-h, --help>]
+
+B<saga_cmd> [B<-f, --flags>][=qrsilpxo][-s, --story][=#][-c, --cores][=#] I<LIBRARY> [I<MODULE>] <module specific options...>
+
+B<saga_cmd> [B<-f, --flags>][=qrsilpxo][-s, --story][=#][-c, --cores][=#] I<SCRIPT>
+
+=head1 DESCRIPTION
+
+SAGA GIS (System for Automated Geoscientific Analysis) is a free and open source geographic information system used for editing and analysing spatial data. It includes a large number of modules for the analysis of vector, table, grid and image data.
+
+The SAGA command line interpreter is particularly useful for the processing
+of complex work flows by defining a series of subsequent tool calls in a
+script file. Calling saga_cmd with the option 'B<-b>' or 'B<--batch>' will
+create an example of a DOS batch script file, which might be a good starting
+point for the implementation of your own specific work flows.
+
+When run without arguments, the module libraries in the current module library are listed. By default this is the directory which was set at installtion (/usr/lib/saga). This can be overwritten by setting the environment variable I<SAGA_MLB>.
+
+=head1 OPTIONS
+
+=over 8
+
+=item [I<SAGA_MLB>=dirname]
+
+Module libraries are expected to be located in the directory that is specified by the environment variable 'SAGA_MLB'. If this is not found the module installation directory (/usr/lib/saga) will be searched for instead.
+
+=item I<LIBRARY> [I<MODULE>] [I<MODULE OPTIONS>]
+
+Specify the library (ie ta_morphometry) and the module (number or name). If no module is specified the different modules of a library are listed.
+
+=item B<-h, --help>
+
+Display help and exit
+
+=item B<-d, --docs>
+
+Create tool documentation in the current working directory
+
+=item B<-b, --batch>
+
+Create batch file examples in the current working directory
+
+=item B<-c, --cores>
+
+Number of physical processors to use for computation
+
+
+=item B<-f, --flags>
+
+Various flags for general usage [qrsilpxo]
+
+=over 9
+
+=item B<q>
+No progress report
+
+=item B<r>
+No messages report
+
+=item B<s>
+Silent mode (no progress and no messages report)
+
+=item B<i>
+Allow user interaction
+
+=item B<l>
+Load translation dictionary
+
+=item B<p>
+Load projections dictionary
+
+=item B<x>
+Use XML markups for synopses and messages
+
+=item B<o>
+Load old style naming
+
+=back
+
+=back
+
+=head1 EXAMPLE
+
+export SAGA_MLB=/usr/lib/saga
+
+B<saga_cmd> ta_morphometry "Local Morphometry" -ELEVATION dem.sgrd -SLOPE slope.sgrd -ASPECT aspect.sgrd -METHOD 1
+
+Multiple input files can be specified by separating them by a semicolon (;).
+
+B<saga_cmd> libgrid_tools Merging -GRIDS test1.sgrd\;test2.sgrd -GRID_TARGET merged.sgrd
+
+=head1 BUGS
+
+On the website of I<http://www.saga-gis.org>, a list of known bugs can be found and new bug reports can be submitted.
+
+=head1 AUTHORS
+
+B<SAGA> was written by Olaf Conrad with help from a large number of contributors. This manual page was written by Johan Van de Wauw.
+Both are released under the GNU General Public License v2.
+
+More info  I<http://www.saga-gis.org>
+
+Please provide the following reference in your work if you are using SAGA:
+
+Conrad, O., Bechtel, B., Bock, M., Dietrich, H., Fischer, E., Gerlitz, L.,
+Wehberg, J., Wichmann, V., and Boehner, J. (2015):
+System for Automated Geoscientific Analyses (SAGA) v. 2.1.4.
+Geosci. Model Dev., 8, 1991-2007, doi:10.5194/gmd-8-1991-2015.
+
+I<http://www.geosci-model-dev.net/8/1991/2015/gmd-8-1991-2015.html>
+
+
+=cut

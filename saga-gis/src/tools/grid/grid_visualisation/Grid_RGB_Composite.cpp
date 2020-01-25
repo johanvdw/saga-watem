@@ -131,48 +131,48 @@ CGrid_RGB_Composite::CGrid_RGB_Composite(void)
 //---------------------------------------------------------
 int CGrid_RGB_Composite::On_Parameters_Enable(CSG_Parameters *pParameters, CSG_Parameter *pParameter)
 {
-	if( !SG_STR_CMP(pParameter->Get_Identifier(), "R_GRID") )
+	if( pParameter->Cmp_Identifier("R_GRID") )
 	{
 		pParameters->Set_Enabled("R_METHOD", pParameter->asPointer() != NULL);
 	}
 
-	if( !SG_STR_CMP(pParameter->Get_Identifier(), "R_METHOD") )
+	if( pParameter->Cmp_Identifier("R_METHOD") )
 	{
 		pParameters->Set_Enabled("R_RANGE" , pParameter->asInt() == 2);	// User defined rescale
 		pParameters->Set_Enabled("R_PERCTL", pParameter->asInt() == 3);	// Percentiles
 		pParameters->Set_Enabled("R_STDDEV", pParameter->asInt() == 4);	// Percentage of standard deviation
 	}
 
-	if( !SG_STR_CMP(pParameter->Get_Identifier(), "G_GRID") )
+	if( pParameter->Cmp_Identifier("G_GRID") )
 	{
 		pParameters->Set_Enabled("G_METHOD", pParameter->asPointer() != NULL);
 	}
 
-	if( !SG_STR_CMP(pParameter->Get_Identifier(), "G_METHOD") )
+	if( pParameter->Cmp_Identifier("G_METHOD") )
 	{
 		pParameters->Set_Enabled("G_RANGE" , pParameter->asInt() == 2);	// User defined rescale
 		pParameters->Set_Enabled("G_PERCTL", pParameter->asInt() == 3);	// Percentiles
 		pParameters->Set_Enabled("G_STDDEV", pParameter->asInt() == 4);	// Percentage of standard deviation
 	}
 
-	if( !SG_STR_CMP(pParameter->Get_Identifier(), "B_GRID") )
+	if( pParameter->Cmp_Identifier("B_GRID") )
 	{
 		pParameters->Set_Enabled("B_METHOD", pParameter->asPointer() != NULL);
 	}
 
-	if( !SG_STR_CMP(pParameter->Get_Identifier(), "B_METHOD") )
+	if( pParameter->Cmp_Identifier("B_METHOD") )
 	{
 		pParameters->Set_Enabled("B_RANGE" , pParameter->asInt() == 2);	// User defined rescale
 		pParameters->Set_Enabled("B_PERCTL", pParameter->asInt() == 3);	// Percentiles
 		pParameters->Set_Enabled("B_STDDEV", pParameter->asInt() == 4);	// Percentage of standard deviation
 	}
 
-	if( !SG_STR_CMP(pParameter->Get_Identifier(), "A_GRID") )
+	if( pParameter->Cmp_Identifier("A_GRID") )
 	{
 		pParameters->Set_Enabled("A_METHOD", pParameter->asPointer() != NULL);
 	}
 
-	if( !SG_STR_CMP(pParameter->Get_Identifier(), "A_METHOD") )
+	if( pParameter->Cmp_Identifier("A_METHOD") )
 	{
 		pParameters->Set_Enabled("A_RANGE" , pParameter->asInt() == 2);	// User defined rescale
 		pParameters->Set_Enabled("A_PERCTL", pParameter->asInt() == 3);	// Percentiles
@@ -218,7 +218,7 @@ bool CGrid_RGB_Composite::On_Execute(void)
 	pRGB->Set_Description(s);
 
 	DataObject_Set_Colors   (pRGB, 100, SG_COLORS_BLACK_WHITE);
-	DataObject_Set_Parameter(pRGB, "COLORS_TYPE", 6);	// Color Classification Type: RGB
+	DataObject_Set_Parameter(pRGB, "COLORS_TYPE", 5);	// Color Classification Type: RGB Coded Values
 
 	//-----------------------------------------------------
 	for(int y=0; y<Get_NY() && Set_Progress(y); y++)
@@ -277,13 +277,13 @@ CSG_Grid * CGrid_RGB_Composite::_Get_Grid(CSG_Grid *pGrid, int Method, CSG_Param
 			break;
 
 		case 2:	// User defined rescale
-			Min		= pRange->Get_LoVal();
-			Range	= pRange->Get_HiVal() - Min;
+			Min		= pRange->Get_Min  ();
+			Range	= pRange->Get_Range();
 			break;
 
 		case 3:	// Percentile
-			Min		= pGrid->Get_Quantile(pPerctl->Get_LoVal());
-			Range	= pGrid->Get_Quantile(pPerctl->Get_HiVal()) - Min;
+			Min		= pGrid->Get_Percentile(pPerctl->Get_Min());
+			Range	= pGrid->Get_Percentile(pPerctl->Get_Max()) - Min;
 			break;
 
 		case 4:	// Standard deviation

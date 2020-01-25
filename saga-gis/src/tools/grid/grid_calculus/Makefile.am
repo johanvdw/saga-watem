@@ -5,7 +5,7 @@ if DEBUG
 DBGFLAGS = -g -DDEBUG
 endif
 
-DEF_SAGA           = -D_SAGA_LINUX -D_TYPEDEF_BYTE -D_TYPEDEF_WORD -D_SAGA_UNICODE
+DEF_SAGA           = -D_SAGA_LINUX -D_TYPEDEF_BYTE -D_TYPEDEF_WORD
 CXX_INCS           = -I$(top_srcdir)/src/saga_core
 AM_CXXFLAGS        = -fPIC $(CXX_INCS) $(DEF_SAGA) $(DBGFLAGS) $(GOMPFLAGS)
 AM_LDFLAGS         = -fPIC -shared -avoid-version
@@ -22,6 +22,7 @@ grid_metric_conversion.cpp\
 Grid_Calculator.cpp\
 grid_difference.cpp\
 Grid_Geometric_Figures.cpp\
+grid_histogram_match.cpp\
 Grid_Normalise.cpp\
 Grid_Plotter.cpp\
 Grid_Random_Field.cpp\
@@ -41,13 +42,13 @@ grid_metric_conversion.h\
 Grid_Calculator.h\
 grid_difference.h\
 Grid_Geometric_Figures.h\
+grid_histogram_match.h\
 Grid_Normalise.h\
 Grid_Plotter.h\
 Grid_Random_Field.h\
 Grid_Random_Terrain.h\
 Grid_Volume.h\
-kff_synth.h\
-MLB_Interface.h
+kff_synth.h
 
 libgrid_calculus_la_LIBADD = $(top_srcdir)/src/saga_core/saga_api/libsaga_api.la
 

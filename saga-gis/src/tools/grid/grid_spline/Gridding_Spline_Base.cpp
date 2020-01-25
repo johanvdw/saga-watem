@@ -1,6 +1,3 @@
-/**********************************************************
- * Version $Id$
- *********************************************************/
 
 ///////////////////////////////////////////////////////////
 //                                                       //
@@ -51,15 +48,6 @@
 ///////////////////////////////////////////////////////////
 
 //---------------------------------------------------------
-
-
-///////////////////////////////////////////////////////////
-//														 //
-//														 //
-//														 //
-///////////////////////////////////////////////////////////
-
-//---------------------------------------------------------
 #include "Gridding_Spline_Base.h"
 
 
@@ -94,7 +82,7 @@ CGridding_Spline_Base::CGridding_Spline_Base(bool bGridPoints)
 		);
 	}
 
-	m_Grid_Target.Create(&Parameters, true, NULL, "TARGET_");
+	m_Grid_Target.Create(&Parameters, true, "", "TARGET_");
 }
 
 
@@ -105,12 +93,12 @@ CGridding_Spline_Base::CGridding_Spline_Base(bool bGridPoints)
 //---------------------------------------------------------
 int CGridding_Spline_Base::On_Parameter_Changed(CSG_Parameters *pParameters, CSG_Parameter *pParameter)
 {
-	if( !SG_STR_CMP(pParameter->Get_Identifier(), "SHAPES") )
+	if( pParameter->Cmp_Identifier("SHAPES") )
 	{
 		m_Grid_Target.Set_User_Defined(pParameters, pParameter->asShapes());
 	}
 
-	if( !SG_STR_CMP(pParameter->Get_Identifier(), "GRID") && pParameter->asGrid() )
+	if( pParameter->Cmp_Identifier("GRID") && pParameter->asGrid() )
 	{
 		m_Grid_Target.Set_User_Defined(pParameters, pParameter->asGrid()->Get_System());
 	}
@@ -163,7 +151,7 @@ bool CGridding_Spline_Base::_Get_Grid(void)
 			return( false );
 		}
 
-		m_pGrid->Set_Name(CSG_String::Format("%s [%s]", pPoints->Get_Name(), Get_Name().c_str()));
+		m_pGrid->Fmt_Name("%s [%s]", pPoints->Get_Name(), Get_Name().c_str());
 	}
 
 	//-----------------------------------------------------
@@ -176,7 +164,7 @@ bool CGridding_Spline_Base::_Get_Grid(void)
 			return( false );
 		}
 
-		m_pGrid->Set_Name(CSG_String::Format("%s.%s [%s]", pPoints->Get_Name(), Parameters("FIELD")->asString(), Get_Name().c_str()));
+		m_pGrid->Fmt_Name("%s.%s [%s]", pPoints->Get_Name(), Parameters("FIELD")->asString(), Get_Name().c_str());
 	}
 
 	//-----------------------------------------------------

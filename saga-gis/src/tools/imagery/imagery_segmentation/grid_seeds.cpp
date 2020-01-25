@@ -76,62 +76,63 @@ CGrid_Seeds::CGrid_Seeds(void)
 	Set_Author		("O.Conrad (c) 2010");
 
 	Set_Description	(_TW(
-		""
+		"The tool allows one to create seed points from a stack of input features. Such seed "
+		"points can be used, for example, as input in the 'Seeded Region Growing' tool.\n\n"
 	));
 
 	//-----------------------------------------------------
 	Parameters.Add_Grid_List(
-		NULL	, "FEATURES"		, _TL("Features"),
+		"", "FEATURES"		, _TL("Features"),
 		_TL(""),
 		PARAMETER_INPUT
 	);
 
 	Parameters.Add_Grid(
-		NULL	, "VARIANCE"		, _TL("Variance"),
+		"", "VARIANCE"		, _TL("Variance"),
 		_TL(""),
 		PARAMETER_OUTPUT
 	);
 
 	Parameters.Add_Grid(
-		NULL	, "SEED_GRID"		, _TL("Seeds Grid"),
+		"", "SEED_GRID"		, _TL("Seeds Grid"),
 		_TL(""),
 		PARAMETER_OUTPUT_OPTIONAL
 	);
 
 	Parameters.Add_Shapes(
-		NULL	, "SEED_POINTS"		, _TL("Seed Points"),
+		"", "SEED_POINTS"	, _TL("Seed Points"),
 		_TL(""),
 		PARAMETER_OUTPUT_OPTIONAL, SHAPE_TYPE_Point
 	);
 
 	Parameters.Add_Choice(
-		NULL	, "SEED_TYPE"		, _TL("Seed Type"),
+		"", "SEED_TYPE"		, _TL("Seed Type"),
 		_TL(""),
-		CSG_String::Format(SG_T("%s|%s|"),
+		CSG_String::Format("%s|%s",
 			_TL("minima of variance"),
 			_TL("maxima of variance")
 		), 0
 	);
 
 	Parameters.Add_Choice(
-		NULL	, "METHOD"			, _TL("Method"),
+		"", "METHOD"		, _TL("Method"),
 		_TL(""),
-		CSG_String::Format(SG_T("%s|%s|"),
+		CSG_String::Format("%s|%s",
 			_TL("band width smoothing"),
 			_TL("band width search")
 		), 0
 	);
 
-	Parameters.Add_Value(
-		NULL	, "BAND_WIDTH"		, _TL("Bandwidth (Cells)"),
+	Parameters.Add_Double(
+		"", "BAND_WIDTH"	, _TL("Bandwidth (Cells)"),
 		_TL(""),
-		PARAMETER_TYPE_Double, 10.0, 1.0, true
+		10.0, 1.0, true
 	);
 
-	Parameters.Add_Value(
-		NULL	, "NORMALIZE"		, _TL("Normalize Features"),
-		_TL(""),
-		PARAMETER_TYPE_Bool, false
+	Parameters.Add_Bool(
+		"", "NORMALIZE"		, _TL("Normalize Features"),
+		_TL("Standardize the input features, i.e. rescale the input data (features) such that the mean equals 0 and the standard deviation equals 1. This is helpful when the input features have different scales, units or outliers."),
+		false
 	);
 
 	m_Cells.Get_Weighting().Set_Weighting(SG_DISTWGHT_GAUSS);
@@ -147,7 +148,7 @@ CGrid_Seeds::CGrid_Seeds(void)
 //---------------------------------------------------------
 int CGrid_Seeds::On_Parameters_Enable(CSG_Parameters *pParameters, CSG_Parameter *pParameter)
 {
-	if( !SG_STR_CMP(pParameter->Get_Identifier(), "METHOD") )
+	if( pParameter->Cmp_Identifier("METHOD") )
 	{
 		pParameters->Set_Enabled("DISTANCE_WEIGHTING", pParameter->asInt() == 1);
 	}
@@ -183,8 +184,8 @@ bool CGrid_Seeds::On_Execute(void)
 		double	Cellsize	= Parameters("BAND_WIDTH")->asDouble() * Get_Cellsize();
 
 		CSG_Grid	Smoothed(SG_DATATYPE_Float,
-			4 + (int)(Get_System()->Get_XRange() / Cellsize),
-			4 + (int)(Get_System()->Get_YRange() / Cellsize),
+			4 + (int)(Get_System().Get_XRange() / Cellsize),
+			4 + (int)(Get_System().Get_YRange() / Cellsize),
 			Cellsize,
 			Get_XMin() - Cellsize,
 			Get_YMin() - Cellsize
@@ -192,13 +193,13 @@ bool CGrid_Seeds::On_Execute(void)
 
 		for(int i=0; i<m_nFeatures; i++)
 		{
-			Process_Set_Text(CSG_String::Format(SG_T("%s: %s"), _TL("resampling"), pFeatures->Get_Grid(i)->Get_Name()));
+			Process_Set_Text("%s: %s", _TL("resampling"), pFeatures->Get_Grid(i)->Get_Name());
 
 			SG_UI_Progress_Lock(true);
 
 			Smoothed.Assign(pFeatures->Get_Grid(i), GRID_RESAMPLING_Mean_Cells);
 
-			m_pFeatures[i]	= new CSG_Grid(*Get_System(), SG_DATATYPE_Float);
+			m_pFeatures[i]	= new CSG_Grid(Get_System(), SG_DATATYPE_Float);
 			m_pFeatures[i]	->Assign(&Smoothed, GRID_RESAMPLING_BSpline);
 			m_pFeatures[i]	->Set_Name(pFeatures->Get_Grid(i)->Get_Name());
 
@@ -447,10 +448,10 @@ bool CGrid_Seeds::Get_Seeds(void)
 	{
 		pPoints->Create(SHAPE_TYPE_Point, _TL("Seeds"));
 
-		pPoints->Add_Field(SG_T("ID" ), SG_DATATYPE_Int);
-		pPoints->Add_Field(SG_T("X"  ), SG_DATATYPE_Int);
-		pPoints->Add_Field(SG_T("Y"  ), SG_DATATYPE_Int);
-		pPoints->Add_Field(SG_T("VAR"), SG_DATATYPE_Double);
+		pPoints->Add_Field("ID" , SG_DATATYPE_Int   );
+		pPoints->Add_Field("X"  , SG_DATATYPE_Int   );
+		pPoints->Add_Field("Y"  , SG_DATATYPE_Int   );
+		pPoints->Add_Field("VAR", SG_DATATYPE_Double);
 
 		for(int iFeature=0; iFeature<m_nFeatures; iFeature++)
 		{
@@ -499,7 +500,7 @@ bool CGrid_Seeds::Get_Seeds(void)
 					{
 						CSG_Shape	*pPoint	= pPoints->Add_Shape();
 
-						pPoint->Add_Point(Get_System()->Get_Grid_to_World(x, y));
+						pPoint->Add_Point(Get_System().Get_Grid_to_World(x, y));
 
 						pPoint->Set_Value(0, n);
 						pPoint->Set_Value(1, x);

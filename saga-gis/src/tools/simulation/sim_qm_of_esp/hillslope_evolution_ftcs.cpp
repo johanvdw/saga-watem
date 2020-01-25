@@ -154,12 +154,12 @@ CHillslope_Evolution_FTCS::CHillslope_Evolution_FTCS(void)
 //---------------------------------------------------------
 int CHillslope_Evolution_FTCS::On_Parameters_Enable(CSG_Parameters *pParameters, CSG_Parameter *pParameter)
 {
-	if( !SG_STR_CMP(pParameter->Get_Identifier(), "TIMESTEP") )
+	if( pParameter->Cmp_Identifier("TIMESTEP") )
 	{
 		pParameters->Set_Enabled("DTIME", pParameter->asInt() == 0);
 	}
 
-	if( !SG_STR_CMP(pParameter->Get_Identifier(), "DIFF") )
+	if( pParameter->Cmp_Identifier("DIFF") )
 	{
 		pParameters->Set_Enabled("UPDATE", pParameter->asPointer() != NULL);
 	}
@@ -176,7 +176,7 @@ int CHillslope_Evolution_FTCS::On_Parameters_Enable(CSG_Parameters *pParameters,
 bool CHillslope_Evolution_FTCS::On_Execute(void)
 {
 	//-----------------------------------------------------
-	CSG_Grid	DEM(*Get_System());
+	CSG_Grid	DEM(Get_System());
 
 	m_pDEM_Old	= &DEM;
 
@@ -208,18 +208,18 @@ bool CHillslope_Evolution_FTCS::On_Execute(void)
 
 	if( dTime > nTime )
 	{
-		Message_Add(CSG_String::Format("\n%s: %s [%f]", _TL("Warning"), _TL("Time step exceeds duration"), dTime), false);
+		Message_Fmt("\n%s: %s [%f]", _TL("Warning"), _TL("Time step exceeds duration"), dTime);
 
 		dTime	= nTime;
 	}
 
-	Message_Add(CSG_String::Format("\n%s: %f", _TL("Time Step"), dTime), false);
-	Message_Add(CSG_String::Format("\n%s: %d", _TL("Steps"), (int)(nTime / dTime)), false);
+	Message_Fmt("\n%s: %f", _TL("Time Step"), dTime);
+	Message_Fmt("\n%s: %d", _TL("Steps"), (int)(nTime / dTime));
 
 	//-----------------------------------------------------
 	for(double iTime=dTime; iTime<=nTime && Set_Progress(iTime, nTime); iTime+=dTime)
 	{
-		Process_Set_Text(CSG_String::Format("%s: %.2f [%.2f]", _TL("Simulation Time"), iTime, nTime));
+		Process_Set_Text("%s: %.2f [%.2f]", _TL("Simulation Time"), iTime, nTime);
 
 		SG_UI_Progress_Lock(true);
 

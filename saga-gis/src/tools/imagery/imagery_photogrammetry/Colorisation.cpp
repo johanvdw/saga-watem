@@ -182,16 +182,16 @@ bool CColorisation::On_Execute(void)
 	bool applyTimeStamp		= Parameters("GIVE_TIME")	->asBool();
 	if (applyTimeStamp) {
 
-		imgTimeStamp = Parameters("IMG_TIME")	->asDouble();
-		timeThresh	= Parameters("TIME_DIFF")	->asDouble();
+		imgTimeStamp = Parameters("IMG_TIME")->asDouble();
+		timeThresh	= Parameters("TIME_DIFF")->asDouble();
 	}
 
 	pResult->Create(pPoints);
-	pResult->Set_Name(CSG_String::Format(_TL("%s_colorised"), pPoints->Get_Name()));
-//	pResult->Add_Field(SG_T("Red"), SG_DATATYPE_Int);
+	pResult->Fmt_Name("%s (%s)", pPoints->Get_Name(), _TL("colorised"));
+//	pResult->Add_Field(SG_T("Red"  ), SG_DATATYPE_Int);
 //	pResult->Add_Field(SG_T("Green"), SG_DATATYPE_Int);
-//	pResult->Add_Field(SG_T("Blue"), SG_DATATYPE_Int);
-	pResult->Add_Field(SG_T("RGB"), SG_DATATYPE_Int);
+//	pResult->Add_Field(SG_T("Blue" ), SG_DATATYPE_Int);
+	pResult->Add_Field(SG_T("RGB"  ), SG_DATATYPE_Int);
 	DataObject_Update(pResult);
 		
 	CSG_Matrix R = methods::calcRotnMatrix(angles);
@@ -281,14 +281,14 @@ bool CColorisation::On_Execute(void)
 int CColorisation::On_Parameters_Enable(CSG_Parameters *pParameters, CSG_Parameter *pParameter)
 {
 
-	if( !SG_STR_CMP(pParameter->Get_Identifier(), SG_T("GIVE_DISTORTIONS")) )
+	if( pParameter->Cmp_Identifier(SG_T("GIVE_DISTORTIONS")) )
 	{
 		pParameters->Get_Parameter("K1")->Set_Enabled( pParameter->asBool() );
 		pParameters->Get_Parameter("K2")->Set_Enabled( pParameter->asBool() );
 		pParameters->Get_Parameter("K3")->Set_Enabled( pParameter->asBool() );
 	}
 
-	if( !SG_STR_CMP(pParameter->Get_Identifier(), SG_T("GIVE_TIME")) )
+	if( pParameter->Cmp_Identifier(SG_T("GIVE_TIME")) )
 	{
 		pParameters->Get_Parameter("IMG_TIME")->Set_Enabled( pParameter->asBool() );
 		pParameters->Get_Parameter("TIME_DIFF")->Set_Enabled( pParameter->asBool() );

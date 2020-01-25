@@ -508,16 +508,56 @@ bool CSG_Projection::Save(CSG_MetaData &Projection) const
 ///////////////////////////////////////////////////////////
 
 //---------------------------------------------------------
+#define WKT_GCS_WGS84	"GEOGCS[\"WGS 84\",AUTHORITY[\"EPSG\",\"4326\"]],"\
+	"DATUM[\"WGS_1984\",AUTHORITY[\"EPSG\",\"6326\"]],"\
+		"SPHEROID[\"WGS 84\",6378137,298.257223563,AUTHORITY[\"EPSG\",\"7030\"]],"\
+	"PRIMEM[\"Greenwich\",0,AUTHORITY[\"EPSG\",\"8901\"]],"\
+	"UNIT[\"degree\",0.0174532925199433,AUTHORITY[\"EPSG\",\"9122\"]]"
+
+//---------------------------------------------------------
+#define PROJ4_GCS_WGS84	"+proj=longlat +datum=WGS84 +no_defs"
+
+//---------------------------------------------------------
 bool CSG_Projection::Set_GCS_WGS84(void)
 {
-	return( Create(
-		"GEOGCS[\"WGS 84\",DATUM[\"WGS_1984\",SPHEROID[\"WGS 84\",6378137,298.257223563,"
-		"AUTHORITY[\"EPSG\",\"7030\"]],"
-		"AUTHORITY[\"EPSG\",\"6326\"]],PRIMEM[\"Greenwich\",0,"
-		"AUTHORITY[\"EPSG\",\"8901\"]],UNIT[\"degree\",0.0174532925199433,"
-		"AUTHORITY[\"EPSG\",\"9122\"]],"
-		"AUTHORITY[\"EPSG\",\"4326\"]]"
-	) );
+	return( Create(WKT_GCS_WGS84, PROJ4_GCS_WGS84) );
+}
+
+//---------------------------------------------------------
+bool CSG_Projection::Set_UTM_WGS84(int Zone, bool bSouth)
+{
+	if( Zone < 1 || Zone > 60 )
+	{
+		return( false );
+	}
+
+	//-----------------------------------------------------
+	int	EPSG_ID	= (bSouth ? 32700 : 32600) + Zone;
+
+	if( Create(EPSG_ID) )
+	{
+		return( true );
+	}
+
+	//-----------------------------------------------------
+	CSG_String	WKT, Proj4;
+
+	WKT.Printf("PROJCS[\"WGS 84 / UTM zone %d%c\",%s"						// Zone, N/S, Datum
+		"PROJECTION[\"Transverse_Mercator\"],AUTHORITY[\"EPSG\",\"%d\"]]"	// EPSG ID
+			"PARAMETER[\"latitude_of_origin\",0],"
+			"PARAMETER[\"central_meridian\",%d],"							// Central Meridian
+			"PARAMETER[\"scale_factor\",0.9996],"
+			"PARAMETER[\"false_easting\",500000],"
+			"PARAMETER[\"false_northing\",%d],"								// False Northing
+			"AXIS[\"Easting\",EAST],"
+			"AXIS[\"Northing\",NORTH],"
+			"UNIT[\"metre\",1,AUTHORITY[\"EPSG\",\"9001\"]]",
+		Zone, bSouth ? 'S' : 'N', CSG_String(WKT_GCS_WGS84).c_str(), EPSG_ID, 6 * (Zone - 1) - 177, bSouth ? 10000000 : 0
+	);
+
+	Proj4.Printf("+proj=utm +zone=%d%s +datum=WGS84 +units=m +no_defs", Zone, bSouth ? SG_T(" +south") : SG_T(""));
+
+	return( Create(WKT, Proj4) );
 }
 
 
@@ -528,13 +568,85 @@ bool CSG_Projection::Set_GCS_WGS84(void)
 //---------------------------------------------------------
 bool CSG_Projection::is_Equal(const CSG_Projection &Projection)	const
 {
+	if( is_Okay() != Projection.is_Okay() )
+	{
+		return( false );
+	}
+
+	if( !is_Okay() )	// both are not valid
+	{
+		return( true );
+	}
+
 	if( !m_Authority.is_Empty() && !Projection.m_Authority.is_Empty() )
 	{
 		return(	m_Authority.CmpNoCase(Projection.m_Authority) == 0 && m_Authority_ID == Projection.m_Authority_ID );
 	}
 
-	return( m_Proj4.CmpNoCase(Projection.m_Proj4) == 0 );
+	if( m_Proj4.CmpNoCase(Projection.m_Proj4) == 0 )	// the simple case...
+	{
+		return( true );
+	}
+
+	//-----------------------------------------------------
+	CSG_Table	parms[2];	// okay, let's perform a more detailed check...
+
+	for(int i=0; i<2; i++)
+	{
+		parms[i].Add_Field("key", SG_DATATYPE_String);
+		parms[i].Add_Field("val", SG_DATATYPE_String);
+
+		CSG_Strings	s	= SG_String_Tokenize(i == 0 ? m_Proj4 : Projection.m_Proj4, "+");
+
+		for(int j=0, k=0; j<s.Get_Count(); j++)
+		{
+			CSG_String	key	= s[j].BeforeFirst('='); key.Trim(false); key.Trim(true); key.Make_Lower();
+			CSG_String	val	= s[j].AfterFirst ('='); val.Trim(false); val.Trim(true); val.Make_Lower();
+
+			if( !key.is_Empty() && key.Cmp("no_defs") && parms[i].Add_Record() )
+			{
+				parms[i][k][0]	= key;
+				parms[i][k][1]	= val;
+
+				k++;
+			}
+		}
+	}
+
+	if( parms[0].Get_Count() != parms[1].Get_Count() )	// should be the same...
+	{
+		return( false );
+	}
+
+	parms[0].Set_Index(0, TABLE_INDEX_Ascending);	// sort by key...
+	parms[1].Set_Index(0, TABLE_INDEX_Ascending);
+
+	for(int j=0; j<parms[0].Get_Count(); j++)
+	{
+		if( SG_STR_CMP(parms[0][j].asString(0), parms[1][j].asString(0)) )	// does the key match ?
+		{
+			return( false );
+		}
+
+		if( SG_STR_CMP(parms[0][j].asString(1), parms[1][j].asString(1)) )	// doe the value string match ?
+		{
+			double	d[2];
+
+			if( !CSG_String(parms[0][j].asString(1)).asDouble(d[0])	// does the numerical value representation match ?
+			||  !CSG_String(parms[1][j].asString(1)).asDouble(d[1]) || d[0] != d[1] )
+			{
+				return( false );
+			}
+		}
+	}
+
+	return( true );
 }
+
+
+///////////////////////////////////////////////////////////
+//														 //
+///////////////////////////////////////////////////////////
 
 //---------------------------------------------------------
 CSG_String CSG_Projection::Get_Description(void)	const
@@ -690,11 +802,11 @@ bool CSG_Projections::Load_Dictionary(const CSG_String &FileName)
 }
 
 //---------------------------------------------------------
-bool CSG_Projections::Save_Dictionary(const CSG_String &FileName)
+bool CSG_Projections::Save_Dictionary(const CSG_String &File)
 {
 	CSG_Table	Table;
 
-	return( _Set_Dictionary(Table, 0) && Table.Save(FileName) );
+	return( _Set_Dictionary(Table, 0) && Table.Save(File) );
 }
 
 
@@ -728,9 +840,9 @@ bool CSG_Projections::Load_DB(const CSG_String &FileName, bool bAppend)
 }
 
 //---------------------------------------------------------
-bool CSG_Projections::Save_DB(const CSG_String &FileName)
+bool CSG_Projections::Save_DB(const CSG_String &File)
 {
-	return( m_pProjections->Save(FileName) );
+	return( m_pProjections->Save(File) );
 }
 
 
@@ -1960,7 +2072,7 @@ bool	SG_Get_Projected	(CSG_Shapes *pSource, CSG_Shapes *pTarget, const CSG_Proje
 		return( false );
 	}
 
-	CSG_Tool	*pTool	= SG_Get_Tool_Library_Manager().Get_Tool("pj_proj4", 2);	// Coordinate Transformation (Shapes)
+	CSG_Tool	*pTool	= SG_Get_Tool_Library_Manager().Create_Tool("pj_proj4", 2);	// Coordinate Transformation (Shapes)
 
 	if( !pTool || pTool->is_Executing() )
 	{
@@ -1968,7 +2080,8 @@ bool	SG_Get_Projected	(CSG_Shapes *pSource, CSG_Shapes *pTarget, const CSG_Proje
 	}
 
 	SG_UI_ProgressAndMsg_Lock(true);
-	pTool->Settings_Push(NULL);
+
+	pTool->Set_Manager(NULL);
 
 	bool	bResult	=
 	    pTool->Set_Parameter("CRS_PROJ4", Target.Get_Proj4())
@@ -1976,7 +2089,8 @@ bool	SG_Get_Projected	(CSG_Shapes *pSource, CSG_Shapes *pTarget, const CSG_Proje
 	&&  pTool->Set_Parameter("TARGET"   , pTarget)
 	&&  pTool->Execute();
 
-	pTool->Settings_Pop();
+	SG_Get_Tool_Library_Manager().Delete_Tool(pTool);
+
 	SG_UI_ProgressAndMsg_Lock(false);
 
 	return( bResult );
@@ -1992,18 +2106,35 @@ bool	SG_Get_Projected	(const CSG_Projection &Source, const CSG_Projection &Targe
 
 	if( Source.is_Okay() && Target.is_Okay() )
 	{
-		CSG_Shapes	Points[2];
+		CSG_Tool	*pTool	= SG_Get_Tool_Library_Manager().Create_Tool("pj_proj4", 29);	// Single Coordinate Transformation
 
-		Points[0].Create(SHAPE_TYPE_Point);
-		Points[0].Get_Projection().Create(Source);
-		Points[0].Add_Shape()->Add_Point(Point);
-
-		if( SG_Get_Projected(&Points[0], &Points[1], Target) )
+		if( !pTool )
 		{
-			Point	= Points[1].Get_Shape(0)->Get_Point(0);
-
-			return( true );
+			return( false );
 		}
+
+		SG_UI_ProgressAndMsg_Lock(true);
+
+		pTool->Set_Manager(NULL);
+
+		bool	bResult	=
+		    pTool->Set_Parameter("TARGET_CRS", Target.Get_Proj4())
+		&&	pTool->Set_Parameter("SOURCE_CRS", Source.Get_Proj4())
+		&&  pTool->Set_Parameter("SOURCE_X"  , Point.x)
+		&&  pTool->Set_Parameter("SOURCE_Y"  , Point.y)
+		&&  pTool->Execute();
+
+		if( bResult )
+		{
+			Point.x	= pTool->Get_Parameter("TARGET_X")->asDouble();
+			Point.y	= pTool->Get_Parameter("TARGET_Y")->asDouble();
+		}
+
+		SG_Get_Tool_Library_Manager().Delete_Tool(pTool);
+
+		SG_UI_ProgressAndMsg_Lock(false);
+
+		return( bResult );
 	}
 
 	return( false );

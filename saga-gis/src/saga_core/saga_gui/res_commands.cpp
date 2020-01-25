@@ -174,6 +174,7 @@ wxString CMD_Get_Name(int Cmd_ID)
 	case ID_CMD_DATA_DEL_FILES:			return( _TL("Delete Associated Files") );
 	case ID_CMD_DATA_PROJECTION:		return( _TL("Spatial Reference") );
 	case ID_CMD_DATA_METADATA:			return( _TL("View Metadata") );
+	case ID_CMD_DATA_FORCE_UPDATE:		return( _TL("Force Update") );
 
 	case ID_CMD_GRID_OPEN:
 	case ID_CMD_GRIDS_OPEN:
@@ -188,10 +189,12 @@ wxString CMD_Get_Name(int Cmd_ID)
 	case ID_CMD_TIN_SHOW:
 	case ID_CMD_POINTCLOUD_SHOW:		return( _TL("Add to Map") );
 
-	case ID_CMD_TABLE_SHOW:			return( _TL("Show") );
+	case ID_CMD_TABLE_SHOW:				return( _TL("Show") );
 
 	case ID_CMD_GRID_SET_LUT:
 	case ID_CMD_SHAPES_SET_LUT:			return( _TL("Classify") );
+
+	case ID_CMD_DATA_CLASSIFY_IMPORT:	return( _TL("Import Classification") );
 
 	case ID_CMD_GRID_HISTOGRAM:
 	case ID_CMD_SHAPES_HISTOGRAM:		return( _TL("Histogram") );
@@ -342,7 +345,6 @@ wxString CMD_Get_Name(int Cmd_ID)
 	case ID_CMD_DIAGRAM_TO_CLIPBOARD:	return( _TL("Copy to Clipboard") );
 
 	case ID_CMD_SCATTERPLOT_PARAMETERS:		return( _TL("Properties") );
-	case ID_CMD_SCATTERPLOT_OPTIONS:		return( _TL("Options") );
 	case ID_CMD_SCATTERPLOT_UPDATE:			return( _TL("Update Data") );
 	case ID_CMD_SCATTERPLOT_AS_TABLE:		return( _TL("Convert To Table") );
 	case ID_CMD_SCATTERPLOT_TO_CLIPBOARD:	return( _TL("Copy to Clipboard") );
@@ -405,7 +407,7 @@ int CMD_Get_ImageID(int Cmd_ID)
 	case ID_CMD_MAPS_3D_SHOW:			return( ID_IMG_TB_MAP_3D_SHOW );
 	case ID_CMD_MAP_LAYOUT_SHOW:		return( ID_IMG_TB_MAP_LAYOUT_SHOW );
 	case ID_CMD_MAPS_LAYOUT_SHOW:		return( ID_IMG_TB_MAP_LAYOUT_SHOW );
-	case ID_CMD_MAPS_SAVE_TO_CLIPBOARD:			break;
+	case ID_CMD_MAPS_SAVE_TO_CLIPBOARD:			return( ID_IMG_TB_CLIPBOARD );
 	case ID_CMD_MAPS_SAVE_TO_CLIPBOARD_LEGEND:	break;
 	case ID_CMD_MAPS_SAVE_IMAGE:				break;
 	case ID_CMD_MAP_NORTH_ARROW:		return( ID_IMG_TB_MAP_NORTH_ARROW );
@@ -439,9 +441,6 @@ int CMD_Get_ImageID(int Cmd_ID)
 	case ID_CMD_LAYOUT_PRINT:			return( ID_IMG_TB_LAYOUT_PRINT );
 	case ID_CMD_LAYOUT_PRINT_PREVIEW:	return( ID_IMG_TB_LAYOUT_PRINT_PREVIEW );
 
-	case ID_CMD_HISTOGRAM_CUMULATIVE:	return( ID_IMG_TB_HISTOGRAM_CUMULATIVE );
-	case ID_CMD_HISTOGRAM_AS_TABLE:		return( ID_IMG_TB_HISTOGRAM_AS_TABLE );
-
 	case ID_CMD_TABLE_FIELD_ADD:		return( ID_IMG_TB_TABLE_COL_ADD );
 	case ID_CMD_TABLE_FIELD_DEL:		return( ID_IMG_TB_TABLE_COL_DEL );
 	case ID_CMD_TABLE_RECORD_ADD:		return( ID_IMG_TB_TABLE_ROW_ADD );
@@ -449,9 +448,14 @@ int CMD_Get_ImageID(int Cmd_ID)
 	case ID_CMD_TABLE_RECORD_DEL:		return( ID_IMG_TB_TABLE_ROW_DEL );
 	case ID_CMD_TABLE_RECORD_DEL_ALL:	return( ID_IMG_TB_TABLE_ROW_DEL_ALL );
 
-	case ID_CMD_SCATTERPLOT_PARAMETERS:	return( ID_IMG_TB_SCATTERPLOT_PARAMETERS );
-	case ID_CMD_SCATTERPLOT_OPTIONS:	return( ID_IMG_TB_SCATTERPLOT_PARAMETERS );
-	case ID_CMD_SCATTERPLOT_UPDATE:		return( ID_IMG_DEFAULT );
+	case ID_CMD_HISTOGRAM_CUMULATIVE    :	return( ID_IMG_TB_HISTOGRAM_CUMULATIVE );
+	case ID_CMD_HISTOGRAM_AS_TABLE      :	return( ID_IMG_TB_HISTOGRAM_AS_TABLE );
+	case ID_CMD_HISTOGRAM_TO_CLIPBOARD  :	return( ID_IMG_TB_CLIPBOARD );
+
+	case ID_CMD_SCATTERPLOT_PARAMETERS  :	return( ID_IMG_TB_SCATTERPLOT_PARAMETERS );
+	case ID_CMD_SCATTERPLOT_UPDATE      :	return( ID_IMG_TB_UPDATE );
+	case ID_CMD_SCATTERPLOT_AS_TABLE    :	return( ID_IMG_TB_HISTOGRAM_AS_TABLE );
+	case ID_CMD_SCATTERPLOT_TO_CLIPBOARD:	return( ID_IMG_TB_CLIPBOARD );
 
 	case ID_CMD_DIAGRAM_PARAMETERS:		return( ID_IMG_TB_DIAGRAM_PARAMETERS );
 	case ID_CMD_DIAGRAM_SIZE_FIT:		break;

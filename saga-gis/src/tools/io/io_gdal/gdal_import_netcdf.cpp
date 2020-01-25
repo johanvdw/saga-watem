@@ -142,29 +142,29 @@ CGDAL_Import_NetCDF::CGDAL_Import_NetCDF(void)
 //---------------------------------------------------------
 int CGDAL_Import_NetCDF::On_Parameters_Enable(CSG_Parameters *pParameters, CSG_Parameter *pParameter)
 {
-	if(	!SG_STR_CMP(pParameter->Get_Identifier(), "SAVE_FILE") )
+	if(	pParameter->Cmp_Identifier("SAVE_FILE") )
 	{
-		pParameters->Set_Enabled("SAVE_PATH" ,  pParameter->asBool());
+		pParameters->Set_Enabled("SAVE_PATH" , pParameter->asBool() == true);
 	}
 
-	if(	!SG_STR_CMP(pParameter->Get_Identifier(), "VARS_ALL" ) && pParameters->Get("VARS") )
+	if(	pParameter->Cmp_Identifier("VARS_ALL" ) )
 	{
-		pParameters->Set_Enabled("VARS"      , !pParameter->asBool());
+		pParameters->Set_Enabled("VARS"      , pParameter->asBool() == false);
 	}
 
-	if(	!SG_STR_CMP(pParameter->Get_Identifier(), "TIME_ALL" ) && pParameters->Get("TIME") )
+	if(	pParameter->Cmp_Identifier("TIME_ALL" ) )
 	{
-		pParameters->Set_Enabled("TIME"      , !pParameter->asBool());
+		pParameters->Set_Enabled("TIME"      , pParameter->asBool() == false);
 	}
 
-	if(	!SG_STR_CMP(pParameter->Get_Identifier(), "LEVEL_ALL") && pParameters->Get("LEVEL") )
+	if(	pParameter->Cmp_Identifier("LEVEL_ALL") )
 	{
-		pParameters->Set_Enabled("LEVEL"     , !pParameter->asBool());
+		pParameters->Set_Enabled("LEVEL"     , pParameter->asBool() == false);
 	}
 
-	if(	!SG_STR_CMP(pParameter->Get_Identifier(), "TRANSFORM") )
+	if(	pParameter->Cmp_Identifier("TRANSFORM") )
 	{
-		pParameters->Set_Enabled("RESAMPLING",  pParameter->asBool());
+		pParameters->Set_Enabled("RESAMPLING", pParameter->asBool() == true);
 	}
 
 	return( CSG_Tool::On_Parameters_Enable(pParameters, pParameter) );
@@ -257,7 +257,7 @@ bool CGDAL_Import_NetCDF::On_Execute(void)
 
 	if( DataSet.Get_DriverID().Cmp("netCDF") )
 	{
-		Message_Add(CSG_String::Format("\n%s: %s [%s]\n", _TL("Warning"), _TL("Driver"), DataSet.Get_DriverID().c_str()), false);
+		Message_Fmt("\n%s: %s [%s]\n", _TL("Warning"), _TL("Driver"), DataSet.Get_DriverID().c_str());
 	}
 
 	//-----------------------------------------------------
@@ -301,10 +301,10 @@ bool CGDAL_Import_NetCDF::Load(CSG_GDAL_DataSet &DataSet, const CSG_String &Name
 
 	DataSet.Get_MetaData(MetaData);
 
-	Message_Add(CSG_String::Format("\n____\n%s\n%s\n%s\n",
+	Message_Fmt("\n____\n%s\n%s\n%s\n",
 		Name.c_str(),
 		Description.c_str(),
-		MetaData.asText().c_str()), false
+		MetaData.asText().c_str()
 	);
 
 	//-----------------------------------------------------
@@ -340,9 +340,9 @@ bool CGDAL_Import_NetCDF::Load(CSG_GDAL_DataSet &DataSet, const CSG_String &Name
 		{
 			const char	*s;
 
-			if( !!(s = Get_Variable(DataSet, i)) && !pVars ->Get(s) ) pVars ->Add_Bool("", s, s, _TL(""), false);
-			if( !!(s = Get_Time    (DataSet, i)) && !pTime ->Get(s) ) pTime ->Add_Bool("", s, Get_Time_String(s, tFmt), _TL(""), false);
-			if( !!(s = Get_Level   (DataSet, i)) && !pLevel->Get(s) ) pLevel->Add_Bool("", s, s, _TL(""), false);
+			if( !!(s = Get_Variable(DataSet, i)) && !(*pVars )(s) ) pVars ->Add_Bool("", s, s, _TL(""), false);
+			if( !!(s = Get_Time    (DataSet, i)) && !(*pTime )(s) ) pTime ->Add_Bool("", s, Get_Time_String(s, tFmt), _TL(""), false);
+			if( !!(s = Get_Level   (DataSet, i)) && !(*pLevel)(s) ) pLevel->Add_Bool("", s, s, _TL(""), false);
 		}
 
 		P("VARS_ALL" )->Set_Enabled(pVars ->Get_Count() > 1);
@@ -391,7 +391,7 @@ bool CGDAL_Import_NetCDF::Load(CSG_GDAL_DataSet &DataSet, const CSG_String &Name
 			{
 				if( bTransform )
 				{
-					Process_Set_Text(CSG_String::Format("%s [%d/%d]", _TL("band transformation"), i + 1, DataSet.Get_Count()));
+					Process_Set_Text("%s [%d/%d]", _TL("band transformation"), i + 1, DataSet.Get_Count());
 
 					DataSet.Get_Transformation(&pGrid, Resampling, true);
 				}

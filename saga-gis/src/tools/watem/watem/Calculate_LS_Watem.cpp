@@ -169,7 +169,7 @@ double CCalculate_LS_Watem::Get_LS(int x, int y)
 
 	if (use_prc)
 	{
-		CSG_Grid_System * system = Get_System();
+		CSG_Grid_System system = Get_System();
 
 		int current_parcel = PRC->asInt(x, y);
 		double	z = m_pDEM->asDouble(x, y), dz[4];
@@ -177,15 +177,15 @@ double CCalculate_LS_Watem::Get_LS(int x, int y)
 		for (int i = 0, iDir = 0, ix, iy; i<4; i++, iDir += 2)
 		{
 			if (is_InGrid(
-				ix = system->Get_xTo(iDir, x),
-				iy = system->Get_yTo(iDir, y)) && (current_parcel == PRC->asInt(ix, iy)) && !m_pDEM->is_NoData(ix,iy))
+				ix = system.Get_xTo(iDir, x),
+				iy = system.Get_yTo(iDir, y)) && (current_parcel == PRC->asInt(ix, iy)) && !m_pDEM->is_NoData(ix,iy))
 			{
 				dz[i] = m_pDEM->asDouble(ix, iy) - z;
 				in_parcel[i] = true;
 			}
 			else if (is_InGrid(
-				ix = system->Get_xFrom(iDir, x),
-				iy = system->Get_yFrom(iDir, y)) && (current_parcel == PRC->asInt(ix, iy)) && !m_pDEM->is_NoData(ix, iy))
+				ix = system.Get_xFrom(iDir, x),
+				iy = system.Get_yFrom(iDir, y)) && (current_parcel == PRC->asInt(ix, iy)) && !m_pDEM->is_NoData(ix, iy))
 			{
 				dz[i] = z - m_pDEM->asDouble(ix, iy);
 				in_parcel[i] = true;

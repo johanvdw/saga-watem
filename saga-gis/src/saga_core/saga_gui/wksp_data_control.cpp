@@ -192,8 +192,6 @@ CWKSP_Data_Control::~CWKSP_Data_Control(void)
 
 ///////////////////////////////////////////////////////////
 //														 //
-//														 //
-//														 //
 ///////////////////////////////////////////////////////////
 
 //---------------------------------------------------------
@@ -261,8 +259,6 @@ void CWKSP_Data_Control::Add_Item(CWKSP_Base_Manager *pManager, CWKSP_Base_Item 
 
 ///////////////////////////////////////////////////////////
 //														 //
-//														 //
-//														 //
 ///////////////////////////////////////////////////////////
 
 //---------------------------------------------------------
@@ -273,8 +269,6 @@ bool CWKSP_Data_Control::Close(bool bSilent)
 
 
 ///////////////////////////////////////////////////////////
-//														 //
-//														 //
 //														 //
 ///////////////////////////////////////////////////////////
 
@@ -346,7 +340,7 @@ bool CWKSP_Data_Control::Set_Item_Selected(CWKSP_Base_Item *pItem, bool bKeepMul
 		}
 	}
 
-	g_pACTIVE->Set_Active(Get_Item_Selected());
+	g_pActive->Set_Active(Get_Item_Selected());
 
 	return( true );
 }
@@ -370,7 +364,7 @@ bool CWKSP_Data_Control::_Del_Active(bool bSilent)
 
 	UnselectAll();
 
-	g_pACTIVE->Set_Active(NULL);
+	g_pActive->Set_Active(NULL);
 
 	for(size_t i=0; i<IDs.GetCount(); i++)
 	{

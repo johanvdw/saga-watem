@@ -142,12 +142,12 @@ void CFlow::Set_Point(int x, int y)
 //---------------------------------------------------------
 int CFlow::On_Parameters_Enable(CSG_Parameters *pParameters, CSG_Parameter *pParameter)
 {
-	if( !SG_STR_CMP(pParameter->Get_Identifier(), "VAL_INPUT") )
+	if( pParameter->Cmp_Identifier("VAL_INPUT") )
 	{
 		pParameters->Set_Enabled("VAL_MEAN"   , pParameter->asGrid() != NULL);
 	}
 
-	if( !SG_STR_CMP(pParameter->Get_Identifier(), "ACCU_MATERIAL") )
+	if( pParameter->Cmp_Identifier("ACCU_MATERIAL") )
 	{
 		pParameters->Set_Enabled("ACCU_TARGET", pParameter->asGrid() != NULL);
 		pParameters->Set_Enabled("ACCU_TOTAL" , pParameter->asGrid() != NULL);
@@ -181,7 +181,7 @@ bool CFlow::On_Execute(void)
 	if( (m_pVal_Input	= Parameters("VAL_INPUT"    )->asGrid()) != NULL
 	&&  (m_pVal_Mean	= Parameters("VAL_MEAN"     )->asGrid()) != NULL )
 	{
-		m_pVal_Mean->Set_Name(CSG_String::Format("%s [%s]", m_pVal_Input->Get_Name(), _TL("Mean over Catchment")));
+		m_pVal_Mean->Fmt_Name("%s [%s]", m_pVal_Input->Get_Name(), _TL("Mean over Catchment"));
 		m_pVal_Mean->Set_Unit(m_pVal_Input->Get_Unit());
 	}
 	else
@@ -205,8 +205,10 @@ bool CFlow::On_Execute(void)
 	SET_GRID_TO(m_pAccu_Left  , 1.0);
 	SET_GRID_TO(m_pAccu_Right , 1.0);
 
-	DataObject_Set_Colors(m_pFlow, 11, SG_COLORS_WHITE_BLUE);
-	
+	DataObject_Set_Colors   (m_pFlow, 11, SG_COLORS_WHITE_BLUE);
+	DataObject_Set_Parameter(m_pFlow, "METRIC_SCALE_MODE",   1);	// increasing geometrical intervals
+	DataObject_Set_Parameter(m_pFlow, "METRIC_SCALE_LOG" , 100);	// Geometrical Interval Factor
+
 	//-----------------------------------------------------
 	if( m_bPoint )
 	{
@@ -301,7 +303,7 @@ void CFlow::_Finalize(void)
 
 			if( m_pFlow && bCellsToArea )
 			{
-				m_pFlow->Set_Value(n, Flow * Get_System()->Get_Cellarea());
+				m_pFlow->Set_Value(n, Flow * Get_Cellarea());
 			}
 
 			if( Flow > 0.0 )

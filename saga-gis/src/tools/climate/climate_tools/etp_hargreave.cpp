@@ -143,12 +143,12 @@ CPET_Hargreave_Grid::CPET_Hargreave_Grid(void)
 //---------------------------------------------------------
 int CPET_Hargreave_Grid::On_Parameters_Enable(CSG_Parameters *pParameters, CSG_Parameter *pParameter)
 {
-	if( !SG_STR_CMP(pParameter->Get_Identifier(), "T") )
+	if( pParameter->Cmp_Identifier("T") )
 	{
 		pParameters->Set_Enabled("LAT", pParameter->asGrid() && pParameter->asGrid()->Get_Projection().is_Okay() == false);
 	}
 
-	if( !SG_STR_CMP(pParameter->Get_Identifier(), "TIME") )
+	if( pParameter->Cmp_Identifier("TIME") )
 	{
 		pParameters->Set_Enabled("DAY", pParameter->asInt() == 0);
 	}
@@ -177,9 +177,9 @@ bool CPET_Hargreave_Grid::On_Execute(void)
 	{
 		bool	bResult;
 
-		CSG_Grid	Lon(*Get_System());
+		CSG_Grid	Lon(Get_System());
 
-		Lat.Create(*Get_System());
+		Lat.Create(Get_System());
 
 		SG_RUN_TOOL(bResult, "pj_proj4", 17,	// geographic coordinate grids
 				SG_TOOL_PARAMETER_SET("GRID", pTavg)
@@ -204,7 +204,7 @@ bool CPET_Hargreave_Grid::On_Execute(void)
 	int		Day		= Date.Get_DayOfYear();
 	int		nDays	= Date.Get_NumberOfDays((CSG_DateTime::Month)Parameters("MONTH")->asInt());
 
-	double	R0_const	= CT_Get_Radiation_TopOfAtmosphere(Day, Parameters("LAT")->asDouble());
+	double	R0_const	= CT_Get_Radiation_Daily_TopOfAtmosphere(Day, Parameters("LAT")->asDouble());
 
 	//-----------------------------------------------------
 	for(int y=0; y<Get_NY() && Set_Progress(y); y++)
@@ -220,7 +220,7 @@ bool CPET_Hargreave_Grid::On_Execute(void)
 			}
 			else
 			{
-				double	PET	= CT_Get_ETpot_Hargreave(pLat ? CT_Get_Radiation_TopOfAtmosphere(Day, pLat->asDouble(x, y)) : R0_const,
+				double	PET	= CT_Get_ETpot_Hargreave(pLat ? CT_Get_Radiation_Daily_TopOfAtmosphere(Day, pLat->asDouble(x, y)) : R0_const,
 					pTavg->asDouble(x, y),
 					pTmin->asDouble(x, y),
 					pTmax->asDouble(x, y)
@@ -342,7 +342,7 @@ bool CPET_Hargreave_Table::On_Execute(void)
 		}
 		else
 		{
-			pRecord->Set_Value(fET, CT_Get_ETpot_Hargreave(CT_Get_Radiation_TopOfAtmosphere(
+			pRecord->Set_Value(fET, CT_Get_ETpot_Hargreave(CT_Get_Radiation_Daily_TopOfAtmosphere(
 				pRecord->asInt   (fDay ), Lat),
 				pRecord->asDouble(fT   ),
 				pRecord->asDouble(fTmin),
@@ -442,7 +442,7 @@ bool CPET_Day_To_Hour::On_Execute(void)
 	sinHgt	= 0.0;	// -0.0145;	// >> -50'' desired height of horizon
 
 	pHours->Destroy();
-	pHours->Set_Name(CSG_String::Format("%s [%s]", pDays->Get_Name(), _TL("h")));
+	pHours->Fmt_Name("%s [%s]", pDays->Get_Name(), _TL("h"));
 	pHours->Add_Field("JULIAN_DAY", SG_DATATYPE_Int);
 	pHours->Add_Field("HOUR"      , SG_DATATYPE_Int);
 	pHours->Add_Field("ET"        , SG_DATATYPE_Double);

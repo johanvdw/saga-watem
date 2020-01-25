@@ -28,12 +28,15 @@ CTopologize::CTopologize(void)
         _TL(""),
         PARAMETER_OUTPUT_OPTIONAL, SHAPE_TYPE_Point
     );
-
     Parameters.Add_Value(
         NULL, "TOLERANCE"	, _TL("Tolerance Distance"),
         _TL(""),
         PARAMETER_TYPE_Double,
         0.01
+    );
+    Parameters.Add_Grid(
+        NULL, "SYSTEM"	, _TL("Target grid (for grid system)"),
+        _TL(""), PARAMETER_INPUT_OPTIONAL
     );
     Parameters.Add_Value(
         NULL, "SIMPLIFY", _TL("Simplify"),
@@ -50,6 +53,13 @@ bool CTopologize::On_Execute(void)
 {
     CSG_Shapes *pInLines, *pOutLines, *pOutPoints;
     CSG_Shape_Line *pInLine;
+
+    CSG_Grid *grid = Parameters("SYSTEM")->asGrid();
+
+    CSG_Grid_System system;
+    if (grid != NULL)
+        system = grid->Get_System();
+
 	int iPart, MaxNodeID=0;
     double tolerance;
 	std::map<Vertex, int> vertices;
@@ -69,6 +79,7 @@ bool CTopologize::On_Execute(void)
 	if (pOutPoints != 0) {
 		pOutPoints->Set_Name(CSG_String::Format(_TL("Vertices of %s"), pInLines->Get_Name()));
         if (pOutPoints->Get_Field("ID")==-1) pOutPoints->Add_Field("ID", SG_DATATYPE_Int);
+        pOutPoints->Del_Records();
 	}
 
 
@@ -99,13 +110,23 @@ bool CTopologize::On_Execute(void)
 			Vertex start, end;
 			start =  pInLine->Get_Point(0, iPart);
 			end = pInLine->Get_Point(pInLine->Get_Point_Count(iPart)-1, iPart);
-			if (tolerance != 0)
+
+            if (grid != NULL && system.is_Valid())
+            {
+                tolerance = 0; // we force tolerance to 0 as we convert to cell center anyway
+                start.x = system.Get_xGrid_to_World(system.Get_xWorld_to_Grid(start.x));
+                start.y = system.Get_yGrid_to_World(system.Get_yWorld_to_Grid(start.y));
+                end.x = system.Get_xGrid_to_World(system.Get_xWorld_to_Grid(end.x));
+                end.y = system.Get_yGrid_to_World(system.Get_yWorld_to_Grid(end.y));
+            }
+            if (tolerance != 0)
 			{
                 start.x = floor(start.x / tolerance + 0.5) * tolerance;
                 start.y = floor(start.y / tolerance + 0.5) * tolerance;
                 end.x = floor(end.x / tolerance + 0.5) * tolerance;
                 end.y = floor(end.y / tolerance + 0.5) * tolerance;
 			}
+
 			
 			auto start_it = vertices.emplace(std::map<Vertex, int>::value_type(start, -1));
 			if (start_it.second)

@@ -1,6 +1,3 @@
-/**********************************************************
- * Version $Id: table.cpp 911 2011-02-14 16:38:15Z reklov_w $
- *********************************************************/
 
 ///////////////////////////////////////////////////////////
 //                                                       //
@@ -9,7 +6,7 @@
 //      System for Automated Geoscientific Analyses      //
 //                                                       //
 //                     Tool Library                      //
-//                   garden_webservices                  //
+//                  garden_webservices                   //
 //                                                       //
 //-------------------------------------------------------//
 //                                                       //
@@ -49,15 +46,6 @@
 ///////////////////////////////////////////////////////////
 
 //---------------------------------------------------------
-
-
-///////////////////////////////////////////////////////////
-//														 //
-//														 //
-//														 //
-///////////////////////////////////////////////////////////
-
-//---------------------------------------------------------
 #ifndef HEADER_INCLUDED__WMS_Import_H
 #define HEADER_INCLUDED__WMS_Import_H
 
@@ -69,7 +57,7 @@
 ///////////////////////////////////////////////////////////
 
 //---------------------------------------------------------
-#include "MLB_Interface.h"
+#include "sg_curl.h"
 
 
 ///////////////////////////////////////////////////////////
@@ -83,11 +71,11 @@ class CWMS_Capabilities
 {
 public:
 	CWMS_Capabilities(void);
-	CWMS_Capabilities(const CSG_String &Server, const CSG_String &Version);
+	CWMS_Capabilities(CWebClient &Server, const CSG_String &Path, const CSG_String &Version);
 
 	virtual ~CWMS_Capabilities(void);
 
-	bool				Create				(const CSG_String &Server, const CSG_String &Version);
+	bool				Create				(CWebClient &Server, const CSG_String &Path, const CSG_String &Version);
 	void				Destroy				(void);
 
 
@@ -99,6 +87,7 @@ public:
 
 	CSG_Strings			m_Layers_Name, m_Layers_Title;
 
+	CSG_MetaData		Capabilities;
 
 };
 
@@ -116,6 +105,7 @@ public:
 
 protected:
 
+	virtual bool		On_Before_Execution		(void);
 	virtual int			On_Parameter_Changed	(CSG_Parameters *pParameters, CSG_Parameter *pParameter);
 	virtual int			On_Parameters_Enable	(CSG_Parameters *pParameters, CSG_Parameter *pParameter);
 
@@ -124,9 +114,11 @@ protected:
 
 private:
 
-	bool				Do_Dialog				(CWMS_Capabilities &Cap);
+	bool				Get_Server				(CWebClient &Server, CSG_String &Path, const CSG_String &Address, const CSG_String &Username, const CSG_String &Password);
 
-	bool				Get_Map					(class wxHTTP *pServer, const CSG_String &Version, CWMS_Capabilities &Cap);
+	bool				Get_Map					(CWebClient &Server, const CSG_String &Path, CWMS_Capabilities &Capabilities);
+
+	bool				Get_Legend				(CWebClient &Server, const CSG_String &Path, const CSG_String &Version, const CSG_String &Layer, const CSG_String &Format);
 
 };
 

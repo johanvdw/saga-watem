@@ -141,7 +141,7 @@ CFlow_RecursiveDown::CFlow_RecursiveDown(void)
 //---------------------------------------------------------
 int CFlow_RecursiveDown::On_Parameters_Enable(CSG_Parameters *pParameters, CSG_Parameter *pParameter)
 {
-	if( !SG_STR_CMP(pParameter->Get_Identifier(), "METHOD") )
+	if( pParameter->Cmp_Identifier("METHOD") )
 	{
 		pParameters->Set_Enabled("CORRECT", pParameter->asInt() >= 1);
 		pParameters->Set_Enabled("MINDQV" , pParameter->asInt() == 2);
@@ -164,11 +164,11 @@ void CFlow_RecursiveDown::On_Initialize(void)
 
 	Lock_Create();
 
-	m_Linear.Create(*Get_System(), SG_DATATYPE_Float);
+	m_Linear.Create(Get_System(), SG_DATATYPE_Float);
 
 	//-----------------------------------------------------
-	m_Dir.Create(*Get_System(), SG_DATATYPE_Char );
-	m_Dif.Create(*Get_System(), SG_DATATYPE_Float);
+	m_Dir.Create(Get_System(), SG_DATATYPE_Char );
+	m_Dif.Create(Get_System(), SG_DATATYPE_Float);
 
 	for(int y=0; y<Get_NY() && Set_Progress(y); y++)
 	{

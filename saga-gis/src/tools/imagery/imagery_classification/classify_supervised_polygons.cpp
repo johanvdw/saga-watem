@@ -211,13 +211,13 @@ CPolygon_Classify_Supervised::CPolygon_Classify_Supervised(bool bShapes)
 //---------------------------------------------------------
 int CPolygon_Classify_Supervised::On_Parameters_Enable(CSG_Parameters *pParameters, CSG_Parameter *pParameter)
 {
-	if(	!SG_STR_CMP(pParameter->Get_Identifier(), "TRAINING") )
+	if(	pParameter->Cmp_Identifier("TRAINING") )
 	{
 		pParameters->Set_Enabled("FILE_LOAD", pParameter->asInt() <  0);
 		pParameters->Set_Enabled("FILE_SAVE", pParameter->asInt() >= 0);
 	}
 
-	if(	!SG_STR_CMP(pParameter->Get_Identifier(), "METHOD") )
+	if(	pParameter->Cmp_Identifier("METHOD") )
 	{
 		pParameters->Set_Enabled("THRESHOLD_DIST" , pParameter->asInt() == SG_CLASSIFY_SUPERVISED_MinimumDistance
 			||                                      pParameter->asInt() == SG_CLASSIFY_SUPERVISED_Mahalonobis      );
@@ -460,7 +460,7 @@ bool CPolygon_Classify_Supervised::Set_Classification(CSG_Classifier_Supervised 
 		DataObject_Set_Parameter(pClasses, "LUT_ATTRIB" , 0);	// Lookup Table Attribute
 	}
 
-	pClasses->Set_Name(CSG_String::Format("%s [%s]", m_pTable->Get_Name(), CSG_Classifier_Supervised::Get_Name_of_Method(Parameters("METHOD")->asInt()).c_str()));
+	pClasses->Fmt_Name("%s [%s]", m_pTable->Get_Name(), CSG_Classifier_Supervised::Get_Name_of_Method(Parameters("METHOD")->asInt()).c_str());
 
 	//-----------------------------------------------------
 	return( true );

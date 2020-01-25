@@ -74,10 +74,10 @@ CGrid_PCA_Focal::CGrid_PCA_Focal(void)
 	Set_Description	(_TW(
 		"This tool uses the difference in cell values of a center cell "
 		"and its neighbours (as specified by the kernel) as features for "
-		"a Principle Components Analysis (PCA). "
+		"a Principal Component Analysis (PCA). "
 		"This method has been used by Thomas and Herzfeld (2004) to parameterize "
 		"the topography for a subsequent regionalization of climate variables "
-		"with the principle components as predictors in a regression model. "
+		"with the principal components as predictors in a regression model. "
 	));
 
 	Add_Reference("Benichou, P., Lebreton, O.", "1987",
@@ -195,7 +195,7 @@ bool CGrid_PCA_Focal::On_Execute(void)
 
 	for(i=0; i<Kernel.Get_Count()-1; i++)
 	{
-		CSG_Grid	*pGrid	= SG_Create_Grid(*Get_System());
+		CSG_Grid	*pGrid	= SG_Create_Grid(Get_System());
 
 		if( !pGrid )
 		{
@@ -211,7 +211,7 @@ bool CGrid_PCA_Focal::On_Execute(void)
 			return( false );
 		}
 
-		pGrid->Set_Name(CSG_String::Format("x(%d)-y(%d)", Kernel.Get_X(i + 1), Kernel.Get_Y(i + 1)));
+		pGrid->Fmt_Name("x(%d)-y(%d)", Kernel.Get_X(i + 1), Kernel.Get_Y(i + 1));
 
 		pGrids->Add_Item(pGrid);
 	}
@@ -272,7 +272,7 @@ bool CGrid_PCA_Focal::On_Execute(void)
 	pGrids	= Parameters("PCA")->asGridList();
 	pPCA	= PCA_Parms ("PCA")->asGridList();
 
-	if( !Parameters("OVERWRITE")->asBool() || (pGrids->Get_Grid_Count() > 0 && !Get_System()->is_Equal(pGrids->Get_Grid(0)->Get_System())) )
+	if( !Parameters("OVERWRITE")->asBool() || (pGrids->Get_Grid_Count() > 0 && !Get_System().is_Equal(pGrids->Get_Grid(0)->Get_System())) )
 	{
 		pGrids->Del_Items();
 	}
@@ -290,7 +290,7 @@ bool CGrid_PCA_Focal::On_Execute(void)
 			pGrids->Add_Item(pPCA->Get_Grid(i));
 		}
 
-		pGrids->Get_Grid(i)->Set_Name(CSG_String::Format("%s [PC%0*d]", pGrid->Get_Name(), pPCA->Get_Grid_Count() < 10 ? 1 : 2, i + 1));
+		pGrids->Get_Grid(i)->Fmt_Name("%s [PC%0*d]", pGrid->Get_Name(), pPCA->Get_Grid_Count() < 10 ? 1 : 2, i + 1);
 	}
 
 	//-----------------------------------------------------

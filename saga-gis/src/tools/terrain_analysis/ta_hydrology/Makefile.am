@@ -5,7 +5,7 @@ if DEBUG
 DBGFLAGS = -g -DDEBUG
 endif
 
-DEF_SAGA           = -D_SAGA_LINUX -D_TYPEDEF_BYTE -D_TYPEDEF_WORD -D_SAGA_UNICODE
+DEF_SAGA           = -D_SAGA_LINUX -D_TYPEDEF_BYTE -D_TYPEDEF_WORD
 CXX_INCS           = -I$(top_srcdir)/src/saga_core
 AM_CXXFLAGS        = -fPIC $(CXX_INCS) $(DEF_SAGA) $(DBGFLAGS) $(GOMPFLAGS)
 AM_LDFLAGS         = -fPIC -shared -avoid-version 
@@ -17,6 +17,7 @@ Erosion_LS_Fields.cpp\
 Flow.cpp\
 Flow_AreaDownslope.cpp\
 Flow_AreaUpslope.cpp\
+flow_accumulation_mp.cpp\
 flow_by_slope.cpp\
 Flow_Distance.cpp\
 Flow_Fields.cpp\
@@ -44,6 +45,7 @@ Erosion_LS_Fields.h\
 Flow.h\
 Flow_AreaDownslope.h\
 Flow_AreaUpslope.h\
+flow_accumulation_mp.h\
 flow_by_slope.h\
 Flow_BRM.h\
 Flow_Distance.h\
@@ -59,7 +61,6 @@ Helper.h\
 IsochronesConst.h\
 IsochronesVar.h\
 LakeFlood.h\
-MLB_Interface.h\
 melton_ruggedness.h\
 SAGA_Wetness_Index.h\
 Sinuosity.h\

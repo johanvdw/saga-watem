@@ -267,7 +267,7 @@ C3D_Viewer_TIN_Panel::C3D_Viewer_TIN_Panel(wxWindow *pParent, CSG_TIN *pTIN, int
 //---------------------------------------------------------
 int C3D_Viewer_TIN_Panel::On_Parameters_Enable(CSG_Parameters *pParameters, CSG_Parameter *pParameter)
 {
-	if( !SG_STR_CMP(pParameter->Get_Identifier(), "DRAW_FACES") )
+	if( pParameter->Cmp_Identifier("DRAW_FACES") )
 	{
 		CSG_Parameter	*pDrape	= pParameters->Get_Parameter("DO_DRAPE");
 
@@ -275,30 +275,30 @@ int C3D_Viewer_TIN_Panel::On_Parameters_Enable(CSG_Parameters *pParameters, CSG_
 		pParameters->Get_Parameter("SHADING"    )->Set_Enabled(pParameter->asBool());
 	}
 
-	if( !SG_STR_CMP(pParameter->Get_Identifier(), "DO_DRAPE") )
+	if( pParameter->Cmp_Identifier("DO_DRAPE") )
 	{
 		CSG_Parameter	*pFaces	= pParameters->Get_Parameter("DRAW_FACES");
 
 		pParameters->Get_Parameter("COLORS_ATTR")->Set_Enabled(pParameter->asBool() == false && pFaces->asBool() == true);
 	}
 
-	if( !SG_STR_CMP(pParameter->Get_Identifier(), "SHADING") )
+	if( pParameter->Cmp_Identifier("SHADING") )
 	{
 		pParameters->Get_Parameter("SHADE_DEC"  )->Set_Enabled(pParameter->asBool());
 		pParameters->Get_Parameter("SHADE_AZI"  )->Set_Enabled(pParameter->asBool());
 	}
 
-	if( !SG_STR_CMP(pParameter->Get_Identifier(), "DRAW_EDGES") )
+	if( pParameter->Cmp_Identifier("DRAW_EDGES") )
 	{
 		pParameters->Get_Parameter("EDGE_COLOR_UNI" )->Set_Enabled(pParameter->asBool());
 	}
 
-	if( !SG_STR_CMP(pParameter->Get_Identifier(), "EDGE_COLOR_UNI") )
+	if( pParameter->Cmp_Identifier("EDGE_COLOR_UNI") )
 	{
 		pParameters->Get_Parameter("EDGE_COLOR" )->Set_Enabled(pParameter->asBool());
 	}
 
-	if( !SG_STR_CMP(pParameter->Get_Identifier(), "DRAW_NODES") )
+	if( pParameter->Cmp_Identifier("DRAW_NODES") )
 	{
 		pParameters->Get_Parameter("NODE_COLOR" )->Set_Enabled(pParameter->asBool());
 		pParameters->Get_Parameter("NODE_SIZE"  )->Set_Enabled(pParameter->asBool());
@@ -416,8 +416,8 @@ bool C3D_Viewer_TIN_Panel::On_Draw(void)
 	//-----------------------------------------------------
 	int		cField	= m_Parameters("COLORS_ATTR")->asInt();
 
-	if( m_Parameters("COLORS_RANGE")->asRange()->Get_LoVal()
-	>=  m_Parameters("COLORS_RANGE")->asRange()->Get_HiVal() )
+	if( m_Parameters("COLORS_RANGE")->asRange()->Get_Min()
+	>=  m_Parameters("COLORS_RANGE")->asRange()->Get_Max() )
 	{
 		m_Parameters("COLORS_RANGE")->asRange()->Set_Range(
 			m_pTIN->Get_Mean(cField) - 1.5 * m_pTIN->Get_StdDev(cField),
@@ -427,8 +427,8 @@ bool C3D_Viewer_TIN_Panel::On_Draw(void)
 
 	m_Colors		= *m_Parameters("COLORS")->asColors();
 	m_Color_bGrad	= m_Parameters("COLORS_GRAD")->asBool();
-	m_Color_Min		= m_Parameters("COLORS_RANGE")->asRange()->Get_LoVal();
-	m_Color_Scale	= m_Colors.Get_Count() / (m_Parameters("COLORS_RANGE")->asRange()->Get_HiVal() - m_Color_Min);
+	m_Color_Min		= m_Parameters("COLORS_RANGE")->asRange()->Get_Min();
+	m_Color_Scale	= m_Colors.Get_Count() / (m_Parameters("COLORS_RANGE")->asRange()->Get_Max() - m_Color_Min);
 
 	//-----------------------------------------------------
 	if( m_Parameters("DRAW_FACES")->asBool() )	// Face

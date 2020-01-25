@@ -134,7 +134,7 @@ CFilter_Sieve::CFilter_Sieve(void)
 //---------------------------------------------------------
 int CFilter_Sieve::On_Parameters_Enable(CSG_Parameters *pParameters, CSG_Parameter *pParameter)
 {
-	if( !SG_STR_CMP(pParameter->Get_Identifier(), "ALL") )
+	if( pParameter->Cmp_Identifier("ALL") )
 	{
 		pParameters->Set_Enabled("CLASS", pParameter->asInt() == 0);
 	}
@@ -173,7 +173,7 @@ bool CFilter_Sieve::On_Execute(void)
 
 		m_pGrid->Create(*pGrid);
 
-		m_pGrid->Set_Name(CSG_String::Format("%s [%s]", pGrid->Get_Name(), Get_Name().c_str()));
+		m_pGrid->Fmt_Name("%s [%s]", pGrid->Get_Name(), Get_Name().c_str());
 		m_pGrid->Set_NoData_Value(pGrid->Get_NoData_Value());
 
 		DataObject_Set_Parameters(m_pGrid, pGrid);

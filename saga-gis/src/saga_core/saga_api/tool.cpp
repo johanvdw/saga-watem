@@ -66,6 +66,8 @@
 
 #include "data_manager.h"
 
+#include <wx/string.h>
+
 
 ///////////////////////////////////////////////////////////
 //														 //
@@ -282,7 +284,7 @@ bool CSG_Tool::Execute(void)
 		Parameters.Msg_String(false);
 
 ///////////////////////////////////////////////////////////
-#if !defined(_DEBUG) && defined(_SAGA_VC) && defined(WXWIN_28)
+#if !defined(_DEBUG) && !defined(_OPENMP) && defined(_SAGA_MSW)
 #define _TOOL_EXCEPTION
 		__try
 		{
@@ -444,11 +446,9 @@ CSG_Parameters * CSG_Tool::Add_Parameters(const CSG_String &Identifier, const CS
 //---------------------------------------------------------
 CSG_Parameters * CSG_Tool::Get_Parameters(const CSG_String &Identifier)
 {
-	CSG_String	sIdentifier(Identifier);
-
 	for(int i=0; i<m_npParameters; i++)
 	{
-		if( !sIdentifier.Cmp(m_pParameters[i]->Get_Identifier()) )
+		if( m_pParameters[i]->Cmp_Identifier(Identifier) )
 		{
 			return( m_pParameters[i] );
 		}
@@ -591,13 +591,63 @@ void CSG_Tool::Process_Set_Text(const CSG_String &Text)
 }
 
 //---------------------------------------------------------
-bool CSG_Tool::Set_Progress(double Percent)
+void CSG_Tool::Process_Set_Text(const char    *Format, ...)
+{
+	wxString	_s;
+
+	va_list	argptr;
+
+	#ifdef _SAGA_LINUX
+	// workaround as we only use wide characters
+	// since wx 2.9.4 so interpret strings as multibyte
+	wxString	_Format(Format);	_Format.Replace("%s", "%ls");
+	va_start(argptr, _Format);
+	_s.PrintfV(_Format, argptr);
+	#else
+	va_start(argptr, Format);
+	_s.PrintfV(Format, argptr);
+	#endif
+
+	va_end(argptr);
+
+	CSG_String	s(&_s);
+
+	SG_UI_Process_Set_Text(s);
+}
+
+//---------------------------------------------------------
+void CSG_Tool::Process_Set_Text(const wchar_t *Format, ...)
+{
+	wxString	_s;
+
+	va_list	argptr;
+
+	#ifdef _SAGA_LINUX
+	// workaround as we only use wide characters
+	// since wx 2.9.4 so interpret strings as multibyte
+	wxString	_Format(Format);	_Format.Replace("%s", "%ls");
+	va_start(argptr, _Format);
+	_s.PrintfV(_Format, argptr);
+	#else
+	va_start(argptr, Format);
+	_s.PrintfV(Format, argptr);
+	#endif
+
+	va_end(argptr);
+
+	CSG_String	s(&_s);
+
+	SG_UI_Process_Set_Text(s);
+}
+
+//---------------------------------------------------------
+bool CSG_Tool::Set_Progress(double Percent)	const
 {
 	return( Set_Progress(Percent, 100.0) );
 }
 
 //---------------------------------------------------------
-bool CSG_Tool::Set_Progress(double Position, double Range)
+bool CSG_Tool::Set_Progress(double Position, double Range)	const
 {
 	return( m_bShow_Progress ? SG_UI_Process_Set_Progress(Position, Range) : Process_Get_Okay(false) );
 }
@@ -636,6 +686,56 @@ void CSG_Tool::Message_Add(const CSG_String &Text, bool bNewLine)
 }
 
 //---------------------------------------------------------
+void CSG_Tool::Message_Fmt(const char *Format, ...)
+{
+	wxString	_s;
+
+	va_list	argptr;
+	
+#ifdef _SAGA_LINUX
+	// workaround as we only use wide characters
+	// since wx 2.9.4 so interpret strings as multibyte
+	wxString	_Format(Format);	_Format.Replace("%s", "%ls");
+	va_start(argptr, _Format);
+	_s.PrintfV(_Format, argptr);
+#else
+	va_start(argptr, Format);
+	_s.PrintfV(Format, argptr);
+#endif
+
+	va_end(argptr);
+
+	CSG_String	s(&_s);
+
+	SG_UI_Msg_Add_Execution(s, false);
+}
+
+//---------------------------------------------------------
+void CSG_Tool::Message_Fmt(const wchar_t *Format, ...)
+{
+	wxString	_s;
+
+	va_list	argptr;
+	
+#ifdef _SAGA_LINUX
+	// workaround as we only use wide characters
+	// since wx 2.9.4 so interpret strings as multibyte
+	wxString	_Format(Format);	_Format.Replace("%s", "%ls");
+	va_start(argptr, _Format);
+	_s.PrintfV(_Format, argptr);
+#else
+	va_start(argptr, Format);
+	_s.PrintfV(Format, argptr);
+#endif
+
+	va_end(argptr);
+
+	CSG_String	s(&_s);
+
+	SG_UI_Msg_Add_Execution(s, false);
+}
+
+//---------------------------------------------------------
 bool CSG_Tool::Error_Set(TSG_Tool_Error Error_ID)
 {
 	switch( Error_ID )
@@ -671,11 +771,9 @@ bool CSG_Tool::Error_Set(const CSG_String &Error_Text)
 }
 
 //---------------------------------------------------------
-#include <wx/string.h>
-
 bool CSG_Tool::Error_Fmt(const char *Format, ...)
 {
-	wxString	Error;
+	wxString	_s;
 
 	va_list	argptr;
 	
@@ -684,15 +782,15 @@ bool CSG_Tool::Error_Fmt(const char *Format, ...)
 	// since wx 2.9.4 so interpret strings as multibyte
 	wxString	_Format(Format);	_Format.Replace("%s", "%ls");
 	va_start(argptr, _Format);
-	Error.PrintfV(_Format, argptr);
+	_s.PrintfV(_Format, argptr);
 #else
 	va_start(argptr, Format);
-	Error.PrintfV(Format, argptr);
+	_s.PrintfV(Format, argptr);
 #endif
 
 	va_end(argptr);
 
-	CSG_String	s(&Error);
+	CSG_String	s(&_s);
 
 	return( Error_Set(s) );
 }
@@ -700,7 +798,7 @@ bool CSG_Tool::Error_Fmt(const char *Format, ...)
 //---------------------------------------------------------
 bool CSG_Tool::Error_Fmt(const wchar_t *Format, ...)
 {
-	wxString	Error;
+	wxString	_s;
 
 	va_list	argptr;
 	
@@ -709,15 +807,15 @@ bool CSG_Tool::Error_Fmt(const wchar_t *Format, ...)
 	// since wx 2.9.4 so interpret strings as multibyte
 	wxString	_Format(Format);	_Format.Replace("%s", "%ls");
 	va_start(argptr, _Format);
-	Error.PrintfV(_Format, argptr);
+	_s.PrintfV(_Format, argptr);
 #else
 	va_start(argptr, Format);
-	Error.PrintfV(Format, argptr);
+	_s.PrintfV(Format, argptr);
 #endif
 
 	va_end(argptr);
 
-	CSG_String	s(&Error);
+	CSG_String	s(&_s);
 
 	return( Error_Set(s) );
 }
@@ -751,18 +849,17 @@ bool CSG_Tool::DataObject_Update(CSG_Data_Object *pDataObject, int Show)
 	return( SG_UI_DataObject_Update(pDataObject, Show, NULL) );
 }
 
-bool CSG_Tool::DataObject_Update(CSG_Data_Object *pDataObject, double Parm_1, double Parm_2, int Show)
+bool CSG_Tool::DataObject_Update(CSG_Data_Object *pDataObject, double Minimum, double Maximum, int Show)
 {
-	if( !pDataObject )
-	{
-		return( false );
-	}
+	CSG_Parameters	P;
 
-	CSG_Parameters	Parameters;
-
-	Parameters.Add_Range("", "METRIC_ZRANGE", "", "", Parm_1, Parm_2);
-
-	return( SG_UI_DataObject_Update(pDataObject, Show, &Parameters) );
+	return( DataObject_Get_Parameters(pDataObject, P)
+		&&  P.Set_Parameter("STRETCH_UPDATE"   , false  )	// internal update flag
+		&&  P.Set_Parameter("STRETCH_DEFAULT"  , 3      )	// manual
+		&&  P.Set_Parameter("METRIC_ZRANGE.MIN", Minimum)
+		&&  P.Set_Parameter("METRIC_ZRANGE.MAX", Maximum)
+		&&  SG_UI_DataObject_Update(pDataObject, Show, &P)
+	);
 }
 
 //---------------------------------------------------------
@@ -825,18 +922,15 @@ bool CSG_Tool::DataObject_Set_Parameters(CSG_Data_Object *pDataObject, CSG_Data_
 		return( true );
 	}
 
-	CSG_Parameters	Parms;
-	
-	if( DataObject_Get_Parameters(pCopy, Parms) )
-	{
-		if( 1 )
-		{
-			Parms.Del_Parameter("OBJECT_NODATA"  );
-			Parms.Del_Parameter("OBJECT_Z_FACTOR");
-			Parms.Del_Parameter("OBJECT_Z_OFFSET");
-		}
+	CSG_Parameters	P;
 
-		return( DataObject_Set_Parameters(pDataObject, Parms) );
+	if( DataObject_Get_Parameters(pCopy, P) )
+	{
+		P.Del_Parameter("OBJECT_NODATA"  );
+		P.Del_Parameter("OBJECT_Z_FACTOR");
+		P.Del_Parameter("OBJECT_Z_OFFSET");
+
+		return( DataObject_Set_Parameters(pDataObject, P) );
 	}
 
 	return( false );
@@ -845,9 +939,9 @@ bool CSG_Tool::DataObject_Set_Parameters(CSG_Data_Object *pDataObject, CSG_Data_
 //---------------------------------------------------------
 CSG_Parameter * CSG_Tool::DataObject_Get_Parameter(CSG_Data_Object *pDataObject, const CSG_String &ID)
 {
-	static CSG_Parameters	sParameters;
+	static CSG_Parameters	P;
 
-	return( DataObject_Get_Parameters(pDataObject, sParameters) ? sParameters(ID) : NULL );
+	return( DataObject_Get_Parameters(pDataObject, P) ? P(ID) : NULL );
 }
 
 bool CSG_Tool::DataObject_Set_Parameter(CSG_Data_Object *pDataObject, CSG_Parameter *pParameter)
@@ -866,11 +960,11 @@ bool CSG_Tool::DataObject_Set_Parameter(CSG_Data_Object *pDataObject, CSG_Data_O
 
 bool CSG_Tool::DataObject_Set_Parameter	(CSG_Data_Object *pDataObject, const CSG_String &ID, int            Value)
 {
-	CSG_Parameters	Parameters;
+	CSG_Parameters	P;
 
-	if( DataObject_Get_Parameters(pDataObject, Parameters) && Parameters(ID) )
+	if( DataObject_Get_Parameters(pDataObject, P) && P(ID) )
 	{
-		return( Parameters(ID)->Set_Value(Value) && DataObject_Set_Parameters(pDataObject, Parameters) );
+		return( P(ID)->Set_Value(Value) && DataObject_Set_Parameters(pDataObject, P) );
 	}
 
 	return( false );
@@ -878,11 +972,11 @@ bool CSG_Tool::DataObject_Set_Parameter	(CSG_Data_Object *pDataObject, const CSG
 
 bool CSG_Tool::DataObject_Set_Parameter	(CSG_Data_Object *pDataObject, const CSG_String &ID, double         Value)
 {
-	CSG_Parameters	Parameters;
+	CSG_Parameters	P;
 
-	if( DataObject_Get_Parameters(pDataObject, Parameters) && Parameters(ID) )
+	if( DataObject_Get_Parameters(pDataObject, P) && P(ID) )
 	{
-		return( Parameters(ID)->Set_Value(Value) && DataObject_Set_Parameters(pDataObject, Parameters) );
+		return( P(ID)->Set_Value(Value) && DataObject_Set_Parameters(pDataObject, P) );
 	}
 
 	return( false );
@@ -890,11 +984,11 @@ bool CSG_Tool::DataObject_Set_Parameter	(CSG_Data_Object *pDataObject, const CSG
 
 bool CSG_Tool::DataObject_Set_Parameter	(CSG_Data_Object *pDataObject, const CSG_String &ID, void          *Value)
 {
-	CSG_Parameters	Parameters;
+	CSG_Parameters	P;
 
-	if( DataObject_Get_Parameters(pDataObject, Parameters) && Parameters(ID) )
+	if( DataObject_Get_Parameters(pDataObject, P) && P(ID) )
 	{
-		return( Parameters(ID)->Set_Value(Value) && DataObject_Set_Parameters(pDataObject, Parameters) );
+		return( P(ID)->Set_Value(Value) && DataObject_Set_Parameters(pDataObject, P) );
 	}
 
 	return( false );
@@ -902,11 +996,11 @@ bool CSG_Tool::DataObject_Set_Parameter	(CSG_Data_Object *pDataObject, const CSG
 
 bool CSG_Tool::DataObject_Set_Parameter	(CSG_Data_Object *pDataObject, const CSG_String &ID, const SG_Char *Value)
 {
-	CSG_Parameters	Parameters;
+	CSG_Parameters	P;
 
-	if( DataObject_Get_Parameters(pDataObject, Parameters) && Parameters(ID) )
+	if( DataObject_Get_Parameters(pDataObject, P) && P(ID) )
 	{
-		return( Parameters(ID)->Set_Value(Value) && DataObject_Set_Parameters(pDataObject, Parameters) );
+		return( P(ID)->Set_Value(Value) && DataObject_Set_Parameters(pDataObject, P) );
 	}
 
 	return( false );
@@ -914,11 +1008,11 @@ bool CSG_Tool::DataObject_Set_Parameter	(CSG_Data_Object *pDataObject, const CSG
 
 bool CSG_Tool::DataObject_Set_Parameter	(CSG_Data_Object *pDataObject, const CSG_String &ID, double loVal, double hiVal)	// Range Parameter
 {
-	CSG_Parameters	Parameters;
+	CSG_Parameters	P;
 
-	if( DataObject_Get_Parameters(pDataObject, Parameters) && Parameters(ID) && Parameters(ID)->Get_Type() == PARAMETER_TYPE_Range )
+	if( DataObject_Get_Parameters(pDataObject, P) && P(ID) && P(ID)->Get_Type() == PARAMETER_TYPE_Range )
 	{
-		return( Parameters(ID)->asRange()->Set_Range(loVal, hiVal) && DataObject_Set_Parameters(pDataObject, Parameters) );
+		return( P(ID)->asRange()->Set_Range(loVal, hiVal) && DataObject_Set_Parameters(pDataObject, P) );
 	}
 
 	return( false );
@@ -936,9 +1030,9 @@ bool CSG_Tool::DataObject_Set_Parameter	(CSG_Data_Object *pDataObject, const CSG
   * Direct 'set a value' access to this tool's default parameters list.
 */
 //---------------------------------------------------------
-bool CSG_Tool::Set_Parameter(const CSG_String &Identifier, CSG_Parameter *pSource)
+bool CSG_Tool::Set_Parameter(const CSG_String &Identifier, CSG_Parameter *pValue)
 {
-	return( Parameters.Set_Parameter(Identifier, pSource) );
+	return( Parameters.Set_Parameter(Identifier, pValue) );
 }
 
 //---------------------------------------------------------
@@ -976,9 +1070,55 @@ bool CSG_Tool::Set_Parameter(const CSG_String &Identifier, void *Value, int Type
   * Direct 'set a value' access to this tool's default parameters list.
 */
 //---------------------------------------------------------
-bool CSG_Tool::Set_Parameter(const CSG_String &Identifier, const SG_Char *Value, int Type)
+bool CSG_Tool::Set_Parameter(const CSG_String &Identifier, const CSG_String &Value, int Type)
 {
 	return( Parameters.Set_Parameter(Identifier, Value, Type) );
+}
+
+//---------------------------------------------------------
+/**
+  * Direct 'set a value' access to this tool's default parameters list.
+*/
+//---------------------------------------------------------
+bool CSG_Tool::Set_Parameter(const CSG_String &Identifier, const char *Value, int Type)
+{
+	return( Parameters.Set_Parameter(Identifier, Value, Type) );
+}
+
+//---------------------------------------------------------
+/**
+  * Direct 'set a value' access to this tool's default parameters list.
+*/
+//---------------------------------------------------------
+bool CSG_Tool::Set_Parameter(const CSG_String &Identifier, const wchar_t *Value, int Type)
+{
+	return( Parameters.Set_Parameter(Identifier, Value, Type) );
+}
+
+
+///////////////////////////////////////////////////////////
+//														 //
+//														 //
+//														 //
+///////////////////////////////////////////////////////////
+
+//---------------------------------------------------------
+bool CSG_Tool::Set_Grid_System(const CSG_Grid_System &System)
+{
+//	for(int i=0; i<m_npParameters; i++)
+//	{
+//		m_pParameters[i]->Set_Grid_System(System);
+//	}
+
+	return( Parameters.Set_Grid_System(System) );
+}
+
+//---------------------------------------------------------
+bool CSG_Tool::Reset_Grid_System(void)
+{
+	CSG_Grid_System	System;
+
+	return( Set_Grid_System(System) );
 }
 
 

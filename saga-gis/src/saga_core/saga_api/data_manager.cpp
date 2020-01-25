@@ -433,7 +433,7 @@ bool CSG_Data_Manager::Add(CSG_Data_Object *pObject)
 }
 
 //---------------------------------------------------------
-bool CSG_Data_Manager::Add(const CSG_String &File, TSG_Data_Object_Type Type)
+CSG_Data_Object * CSG_Data_Manager::Add(const CSG_String &File, TSG_Data_Object_Type Type)
 {
 	//-----------------------------------------------------
 	if( Type == SG_DATAOBJECT_TYPE_Undefined )
@@ -489,9 +489,9 @@ bool CSG_Data_Manager::Add(const CSG_String &File, TSG_Data_Object_Type Type)
 
 	if( pObject )
 	{
-		if( pObject->is_Valid() )
+		if( pObject->is_Valid() && Add(pObject) )
 		{
-			return( Add(pObject) );
+			return( pObject );
 		}
 
 		delete(pObject);
@@ -502,17 +502,16 @@ bool CSG_Data_Manager::Add(const CSG_String &File, TSG_Data_Object_Type Type)
 }
 
 //---------------------------------------------------------
-bool CSG_Data_Manager::_Add_External(const CSG_String &File)
+CSG_Data_Object * CSG_Data_Manager::_Add_External(const CSG_String &File)
 {
+	CSG_Data_Object *pData	= NULL;
+
 	if( !SG_File_Exists(File) )
 	{
-		return( false );
+		return( pData );
 	}
 
-	//-----------------------------------------------------
-	bool		bResult	= false;
-
-	CSG_Tool	*pImport;
+	CSG_Tool	*pImport	= NULL;
 
 	SG_UI_Msg_Lock(true);
 
@@ -524,54 +523,74 @@ bool CSG_Data_Manager::_Add_External(const CSG_String &File)
 		||	SG_File_Cmp_Extension(File, "jpg")
 		||	SG_File_Cmp_Extension(File, "png")
 		||	SG_File_Cmp_Extension(File, "pcx") )
-	&&  (pImport = SG_Get_Tool_Library_Manager().Get_Tool("io_grid_image", 1)) != NULL
+	&&  (pImport = SG_Get_Tool_Library_Manager().Create_Tool("io_grid_image", 1)) != NULL
 	&&   pImport->Set_Parameter("FILE", File, PARAMETER_TYPE_FilePath) )
 	{
 		pImport->Set_Manager(this);
-		bResult	= pImport->Execute();
-		pImport->Set_Manager(&g_Data_Manager);
+
+		if( pImport->Execute() )
+		{
+			pData	= pImport->Get_Parameter("OUT_GRID")->asDataObject();
+		}
 	}
+
+	SG_Get_Tool_Library_Manager().Delete_Tool(pImport);
 
 	//-----------------------------------------------------
 	// GDAL Import
 
-	if( !bResult
-	&&  (pImport = SG_Get_Tool_Library_Manager().Get_Tool("io_gdal", 0)) != NULL
+	if( !pData
+	&&  (pImport = SG_Get_Tool_Library_Manager().Create_Tool("io_gdal", 0)) != NULL
 	&&   pImport->Set_Parameter("FILES", File, PARAMETER_TYPE_FilePath) )
 	{
 		pImport->Set_Manager(this);
-		bResult	= pImport->Execute();
-		pImport->Set_Manager(&g_Data_Manager);
+
+		if( pImport->Execute() )
+		{
+			pData	= pImport->Get_Parameter("GRIDS")->asList()->Get_Item(0);
+		}
 	}
+
+	SG_Get_Tool_Library_Manager().Delete_Tool(pImport);
 
 	//-----------------------------------------------------
 	// OGR Import
 
-	if( !bResult
-	&&  (pImport = SG_Get_Tool_Library_Manager().Get_Tool("io_gdal", 3)) != NULL
+	if( !pData
+	&&  (pImport = SG_Get_Tool_Library_Manager().Create_Tool("io_gdal", 3)) != NULL
 	&&   pImport->Set_Parameter("FILES", File, PARAMETER_TYPE_FilePath) )
 	{
 		pImport->Set_Manager(this);
-		bResult	= pImport->Execute();
-		pImport->Set_Manager(&g_Data_Manager);
+
+		if( pImport->Execute() )
+		{
+			pData	= pImport->Get_Parameter("SHAPES")->asList()->Get_Item(0);
+		}
 	}
+
+	SG_Get_Tool_Library_Manager().Delete_Tool(pImport);
 
 	//-----------------------------------------------------
 	// LAS Import
 
-	if( !bResult && SG_File_Cmp_Extension(File, "las")
-	&&  (pImport = SG_Get_Tool_Library_Manager().Get_Tool("io_shapes_las", 1)) != NULL
+	if( !pData && SG_File_Cmp_Extension(File, "las")
+	&&  (pImport = SG_Get_Tool_Library_Manager().Create_Tool("io_shapes_las", 1)) != NULL
 	&&   pImport->Set_Parameter("FILES", File, PARAMETER_TYPE_FilePath) )
 	{
 		pImport->Set_Manager(this);
-		bResult	= pImport->Execute();
-		pImport->Set_Manager(&g_Data_Manager);
+
+		if( pImport->Execute() )
+		{
+			pData	= pImport->Get_Parameter("POINTS")->asDataObject();
+		}
 	}
+
+	SG_Get_Tool_Library_Manager().Delete_Tool(pImport);
 
 	//-----------------------------------------------------
 	SG_UI_Msg_Lock(false);
 
-	return( bResult );
+	return( pData );
 }
 
 
@@ -780,46 +799,133 @@ bool CSG_Data_Manager::Delete_Unsaved(bool bDetachOnly)
 ///////////////////////////////////////////////////////////
 
 //---------------------------------------------------------
-#define SUMMARY_ADD_INT(label, value)	s += CSG_String::Format("<tr><td valign=\"top\">%s</td><td valign=\"top\">%d</td></tr>", label, value)
-
-//---------------------------------------------------------
 CSG_String CSG_Data_Manager::Get_Summary(void)	const
 {
-	//-----------------------------------------------------
 	CSG_String	s;
 
-/*	s	+= CSG_String::Format("<b>%s</b>", _TL("Tool Libraries"));
-
-	s	+= "<table border=\"0\">";
-
-	SUMMARY_ADD_INT(_TL("Available Libraries"), Get_Count());
-	SUMMARY_ADD_INT(_TL("Available Tools"    ), nTools);
-
-	s	+= "</table>";
-
 	//-----------------------------------------------------
-	s	+= CSG_String::Format("<hr><b>%s:</b><table border=\"1\">", _TL("Tool Libraries"));
-
-	s	+= CSG_String::Format("<tr><th>%s</th><th>%s</th><th>%s</th><th>%s</th></tr>",
-			_TL("Library"),
-			_TL("Tools"),
-			_TL("Name"),
-			_TL("Location")
-		);
-
-	for(i=0; i<Get_Count(); i++)
+	if( Get_Table()->Count() > 0 )
 	{
-		s	+= CSG_String::Format("<tr><td>%s</td><td>%d</td><td>%s</td><td>%s</td></tr>",
-				SG_File_Get_Name(Get_Library(i)->Get_File_Name(), false).c_str(),
-				Get_Library(i)->Get_Count(),
-				Get_Library(i)->Get_Name().c_str(),
-				SG_File_Get_Path(Get_Library(i)->Get_File_Name()).c_str()
+		s	+= CSG_String::Format("___\n%s [%d %s]\n", _TL("Table"), Get_Table()->Count(), _TL("objects"));
+
+		for(size_t i=0; i<Get_Table()->Count(); i++)
+		{
+			CSG_Table	*pObject	= (CSG_Table *)Get_Table()->Get(i);
+
+			s	+= CSG_String::Format("- [%d %s] %s\n",
+				pObject->Get_Count(), _TL("records"),
+				pObject->Get_Name()
 			);
+		}
 	}
 
-	s	+= "</table>";
+	//-----------------------------------------------------
+	if( Get_Shapes()->Count() > 0 )
+	{
+		s	+= CSG_String::Format("___\n%s [%d %s]\n", _TL("Shapes"), Get_Shapes()->Count(), _TL("objects"));
 
-*/
+		for(size_t i=0; i<Get_Shapes()->Count(); i++)
+		{
+			CSG_Shapes	*pObject	= (CSG_Shapes *)Get_Shapes()->Get(i);
+
+			s	+= CSG_String::Format("- [%s; %d %s] %s\n",
+				pObject->Get_Type() == SHAPE_TYPE_Point   ? _TL("point"  ) :
+				pObject->Get_Type() == SHAPE_TYPE_Points  ? _TL("points" ) :
+				pObject->Get_Type() == SHAPE_TYPE_Line    ? _TL("line"   ) :
+				pObject->Get_Type() == SHAPE_TYPE_Polygon ? _TL("polygon") : _TL("unknown"),
+				pObject->Get_Count(), _TL("records"),
+				pObject->Get_Name()
+			);
+		}
+	}
+
+	//-----------------------------------------------------
+	if( Get_Point_Cloud()->Count() > 0 )
+	{
+		s	+= CSG_String::Format("___\n%s [%d %s]\n", _TL("Point Cloud"), Get_Point_Cloud()->Count(), _TL("objects"));
+
+		for(size_t i=0; i<Get_Point_Cloud()->Count(); i++)
+		{
+			CSG_PointCloud	*pObject	= (CSG_PointCloud *)Get_Point_Cloud()->Get(i);
+
+			s	+= CSG_String::Format("- [%d %s] %s\n",
+				pObject->Get_Count(), _TL("records"),
+				pObject->Get_Name()
+			);
+		}
+	}
+
+	//-----------------------------------------------------
+//	if( Get_TIN()->Count() > 0 )
+//	{
+//		s	+= CSG_String::Format("___\n%s [%d %s]\n", _TL("TIN"), Get_TIN()->Count(), _TL("objects"));
+//
+//		for(size_t i=0; i<Get_TIN()->Count(); i++)
+//		{
+//			CSG_TIN	*pObject	= (CSG_TIN *)Get_TIN()->Get(i);
+//
+//			s	+= CSG_String::Format("- [%d %s] %s\n",
+//				pObject->Get_Count(), _TL("nodes"),
+//				pObject->Get_Name()
+//			);
+//		}
+//	}
+
+	//-----------------------------------------------------
+	if( Grid_System_Count() > 0 )
+	{
+		sLong	memory	= 0;
+
+		for(size_t i=0; i<Grid_System_Count(); i++)
+		{
+			CSG_Grid_Collection	*pSystem	= Get_Grid_System(i);
+
+			s	+= CSG_String::Format("___\n%s [%s; %d %s]\n", _TL("Grid System"), pSystem->m_System.Get_Name(), pSystem->Count(), _TL("objects"));
+
+			for(size_t j=0; j<pSystem->Count(); j++)
+			{
+				if( pSystem->Get(j)->Get_ObjectType() == SG_DATAOBJECT_TYPE_Grid )
+				{
+					CSG_Grid	*pObject	= (CSG_Grid *)pSystem->Get(j);
+
+					s	+= CSG_String::Format("- [%s; %.1fmb] %s\n",
+						SG_Data_Type_Get_Name(pObject->Get_Type()).c_str(),
+						pObject->Get_Memory_Size() / (double)N_MEGABYTE_BYTES,
+						pObject->Get_Name()
+					);
+
+					memory	+= pObject->Get_Memory_Size();
+				}
+
+				if( pSystem->Get(j)->Get_ObjectType() == SG_DATAOBJECT_TYPE_Grids )
+				{
+					CSG_Grids	*pObject	= (CSG_Grids *)pSystem->Get(j);
+
+					s	+= CSG_String::Format("- [%s; %d %s; %.1fmb] %s\n",
+						SG_Data_Type_Get_Name(pObject->Get_Type()).c_str(),
+						pObject->Get_NZ(), _TL("grids"),
+						pObject->Get_Memory_Size() / (double)N_MEGABYTE_BYTES,
+						pObject->Get_Name()
+					);
+
+					memory	+= pObject->Get_Memory_Size();
+				}
+			}
+		}
+
+		s	+= CSG_String::Format("_\n%s: %.1fmb\n", _TL("Total memory in use by grids"), memory / (double)N_MEGABYTE_BYTES);
+	}
+
+	//-----------------------------------------------------
+	if( s.is_Empty() )
+	{
+		s	+= CSG_String::Format("%s - %s\n--- %s ---\n", _TL("Data Manager"), _TL("Summary"), _TL("no data"));
+	}
+	else
+	{
+		s.Prepend(CSG_String::Format("%s - %s\n", _TL("Data Manager"), _TL("Summary")));
+	}
+
 	//-----------------------------------------------------
 	return( s );
 }

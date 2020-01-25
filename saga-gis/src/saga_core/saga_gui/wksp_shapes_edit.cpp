@@ -1,6 +1,3 @@
-/**********************************************************
- * Version $Id$
- *********************************************************/
 
 ///////////////////////////////////////////////////////////
 //                                                       //
@@ -51,15 +48,6 @@
 ///////////////////////////////////////////////////////////
 
 //---------------------------------------------------------
-
-
-///////////////////////////////////////////////////////////
-//														 //
-//														 //
-//														 //
-///////////////////////////////////////////////////////////
-
-//---------------------------------------------------------
 #include <wx/dcclient.h>
 
 #include "res_commands.h"
@@ -69,7 +57,6 @@
 #include "dc_helper.h"
 
 #include "active.h"
-#include "active_attributes.h"
 
 #include "wksp_shapes.h"
 
@@ -85,6 +72,13 @@
 
 //---------------------------------------------------------
 #define EDIT_TICKMARK_SIZE	4
+
+//---------------------------------------------------------
+#define GET_TABLE_NUM_PREC(Precision)	switch( Get_Parameter("TABLE_FLT_STYLE")->asInt() ) {\
+	default: Precision = -99; break;\
+	case  1: Precision = -Get_Parameter("TABLE_FLT_DECIMALS")->asInt(); break;\
+	case  2: Precision =  Get_Parameter("TABLE_FLT_DECIMALS")->asInt(); break;\
+}
 
 
 ///////////////////////////////////////////////////////////
@@ -347,7 +341,7 @@ bool CWKSP_Shapes::Edit_On_Mouse_Up(CSG_Point Point, double ClientToWorld, int K
 	//-----------------------------------------------------
 	else if( m_Edit_Mode == EDIT_SHAPE_MODE_Normal )
 	{
-		g_pACTIVE->Get_Attributes()->Save_Changes(true);
+		g_pActive->Update_Attributes(true);
 
 		CSG_Rect	rWorld(m_Edit_Mouse_Down, Point);
 
@@ -457,6 +451,8 @@ bool CWKSP_Shapes::Edit_Set_Index(int Index)
 
 	if( pSelection )
 	{
+		int	Decimals;	GET_TABLE_NUM_PREC(Decimals);
+
 		m_Edit_Index	= Index;
 
 		for(int i=0; i<Get_Shapes()->Get_Field_Count(); i++)
@@ -464,7 +460,7 @@ bool CWKSP_Shapes::Edit_Set_Index(int Index)
 			CSG_Table_Record	*pRecord	= m_Edit_Attributes.Add_Record();
 
 			pRecord->Set_Value(0, pSelection->Get_Table()->Get_Field_Name(i));
-			pRecord->Set_Value(1, pSelection->asString(i));
+			pRecord->Set_Value(1, pSelection->asString(i, Decimals));
 		}
 	}
 	else
@@ -482,11 +478,13 @@ bool CWKSP_Shapes::Edit_Set_Attributes(void)
 
 	if( pSelection )
 	{
+		int	Decimals;	GET_TABLE_NUM_PREC(Decimals);
+
 		for(int i=0; i<m_Edit_Attributes.Get_Record_Count(); i++)
 		{
 			if( !pSelection->Set_Value(i, m_Edit_Attributes.Get_Record(i)->asString(1)) )
 			{
-				m_Edit_Attributes.Get_Record(i)->Set_Value(1, pSelection->asString(i));
+				m_Edit_Attributes.Get_Record(i)->Set_Value(1, pSelection->asString(i, Decimals));
 			}
 		}
 
@@ -579,11 +577,13 @@ bool CWKSP_Shapes::_Edit_Split(void)
 			m_Edit_Mode	= EDIT_SHAPE_MODE_Normal;
 
 			CSG_Tool	*pTool	= Get_Shapes()->Get_Type() == SHAPE_TYPE_Polygon
-			?	SG_Get_Tool_Library_Manager().Get_Tool("shapes_polygons", 8)	// Polygon-Line Intersection
-			:	SG_Get_Tool_Library_Manager().Get_Tool("shapes_lines"   , 6); // Split Lines with Lines
+			?	SG_Get_Tool_Library_Manager().Create_Tool("shapes_polygons", 8)  // Polygon-Line Intersection
+			:	SG_Get_Tool_Library_Manager().Create_Tool("shapes_lines"   , 6); // Split Lines with Lines
 
 			if(	pTool )
 			{
+				pTool->Set_Manager(NULL);
+
 				CSG_Shapes	Line(SHAPE_TYPE_Line), Split(Get_Shapes()->Get_Type());
 
 				Line.Add_Shape();
@@ -597,10 +597,6 @@ bool CWKSP_Shapes::_Edit_Split(void)
 
 				//-----------------------------------------
 				bool	bResult;
-
-				CSG_Parameters	P; P.Assign(pTool->Get_Parameters());
-
-				pTool->Set_Manager(NULL);
 
 				if( Get_Shapes()->Get_Type() == SHAPE_TYPE_Polygon )
 				{
@@ -656,8 +652,7 @@ bool CWKSP_Shapes::_Edit_Split(void)
 					}
 				}
 
-				pTool->Get_Parameters()->Assign_Values(&P);
-				pTool->Set_Manager(P.Get_Manager());
+				SG_Get_Tool_Library_Manager().Delete_Tool(pTool);
 			}
 
 			Update_Views(false);
@@ -951,27 +946,33 @@ void CWKSP_Shapes::_Edit_Shape_Draw_Point(wxDC &dc, TSG_Point_Int Point, bool bS
 
 void CWKSP_Shapes::_Edit_Shape_Draw_Point(wxDC &dc, int x, int y, bool bSelected)
 {
-	dc.SetPen  (wxPen(m_Edit_Color));
 	dc.SetBrush(*wxTRANSPARENT_BRUSH);
+
+	dc.SetPen  (wxPen(m_Edit_Color));
 
 	dc.DrawCircle(x, y, 2);
 
 	Draw_Edge(dc, EDGE_STYLE_SIMPLE,
-		x - EDIT_TICKMARK_SIZE - 1,
-		y - EDIT_TICKMARK_SIZE - 1,
-		x + EDIT_TICKMARK_SIZE,
-		y + EDIT_TICKMARK_SIZE
+		x - EDIT_TICKMARK_SIZE, y - EDIT_TICKMARK_SIZE,
+		x + EDIT_TICKMARK_SIZE, y + EDIT_TICKMARK_SIZE
 	);
 
 	if( bSelected )
 	{
-		dc.SetPen(*wxRED_PEN);
+		dc.SetPen(m_Sel_Color);
 
 		Draw_Edge(dc, EDGE_STYLE_SIMPLE,
-			x - EDIT_TICKMARK_SIZE - 2,
-			y - EDIT_TICKMARK_SIZE - 2,
-			x + EDIT_TICKMARK_SIZE + 1,
-			y + EDIT_TICKMARK_SIZE + 1
+			x - EDIT_TICKMARK_SIZE - 1, y - EDIT_TICKMARK_SIZE - 1,
+			x + EDIT_TICKMARK_SIZE + 1, y + EDIT_TICKMARK_SIZE + 1
+		);
+	}
+	else if( m_Edit_bGleam )
+	{
+		dc.SetPen(wxColour(255 - m_Edit_Color.Red(), 255 - m_Edit_Color.Green(), 255 - m_Edit_Color.Blue()));
+
+		Draw_Edge(dc, EDGE_STYLE_SIMPLE,
+			x - EDIT_TICKMARK_SIZE + 1, y - EDIT_TICKMARK_SIZE + 1,
+			x + EDIT_TICKMARK_SIZE - 1, y + EDIT_TICKMARK_SIZE - 1
 		);
 	}
 }
@@ -996,13 +997,11 @@ void CWKSP_Shapes::Edit_Shape_Draw_Move(wxDC &dc, const CSG_Rect &rWorld, const 
 //---------------------------------------------------------
 void CWKSP_Shapes::Edit_Shape_Draw(CWKSP_Map_DC &dc_Map)
 {
-	int		iPart, iPoint;
-
 	if( m_Edit_pShape )
 	{
-		for(iPart=0; iPart<m_Edit_pShape->Get_Part_Count(); iPart++)
+		for(int iPart=0; iPart<m_Edit_pShape->Get_Part_Count(); iPart++)
 		{
-			for(iPoint=0; iPoint<m_Edit_pShape->Get_Point_Count(iPart); iPoint++)
+			for(int iPoint=0; iPoint<m_Edit_pShape->Get_Point_Count(iPart); iPoint++)
 			{
 				_Edit_Shape_Draw_Point(dc_Map.dc, dc_Map.World2DC(m_Edit_pShape->Get_Point(iPoint, iPart)), false);
 			}
@@ -1015,7 +1014,7 @@ void CWKSP_Shapes::Edit_Shape_Draw(CWKSP_Map_DC &dc_Map)
 
 		if( m_Parameters("EDIT_SNAP_LIST")->asShapesList()->Get_Item_Count() > 0 )
 		{
-			iPoint	= m_Parameters("EDIT_SNAP_DIST")->asInt();
+			int	iPoint	= m_Parameters("EDIT_SNAP_DIST")->asInt();
 
 			dc_Map.dc.SetBrush(wxNullBrush);
 			dc_Map.dc.SetPen  (*wxWHITE);

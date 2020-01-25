@@ -112,7 +112,7 @@ CTable_Field_Deletion::CTable_Field_Deletion(void)
 //---------------------------------------------------------
 int CTable_Field_Deletion::On_Parameters_Enable(CSG_Parameters *pParameters, CSG_Parameter *pParameter)
 {
-	if( !SG_STR_CMP(pParameter->Get_Identifier(), "TABLE") )
+	if( pParameter->Cmp_Identifier("TABLE") )
 	{
 		CSG_Data_Object	*pObject	= pParameter->asDataObject();
 
@@ -189,7 +189,7 @@ bool CTable_Field_Deletion::On_Execute(void)
 			bDelete[Fields[i]]	= true;
 		}
 
-		pOutput->Set_Name(CSG_String::Format("%s [%s]", pInput->Get_Name(), _TL("Changed")));
+		pOutput->Fmt_Name("%s [%s]", pInput->Get_Name(), _TL("Changed"));
 
 		for(i=0; i<pInput->Get_Field_Count(); i++)
 		{

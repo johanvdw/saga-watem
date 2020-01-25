@@ -116,7 +116,7 @@ CTable_Categories_to_Indicators::CTable_Categories_to_Indicators(void)
 //---------------------------------------------------------
 int CTable_Categories_to_Indicators::On_Parameters_Enable(CSG_Parameters *pParameters, CSG_Parameter *pParameter)
 {
-	if( !SG_STR_CMP(pParameter->Get_Identifier(), "TABLE") )
+	if( pParameter->Cmp_Identifier("TABLE") )
 	{
 		CSG_Data_Object	*pObject	= pParameter->asDataObject();
 
@@ -153,7 +153,7 @@ bool CTable_Categories_to_Indicators::On_Execute(void)
 			CSG_Shapes	*pOutput	= Parameters("OUT_SHAPES")->asShapes();
 
 			pOutput->Create(((CSG_Shapes *)pTable)->Get_Type(), NULL, (CSG_Table *)0, ((CSG_Shapes *)pTable)->Get_Vertex_Type());
-			pOutput->Set_Name(CSG_String::Format(SG_T("%s [%s]"), pTable->Get_Name(), pTable->Get_Field_Name(iCategory)));
+			pOutput->Fmt_Name("%s [%s]", pTable->Get_Name(), pTable->Get_Field_Name(iCategory));
 			pOutput->Add_Field(pTable->Get_Field_Name(iCategory), pTable->Get_Field_Type(iCategory));
 
 			for(int i=0; i<pTable->Get_Count(); i++)
@@ -176,7 +176,7 @@ bool CTable_Categories_to_Indicators::On_Execute(void)
 			CSG_Table	*pOutput	= Parameters("OUT_SHAPES")->asTable();
 
 			pOutput->Destroy();
-			pOutput->Set_Name(CSG_String::Format(SG_T("%s [%s]"), pTable->Get_Name(), pTable->Get_Field_Name(iCategory)));
+			pOutput->Fmt_Name("%s [%s]", pTable->Get_Name(), pTable->Get_Field_Name(iCategory));
 			pOutput->Add_Field(pTable->Get_Field_Name(iCategory), pTable->Get_Field_Type(iCategory));
 
 			for(int i=0; i<pTable->Get_Count(); i++)
@@ -219,7 +219,7 @@ bool CTable_Categories_to_Indicators::On_Execute(void)
 
 	pTable->Set_Index(old_Field, old_Order);
 
-	Message_Add(CSG_String::Format("\n%s: %d\n", _TL("number of categories"), nCategories), false);
+	Message_Fmt("\n%s: %d", _TL("number of categories"), nCategories);
 
 	//-----------------------------------------------------
 	return( true );

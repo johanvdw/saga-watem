@@ -96,7 +96,7 @@ CGrid_Buffer::CGrid_Buffer(void)
 //---------------------------------------------------------
 int CGrid_Buffer::On_Parameters_Enable(CSG_Parameters *pParameters, CSG_Parameter *pParameter)
 {
-	if( !SG_STR_CMP(pParameter->Get_Identifier(), "TYPE") )
+	if( pParameter->Cmp_Identifier("TYPE") )
 	{
 		pParameters->Set_Enabled("DISTANCE", pParameter->asInt() == 0);
 	}
@@ -117,7 +117,7 @@ bool CGrid_Buffer::On_Execute(void)
 
 	pBuffer->Set_NoData_Value(EMPTY);
 	pBuffer->Assign_NoData();
-	pBuffer->Set_Name(CSG_String::Format("%s [%s]", pFeatures->Get_Name(), _TL("Buffer")));
+	pBuffer->Fmt_Name("%s [%s]", pFeatures->Get_Name(), _TL("Buffer"));
 
 	bool	bFixed	= Parameters("TYPE")->asInt() == 0;
 

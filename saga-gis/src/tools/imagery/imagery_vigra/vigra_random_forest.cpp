@@ -1,6 +1,3 @@
-/**********************************************************
- * Version $Id: vigra_random_forest.cpp 1282 2011-12-29 17:13:26Z manfred-e $
- *********************************************************/
 
 ///////////////////////////////////////////////////////////
 //                                                       //
@@ -131,8 +128,6 @@ CRandom_Forest::CRandom_Forest(CSG_Parameters *pParameters)
 //---------------------------------------------------------
 bool CRandom_Forest::Parameters_Create(CSG_Parameters &Parameters)
 {
-	CSG_Parameter	*pNode;
-
 	//-----------------------------------------------------
 #if defined(WITH_HDF5)
 	Parameters.Add_FilePath("",
@@ -143,47 +138,47 @@ bool CRandom_Forest::Parameters_Create(CSG_Parameters &Parameters)
 #endif
 
 	//-----------------------------------------------------
-	pNode	= Parameters.Add_Node("",
+	Parameters.Add_Node("",
 		"RF_OPTIONS"			, _TL("Random Forest Options"),
 		_TL("")
 	);
 
 #if defined(WITH_HDF5)
 	Parameters.Add_FilePath(
-		pNode	, "RF_EXPORT"			, _TL("Export to File"),
+		"RF_OPTIONS", "RF_EXPORT"			, _TL("Export to File"),
 		_TL(""),
 		NULL, NULL, true
 	);
 #endif
 
-	Parameters.Add_Value(
-		pNode	, "RF_TREE_COUNT"		, _TL("Tree Count"),
+	Parameters.Add_Int(
+		"RF_OPTIONS", "RF_TREE_COUNT"		, _TL("Tree Count"),
 		_TL("How many trees to create?"),
-		PARAMETER_TYPE_Int, 32, 1, true
+		32, 1, true
 	);
 
-	Parameters.Add_Value(
-		pNode	, "RF_TREE_SAMPLES"		, _TL("Samples per Tree"),
+	Parameters.Add_Double(
+		"RF_OPTIONS", "RF_TREE_SAMPLES"		, _TL("Samples per Tree"),
 		_TL("Specifies the fraction of the total number of samples used per tree for learning."),
-		PARAMETER_TYPE_Double, 1.0, 0.0, true, 1.0, true
+		1.0, 0.0, true, 1.0, true
 	);
 
-	Parameters.Add_Value(
-		pNode	, "RF_REPLACE"			, _TL("Sample with Replacement"),
+	Parameters.Add_Bool(
+		"RF_OPTIONS", "RF_REPLACE"			, _TL("Sample with Replacement"),
 		_TL("Sample from training population with or without replacement?"),
-		PARAMETER_TYPE_Bool, true
+		true
 	);
 
-	Parameters.Add_Value(
-		pNode	, "RF_SPLIT_MIN_SIZE"	, _TL("Minimum Node Split Size"),
+	Parameters.Add_Int(
+		"RF_OPTIONS", "RF_SPLIT_MIN_SIZE"	, _TL("Minimum Node Split Size"),
 		_TL("Number of examples required for a node to be split. Choose 1 for complete growing."),
-		PARAMETER_TYPE_Int, 1, 1, true
+		1, 1, true
 	);
 
 	Parameters.Add_Choice(
-		pNode	, "RF_NODE_FEATURES"	, _TL("Features per Node"),
+		"RF_OPTIONS", "RF_NODE_FEATURES"	, _TL("Features per Node"),
 		_TL(""),
-		CSG_String::Format(SG_T("%s|%s|%s|"),
+		CSG_String::Format("%s|%s|%s",
 			_TL("logarithmic"),
 			_TL("square root"),
 			_TL("all")
@@ -191,9 +186,9 @@ bool CRandom_Forest::Parameters_Create(CSG_Parameters &Parameters)
 	);
 
 	Parameters.Add_Choice(
-		pNode	, "RF_STRATIFICATION"	, _TL("Stratification"),
+		"RF_OPTIONS", "RF_STRATIFICATION"	, _TL("Stratification"),
 		_TL("Specifies stratification strategy. Either none, equal amount of class samples, or proportional to fraction of class samples."),
-		CSG_String::Format(SG_T("%s|%s|%s|"),
+		CSG_String::Format("%s|%s|%s",
 			_TL("none"),
 			_TL("equal"),
 			_TL("proportional")
@@ -337,10 +332,10 @@ CViGrA_Random_Forest::CViGrA_Random_Forest(void)
 	Set_Author		("O.Conrad (c) 2013");
 
 	Set_Description	(_TW(
-		"References:\n"
-		"ViGrA - Vision with Generic Algorithms\n"
-		"<a target=\"_blank\" href=\"http://hci.iwr.uni-heidelberg.de/vigra\">http://hci.iwr.uni-heidelberg.de</a>"
+		"Random Forest Classification."
 	));
+
+	Add_Reference("http://ukoethe.github.io/vigra/", SG_T("ViGrA - Vision with Generic Algorithms"));
 
 	//-----------------------------------------------------
 	Parameters.Add_Grid_List("",
@@ -415,7 +410,7 @@ CViGrA_Random_Forest::CViGrA_Random_Forest(void)
 //---------------------------------------------------------
 int CViGrA_Random_Forest::On_Parameters_Enable(CSG_Parameters *pParameters, CSG_Parameter *pParameter)
 {
-	if( !SG_STR_CMP(pParameter->Get_Identifier(), "RF_IMPORT") )
+	if( pParameter->Cmp_Identifier("RF_IMPORT") )
 	{
 		bool	bTraining	= !SG_File_Exists(pParameter->asString());
 
@@ -424,12 +419,12 @@ int CViGrA_Random_Forest::On_Parameters_Enable(CSG_Parameters *pParameters, CSG_
 		pParameters->Set_Enabled("IMPORTANCES", bTraining);
 	}
 
-	if( !SG_STR_CMP(pParameter->Get_Identifier(), "DO_MRMR") )
+	if( pParameter->Cmp_Identifier("DO_MRMR") )
 	{
-		pParameters->Get("DO_MRMR")->Set_Children_Enabled(pParameter->asBool());
+		(*pParameters)("DO_MRMR")->Set_Children_Enabled(pParameter->asBool());
 	}
 
-	if( pParameters->Get("DO_MRMR")->asBool() )
+	if( (*pParameters)("DO_MRMR")->asBool() )
 	{
 		CSG_mRMR::Parameters_Enable(pParameters, pParameter);
 	}
@@ -459,7 +454,7 @@ bool CViGrA_Random_Forest::On_Execute(void)
 	{
 		if( pFeatures->Get_Grid(i)->Get_Range() <= 0.0 )
 		{
-			Message_Add(CSG_String::Format("%s: %s", _TL("grid has been dropped"), pFeatures->Get_Grid(i)->Get_Name()));
+			Message_Fmt("\n%s: %s", _TL("grid has been dropped"), pFeatures->Get_Grid(i)->Get_Name());
 		}
 		else
 		{
@@ -675,9 +670,9 @@ bool CViGrA_Random_Forest::Get_Training(CSG_Matrix &Data, CSG_Table &Classes)
 			{
 				bSelected[j = Selector.Get_Index(i) - 1]	= 1;
 
-				Message_Add(CSG_String::Format(SG_T("\n%02d. %s (%s: %f)"),
+				Message_Fmt("\n%02d. %s (%s: %f)",
 					i + 1, m_pFeatures[j]->Get_Name(), _TL("Score"), Selector.Get_Score(i)
-				), false);
+				);
 			}
 
 			Message_Add("\n", false);
@@ -709,16 +704,16 @@ int CViGrA_Random_Forest::Get_Training(CSG_Matrix &Data, int ID, CSG_Shape_Polyg
 {
 	int	Count	= 0;
 
-	int	xMin	= Get_System()->Get_xWorld_to_Grid(pArea->Get_Extent().Get_XMin());	if( xMin <  0        ) xMin = 0;
-	int	xMax	= Get_System()->Get_xWorld_to_Grid(pArea->Get_Extent().Get_XMax());	if( xMax >= Get_NX() ) xMax = Get_NX() - 1;
-	int	yMin	= Get_System()->Get_yWorld_to_Grid(pArea->Get_Extent().Get_YMin());	if( yMin <  0        ) yMin = 0;
-	int	yMax	= Get_System()->Get_yWorld_to_Grid(pArea->Get_Extent().Get_YMax());	if( yMax >= Get_NY() ) yMax = Get_NY() - 1;
+	int	xMin	= Get_System().Get_xWorld_to_Grid(pArea->Get_Extent().Get_XMin());	if( xMin <  0        ) xMin = 0;
+	int	xMax	= Get_System().Get_xWorld_to_Grid(pArea->Get_Extent().Get_XMax());	if( xMax >= Get_NX() ) xMax = Get_NX() - 1;
+	int	yMin	= Get_System().Get_yWorld_to_Grid(pArea->Get_Extent().Get_YMin());	if( yMin <  0        ) yMin = 0;
+	int	yMax	= Get_System().Get_yWorld_to_Grid(pArea->Get_Extent().Get_YMax());	if( yMax >= Get_NY() ) yMax = Get_NY() - 1;
 
 	for(int y=yMin; y<=yMax; y++)
 	{
 		for(int x=xMin; x<=xMax; x++)
 		{
-			if( pArea->Contains(Get_System()->Get_Grid_to_World(x, y)) )
+			if( pArea->Contains(Get_System().Get_Grid_to_World(x, y)) )
 			{
 				CSG_Vector	z(1 + m_nFeatures);
 
@@ -838,12 +833,12 @@ CSG_Parameter_Grid_List * CViGrA_Random_Forest::Get_Propability_Grids(CSG_Table 
 			}
 			else
 			{
-				pGrids->Add_Item(pGrid = SG_Get_Data_Manager().Add_Grid(*Get_System()));
+				pGrids->Add_Item(pGrid = SG_Get_Data_Manager().Add_Grid(Get_System()));
 
 				DataObject_Set_Colors(pGrid, 11, SG_COLORS_WHITE_GREEN);
 			}
 
-			pGrid->Set_Name(CSG_String::Format(SG_T("%s [%s]"), Classes[i].asString(CLASS_NAME), _TL("Probability")));
+			pGrid->Fmt_Name("%s [%s]", Classes[i].asString(CLASS_NAME), _TL("Probability"));
 		}
 
 		return( pGrids );
@@ -868,10 +863,10 @@ CViGrA_RF_Presence::CViGrA_RF_Presence(void)
 	Set_Author		("O.Conrad (c) 2015");
 
 	Set_Description	(_TW(
-		"References:\n"
-		"ViGrA - Vision with Generic Algorithms\n"
-		"<a target=\"_blank\" href=\"http://hci.iwr.uni-heidelberg.de/vigra\">http://hci.iwr.uni-heidelberg.de</a>"
+		"Random Forest Presence Prediction"
 	));
+
+	Add_Reference("http://ukoethe.github.io/vigra/", SG_T("ViGrA - Vision with Generic Algorithms"));
 
 	//-----------------------------------------------------
 	Parameters.Add_Grid_List("",
@@ -923,7 +918,7 @@ CViGrA_RF_Presence::CViGrA_RF_Presence(void)
 //---------------------------------------------------------
 int CViGrA_RF_Presence::On_Parameters_Enable(CSG_Parameters *pParameters, CSG_Parameter *pParameter)
 {
-	if( !SG_STR_CMP(pParameter->Get_Identifier(), "RF_IMPORT") )
+	if( pParameter->Cmp_Identifier("RF_IMPORT") )
 	{
 		bool	bTraining	= !SG_File_Exists(pParameter->asString());
 
@@ -931,12 +926,12 @@ int CViGrA_RF_Presence::On_Parameters_Enable(CSG_Parameters *pParameters, CSG_Pa
 		pParameters->Set_Enabled("PRESENCE"  , bTraining);
 	}
 
-	if( !SG_STR_CMP(pParameter->Get_Identifier(), "DO_MRMR") )
+	if( pParameter->Cmp_Identifier("DO_MRMR") )
 	{
-		pParameters->Get("DO_MRMR")->Set_Children_Enabled(pParameter->asBool());
+		(*pParameters)("DO_MRMR")->Set_Children_Enabled(pParameter->asBool());
 	}
 
-	if( pParameters->Get("DO_MRMR")->asBool() )
+	if( (*pParameters)("DO_MRMR")->asBool() )
 	{
 		CSG_mRMR::Parameters_Enable(pParameters, pParameter);
 	}
@@ -964,7 +959,7 @@ bool CViGrA_RF_Presence::On_Execute(void)
 	{
 		if( pFeatures->Get_Grid(i)->Get_Range() <= 0.0 )
 		{
-			Message_Add(CSG_String::Format(SG_T("%s: %s"), _TL("grid has been dropped"), pFeatures->Get_Grid(i)->Get_Name()));
+			Message_Fmt("\n%s: %s", _TL("grid has been dropped"), pFeatures->Get_Grid(i)->Get_Name());
 		}
 		else
 		{
@@ -1077,8 +1072,8 @@ bool CViGrA_RF_Presence::Get_Training(CSG_Matrix &Data)
 	{
 		TSG_Point	p	= pPresence->Get_Shape(iPoint)->Get_Point(0);
 
-		int	x	= Get_System()->Get_xWorld_to_Grid(p.x);
-		int	y	= Get_System()->Get_yWorld_to_Grid(p.y);
+		int	x	= Get_System().Get_xWorld_to_Grid(p.x);
+		int	y	= Get_System().Get_yWorld_to_Grid(p.y);
 
 		Get_Training(Data, x, y, 1);
 	}
@@ -1113,9 +1108,9 @@ bool CViGrA_RF_Presence::Get_Training(CSG_Matrix &Data)
 			{
 				bSelected[j = Selector.Get_Index(i) - 1]	= 1;
 
-				Message_Add(CSG_String::Format(SG_T("\n%02d. %s (%s: %f)"),
+				Message_Fmt("\n%02d. %s (%s: %f)",
 					i + 1, m_pFeatures[j]->Get_Name(), _TL("Score"), Selector.Get_Score(i)
-				), false);
+				);
 			}
 
 			Message_Add("\n", false);
@@ -1180,10 +1175,10 @@ CViGrA_RF_Table::CViGrA_RF_Table(void)
 	Set_Author		("B. Bechtel, O.Conrad (c) 2015");
 
 	Set_Description	(_TW(
-		"References:\n"
-		"ViGrA - Vision with Generic Algorithms\n"
-		"<a target=\"_blank\" href=\"http://hci.iwr.uni-heidelberg.de/vigra\">http://hci.iwr.uni-heidelberg.de</a>"
+		"Random Forest Table Classification."
 	));
+
+	Add_Reference("http://ukoethe.github.io/vigra/", SG_T("ViGrA - Vision with Generic Algorithms"));
 
 	//-----------------------------------------------------
 	Parameters.Add_Table("",
@@ -1233,7 +1228,7 @@ CViGrA_RF_Table::CViGrA_RF_Table(void)
 //---------------------------------------------------------
 int CViGrA_RF_Table::On_Parameters_Enable(CSG_Parameters *pParameters, CSG_Parameter *pParameter)
 {
-	if( !SG_STR_CMP(pParameter->Get_Identifier(), "RF_IMPORT") )
+	if( pParameter->Cmp_Identifier("RF_IMPORT") )
 	{
 		bool	bTraining	= !SG_File_Exists(pParameter->asString());
 

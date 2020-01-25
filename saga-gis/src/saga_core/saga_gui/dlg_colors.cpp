@@ -1,6 +1,3 @@
-/**********************************************************
- * Version $Id$
- *********************************************************/
 
 ///////////////////////////////////////////////////////////
 //                                                       //
@@ -51,6 +48,18 @@
 ///////////////////////////////////////////////////////////
 
 //---------------------------------------------------------
+#include <saga_api/saga_api.h>
+
+#include <wx/odcombo.h>
+
+#include "res_controls.h"
+#include "res_dialogs.h"
+
+#include "helper.h"
+#include "dc_helper.h"
+
+#include "dlg_colors.h"
+#include "dlg_colors_control.h"
 
 
 ///////////////////////////////////////////////////////////
@@ -60,15 +69,75 @@
 ///////////////////////////////////////////////////////////
 
 //---------------------------------------------------------
-#include <saga_api/saga_api.h>
+class CColorPresets : public wxOwnerDrawnComboBox
+{
+public:
+	CColorPresets(wxWindow *pParent)
+	{
+		wxArrayString	Items;	CSG_Colors	Colors;
 
-#include "res_controls.h"
-#include "res_dialogs.h"
+		for(int i=0; Colors.Set_Predefined(i); i++)
+		{
+			Items.Add(CSG_Colors::Get_Predefined_Name(i));
+		}
 
-#include "helper.h"
+		Create(pParent, wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, Items, wxCB_READONLY); //wxNO_BORDER|wxCB_READONLY);
 
-#include "dlg_colors.h"
-#include "dlg_colors_control.h"
+		SetSelection(0);
+	}
+
+	//-----------------------------------------------------
+	void	Draw_Colors		(wxDC &dc, const wxRect &r, int Palette) const
+	{
+		CSG_Colors	Colors(r.GetWidth(), Palette);
+
+		for(int i=0, x=r.GetLeft(); i<Colors.Get_Count(); i++)
+		{
+			int	xx = x; x = r.GetLeft() + (int)((i + 1.) * r.GetWidth() / (double)Colors.Get_Count());
+
+			Draw_FillRect(dc, Get_Color_asWX(Colors.Get_Color(i)), xx, r.GetTop(), x, r.GetBottom());
+		}
+	}
+
+	//-----------------------------------------------------
+	virtual void OnDrawItem(wxDC &dc, const wxRect &rect, int item, int flags) const
+	{
+		if( item != wxNOT_FOUND )
+		{
+			wxRect	r = rect; r.Deflate(1);
+
+			Draw_Colors(dc, r, item);
+		}
+	}
+
+	//-----------------------------------------------------
+	virtual void OnDrawBackground( wxDC& dc, const wxRect &rect, int item, int flags ) const
+	{
+		if( (flags & (wxODCB_PAINTING_CONTROL|wxODCB_PAINTING_SELECTED)) )
+		{
+			wxOwnerDrawnComboBox::OnDrawBackground(dc, rect, item, flags);
+
+			return;
+		}
+
+		wxColour	Color	= SYS_Get_Color(wxSYS_COLOUR_WINDOW);
+
+		dc.SetBrush(wxBrush(Color));
+		dc.SetPen  (wxPen  (Color));
+
+		dc.DrawRectangle(rect);
+	}
+
+	virtual wxCoord OnMeasureItem(size_t WXUNUSED(item)) const
+	{
+		return( (wxCoord)( 0.8 * GetSize().GetHeight()) );
+	}
+
+	virtual wxCoord OnMeasureItemWidth(size_t WXUNUSED(item)) const
+	{
+		return( (wxCoord)(10.0 * GetSize().GetWidth ()) ); // return( -1 ); // will be measured from text width
+	}
+};
 
 
 ///////////////////////////////////////////////////////////
@@ -82,19 +151,20 @@ IMPLEMENT_CLASS(CDLG_Colors, CDLG_Base)
 
 //---------------------------------------------------------
 BEGIN_EVENT_TABLE(CDLG_Colors, CDLG_Base)
-	EVT_BUTTON			(ID_BTN_LOAD			, CDLG_Colors::On_Load)
-	EVT_BUTTON			(ID_BTN_SAVE			, CDLG_Colors::On_Save)
-	EVT_BUTTON			(ID_BTN_COLORS_COUNT	, CDLG_Colors::On_Count)
-	EVT_BUTTON			(ID_BTN_COLORS_MIRROR	, CDLG_Colors::On_Miror)
-	EVT_BUTTON			(ID_BTN_COLORS_INVERT	, CDLG_Colors::On_Invert)
-	EVT_BUTTON			(ID_BTN_COLORS_RANDOM	, CDLG_Colors::On_Random)
-	EVT_BUTTON			(ID_BTN_COLORS_PRESET	, CDLG_Colors::On_Preset)
+	EVT_BUTTON(ID_BTN_LOAD            , CDLG_Colors::On_Load     )
+	EVT_BUTTON(ID_BTN_SAVE            , CDLG_Colors::On_Save     )
+	EVT_BUTTON(ID_BTN_COLORS_COUNT    , CDLG_Colors::On_Count    )
+	EVT_BUTTON(ID_BTN_COLORS_MIRROR   , CDLG_Colors::On_Mirror   )
+	EVT_BUTTON(ID_BTN_COLORS_INVERT   , CDLG_Colors::On_Invert   )
+	EVT_BUTTON(ID_BTN_COLORS_GREYSCALE, CDLG_Colors::On_Greyscale)
+	EVT_BUTTON(ID_BTN_COLORS_RANDOM   , CDLG_Colors::On_Random   )
+	EVT_BUTTON(ID_BTN_COLORS_PRESET   , CDLG_Colors::On_Preset   )
+
+	EVT_COMBOBOX(wxID_ANY             , CDLG_Colors::On_ComboBox )
 END_EVENT_TABLE()
 
 
 ///////////////////////////////////////////////////////////
-//														 //
-//														 //
 //														 //
 ///////////////////////////////////////////////////////////
 
@@ -111,11 +181,14 @@ CDLG_Colors::CDLG_Colors(CSG_Colors *pColors)
 	Add_Button(ID_BTN_LOAD);
 	Add_Button(ID_BTN_SAVE);
 	Add_Button(-1);
-	Add_Button(ID_BTN_COLORS_COUNT);
-	Add_Button(ID_BTN_COLORS_MIRROR);
-	Add_Button(ID_BTN_COLORS_INVERT);
-	Add_Button(ID_BTN_COLORS_RANDOM);
-	Add_Button(ID_BTN_COLORS_PRESET);
+	Add_Control(new CColorPresets(Get_Controls()));
+//	Add_Button(-1);
+	Add_Button(ID_BTN_COLORS_COUNT    );
+	Add_Button(ID_BTN_COLORS_MIRROR   );
+	Add_Button(ID_BTN_COLORS_INVERT   );
+	Add_Button(ID_BTN_COLORS_GREYSCALE);
+	Add_Button(ID_BTN_COLORS_RANDOM   );
+//	Add_Button(ID_BTN_COLORS_PRESET   );
 
 	Set_Positions();
 }
@@ -129,8 +202,6 @@ CDLG_Colors::~CDLG_Colors(void)
 
 ///////////////////////////////////////////////////////////
 //														 //
-//														 //
-//														 //
 ///////////////////////////////////////////////////////////
 
 //---------------------------------------------------------
@@ -142,8 +213,6 @@ void CDLG_Colors::Set_Position(wxRect r)
 
 ///////////////////////////////////////////////////////////
 //														 //
-//														 //
-//														 //
 ///////////////////////////////////////////////////////////
 
 //---------------------------------------------------------
@@ -154,8 +223,6 @@ void CDLG_Colors::Save_Changes(void)
 
 
 ///////////////////////////////////////////////////////////
-//														 //
-//														 //
 //														 //
 ///////////////////////////////////////////////////////////
 
@@ -194,9 +261,9 @@ void CDLG_Colors::On_Save(wxCommandEvent &event)
 //---------------------------------------------------------
 void CDLG_Colors::On_Count(wxCommandEvent &event)
 {
-	int		Count;
+	int	Count	= m_pColors->Get_Count();
 
-	if( DLG_Get_Number(Count = m_pColors->Get_Count()) )
+	if( DLG_Get_Number(Count ) )
 	{
 		m_pColors->Set_Count(Count);
 
@@ -205,7 +272,7 @@ void CDLG_Colors::On_Count(wxCommandEvent &event)
 }
 
 //---------------------------------------------------------
-void CDLG_Colors::On_Miror(wxCommandEvent &event)
+void CDLG_Colors::On_Mirror(wxCommandEvent &event)
 {
 	m_pColors->Revert();
 
@@ -221,6 +288,14 @@ void CDLG_Colors::On_Invert(wxCommandEvent &event)
 }
 
 //---------------------------------------------------------
+void CDLG_Colors::On_Greyscale(wxCommandEvent &event)
+{
+	m_pColors->Greyscale();
+
+	m_pControl->Refresh(false);
+}
+
+//---------------------------------------------------------
 void CDLG_Colors::On_Random(wxCommandEvent &event)
 {
 	m_pColors->Random();
@@ -231,11 +306,27 @@ void CDLG_Colors::On_Random(wxCommandEvent &event)
 //---------------------------------------------------------
 void CDLG_Colors::On_Preset(wxCommandEvent &event)
 {
-	int		Palette;
+	int	Palette;
 
 	if( DLG_Colors(Palette) )
 	{
 		m_pColors->Set_Palette(Palette, false, m_pColors->Get_Count());
+
+		m_pControl->Refresh(false);
+	}
+}
+
+//---------------------------------------------------------
+void CDLG_Colors::On_ComboBox(wxCommandEvent &event)
+{
+	if( !event.GetEventObject()->IsKindOf(CLASSINFO(wxComboCtrl)) )	// Don't show messages for the log output window (it'll crash)
+	{
+		return;
+	}
+
+	if( event.GetEventType() == wxEVT_COMBOBOX )
+	{
+		m_pColors->Set_Palette(event.GetSelection(), false, m_pColors->Get_Count());
 
 		m_pControl->Refresh(false);
 	}

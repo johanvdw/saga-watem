@@ -1,6 +1,3 @@
-/**********************************************************
- * Version $Id$
- *********************************************************/
 
 ///////////////////////////////////////////////////////////
 //                                                       //
@@ -53,15 +50,6 @@
 ///////////////////////////////////////////////////////////
 
 //---------------------------------------------------------
-
-
-///////////////////////////////////////////////////////////
-//														 //
-//					class CSG_Colors					 //
-//														 //
-///////////////////////////////////////////////////////////
-
-//---------------------------------------------------------
 #include <stdlib.h>
 #include <string.h>
 
@@ -76,64 +64,56 @@
 ///////////////////////////////////////////////////////////
 
 //---------------------------------------------------------
-long	SG_Color_Get_Random(void)
+CSG_String	SG_Colors_Get_Name	(int Index)
+{
+	return( CSG_Colors::Get_Predefined_Name(Index) );
+}
+
+//---------------------------------------------------------
+long		SG_Color_Get_Random	(void)
 {
 	return(	SG_GET_RGB(CSG_Random::Get_Uniform(0, 255), CSG_Random::Get_Uniform(0, 255), CSG_Random::Get_Uniform(0, 255)) );
 }
 
-
-///////////////////////////////////////////////////////////
-//														 //
-//														 //
-//														 //
-///////////////////////////////////////////////////////////
-
 //---------------------------------------------------------
-#define COLORS_SERIAL_VERSION_BINARY	"SAGA_COLORPALETTE_VERSION_0.100_BINARY"
-#define COLORS_SERIAL_VERSION__ASCII	"SAGA_COLORPALETTE_VERSION_0.100__ASCII"
+bool		SG_Color_From_Text	(const CSG_String &Text, long &Color)
+{	// from wx/colourmng.cpp, hexadecimal prefixed with # ("HTML syntax") see https://drafts.csswg.org/css-color/#hex-notation
 
+	const char	*s	= Text.b_str();	unsigned long	c;
 
-///////////////////////////////////////////////////////////
-//														 //
-//														 //
-//														 //
-///////////////////////////////////////////////////////////
-
-//---------------------------------------------------------
-CSG_String		SG_Colors_Get_Name	(int Identifier)
-{
-	switch( Identifier )
+	if( sscanf(s + 1, "%lx", &c) == 1 )
 	{
-	case SG_COLORS_DEFAULT        :	return( _TL("default") );
-	case SG_COLORS_DEFAULT_BRIGHT :	return( _TL("default (same brightness)") );
-	case SG_COLORS_BLACK_WHITE    :	return( _TL("greyscale") );
-	case SG_COLORS_BLACK_RED      :	return( _TL("black > red") );
-	case SG_COLORS_BLACK_GREEN    :	return( _TL("black > green") );
-	case SG_COLORS_BLACK_BLUE     :	return( _TL("black > blue") );
-	case SG_COLORS_WHITE_RED      :	return( _TL("white > red") );
-	case SG_COLORS_WHITE_GREEN    :	return( _TL("white > green") );
-	case SG_COLORS_WHITE_BLUE     :	return( _TL("white > blue") );
-	case SG_COLORS_YELLOW_RED     :	return( _TL("yellow > red") );
-	case SG_COLORS_YELLOW_GREEN   :	return( _TL("yellow > green") );
-	case SG_COLORS_YELLOW_BLUE    :	return( _TL("yellow > blue") );
-	case SG_COLORS_RED_GREEN      :	return( _TL("red > green") );
-	case SG_COLORS_RED_BLUE       :	return( _TL("red > blue") );
-	case SG_COLORS_GREEN_BLUE     :	return( _TL("green > blue") );
-	case SG_COLORS_RED_GREY_BLUE  :	return( _TL("red > grey > blue") );
-	case SG_COLORS_RED_GREY_GREEN :	return( _TL("red > grey > green") );
-	case SG_COLORS_GREEN_GREY_BLUE:	return( _TL("green > grey > blue") );
-	case SG_COLORS_RED_GREEN_BLUE :	return( _TL("red > green > blue") );
-	case SG_COLORS_RED_BLUE_GREEN :	return( _TL("red > blue > green") );
-	case SG_COLORS_GREEN_RED_BLUE :	return( _TL("green > red > blue") );
-	case SG_COLORS_RAINBOW        :	return( _TL("rainbow") );
-	case SG_COLORS_NEON           :	return( _TL("neon") );
-	case SG_COLORS_TOPOGRAPHY     :	return( _TL("topography") );
-	case SG_COLORS_ASPECT_1       :	return( _TL("aspect 1") );
-	case SG_COLORS_ASPECT_2       :	return( _TL("aspect 2") );
-	case SG_COLORS_ASPECT_3       :	return( _TL("aspect 3") );
+		switch( Text.Length() - 1 )
+		{
+		case 6: // #rrggbb
+			Color	= (long)((c << 8) + 0xFF);
+			return( true );
+
+		case 8: // #rrggbbaa
+			Color	= SG_GET_RGBA(
+				(unsigned char)((c >> 24) & 0xFF),
+				(unsigned char)((c >> 16) & 0xFF),
+				(unsigned char)((c >>  8) & 0xFF),
+				(unsigned char)((c      ) & 0xFF)
+			);
+			return( true );
+
+		case 3: // #rgb
+			Color	= (long)((c << 4) + 0xF);
+			return( true );
+
+		case 4: // #rgba
+			Color	= SG_GET_RGBA(
+				(unsigned char)(((c >> 12) & 0xF) * 0x11),
+				(unsigned char)(((c >>  8) & 0xF) * 0x11),
+				(unsigned char)(((c >>  4) & 0xF) * 0x11),
+				(unsigned char)(((c      ) & 0xF) * 0x11)
+			);
+			return( true );
+		}
 	}
 
-	return( "" );
+	return( false );
 }
 
 
@@ -149,7 +129,7 @@ CSG_Colors::CSG_Colors(void)
 	m_Colors	= NULL;
 	m_nColors	= 0;
 
-	Set_Count(11);
+	Create();
 }
 
 //---------------------------------------------------------
@@ -158,7 +138,7 @@ CSG_Colors::CSG_Colors(const CSG_Colors &Colors)
 	m_Colors	= NULL;
 	m_nColors	= 0;
 
-	Assign(Colors);
+	Create(Colors);
 }
 
 //---------------------------------------------------------
@@ -167,14 +147,7 @@ CSG_Colors::CSG_Colors(int nColors, int Palette, bool bRevert)
 	m_Colors	= NULL;
 	m_nColors	= 0;
 
-	if( nColors <= 1 )
-	{
-		nColors	= 11;
-	}
-
-	Set_Count(nColors);
-
-	Set_Palette(Palette, bRevert, nColors);
+	Create(nColors, Palette, bRevert);
 }
 
 //---------------------------------------------------------
@@ -186,9 +159,44 @@ CSG_Colors::~CSG_Colors(void)
 
 ///////////////////////////////////////////////////////////
 //														 //
-//														 //
-//														 //
 ///////////////////////////////////////////////////////////
+
+//---------------------------------------------------------
+bool CSG_Colors::Create(void)
+{
+	return( Create(11) );
+}
+
+//---------------------------------------------------------
+bool CSG_Colors::Create(const CSG_Colors &Colors)
+{
+	if( Colors.m_nColors > 0 )
+	{
+		m_nColors	= Colors.m_nColors;
+		m_Colors	= (long *)SG_Realloc(m_Colors, m_nColors * sizeof(long));
+
+		memcpy(m_Colors, Colors.m_Colors, m_nColors * sizeof(long));
+
+		return( true );
+	}
+
+	return( false );
+}
+
+//---------------------------------------------------------
+bool CSG_Colors::Create(int nColors, int Palette, bool bRevert)
+{
+	if( nColors <= 1 )
+	{
+		nColors	= 11;
+	}
+
+	Set_Count(nColors);
+
+	Set_Palette(Palette, bRevert, nColors);
+
+	return( true );
+}
 
 //---------------------------------------------------------
 void CSG_Colors::Destroy(void)
@@ -204,8 +212,6 @@ void CSG_Colors::Destroy(void)
 
 
 ///////////////////////////////////////////////////////////
-//														 //
-//														 //
 //														 //
 ///////////////////////////////////////////////////////////
 
@@ -253,8 +259,6 @@ bool CSG_Colors::Set_Count(int nColors)
 
 
 ///////////////////////////////////////////////////////////
-//														 //
-//														 //
 //														 //
 ///////////////////////////////////////////////////////////
 
@@ -380,46 +384,58 @@ void CSG_Colors::_Set_Brightness(double &a, double &b, double &c, int Pass)
 
 ///////////////////////////////////////////////////////////
 //														 //
-//														 //
-//														 //
 ///////////////////////////////////////////////////////////
 
 //---------------------------------------------------------
-bool CSG_Colors::Set_Default(int nColors)
+int CSG_Colors::Get_Predefined_Count(void)
 {
-	int		i;
-	double	d, dStep;
-
-	if( nColors > 0 )
-	{
-		m_nColors	= nColors;
-		m_Colors	= (long *)SG_Realloc(m_Colors, m_nColors * sizeof(long));
-
-		dStep		= 2 * M_PI / (double)Get_Count();
-
-		for(i=0, d=0; i<Get_Count(); i++, d+=dStep)
-		{
-			Set_Color(i,
-				(int)(d < M_PI / 2 ? 0 : 128 - 127 * sin(M_PI - d)),
-				(int)(128 - 127 * cos(d)),
-				(int)(d > M_PI * 3 / 2 ? 0 : 128 + 127 * sin(d))
-			);
-		}
-
-		return( true );
-	}
-
-	return( false );
+	return( SG_COLORS_COUNT );
 }
 
 //---------------------------------------------------------
-bool CSG_Colors::Set_Palette(int Index, bool bRevert, int nColors)
+const SG_Char * CSG_Colors::Get_Predefined_Name(int Index)
 {
 	switch( Index )
 	{
-	default:
-		return( false );
+	case SG_COLORS_DEFAULT        :	return( _TL("default"                  ) );
+	case SG_COLORS_DEFAULT_BRIGHT :	return( _TL("default (same brightness)") );
+	case SG_COLORS_BLACK_WHITE    :	return( _TL("greyscale"                ) );
+	case SG_COLORS_BLACK_RED      :	return( _TL("black > red"              ) );
+	case SG_COLORS_BLACK_GREEN    :	return( _TL("black > green"            ) );
+	case SG_COLORS_BLACK_BLUE     :	return( _TL("black > blue"             ) );
+	case SG_COLORS_WHITE_RED      :	return( _TL("white > red"              ) );
+	case SG_COLORS_WHITE_GREEN    :	return( _TL("white > green"            ) );
+	case SG_COLORS_WHITE_BLUE     :	return( _TL("white > blue"             ) );
+	case SG_COLORS_YELLOW_RED     :	return( _TL("yellow > red"             ) );
+	case SG_COLORS_YELLOW_GREEN   :	return( _TL("yellow > green"           ) );
+	case SG_COLORS_YELLOW_BLUE    :	return( _TL("yellow > blue"            ) );
+	case SG_COLORS_RED_GREEN      :	return( _TL("red > green"              ) );
+	case SG_COLORS_RED_BLUE       :	return( _TL("red > blue"               ) );
+	case SG_COLORS_GREEN_BLUE     :	return( _TL("green > blue"             ) );
+	case SG_COLORS_RED_GREY_BLUE  :	return( _TL("red > grey > blue"        ) );
+	case SG_COLORS_RED_GREY_GREEN :	return( _TL("red > grey > green"       ) );
+	case SG_COLORS_GREEN_GREY_BLUE:	return( _TL("green > grey > blue"      ) );
+	case SG_COLORS_RED_GREEN_BLUE :	return( _TL("red > green > blue"       ) );
+	case SG_COLORS_RED_BLUE_GREEN :	return( _TL("red > blue > green"       ) );
+	case SG_COLORS_GREEN_RED_BLUE :	return( _TL("green > red > blue"       ) );
+	case SG_COLORS_RAINBOW        :	return( _TL("rainbow"                  ) );
+	case SG_COLORS_NEON           :	return( _TL("neon"                     ) );
+	case SG_COLORS_TOPOGRAPHY     :	return( _TL("topography 1"             ) );
+	case SG_COLORS_TOPOGRAPHY_2   :	return( _TL("topography 2"             ) );
+	case SG_COLORS_TOPOGRAPHY_3   :	return( _TL("topography 3"             ) );
+	case SG_COLORS_PRECIPITATION  :	return( _TL("precipitation"            ) );
+	case SG_COLORS_ASPECT_1       :	return( _TL("aspect 1"                 ) );
+	case SG_COLORS_ASPECT_2       :	return( _TL("aspect 2"                 ) );
+	case SG_COLORS_ASPECT_3       :	return( _TL("aspect 3"                 ) );
+	default                       : return( _TL(""                         ) );
+	}
+}
 
+//---------------------------------------------------------
+bool CSG_Colors::Set_Predefined(int Index, bool bRevert, int nColors)
+{
+	switch( Index )
+	{
 	case SG_COLORS_DEFAULT:
 		Set_Default(nColors);
 		break;
@@ -473,9 +489,9 @@ bool CSG_Colors::Set_Palette(int Index, bool bRevert, int nColors)
 
 	case SG_COLORS_YELLOW_BLUE:
 		Set_Count(3);
-		Set_Color(0, SG_GET_RGB(255, 255, 127));
-		Set_Color(1, SG_GET_RGB(127, 127, 255));
-		Set_Color(2, SG_GET_RGB(  0,   0, 127));
+		Set_Color(2, SG_GET_RGB(  0,  64, 127));
+		Set_Color(1, SG_GET_RGB(127, 192, 255));
+		Set_Color(0, SG_GET_RGB(255, 255, 200));
 		break;
 
 	case SG_COLORS_RED_GREEN:
@@ -581,6 +597,55 @@ bool CSG_Colors::Set_Palette(int Index, bool bRevert, int nColors)
 		Set_Color(4, SG_GET_RGB(127,  63,   0));
 		break;
 
+	case SG_COLORS_TOPOGRAPHY_2:
+		Set_Count(6);
+		Set_Color(0, SG_GET_RGB(  0, 191, 191));
+		Set_Color(1, SG_GET_RGB(  0, 255,   0));
+		Set_Color(2, SG_GET_RGB(255, 255,   0));
+		Set_Color(3, SG_GET_RGB(255, 127,   0));
+		Set_Color(4, SG_GET_RGB(191, 152, 110));
+		Set_Color(5, SG_GET_RGB(199, 199, 199));
+		break;
+
+	case SG_COLORS_TOPOGRAPHY_3:
+		Set_Count(9);
+		Set_Color(0, SG_GET_RGB(177, 242, 212));
+		Set_Color(1, SG_GET_RGB(248, 252, 179));
+		Set_Color(2, SG_GET_RGB( 11, 128, 064));
+		Set_Color(3, SG_GET_RGB(248, 202,  80));
+		Set_Color(4, SG_GET_RGB(158,  30,   0));
+		Set_Color(5, SG_GET_RGB(128, 064, 064));
+		Set_Color(6, SG_GET_RGB(185, 121, 076));
+		Set_Color(7, SG_GET_RGB(179, 179, 179));
+		Set_Color(8, SG_GET_RGB(255, 255, 255));
+		break;
+
+	case SG_COLORS_PRECIPITATION:	// juergen's favorite precipition colour ramp
+		Set_Count(22);
+		Set_Color( 0, SG_GET_RGB(216, 204, 131));
+		Set_Color( 1, SG_GET_RGB(196, 208, 111));
+		Set_Color( 2, SG_GET_RGB(184, 210, 101));
+		Set_Color( 3, SG_GET_RGB(172, 212,  91));
+		Set_Color( 4, SG_GET_RGB(139, 212,  99));
+		Set_Color( 5, SG_GET_RGB(107, 212, 107));
+		Set_Color( 6, SG_GET_RGB( 75, 212, 119));
+		Set_Color( 7, SG_GET_RGB( 42, 212, 131));
+		Set_Color( 8, SG_GET_RGB( 26, 212, 151));
+		Set_Color( 9, SG_GET_RGB( 10, 212, 172));
+		Set_Color(10, SG_GET_RGB( 30, 192, 192));
+		Set_Color(11, SG_GET_RGB( 50, 172, 212));
+		Set_Color(12, SG_GET_RGB( 70, 151, 214));
+		Set_Color(13, SG_GET_RGB( 91, 131, 216));
+		Set_Color(14, SG_GET_RGB( 75, 115, 198));
+		Set_Color(15, SG_GET_RGB( 58,  99, 180));
+		Set_Color(16, SG_GET_RGB( 42,  83, 184));
+		Set_Color(17, SG_GET_RGB( 26, 066, 188));
+		Set_Color(18, SG_GET_RGB( 26, 046, 180));
+		Set_Color(19, SG_GET_RGB( 26, 026, 166));
+		Set_Color(20, SG_GET_RGB( 38,  18, 151));
+		Set_Color(21, SG_GET_RGB( 50, 010, 131));
+		break;
+
 	case SG_COLORS_ASPECT_1:
 		Set_Count(5);
 		Set_Color(0, SG_GET_RGB(225, 225, 225));
@@ -607,17 +672,139 @@ bool CSG_Colors::Set_Palette(int Index, bool bRevert, int nColors)
 		Set_Color(3, SG_GET_RGB(127, 127, 255));
 		Set_Color(4, SG_GET_RGB(225, 225, 225));
 		break;
+
+	case SG_COLORS_COUNT + 0:
+		Set_Count(3);
+		Set_Color(0, SG_GET_RGB(  0, 128,   0));
+		Set_Color(1, SG_GET_RGB(255, 255, 127));
+		Set_Color(2, SG_GET_RGB(127,  63,  63));
+		break;
+
+	case SG_COLORS_COUNT + 1:
+		Set_Count(3);
+		Set_Color(0, SG_GET_RGB(  0,   0, 255));
+		Set_Color(1, SG_GET_RGB(255, 255,   0));
+		Set_Color(2, SG_GET_RGB(255,   0,   0));
+		break;
+
+	case SG_COLORS_COUNT + 2:
+		Set_Count(3);
+		Set_Color(0, SG_GET_RGB(  0, 127,   0));
+		Set_Color(1, SG_GET_RGB(255, 255, 255));
+		Set_Color(2, SG_GET_RGB(255,   0,   0));
+		break;
+
+	case SG_COLORS_COUNT + 3:
+		Set_Count(3);
+		Set_Color(0, SG_GET_RGB(  0,   0, 255));
+		Set_Color(1, SG_GET_RGB(255, 255, 255));
+		Set_Color(2, SG_GET_RGB(  0, 127,   0));
+		break;
+
+	case SG_COLORS_COUNT + 4:
+		Set_Count(4);
+		Set_Color(0, SG_GET_RGB(  0,   0, 255));
+		Set_Color(1, SG_GET_RGB(  0, 255,   0));
+		Set_Color(2, SG_GET_RGB(255, 255,   0));
+		Set_Color(3, SG_GET_RGB(255,   0,   0));
+		break;
+
+	case SG_COLORS_COUNT + 5:
+		Set_Count(11);
+		Set_Color( 0, SG_GET_RGB( 37,  57, 175));
+		Set_Color( 1, SG_GET_RGB( 40, 127, 251));
+		Set_Color( 2, SG_GET_RGB( 50, 190, 255));
+		Set_Color( 3, SG_GET_RGB(106, 235, 255));
+		Set_Color( 4, SG_GET_RGB(138, 236, 174));
+		Set_Color( 5, SG_GET_RGB(205, 255, 162));
+		Set_Color( 6, SG_GET_RGB(240, 236, 121));
+		Set_Color( 7, SG_GET_RGB(255, 189,  87));
+		Set_Color( 8, SG_GET_RGB(255, 161,  68));
+		Set_Color( 9, SG_GET_RGB(255, 186, 133));
+		Set_Color(10, SG_GET_RGB(255, 255, 255));
+		break;
+
+	case SG_COLORS_COUNT + 6:
+		Set_Count(8);
+		Set_Color(0, SG_GET_RGB(171,  43,   0));
+		Set_Color(1, SG_GET_RGB(255, 127,   0));
+		Set_Color(2, SG_GET_RGB(255, 255,   0));
+		Set_Color(3, SG_GET_RGB(  0, 255,   0));
+		Set_Color(4, SG_GET_RGB(  0, 255, 255));
+		Set_Color(5, SG_GET_RGB(  0,   0, 255));
+		Set_Color(6, SG_GET_RGB(255,   0, 255));
+		Set_Color(7, SG_GET_RGB(255, 255, 255));
+		break;
+
+	case SG_COLORS_COUNT + 7:
+		Set_Count(5);
+		Set_Color(0, SG_GET_RGB(  0,   0, 191));
+		Set_Color(1, SG_GET_RGB(255,   0, 255));
+		Set_Color(2, SG_GET_RGB(255,   0,   0));
+		Set_Color(3, SG_GET_RGB(255, 255,   0));
+		Set_Color(4, SG_GET_RGB(245, 245, 163));
+		break;
+
+	case SG_COLORS_COUNT + 8:
+		Set_Count(6);
+		Set_Color(0, SG_GET_RGB(127, 255, 255));
+		Set_Color(1, SG_GET_RGB(  0,   0, 255));
+		Set_Color(2, SG_GET_RGB(127,   0, 255));
+		Set_Color(3, SG_GET_RGB(255,   0,   0));
+		Set_Color(4, SG_GET_RGB(255, 255,   0));
+		Set_Color(5, SG_GET_RGB(255, 255, 127));
+		break;
+
+	case SG_COLORS_COUNT + 9:
+		Set_Count(5);
+		Set_Color(0, SG_GET_RGB(  0,   0, 127));
+		Set_Color(1, SG_GET_RGB(  0, 127, 255));
+		Set_Color(2, SG_GET_RGB(  0, 191,   0));
+		Set_Color(3, SG_GET_RGB(191, 255,   0));
+		Set_Color(4, SG_GET_RGB(255, 255, 127));
+		break;
+
+	case SG_COLORS_COUNT + 10:
+		Set_Count(nColors);
+		Random();
+		break;
+
+	default:
+		return( false );
 	}
 
 	//-----------------------------------------------------
-	Set_Count(nColors);
-
 	if( bRevert )
 	{
 		Revert();
 	}
 
-	return( true );
+	return( Set_Count(nColors) );
+}
+
+//---------------------------------------------------------
+bool CSG_Colors::Set_Default(int nColors)
+{
+	if( nColors > 0 )
+	{
+		m_nColors	= nColors;
+		m_Colors	= (long *)SG_Realloc(m_Colors, m_nColors * sizeof(long));
+
+		double	d	= 0., dStep = 2. * M_PI / (double)Get_Count();
+
+		for(int i=0; i<Get_Count(); i++, d+=dStep)
+		{
+			Set_Color(i,
+				(int)(d < M_PI / 2 ? 0 : 128 - 127 * sin(M_PI - d)),
+				(int)(128 - 127 * cos(d)),
+				(int)(d > M_PI * 3 / 2 ? 0 : 128 + 127 * sin(d))
+			);
+		}
+
+		return( true );
+	}
+
+	return( false );
 }
 
 //---------------------------------------------------------
@@ -629,40 +816,38 @@ bool CSG_Colors::Set_Ramp(long Color_A, long Color_B)
 //---------------------------------------------------------
 bool CSG_Colors::Set_Ramp(long Color_A, long Color_B, int iColor_A, int iColor_B)
 {
-	int		i, n, ar, ag, ab;
-	double	dr, dg, db;
-
-	//-----------------------------------------------------
 	if( iColor_A > iColor_B )
 	{
-		i			= iColor_A;
-		iColor_A	= iColor_B;
-		iColor_B	= i;
+		int	i    = iColor_A;
+		iColor_A = iColor_B;
+		iColor_B = i;
 	}
 
 	if( iColor_A < 0 )
 	{
-		iColor_A	= 0;
+		iColor_A = 0;
 	}
 
 	if( iColor_B >= Get_Count() )
 	{
-		iColor_B	= Get_Count() - 1;
+		iColor_B = Get_Count() - 1;
 	}
 
 	//-----------------------------------------------------
-	if( (n = iColor_B - iColor_A) > 0 )
+	int	n	= iColor_B - iColor_A;
+
+	if( n > 0 )
 	{
-		ar		= SG_GET_R(Color_A);
-		dr		= (double)(SG_GET_R(Color_B) - ar) / (double)n;
+		int		ar	= SG_GET_R(Color_A);
+		double	dr	= (double)(SG_GET_R(Color_B) - ar) / (double)n;
 
-		ag		= SG_GET_G(Color_A);
-		dg		= (double)(SG_GET_G(Color_B) - ag) / (double)n;
+		int		ag	= SG_GET_G(Color_A);
+		double	dg	= (double)(SG_GET_G(Color_B) - ag) / (double)n;
 
-		ab		= SG_GET_B(Color_A);
-		db		= (double)(SG_GET_B(Color_B) - ab) / (double)n;
+		int		ab	= SG_GET_B(Color_A);
+		double	db	= (double)(SG_GET_B(Color_B) - ab) / (double)n;
 
-		for(i=0; i<=n; i++)
+		for(int i=0; i<=n; i++)
 		{
 			Set_Color(iColor_A + i,
 				(int)(ar + i * dr),
@@ -686,33 +871,31 @@ bool CSG_Colors::Set_Ramp_Brighness(int Brightness_A, int Brightness_B)
 //---------------------------------------------------------
 bool CSG_Colors::Set_Ramp_Brighness(int Brightness_A, int Brightness_B, int iColor_A, int iColor_B)
 {
-	int		i, n;
-	double	dBrightness;
-
-	//-----------------------------------------------------
 	if( iColor_A > iColor_B )
 	{
-		i			= iColor_A;
-		iColor_A	= iColor_B;
-		iColor_B	= i;
+		int	i    = iColor_A;
+		iColor_A = iColor_B;
+		iColor_B = i;
 	}
 
 	if( iColor_A < 0 )
 	{
-		iColor_A	= 0;
+		iColor_A = 0;
 	}
 
 	if( iColor_B >= Get_Count() )
 	{
-		iColor_B	= Get_Count() - 1;
+		iColor_B = Get_Count() - 1;
 	}
 
 	//-----------------------------------------------------
-	if( (n = iColor_B - iColor_A) > 0 )
-	{
-		dBrightness	= (double)(Brightness_B - Brightness_A) / (double)n;
+	int	n	= iColor_B - iColor_A;
 
-		for(i=0; i<=n; i++)
+	if( n > 0 )
+	{
+		double	dBrightness	= (double)(Brightness_B - Brightness_A) / (double)n;
+
+		for(int i=0; i<=n; i++)
 		{
 			Set_Brightness(iColor_A + i, (int)(Brightness_A + i * dBrightness));
 		}
@@ -726,16 +909,12 @@ bool CSG_Colors::Set_Ramp_Brighness(int Brightness_A, int Brightness_B, int iCol
 
 ///////////////////////////////////////////////////////////
 //														 //
-//														 //
-//														 //
 ///////////////////////////////////////////////////////////
 
 //---------------------------------------------------------
 bool CSG_Colors::Random(void)
 {
-	int		i;
-
-	for(i=0; i<Get_Count(); i++)
+	for(int i=0; i<Get_Count(); i++)
 	{
 		Set_Color(i,
 			(int)(255.0 * (double)rand() / (double)RAND_MAX),
@@ -750,9 +929,7 @@ bool CSG_Colors::Random(void)
 //---------------------------------------------------------
 bool CSG_Colors::Invert(void)
 {
-	int		i;
-
-	for(i=0; i<Get_Count(); i++)
+	for(int i=0; i<Get_Count(); i++)
 	{
 		Set_Color(i, 255 - Get_Red(i), 255 - Get_Green(i), 255 - Get_Blue(i));
 	}
@@ -763,14 +940,24 @@ bool CSG_Colors::Invert(void)
 //---------------------------------------------------------
 bool CSG_Colors::Revert(void)
 {
-	int		i, j;
-	long	c;
-
-	for(i=0, j=Get_Count()-1; i<j; i++, j--)
+	for(int i=0, j=Get_Count()-1; i<j; i++, j--)
 	{
-		c		=    Get_Color(j);
+		long    c  = Get_Color(j);
 		Set_Color(j, Get_Color(i));
 		Set_Color(i, c);
+	}
+
+	return( Get_Count() > 0 );
+}
+
+//---------------------------------------------------------
+bool CSG_Colors::Greyscale(void)
+{
+	for(int i=0; i<Get_Count(); i++)
+	{
+		long	c	= Get_Brightness(i);
+
+		Set_Color(i, c, c, c);
 	}
 
 	return( Get_Count() > 0 );
@@ -779,14 +966,12 @@ bool CSG_Colors::Revert(void)
 
 ///////////////////////////////////////////////////////////
 //														 //
-//														 //
-//														 //
 ///////////////////////////////////////////////////////////
 
 //---------------------------------------------------------
 CSG_Colors & CSG_Colors::operator = (const CSG_Colors &Colors)
 {
-	Assign(Colors);
+	Create(Colors);
 
 	return( *this );
 }
@@ -794,31 +979,23 @@ CSG_Colors & CSG_Colors::operator = (const CSG_Colors &Colors)
 //---------------------------------------------------------
 bool CSG_Colors::Assign(const CSG_Colors &Colors)
 {
-	if( Colors.m_nColors > 0 )
-	{
-		m_nColors	= Colors.m_nColors;
-		m_Colors	= (long *)SG_Realloc(m_Colors, m_nColors * sizeof(long));
-
-		memcpy(m_Colors, Colors.m_Colors, m_nColors * sizeof(long));
-
-		return( true );
-	}
-
-	return( false );
+	return( Create(Colors) );
 }
 
 //---------------------------------------------------------
 bool CSG_Colors::Assign(CSG_Colors *pColors)
 {
-	return( pColors ? Assign(*pColors) : false );
+	return( pColors ? Create(*pColors) : false );
 }
 
 
 ///////////////////////////////////////////////////////////
 //														 //
-//														 //
-//														 //
 ///////////////////////////////////////////////////////////
+
+//---------------------------------------------------------
+#define COLORS_SERIAL_VERSION_BINARY	"SAGA_COLORPALETTE_VERSION_0.100_BINARY"
+#define COLORS_SERIAL_VERSION__ASCII	"SAGA_COLORPALETTE_VERSION_0.100__ASCII"
 
 //---------------------------------------------------------
 bool CSG_Colors::Load(const CSG_String &File_Name)
@@ -927,8 +1104,6 @@ bool CSG_Colors::Save(const CSG_String &File_Name, bool bBinary)
 
 
 ///////////////////////////////////////////////////////////
-//														 //
-//														 //
 //														 //
 ///////////////////////////////////////////////////////////
 

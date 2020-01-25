@@ -176,17 +176,17 @@ CGrids_Create::CGrids_Create(void)
 //---------------------------------------------------------
 int CGrids_Create::On_Parameter_Changed(CSG_Parameters *pParameters, CSG_Parameter *pParameter)
 {
-	if( !SG_STR_CMP(pParameter->Get_Identifier(), "LIST") )
+	if( pParameter->Cmp_Identifier("LIST") )
 	{
 		if( pParameter->asList()->Get_Item_Count() > 0 )
 		{
-			pParameters->Get("NAME")->Set_Value(pParameter->asList()->Get_Item(0)->Get_Name());
+			pParameters->Set_Parameter("NAME", pParameter->asList()->Get_Item(0)->Get_Name());
 		}
 	}
 
-	if( !SG_STR_CMP(pParameter->Get_Identifier(), "NFIELDS") && pParameter->asInt() > 0 )
+	if( pParameter->Cmp_Identifier("NFIELDS") && pParameter->asInt() > 0 )
 	{
-		Set_Field_Count(pParameters->Get("FIELDS")->asParameters(), pParameter->asInt());
+		Set_Field_Count((*pParameters)("FIELDS")->asParameters(), pParameter->asInt());
 
 		return( true );
 	}
@@ -197,15 +197,15 @@ int CGrids_Create::On_Parameter_Changed(CSG_Parameters *pParameters, CSG_Paramet
 //---------------------------------------------------------
 int CGrids_Create::On_Parameters_Enable(CSG_Parameters *pParameters, CSG_Parameter *pParameter)
 {
-	if( !SG_STR_CMP(pParameter->Get_Identifier(), "ATTRIBUTES") )
+	if( pParameter->Cmp_Identifier("ATTRIBUTES") )
 	{
 		pParameters->Set_Enabled("NFIELDS", pParameter->asInt() == 1);
 		pParameters->Set_Enabled("TABLE"  , pParameter->asInt() == 2);
 
-		pParameters->Set_Enabled(pParameters->Get("COPY")->Get_Parent()->Get_Identifier(), pParameter->asInt() == 3);
+		pParameters->Set_Enabled((*pParameters)("COPY")->Get_Parent()->Get_Identifier(), pParameter->asInt() == 3);
 	}
 
-	if( !SG_STR_CMP(pParameter->Get_Identifier(), "NFIELDS") )
+	if( pParameter->Cmp_Identifier("NFIELDS") )
 	{
 		pParameters->Set_Enabled("ZFIELD" , pParameter->asInt() > 0);
 		pParameters->Set_Enabled( "FIELDS", pParameter->asInt() > 0);
@@ -443,6 +443,125 @@ bool CGrids_Create::On_Execute(void)
 ///////////////////////////////////////////////////////////
 
 //---------------------------------------------------------
+CGrids_Add_Grid::CGrids_Add_Grid(void)
+{
+	//-----------------------------------------------------
+	Set_Name		(_TL("Add a Grid to a Grid Collection"));
+
+	Set_Author		("O.Conrad (c) 2018");
+
+	Set_Description	(_TW(
+		"Adds a grid at the specified z-level to an existing grid collection. "
+		"If no grid collection is supplied it will be created according to the "
+		"input grid's grid system and data type. "
+	));
+
+	//-----------------------------------------------------
+	Parameters.Add_Grid("",
+		"GRID"		, _TL("Grid"),
+		_TL(""),
+		PARAMETER_INPUT
+	);
+
+	Parameters.Add_Grids("",
+		"GRIDS"		, _TL("Grid Collection"),
+		_TL(""),
+		PARAMETER_OUTPUT_OPTIONAL
+	);
+
+	Parameters.Add_Double("",
+		"Z_LEVEL"	, _TL("Z"),
+		_TL(""),
+		0.0
+	);
+
+	Parameters.Add_Bool("GRID",
+		"DELETE"	, _TL("Delete"),
+		_TL(""),
+		false
+	);
+}
+
+
+///////////////////////////////////////////////////////////
+//														 //
+///////////////////////////////////////////////////////////
+
+//---------------------------------------------------------
+int CGrids_Add_Grid::On_Parameter_Changed(CSG_Parameters *pParameters, CSG_Parameter *pParameter)
+{
+	return( CSG_Tool_Grid::On_Parameter_Changed(pParameters, pParameter) );
+}
+
+//---------------------------------------------------------
+int CGrids_Add_Grid::On_Parameters_Enable(CSG_Parameters *pParameters, CSG_Parameter *pParameter)
+{
+	if( pParameter->Cmp_Identifier("GRID") )
+	{
+		pParameters->Set_Enabled("DELETE", pParameter->asGrid() && !pParameter->asGrid()->Get_Owner());
+	}
+
+	return( CSG_Tool_Grid::On_Parameters_Enable(pParameters, pParameter) );
+}
+
+
+///////////////////////////////////////////////////////////
+//														 //
+///////////////////////////////////////////////////////////
+
+//---------------------------------------------------------
+bool CGrids_Add_Grid::On_Execute(void)
+{
+	//-----------------------------------------------------
+	CSG_Grid	*pGrid	= Parameters("GRID" )->asGrid ();
+	CSG_Grids	*pGrids	= Parameters("GRIDS")->asGrids();
+
+	//-----------------------------------------------------
+	if( pGrids == NULL )
+	{
+		pGrids	= SG_Create_Grids(pGrid->Get_System(), 0, 0.0, pGrid->Get_Type());
+
+		pGrids->Set_Name(pGrid->Get_Name());
+		pGrids->Set_Unit(pGrid->Get_Unit());
+		pGrids->Set_NoData_Value_Range(pGrid->Get_NoData_Value(), pGrid->Get_NoData_hiValue());
+
+		Parameters("GRIDS")->Set_Value(pGrids);
+	}
+
+	//-----------------------------------------------------
+	if( pGrid->Get_Type() != pGrids->Get_Type() )
+	{
+		Error_Fmt("%s\n%s > %s", _TL("Data types of grid and grid collection must not differ."),
+			SG_Data_Type_Get_Name(pGrid ->Get_Type()).c_str(),
+			SG_Data_Type_Get_Name(pGrids->Get_Type()).c_str()
+		);
+
+		return( false );
+	}
+
+	//-----------------------------------------------------
+	double	Z	= Parameters("Z_LEVEL")->asDouble();
+
+	bool	bDelete	= !pGrid->Get_Owner() && Parameters("DELETE")->asBool();
+
+	if( bDelete && Parameters.Get_Manager() )
+	{
+		Parameters.Get_Manager()->Delete(pGrid, true);
+
+		DataObject_Update(pGrid);
+	}
+
+	return( pGrids->Add_Grid(Z, pGrid, bDelete) );
+}
+
+
+///////////////////////////////////////////////////////////
+//														 //
+//														 //
+//														 //
+///////////////////////////////////////////////////////////
+
+//---------------------------------------------------------
 CGrids_Extract::CGrids_Extract(void)
 {
 	//-----------------------------------------------------
@@ -451,20 +570,20 @@ CGrids_Extract::CGrids_Extract(void)
 	Set_Author		("O.Conrad (c) 2017");
 
 	Set_Description	(_TW(
-		""
+		"Extracts selected z-level grids from a grid collection."
 	));
 
 	//-----------------------------------------------------
-	Parameters.Add_Grid_List("",
-		"LIST"		, _TL("Single Grids"),
-		_TL(""),
-		PARAMETER_OUTPUT
-	);
-
 	Parameters.Add_Grids("",
 		"GRIDS"		, _TL("Grid Collection"),
 		_TL(""),
 		PARAMETER_INPUT
+	);
+
+	Parameters.Add_Grid_List("",
+		"LIST"		, _TL("Single Grids"),
+		_TL(""),
+		PARAMETER_OUTPUT
 	);
 
 	Parameters.Add_Choices("",
@@ -482,9 +601,9 @@ CGrids_Extract::CGrids_Extract(void)
 //---------------------------------------------------------
 int CGrids_Extract::On_Parameter_Changed(CSG_Parameters *pParameters, CSG_Parameter *pParameter)
 {
-	if( !SG_STR_CMP(pParameter->Get_Identifier(), "GRIDS") )
+	if( pParameter->Cmp_Identifier("GRIDS") )
 	{
-		CSG_Parameter_Choices	*pChoices	= pParameters->Get("SELECTION")->asChoices();
+		CSG_Parameter_Choices	*pChoices	= (*pParameters)("SELECTION")->asChoices();
 
 		pChoices->Del_Items();
 
@@ -555,6 +674,150 @@ bool CGrids_Extract::On_Execute(void)
 ///////////////////////////////////////////////////////////
 
 //---------------------------------------------------------
+CGrids_Extract_Grid::CGrids_Extract_Grid(void)
+{
+	//-----------------------------------------------------
+	Set_Name		(_TL("Extract a Grid from a Grid Collection"));
+
+	Set_Author		("O.Conrad (c) 2018");
+
+	Set_Description	(_TW(
+		"Extracts grid values from the input grid collection using "
+		"the chosen interpolation either for a constant or a variable "
+		"z-level as defined by the z-level input grid."
+	));
+
+	//-----------------------------------------------------
+	Parameters.Add_Grids("",
+		"GRIDS"		, _TL("Grid Collection"),
+		_TL(""),
+		PARAMETER_INPUT
+	);
+
+	Parameters.Add_Grid("",
+		"GRID"		, _TL("Grid"),
+		_TL(""),
+		PARAMETER_OUTPUT
+	);
+
+	Parameters.Add_Grid_or_Const("",
+		"Z_LEVEL"	, _TL("Z"),
+		_TL(""),
+		0.0
+	);
+
+	Parameters.Add_Choice("",
+		"RESAMPLING", _TL("Resampling"),
+		_TL(""),
+		CSG_String::Format("%s|%s|%s",
+			_TL("Nearest Neigbhour"   ),
+			_TL("Linear Interpolation"),
+			_TL("Spline Interpolation")
+		), 1
+	);
+}
+
+
+///////////////////////////////////////////////////////////
+//														 //
+///////////////////////////////////////////////////////////
+
+//---------------------------------------------------------
+int CGrids_Extract_Grid::On_Parameter_Changed(CSG_Parameters *pParameters, CSG_Parameter *pParameter)
+{
+	return( CSG_Tool_Grid::On_Parameter_Changed(pParameters, pParameter) );
+}
+
+//---------------------------------------------------------
+int CGrids_Extract_Grid::On_Parameters_Enable(CSG_Parameters *pParameters, CSG_Parameter *pParameter)
+{
+	return( CSG_Tool_Grid::On_Parameters_Enable(pParameters, pParameter) );
+}
+
+
+///////////////////////////////////////////////////////////
+//														 //
+///////////////////////////////////////////////////////////
+
+//---------------------------------------------------------
+bool CGrids_Extract_Grid::On_Execute(void)
+{
+	//-----------------------------------------------------
+	CSG_Grid	*pZ	= Parameters("Z_LEVEL")->asGrid();
+	double		Z	= Parameters("Z_LEVEL")->asDouble();
+
+	CSG_Grids	*pGrids	= Parameters("GRIDS")->asGrids();
+
+	if( pZ == NULL && Z < pGrids->Get_ZMin() )
+	{
+		Message_Fmt("%s: %s (%f < %f)", _TL("Warning"), _TL("z-level is out of grid collection's range"), Z, pGrids->Get_ZMin());
+	}
+
+	if( pZ == NULL && Z > pGrids->Get_ZMax() )
+	{
+		Message_Fmt("%s: %s (%f > %f)", _TL("Warning"), _TL("z-level is out of grid collection's range"), Z, pGrids->Get_ZMax());
+	}
+
+	//-----------------------------------------------------
+	CSG_Grid	*pGrid	= Parameters("GRID")->asGrid();
+
+	pGrid->Create(pGrids->Get_System(), pGrids->Get_Type());
+
+	pGrid->Set_NoData_Value_Range(pGrids->Get_NoData_Value(), pGrids->Get_NoData_hiValue());
+
+	if( pZ )
+	{
+		pGrid->Fmt_Name("%s [%s]"  , pGrids->Get_Name(), pZ->Get_Name());
+	}
+	else
+	{
+		pGrid->Fmt_Name("%s [%.*f]", pGrids->Get_Name(), SG_Get_Significant_Decimals(Z), Z);
+	}
+
+	TSG_Grid_Resampling	Resampling;
+
+	switch( Parameters("RESAMPLING")->asInt() )
+	{
+	default: Resampling = GRID_RESAMPLING_NearestNeighbour; break;
+	case  1: Resampling = GRID_RESAMPLING_Bilinear        ; break;
+	case  2: Resampling = GRID_RESAMPLING_BSpline         ; break;
+	}
+
+	//-----------------------------------------------------
+	for(int y=0; y<Get_NY() && Set_Progress(y); y++)
+	{
+		double	py	= Get_YMin() + y * Get_Cellsize();
+
+		#ifndef _DEBUG
+		#pragma omp parallel for
+		#endif
+		for(int x=0; x<Get_NX(); x++)
+		{
+			double	Value, px = Get_XMin() + x * Get_Cellsize();
+
+			if( (!pZ || !pZ->is_NoData(x, y)) && pGrids->Get_Value(px, py, !pZ ? Z : pZ->asDouble(x, y), Value, GRID_RESAMPLING_NearestNeighbour, Resampling) )
+			{
+				pGrid->Set_Value(x, y, Value);
+			}
+			else
+			{
+				pGrid->Set_NoData(x, y);
+			}
+		}
+	}
+
+	//-----------------------------------------------------
+	return( true );
+}
+
+
+///////////////////////////////////////////////////////////
+//														 //
+//														 //
+//														 //
+///////////////////////////////////////////////////////////
+
+//---------------------------------------------------------
 CGrids_Delete::CGrids_Delete(void)
 {
 	//-----------------------------------------------------
@@ -588,9 +851,9 @@ CGrids_Delete::CGrids_Delete(void)
 //---------------------------------------------------------
 int CGrids_Delete::On_Parameter_Changed(CSG_Parameters *pParameters, CSG_Parameter *pParameter)
 {
-	if( !SG_STR_CMP(pParameter->Get_Identifier(), "GRIDS") )
+	if( pParameter->Cmp_Identifier("GRIDS") )
 	{
-		CSG_Parameter_Choices	*pChoices	= pParameters->Get("SELECTION")->asChoices();
+		CSG_Parameter_Choices	*pChoices	= (*pParameters)("SELECTION")->asChoices();
 
 		pChoices->Del_Items();
 

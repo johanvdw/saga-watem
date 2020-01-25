@@ -157,7 +157,7 @@ CGrids_Trend::CGrids_Trend(void)
 //---------------------------------------------------------
 int CGrids_Trend::On_Parameters_Enable(CSG_Parameters *pParameters, CSG_Parameter *pParameter)
 {
-	if(	!SG_STR_CMP(pParameter->Get_Identifier(), SG_T("XSOURCE")) )
+	if(	pParameter->Cmp_Identifier(SG_T("XSOURCE")) )
 	{
 		pParameters->Get_Parameter("X_TABLE")->Set_Enabled(pParameter->asInt() == 1);	// table
 		pParameters->Get_Parameter("X_GRIDS")->Set_Enabled(pParameter->asInt() == 2);	// grid list
@@ -225,13 +225,13 @@ bool CGrids_Trend::On_Execute(void)
 
 	for(int i=0; i<=Order; i++)
 	{
-		pCoeff->Add_Item(SG_Create_Grid(*Get_System()));
-		pCoeff->Get_Grid(i)->Set_Name(CSG_String::Format(SG_T("%s [%d]"), _TL("Polynomial Coefficient"), i + 1));
+		pCoeff->Add_Item(SG_Create_Grid(Get_System()));
+		pCoeff->Get_Grid(i)->Fmt_Name("%s [%d]", _TL("Polynomial Coefficient"), i + 1);
 	}
 
 	if( pR2 )
 	{
-		pR2->Set_Name(CSG_String::Format(SG_T("%s"), _TL("Determination Coefficients")));
+		pR2->Fmt_Name("%s", _TL("Determination Coefficients"));
 	}
 
 	//-----------------------------------------------------

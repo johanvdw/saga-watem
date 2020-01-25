@@ -72,31 +72,31 @@ CForecasting::CForecasting(void){
 	Parameters.Add_Grid(NULL, 
 						"M1H", 
 						_TL("Dead Fuel Moisture 1H"), 
-						_TL(""), 
+						_TL("Fraction (weight of water in sample / dry weight of sample)"), 
 						PARAMETER_INPUT);
 
 	Parameters.Add_Grid(NULL, 
 						"M10H", 
 						_TL("Dead Fuel Moisture 10H"),
-						_TL(""), 
+						_TL("Fraction (weight of water in sample / dry weight of sample)"), 
 						PARAMETER_INPUT);
 
 	Parameters.Add_Grid(NULL, 
 						"M100H", 
 						_TL("Dead Fuel Moisture 100H"),
-						_TL(""), 
+						_TL("Fraction (weight of water in sample / dry weight of sample)"), 
 						PARAMETER_INPUT);
 
 	Parameters.Add_Grid(NULL, 
 						"MHERB", 
 						_TL("Herbaceous Fuel Moisture"),
-						_TL(""), 
+						_TL("Fraction (weight of water in sample / dry weight of sample)"), 
 						PARAMETER_INPUT);
 
 	Parameters.Add_Grid(NULL, 
 						"MWOOD", 
 						_TL("Wood Fuel Moisture"), 
-						_TL(""), 
+						_TL("Fraction (weight of water in sample / dry weight of sample)"), 
 						PARAMETER_INPUT);
 
 	Parameters.Add_Grid(NULL, 
@@ -132,7 +132,7 @@ CForecasting::CForecasting(void){
 	Parameters.Add_Value(NULL,
 						"MONTECARLO",
 						_TL("Number of Events"),
-						_TL("N\xc3\xbamero of Monte-Carlo events"),
+						_TL("Number of Monte-Carlo events"),
 						PARAMETER_TYPE_Int,
 						1000,
 						1.,
@@ -556,8 +556,8 @@ void CForecasting::Gaps_Tension_Init(int iStep, CSG_Grid *pTension_Temp, CSG_Gri
 
 					for(i=0; i<8; i++)
 					{
-						ix	= x + iStep * Get_System()->Get_xTo(i);
-						iy	= y + iStep * Get_System()->Get_yTo(i);
+						ix	= x + iStep * Get_xTo(i);
+						iy	= y + iStep * Get_yTo(i);
 
 						if( pResult->is_InGrid(ix, iy) )
 						{
@@ -635,12 +635,12 @@ double CForecasting::Gaps_Tension_Change(int x, int y, int iStep, CSG_Grid *pRes
 
 	for(i=0, d=0.0, n=0.0; i<8; i++)
 	{
-		ix	= x + iStep * Get_System()->Get_xTo(i);
-		iy	= y + iStep * Get_System()->Get_yTo(i);
+		ix	= x + iStep * Get_xTo(i);
+		iy	= y + iStep * Get_yTo(i);
 
 		if( pResult->is_InGrid(ix, iy) )
 		{
-			dz	= 1.0 / Get_System()->Get_UnitLength(i);
+			dz	= 1.0 / Get_UnitLength(i);
 			d	+= dz * pResult->asDouble(ix, iy);
 			n	+= dz;
 		}

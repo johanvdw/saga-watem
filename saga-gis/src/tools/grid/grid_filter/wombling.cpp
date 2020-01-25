@@ -136,7 +136,7 @@ bool CWombling_Base::Initialize(CSG_Grid Gradient[2], CSG_Grid *pEdges)
 
 	if( Parameters("ALIGNMENT")->asInt() == 1 )
 	{
-		System	= *Get_System();
+		System	= Get_System();
 	}
 	else
 	{
@@ -167,8 +167,8 @@ bool CWombling_Base::Get_Gradient(CSG_Grid Gradient[2], CSG_Grid *pFeature, bool
 {
 	int	Alignment	= Parameters("ALIGNMENT")->asInt() == 1;
 
-	Gradient[0].Set_Name(CSG_String::Format("%s [%s]", pFeature->Get_Name(), _TL("Magnitude")));
-	Gradient[1].Set_Name(CSG_String::Format("%s [%s]", pFeature->Get_Name(), _TL("Direction")));
+	Gradient[0].Fmt_Name("%s [%s]", pFeature->Get_Name(), _TL("Magnitude"));
+	Gradient[1].Fmt_Name("%s [%s]", pFeature->Get_Name(), _TL("Direction"));
 
 	//-----------------------------------------------------
 	for(int y=0; y<Gradient[0].Get_NY() && Set_Progress(y, Gradient[0].Get_NY()); y++)
@@ -266,7 +266,7 @@ bool CWombling_Base::Get_Edge_Cells(CSG_Grid *Gradient, CSG_Grid *pEdges)
 	//-----------------------------------------------------
 	// 1. magnitude
 
-	double	Threshold	= Gradient[0].Get_Quantile(Parameters("TMAGNITUDE")->asDouble());
+	double	Threshold	= Gradient[0].Get_Percentile(Parameters("TMAGNITUDE")->asDouble());
 
 	for(y=0; y<Gradient[0].Get_NY() && Set_Progress(y, Gradient[0].Get_NY()); y++)
 	{
@@ -474,7 +474,7 @@ bool CWombling::On_Execute(void)
 	//-----------------------------------------------------
 	CSG_Grid	*pFeature	= Parameters("FEATURE")->asGrid();
 
-	Edges.Set_Name(CSG_String::Format("%s [%s]", pFeature->Get_Name(), _TL("Edges")));
+	Edges.Fmt_Name("%s [%s]", pFeature->Get_Name(), _TL("Edges"));
 
 	Get_Gradient   (Gradient, pFeature, false);
 
@@ -629,7 +629,7 @@ bool CWombling_MultiFeature::On_Execute(void)
 	//-----------------------------------------------------
 	for(int i=0; i<pFeatures->Get_Grid_Count() && Process_Get_Okay(); i++)
 	{
-		Edges.Set_Name(CSG_String::Format("%s [%s]", pFeatures->Get_Grid(i)->Get_Name(), _TL("Edges")));
+		Edges.Fmt_Name("%s [%s]", pFeatures->Get_Grid(i)->Get_Name(), _TL("Edges"));
 
 		Get_Gradient(Gradient, pFeatures->Get_Grid(i), false);
 

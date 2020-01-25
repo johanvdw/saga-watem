@@ -144,7 +144,7 @@ CFilter_LoG::CFilter_LoG(void)
 //---------------------------------------------------------
 int CFilter_LoG::On_Parameters_Enable(CSG_Parameters *pParameters, CSG_Parameter *pParameter)
 {
-	if(	!SG_STR_CMP(pParameter->Get_Identifier(), "METHOD") )
+	if(	pParameter->Cmp_Identifier("METHOD") )
 	{
 		pParameters->Set_Enabled("SIGMA"        , pParameter->asInt() == 3);
 		pParameters->Set_Enabled("KERNEL_RADIUS", pParameter->asInt() == 3);
@@ -197,7 +197,7 @@ bool CFilter_LoG::On_Execute(void)
 	}
 	else
 	{
-		pResult->Set_Name(CSG_String::Format("%s [%s]", m_pInput->Get_Name(), _TL("Laplace Filter")));
+		pResult->Fmt_Name("%s [%s]", m_pInput->Get_Name(), _TL("Laplace Filter"));
 
 		pResult->Set_NoData_Value(m_pInput->Get_NoData_Value());
 	}

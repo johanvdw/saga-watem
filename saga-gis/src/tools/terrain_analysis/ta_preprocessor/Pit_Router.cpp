@@ -164,7 +164,7 @@ int CPit_Router::Get_Routes(CSG_Grid *pDEM, CSG_Grid *pRoute, double Threshold)
 	m_Outlets	= NULL;
 
 	//-----------------------------------------------------
-	Get_System()->Assign(m_pDEM->Get_System());
+	Set_System(m_pDEM->Get_System());
 
 	//-----------------------------------------------------
 	if( Initialize() )
@@ -249,7 +249,7 @@ int CPit_Router::Get_Routes(CSG_Grid *pDEM, CSG_Grid *pRoute, double Threshold)
 	{
 		if( nPits > 0 )
 		{
-			Message_Add(CSG_String::Format(SG_T("%s: %d"), _TL("number of processed sinks"), nPits));
+			Message_Fmt("\n%s: %d", _TL("number of processed sinks"), nPits);
 
 			return( nPits );
 		}
@@ -1023,7 +1023,7 @@ int CPit_Router::Process_Threshold(void)
 {
 	int		x, y, n, i;
 
-	m_Route.Create(*Get_System(), SG_DATATYPE_Char);
+	m_Route.Create(Get_System(), SG_DATATYPE_Char);
 
 	//-----------------------------------------------------
 	for(y=0; y<Get_NY() && Set_Progress(y); y++)
@@ -1083,7 +1083,7 @@ int CPit_Router::Process_Threshold(void)
 	}
 
 	//-----------------------------------------------------
-	Message_Add(CSG_String::Format(SG_T("%s: %d"), _TL("number of pits above threshold level"), n));
+	Message_Fmt("\n%s: %d", _TL("number of pits above threshold level"), n);
 
 	m_Route.Destroy();
 

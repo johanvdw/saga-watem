@@ -13,7 +13,7 @@
 //                                                       //
 //-------------------------------------------------------//
 //                                                       //
-//                     Shapes2Grid.h                     //
+//                    LineDirection.h                    //
 //                                                       //
 //                 Copyright (C) 2019 by                 //
 //                    Johan Van de Wauw                  //
@@ -108,8 +108,8 @@ private:
 	void						Set_Value				(int x, int y, double Value);
 
 
-    void						Set_Line				(CSG_Shape *pShape, bool bFat, double Value);
-	void						Set_Line_Fat			(TSG_Point a, TSG_Point b, double Value);
+    void						Set_Line				(CSG_Shape *pShape);
+	void						Set_Line_Fat			(TSG_Point a, TSG_Point b);
 };
 
 

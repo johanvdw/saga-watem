@@ -83,7 +83,8 @@
 //---------------------------------------------------------
 CWKSP_Map_BaseMap::CWKSP_Map_BaseMap(CSG_MetaData *pEntry)
 {
-	m_bShow		= true;
+	m_bShow	= true;
+	m_pTool	= NULL;	// remember the last created base map tool instance
 
 	//-----------------------------------------------------
 	m_Parameters.Set_Name      ("BASEMAP");
@@ -151,6 +152,12 @@ CWKSP_Map_BaseMap::CWKSP_Map_BaseMap(CSG_MetaData *pEntry)
 		"TRANSPARENCY"	, _TL("Transparency [%]"),
 		_TL(""),
 		0.0, 0.0, true, 100.0, true
+	);
+
+	m_Parameters.Add_Double("NODE_DISPLAY",
+		"BRIGHTNESS"	, _TL("Maximum Brightness [%]"),
+		_TL("Brightness threshold below a pixel is displayed. Set to 100% to display all (default)."),
+		100.0, 0.0, true, 100.0, true
 	);
 
 	m_Parameters.Add_Bool("NODE_DISPLAY",
@@ -346,17 +353,17 @@ int CWKSP_Map_BaseMap::On_Parameter_Changed(CSG_Parameters *pParameters, CSG_Par
 {
 	if( Flags & PARAMETER_CHECK_ENABLE )
 	{
-		if(	!SG_STR_CMP(pParameter->Get_Identifier(), "SHOW_ALWAYS") )
+		if(	pParameter->Cmp_Identifier("SHOW_ALWAYS") )
 		{
 			pParameters->Set_Enabled("SHOW_RANGE" , pParameter->asBool() == false);
 		}
 
-		if(	!SG_STR_CMP(pParameter->Get_Identifier(), "SERVER") )
+		if(	pParameter->Cmp_Identifier("SERVER") )
 		{
 			pParameters->Set_Enabled("SERVER_USER", pParameter->asInt() >= pParameter->asChoice()->Get_Count() - 1);	// user defined
 		}
 
-		if( !SG_STR_CMP(pParameter->Get_Identifier(), "CACHE") )
+		if( pParameter->Cmp_Identifier("CACHE") )
 		{
 			pParameters->Set_Enabled("CACHE_DIR"  , pParameter->asBool());
 		}
@@ -400,58 +407,92 @@ bool CWKSP_Map_BaseMap::Dlg_Parameters(void)
 //---------------------------------------------------------
 bool CWKSP_Map_BaseMap::Set_BaseMap(const CSG_Grid_System &System)
 {
-	m_BaseMap.Destroy();
+	CSG_Tool	*pTool;
 
-	CSG_Tool	*pTool	= SG_Get_Tool_Library_Manager().Get_Tool("io_gdal", 9);
-
-	if(	pTool && Get_Map()->Get_Projection().is_Okay() )
+	if(	!Get_Map()->Get_Projection().is_Okay() || !(pTool = SG_Get_Tool_Library_Manager().Create_Tool("io_gdal", 9)) )
 	{
-		SG_UI_Msg_Lock     (true);
-		SG_UI_Progress_Lock(true);
+		m_BaseMap.Destroy();
+
+		return( false );
+	}
+
+	SG_UI_ProgressAndMsg_Lock(true);
+
+	//-----------------------------------------------------
+	CSG_Grid	BaseMap;
+
+	if( m_Parameters("RESOLUTION")->asDouble() > 1.0 )
+	{
+		BaseMap.Create(CSG_Grid_System(m_Parameters("RESOLUTION")->asDouble() * System.Get_Cellsize(), System.Get_Extent(true)), SG_DATATYPE_Int);
+	}
+	else
+	{
+		BaseMap.Create(System);
+	}
+
+	BaseMap.Get_Projection()	= Get_Map()->Get_Projection();
+
+	m_pTool	= pTool;	// remember the last created base map tool instance
+
+	pTool->Set_Manager(NULL);
+
+	if( pTool->Set_Parameter("TARGET"     , &BaseMap)
+	&&  pTool->Set_Parameter("TARGET_MAP" , &BaseMap)
+	&&  pTool->Set_Parameter("SERVER"     , m_Parameters("SERVER"     ))
+	&&  pTool->Set_Parameter("SERVER_USER", m_Parameters("SERVER_USER"))
+	&&  pTool->Set_Parameter("CACHE"      , m_Parameters("CACHE"      ))
+	&&  pTool->Set_Parameter("CACHE_DIR"  , m_Parameters("CACHE_DIR"  ))
+	&&  pTool->Set_Parameter("GRAYSCALE"  , m_Parameters("GRAYSCALE"  ))
+	&&  pTool->On_Before_Execution() && pTool->Execute() && pTool == m_pTool )
+	{
+		m_pTool	= NULL;
 
 		m_BaseMap.Create(System, SG_DATATYPE_Int);
 
-		CSG_Grid	*pBaseMap, BaseMap;
-		
-		if( m_Parameters("RESOLUTION")->asDouble() > 1.0 )
+		if( System == BaseMap.Get_System() )
 		{
-			BaseMap.Create(CSG_Grid_System(m_Parameters("RESOLUTION")->asDouble() * System.Get_Cellsize(), System.Get_Extent(true)), SG_DATATYPE_Int);
-
-			pBaseMap	= &BaseMap;
-		}
-		else
-		{
-			pBaseMap	= &m_BaseMap;
-		}
-
-		pBaseMap->Get_Projection()	= Get_Map()->Get_Projection();
-
-		pTool->Settings_Push();
-
-		if( pTool->Set_Parameter("TARGET"     , pBaseMap)
-		&&  pTool->Set_Parameter("TARGET_MAP" , pBaseMap)
-		&&  pTool->Set_Parameter("SERVER"     , m_Parameters("SERVER"     ))
-		&&  pTool->Set_Parameter("SERVER_USER", m_Parameters("SERVER_USER"))
-		&&  pTool->Set_Parameter("CACHE"      , m_Parameters("CACHE"      ))
-		&&  pTool->Set_Parameter("CACHE_DIR"  , m_Parameters("CACHE_DIR"  ))
-		&&  pTool->Set_Parameter("GRAYSCALE"  , m_Parameters("GRAYSCALE"  ))
-		&&  pTool->On_Before_Execution() && pTool->Execute() )
-		{
-			if( &m_BaseMap != pBaseMap )
+			#pragma omp parallel for
+			for(int i=0; i<m_BaseMap.Get_NCells(); i++)
 			{
-				m_BaseMap.Assign(pBaseMap, GRID_RESAMPLING_NearestNeighbour);
+				m_BaseMap.Set_Value(i, BaseMap.asInt(i));
 			}
 		}
 		else
 		{
-			m_BaseMap.Destroy();
+			#pragma omp parallel for
+			for(int y=0; y<m_BaseMap.Get_NY(); y++)	for(int x=0; x<m_BaseMap.Get_NX(); x++)
+			{
+				m_BaseMap.Set_Value(x, y, BaseMap.Get_Value(System.Get_Grid_to_World(x, y), GRID_RESAMPLING_BSpline, true));
+			}
 		}
 
-		pTool->Settings_Pop();
+		if( m_Parameters("BRIGHTNESS")->asDouble() < 100.0 )
+		{
+			int	Threshold	= (int)(0.5 + 3 * 255 * m_Parameters("BRIGHTNESS")->asDouble() / 100.0);
 
-		SG_UI_Msg_Lock     (false);
-		SG_UI_Progress_Lock(false);
+			#pragma omp parallel for
+			for(int i=0; i<m_BaseMap.Get_NCells(); i++)
+			{
+				int	c	= m_BaseMap.asInt(i);
+
+				if( Threshold < (SG_GET_R(c) + SG_GET_G(c) + SG_GET_B(c)) )
+				{
+					m_BaseMap.Set_NoData(i);
+				}
+			}
+		}
 	}
+	else if( pTool == m_pTool )
+	{
+		m_pTool	= NULL;
+
+		m_BaseMap.Destroy();
+	}
+
+	//-----------------------------------------------------
+	SG_UI_ProgressAndMsg_Lock(false);
+
+	SG_Get_Tool_Library_Manager().Delete_Tool(pTool);
 
 	return( m_BaseMap.is_Valid() );
 }
@@ -469,7 +510,7 @@ bool CWKSP_Map_BaseMap::Draw(CWKSP_Map_DC &dc_Map)
 		CSG_Parameter_Range	*pRange	= m_Parameters("SHOW_RANGE")->asRange();
 		double	dRange	= dc_Map.m_rWorld.Get_XRange() > dc_Map.m_rWorld.Get_YRange() ? dc_Map.m_rWorld.Get_XRange() : dc_Map.m_rWorld.Get_YRange();
 
-		if( dRange < pRange->Get_LoVal() || pRange->Get_HiVal() < dRange )
+		if( dRange < pRange->Get_Min() || pRange->Get_Max() < dRange )
 		{
 			return( false );
 		}
@@ -489,7 +530,10 @@ bool CWKSP_Map_BaseMap::Draw(CWKSP_Map_DC &dc_Map)
 		#pragma omp parallel for
 		for(int y=0; y<m_BaseMap.Get_NY(); y++)	for(int x=0, yy=m_BaseMap.Get_NY()-y-1; x<m_BaseMap.Get_NX(); x++)
 		{
-			dc_Map.IMG_Set_Pixel(x, y, m_BaseMap.asInt(x, yy));
+			if( !m_BaseMap.is_NoData(x, yy) )
+			{
+				dc_Map.IMG_Set_Pixel(x, y, m_BaseMap.asInt(x, yy));
+			}
 		}
 
 		dc_Map.IMG_Draw_End();

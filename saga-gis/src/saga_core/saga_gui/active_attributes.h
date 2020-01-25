@@ -1,6 +1,3 @@
-/**********************************************************
- * Version $Id$
- *********************************************************/
 
 ///////////////////////////////////////////////////////////
 //                                                       //
@@ -51,15 +48,6 @@
 ///////////////////////////////////////////////////////////
 
 //---------------------------------------------------------
-
-
-///////////////////////////////////////////////////////////
-//														 //
-//														 //
-//														 //
-///////////////////////////////////////////////////////////
-
-//---------------------------------------------------------
 #ifndef _HEADER_INCLUDED__SAGA_GUI__ACTIVE_Attributes_H
 #define _HEADER_INCLUDED__SAGA_GUI__ACTIVE_Attributes_H
 
@@ -81,22 +69,16 @@
 ///////////////////////////////////////////////////////////
 
 //---------------------------------------------------------
-class CACTIVE_Attributes : public wxPanel
+class CActive_Attributes : public wxPanel
 {
-	DECLARE_CLASS(CACTIVE_Attributes)
+	DECLARE_CLASS(CActive_Attributes)
 
 public:
-	CACTIVE_Attributes(wxWindow *pParent);
-	virtual ~CACTIVE_Attributes(void);
-
-	void								On_Size				(wxSizeEvent     &event);
+	CActive_Attributes(wxWindow *pParent);
 
 	void								On_Choice			(wxCommandEvent  &event);
-
-	void								On_Apply			(wxCommandEvent  &event);
-	void								On_Apply_UI			(wxUpdateUIEvent &event);
-	void								On_Restore			(wxCommandEvent  &event);
-	void								On_Restore_UI		(wxUpdateUIEvent &event);
+	void								On_Button			(wxCommandEvent  &event);
+	void								On_Button_UI		(wxUpdateUIEvent &event);
 
 	void								Set_Item			(class CWKSP_Layer *pItem);
 
@@ -107,24 +89,18 @@ public:
 
 protected:
 
-	int									m_Btn_Height;
-
-	class wxButton						*m_Btn_Restore, *m_Btn_Apply;
+	class CWKSP_Layer					*m_pItem;
 
 	class wxChoice						*m_pSelections;
 
 	class CActive_Attributes_Control	*m_pControl;
 
-	class CWKSP_Layer					*m_pItem;
-
-
-	void								_Set_Positions		(void);
 
 	class CSG_Table *					_Get_Table			(void);
 
 
-//---------------------------------------------------------
-DECLARE_EVENT_TABLE()
+	DECLARE_EVENT_TABLE()
+
 };
 
 

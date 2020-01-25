@@ -1,6 +1,3 @@
-/**********************************************************
- * Version $Id$
- *********************************************************/
 
 ///////////////////////////////////////////////////////////
 //                                                       //
@@ -203,6 +200,8 @@ void CSG_Shapes::_On_Construction(void)
 
 	m_Type			= SHAPE_TYPE_Undefined;
 	m_Vertex_Type	= SG_VERTEX_TYPE_XY;
+
+	m_Encoding		= SG_FILE_ENCODING_UTF8;
 }
 
 
@@ -237,7 +236,7 @@ bool CSG_Shapes::Create(const CSG_String &File_Name)
 		s	= s.AfterFirst(':');	CSG_String	DBName(s.BeforeFirst(':'));
 		s	= s.AfterFirst(':');	CSG_String	Table (s.BeforeFirst(':'));
 
-		CSG_Tool	*pTool	= SG_Get_Tool_Library_Manager().Get_Tool("db_pgsql", 0);	// CGet_Connections
+		CSG_Tool	*pTool	= SG_Get_Tool_Library_Manager().Create_Tool("db_pgsql", 0);	// CGet_Connections
 
 		if(	pTool != NULL )
 		{
@@ -247,8 +246,8 @@ bool CSG_Shapes::Create(const CSG_String &File_Name)
 			CSG_Table	Connections;
 			CSG_String	Connection	= DBName + " [" + Host + ":" + Port + "]";
 
+			pTool->Set_Manager(NULL);
 			pTool->On_Before_Execution();
-			pTool->Settings_Push();
 
 			if( SG_TOOL_PARAMETER_SET("CONNECTIONS", &Connections) && pTool->Execute() )	// CGet_Connections
 			{
@@ -261,20 +260,20 @@ bool CSG_Shapes::Create(const CSG_String &File_Name)
 				}
 			}
 
-			pTool->Settings_Pop();
+			SG_Get_Tool_Library_Manager().Delete_Tool(pTool);
 
 			//---------------------------------------------
-			if( bResult && (bResult = (pTool = SG_Get_Tool_Library_Manager().Get_Tool("db_pgsql", 20)) != NULL) == true )	// CPGIS_Shapes_Load
+			if( bResult && (bResult = (pTool = SG_Get_Tool_Library_Manager().Create_Tool("db_pgsql", 20)) != NULL) == true )	// CPGIS_Shapes_Load
 			{
+				pTool->Set_Manager(NULL);
 				pTool->On_Before_Execution();
-				pTool->Settings_Push();
 
 				bResult	=  SG_TOOL_PARAMETER_SET("CONNECTION", Connection)
 						&& SG_TOOL_PARAMETER_SET("TABLES"    , Table)
 						&& SG_TOOL_PARAMETER_SET("SHAPES"    , this)
 						&& pTool->Execute();
 
-				pTool->Settings_Pop();
+				SG_Get_Tool_Library_Manager().Delete_Tool(pTool);
 			}
 
 			SG_UI_ProgressAndMsg_Lock(false);
@@ -325,7 +324,10 @@ bool CSG_Shapes::Create(TSG_Shape_Type Type, const SG_Char *Name, CSG_Table *pSt
 
 	CSG_Table::Create(pStructure);
 
-	Set_Name(Name);
+	if( Name )
+	{
+		Set_Name(CSG_String(Name));
+	}
 
 	m_Type			= Type;
 	m_Vertex_Type	= Vertex_Type;
@@ -368,16 +370,14 @@ bool CSG_Shapes::Assign(CSG_Data_Object *pObject)
 
 		Create(pShapes->Get_Type(), pShapes->Get_Name(), pShapes, pShapes->Get_Vertex_Type());
 
-		for(int iShape=0; iShape<pShapes->Get_Count() && SG_UI_Process_Set_Progress(iShape, pShapes->Get_Count()); iShape++)
+		Get_History()	= pShapes->Get_History();
+
+		Get_Projection().Create(pShapes->Get_Projection());
+
+		for(int iShape=0; iShape<pShapes->Get_Count() && SG_UI_Process_Get_Okay(); iShape++)
 		{
 			Add_Shape(pShapes->Get_Shape(iShape));
 		}
-
-		SG_UI_Process_Set_Ready();
-
-		Update();
-
-		Get_History()	= pObject->Get_History();
 
 		return( true );
 	}

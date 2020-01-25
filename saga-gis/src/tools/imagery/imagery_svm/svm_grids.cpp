@@ -268,7 +268,7 @@ CSVM_Grids::CSVM_Grids(void)
 //---------------------------------------------------------
 int CSVM_Grids::On_Parameters_Enable(CSG_Parameters *pParameters, CSG_Parameter *pParameter)
 {
-	if(	!SG_STR_CMP(pParameter->Get_Identifier(), SG_T("MODEL_SRC")) )
+	if(	pParameter->Cmp_Identifier(SG_T("MODEL_SRC")) )
 	{
 		pParameters->Get_Parameter("MODEL_TRAIN")->Set_Enabled(pParameter->asInt() == 0);
 		pParameters->Get_Parameter("MODEL_LOAD" )->Set_Enabled(pParameter->asInt() == 1);
@@ -322,7 +322,7 @@ bool CSVM_Grids::On_Execute(void)
 	{
 		if( m_pGrids->Get_Grid(i)->Get_Range() <= 0.0 )
 		{
-			Message_Add(CSG_String::Format("%s: %s", _TL("grid has been dropped"), m_pGrids->Get_Grid(i)->Get_Name()));
+			Message_Fmt("\n%s: %s", _TL("grid has been dropped"), m_pGrids->Get_Grid(i)->Get_Name());
 
 			m_pGrids->Del_Item(i);
 		}
@@ -778,7 +778,7 @@ bool CSVM_Grids::Finalize(void)
 	}
 
 	//-----------------------------------------------------
-	m_pClasses->Set_Name(CSG_String::Format(SG_T("%s [%s]"), _TL("Classification"), _TL("SVM")));
+	m_pClasses->Fmt_Name("%s [%s]", _TL("Classification"), _TL("SVM"));
 
 	//-----------------------------------------------------
 	return( true );

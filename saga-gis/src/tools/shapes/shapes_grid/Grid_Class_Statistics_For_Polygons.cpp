@@ -127,12 +127,12 @@ CGrid_Class_Statistics_For_Polygons::CGrid_Class_Statistics_For_Polygons(void)
 //---------------------------------------------------------
 int CGrid_Class_Statistics_For_Polygons::On_Parameters_Enable(CSG_Parameters *pParameters, CSG_Parameter *pParameter)
 {
-	if(	!SG_STR_CMP(pParameter->Get_Identifier(), "GRID_VALUES") )
+	if(	pParameter->Cmp_Identifier("GRID_VALUES") )
 	{
 		pParameters->Set_Enabled("GRID_LUT", pParameter->asInt() == 1);
 	}
 
-	if(	!SG_STR_CMP(pParameter->Get_Identifier(), "GRID_LUT") )
+	if(	pParameter->Cmp_Identifier("GRID_LUT") )
 	{
 		pParameters->Set_Enabled("GRID_LUT_MIN", pParameter->asTable() != NULL);
 		pParameters->Set_Enabled("GRID_LUT_MAX", pParameter->asTable() != NULL);
@@ -265,7 +265,7 @@ bool CGrid_Class_Statistics_For_Polygons::Get_Classes(CSG_Grid *pGrid, CSG_Shape
 				pPolygons->Add_Field(Classes.asString(iClass), SG_DATATYPE_Double);
 			}
 
-			m_Classes.Create(*Get_System(), SG_DATATYPE_Short);
+			m_Classes.Create(Get_System(), SG_DATATYPE_Short);
 
 			for(iCell=0; iCell<pGrid->Get_NCells(); iCell++)
 			{
@@ -305,7 +305,7 @@ bool CGrid_Class_Statistics_For_Polygons::Get_Classes(CSG_Grid *pGrid, CSG_Shape
 				pPolygons->Add_Field((*pLUT)[iClass].asString(fNam), SG_DATATYPE_Double);
 			}
 
-			m_Classes.Create(*Get_System(), SG_DATATYPE_Short);
+			m_Classes.Create(Get_System(), SG_DATATYPE_Short);
 
 			for(sLong iCell=0; iCell<pGrid->Get_NCells(); iCell++)
 			{

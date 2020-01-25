@@ -121,9 +121,13 @@ public:
 
 	virtual bool					Assign				(CSG_Data_Object *pSource);
 
-	virtual bool					Save				(const CSG_String &File_Name, int Format = 0);
+	virtual bool					Save				(const CSG_String &File, int Format = 0);
+	virtual bool					Save				(const char       *File, int Format = 0)	{	return( Save(CSG_String(File), Format) );	}
+	virtual bool					Save				(const wchar_t    *File, int Format = 0)	{	return( Save(CSG_String(File), Format) );	}
 
 	void							Set_XYZ_Precision	(bool bDouble)			{	m_bXYZPrecDbl	= bDouble;	}
+
+	static bool						Get_Header_Content	(const CSG_String &FileName, CSG_MetaData &Header);
 
 	//-----------------------------------------------------
 	virtual bool					is_Valid			(void)	const			{	return( m_nFields > 0 );	}
@@ -178,6 +182,8 @@ public:
 
 	TSG_Point_Z						Get_Point			(void)			const;
 	TSG_Point_Z						Get_Point			(int iPoint)	const;
+	virtual bool					Set_Point			(            const TSG_Point_Z &Point);
+	virtual bool					Set_Point			(int iPoint, const TSG_Point_Z &Point);
 
 	virtual void					Set_Modified		(bool bModified = true)		{	CSG_Data_Object::Set_Modified(bModified);	}
 
@@ -218,8 +224,6 @@ protected:
 	virtual bool					On_Reload			(void);
 	virtual bool					On_Delete			(void);
 
-	virtual bool					On_NoData_Changed	(void);
-
 	virtual void					_On_Construction	(void);
 
 	virtual bool					_Stats_Update		(int iField)	const;
@@ -241,6 +245,7 @@ private:
 	bool							_Load				(const CSG_String &File_Name);
 	bool							_Load				(CSG_File &Stream);
 	bool							_Save				(CSG_File &Stream);
+	CSG_MetaData					_Create_Header		(void)	const;
 
 	bool							_Add_Field			(const SG_Char *Name, TSG_Data_Type Type, int iField = -1);
 	bool							_Set_Field_Value	(char *pPoint, int iField, double         Value);
@@ -275,7 +280,6 @@ SAGA_API_DLL_EXPORT CSG_PointCloud *	SG_Create_PointCloud	(const CSG_String &Fil
 
 /** Safe Point Cloud construction */
 SAGA_API_DLL_EXPORT CSG_PointCloud *	SG_Create_PointCloud	(CSG_PointCloud *pStructure);
-
 
 ///////////////////////////////////////////////////////////
 //														 //

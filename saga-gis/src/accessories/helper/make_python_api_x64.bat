@@ -14,7 +14,7 @@ call "C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\vcvarsall.bat" x86_
 
 REM ___________________________________
 SET SAGA_ROOT=%SAGA%
-SET SAGA_VERSION=saga_6.4.0
+SET SAGA_VERSION=saga
 
 SET ZIPEXE="C:\Program Files\7-Zip\7z.exe" a -r -y -mx5
 
@@ -34,7 +34,7 @@ REM SWIG/Python
 PUSHD "%SAGA_ROOT%\src\saga_core\saga_api"
 ECHO __________________
 ECHO SWIG Compilation
-%SWIGEXE% -c++ -python -includeall -I. -D_SAGA_PYTHON -D_SAGA_UNICODE saga_api.h
+%SWIGEXE% -c++ -python -includeall -I. -D_SAGA_PYTHON saga_api.h
 
 ECHO __________________
 ECHO Python Compilation

@@ -136,13 +136,13 @@ void CGrid_Filler::Parameters_Add(CSG_Parameters &Parameters)
 //---------------------------------------------------------
 void CGrid_Filler::Parameters_Enable(CSG_Parameters *pParameters, CSG_Parameter *pParameter)
 {
-	if( !SG_STR_CMP(pParameter->Get_Identifier(), "REPLACE") )
+	if( pParameter->Cmp_Identifier("REPLACE") )
 	{
 		pParameters->Set_Enabled("REPLACE_VALUE", pParameter->asInt() == 1);
 		pParameters->Set_Enabled("IGNORE_NODATA", pParameter->asInt() != 1);
 	}
 
-	if( !SG_STR_CMP(pParameter->Get_Identifier(), "FILL_NODATA") )
+	if( pParameter->Cmp_Identifier("FILL_NODATA") )
 	{
 		pParameters->Set_Enabled("FILL_VALUE", pParameter->asBool() == false);
 	}
@@ -156,7 +156,7 @@ bool CGrid_Filler::Parameters_Set(CSG_Parameters &Parameters)
 	if( m_pGrid && m_pGrid != Parameters("GRID")->asGrid() )
 	{
 		m_pGrid->Assign(Parameters("GRID")->asGrid());
-		m_pGrid->Set_Name(CSG_String::Format("%s [%s]", Parameters("GRID")->asGrid()->Get_Name(), _TL("Flood Fill")));
+		m_pGrid->Fmt_Name("%s [%s]", Parameters("GRID")->asGrid()->Get_Name(), _TL("Flood Fill"));
 	}
 	else
 	{
@@ -283,7 +283,7 @@ bool CGrid_Fill::On_Execute(void)
 {
 	CSG_Shapes	*pPoints	= Parameters("POINTS")->asShapes();
 
-	if( !pPoints->is_Valid() || !pPoints->Get_Extent().Intersects(Get_System()->Get_Extent()) || !Parameters_Set(Parameters) )
+	if( !pPoints->is_Valid() || !pPoints->Get_Extent().Intersects(Get_System().Get_Extent()) || !Parameters_Set(Parameters) )
 	{
 		return( false );
 	}
@@ -301,7 +301,7 @@ bool CGrid_Fill::On_Execute(void)
 		nReplaced	+= Fill(GET_POINT(i));
 	}
 
-	Message_Add(CSG_String::Format("\n%d %s\n", nReplaced, _TL("replacements")), false);
+	Message_Fmt("\n%d %s\n", nReplaced, _TL("replacements"));
 
 	return( true );	
 }
@@ -354,7 +354,7 @@ bool CGrid_Fill_Interactive::On_Execute_Position(CSG_Point ptWorld, TSG_Tool_Int
 		int	nReplaced	= Fill(ptWorld);
 
 		Message_Add(_TL("ready"), false);
-		Message_Add(CSG_String::Format("%d %s", nReplaced, _TL("replacements")));
+		Message_Fmt("\n%d %s", nReplaced, _TL("replacements"));
 
 		DataObject_Update(m_pGrid, m_pGrid->Get_Min(), m_pGrid->Get_Max());
 

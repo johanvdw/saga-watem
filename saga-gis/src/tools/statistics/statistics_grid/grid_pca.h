@@ -1,6 +1,3 @@
-/**********************************************************
- * Version $Id: grid_pca.h 1921 2014-01-09 10:24:11Z oconrad $
- *********************************************************/
 
 ///////////////////////////////////////////////////////////
 //                                                       //
@@ -48,18 +45,12 @@
 //                                                       //
 ///////////////////////////////////////////////////////////
 
-///////////////////////////////////////////////////////////
-//                                                       //
-//                                                       //
-//                                                       //
-///////////////////////////////////////////////////////////
-
 //---------------------------------------------------------
 #ifndef HEADER_INCLUDED__grid_pca_H
 #define HEADER_INCLUDED__grid_pca_H
 
 //---------------------------------------------------------
-#include "MLB_Interface.h"
+#include <saga_api/saga_api.h>
 
 
 ///////////////////////////////////////////////////////////
@@ -74,32 +65,38 @@ class CGrid_PCA : public CSG_Tool_Grid
 public:
 	CGrid_PCA(void);
 
-	virtual CSG_String		Get_MenuPath		(void)	{	return( _TL("Principle Components") );	}
+	virtual CSG_String		Get_MenuPath			(void)	{	return( _TL("Principal Components") );	}
 
 
 protected:
 
-	virtual bool			On_Execute			(void);
+	virtual int				On_Parameters_Enable	(CSG_Parameters *pParameters, CSG_Parameter *pParameter);
+
+	virtual bool			On_Execute				(void);
 
 
 private:
 
-	int						m_Method, m_nFeatures;
+	int						m_nFeatures, m_Method;
 
 	CSG_Parameter_Grid_List	*m_pGrids;
 
 
-	bool					is_NoData			(sLong iCell);
-	double					Get_Value			(sLong iCell, int iFeature);
-	
-	bool					Get_Matrix			(CSG_Matrix &Matrix);
+	bool					is_NoData				(sLong iCell);
+	double					Get_Value				(sLong iCell, int iFeature);	
+	bool					Get_Matrix				(CSG_Matrix &Matrix);
+	bool					Get_Eigen_Reduction		(CSG_Matrix &Eigen_Vectors);
 
-	void					Print_Eigen_Values	(CSG_Vector &Eigen_Values);
-	void					Print_Eigen_Vectors	(CSG_Matrix &Eigen_Vectors);
+	void					Print_Eigen_Values		(CSG_Vector &Eigen_Values );
+	void					Print_Eigen_Vectors		(CSG_Matrix &Eigen_Vectors);
 
-	bool					Get_Components		(CSG_Matrix &Eigen_Vectors);
+	bool					Set_Eigen_Vectors		(CSG_Matrix &Eigen_Vectors);
+	bool					Get_Eigen_Vectors		(CSG_Matrix &Eigen_Vectors);
+
+	bool					Get_Components			(const CSG_Matrix &Eigen_Vectors);
 
 };
+
 
 ///////////////////////////////////////////////////////////
 //                                                       //
@@ -111,12 +108,12 @@ class CGrid_PCA_Inverse : public CSG_Tool_Grid
 public:
 	CGrid_PCA_Inverse(void);
 
-	virtual CSG_String		Get_MenuPath		(void)	{	return( _TL("Principle Components") );	}
+	virtual CSG_String		Get_MenuPath			(void)	{	return( _TL("Principal Components") );	}
 
 
 protected:
 
-	virtual bool			On_Execute			(void);
+	virtual bool			On_Execute				(void);
 
 
 private:

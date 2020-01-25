@@ -1,5 +1,5 @@
 /**********************************************************
- * Version $Id: tool_chain.h 2111 2014-05-07 09:58:48Z oconrad $
+ * Version $Id$
  *********************************************************/
 
 ///////////////////////////////////////////////////////////
@@ -91,10 +91,18 @@ public:
 	CSG_Tool_Chain(void);
 	virtual ~CSG_Tool_Chain(void);
 
+								CSG_Tool_Chain			(const CSG_Tool_Chain &Tool);
+	bool						Create					(const CSG_Tool_Chain &Tool);
+
 								CSG_Tool_Chain			(const CSG_String &File);
 	bool						Create					(const CSG_String &File);
 
-	virtual TSG_Tool_Type		Get_Type				(void)			{	return( TOOL_TYPE_Chain );	}
+								CSG_Tool_Chain			(const CSG_MetaData &Chain);
+	bool						Create					(const CSG_MetaData &Chain);
+
+	virtual TSG_Tool_Type		Get_Type				(void)	const	{	return( TOOL_TYPE_Chain );	}
+
+	virtual bool				do_Sync_Projections		(void)	const;
 
 	bool						is_Okay					(void)	const	{	return( m_Chain.Get_Children_Count() > 0 );	}
 
@@ -127,6 +135,7 @@ private:
 
 	bool						Data_Add				(const CSG_String &ID, CSG_Parameter *pData);
 	bool						Data_Add_TempList		(const CSG_String &ID, const CSG_String &Type);
+	bool						Data_Del_Temp			(const CSG_String &ID, bool bData);
 	bool						Data_Exists				(CSG_Data_Object *pData);
 	bool						Data_Initialize			(void);
 	bool						Data_Finalize			(void);
@@ -136,21 +145,23 @@ private:
 	bool						Check_Condition			(const CSG_MetaData &Condition, CSG_Parameters *pData);
 
 	bool						ForEach					(const CSG_MetaData &Commands);
-	bool						ForEach_Object			(const CSG_MetaData &Commands, const CSG_String &ListVarName);
-	bool						ForEach_File			(const CSG_MetaData &Commands, const CSG_String &ListVarName);
+	bool						ForEach_Iterator		(const CSG_MetaData &Commands, const CSG_String &    VarName, bool bIgnoreErrors);
+	bool						ForEach_Object			(const CSG_MetaData &Commands, const CSG_String &ListVarName, bool bIgnoreErrors);
+	bool						ForEach_File			(const CSG_MetaData &Commands, const CSG_String &ListVarName, bool bIgnoreErrors);
 
 	bool						Tool_Run				(const CSG_MetaData &Tool, bool bShowError = true);
 	bool						Tool_Check_Condition	(const CSG_MetaData &Tool);
-	bool						Tool_Get_Parameter		(const CSG_MetaData &Parameter, CSG_Tool *pTool, CSG_Parameter **ppParameter, CSG_Parameter **ppParameters);
+	bool						Tool_Get_Parameter		(const CSG_String ID, CSG_Parameters *pParameters, CSG_Parameter **ppParameter, CSG_Parameter **ppOwner = NULL);
+	bool						Tool_Get_Parameter		(const CSG_MetaData &Parameter, CSG_Tool *pTool  , CSG_Parameter **ppParameter, CSG_Parameter **ppOwner = NULL);
 	bool						Tool_Initialize			(const CSG_MetaData &Tool, CSG_Tool *pTool);
 	bool						Tool_Finalize			(const CSG_MetaData &Tool, CSG_Tool *pTool);
 
 
 //---------------------------------------------------------
-public: 	static bool			Save_History_to_Model		(const CSG_MetaData &History, const CSG_String &File);
+public: 	static bool			Save_History_to_Model	(const CSG_MetaData &History, const CSG_String &File);
 
-private:	static bool			_Save_History_Add_Tool		(const CSG_MetaData &History, CSG_MetaData &Parms, CSG_MetaData &Tools, bool bAddOutput = false);
-private:	static bool			_Save_History_Add_Input		(const CSG_MetaData &History, CSG_MetaData &Parms, CSG_MetaData &Tool);
+private:	static bool			_Save_History_Add_Tool	(const CSG_MetaData &History, CSG_MetaData &Parms, CSG_MetaData &Tools, bool bAddOutput = false);
+private:	static bool			_Save_History_Add_Input	(const CSG_MetaData &History, CSG_MetaData &Parms, CSG_MetaData &Tool);
 
 };
 
@@ -174,11 +185,15 @@ public:
 
 	bool							Add_Tool			(CSG_Tool_Chain *pTool);
 
-	virtual int						Get_Count			(void)		const	{	return( m_nTools );	}
+	virtual int						Get_Count			(void)		const	{	return( (int)m_Tools.Get_Size() );	}
 
 	virtual CSG_Tool *				Get_Tool			(int Index, TSG_Tool_Type Type = TOOL_TYPE_Base)	const;
 
-	virtual CSG_String				Get_File_Name		(int Index)	const	{	return( Index >= 0 && Index < m_nTools ? m_pTools[Index]->Get_File_Name() : "" );	}
+	virtual CSG_Tool *				Create_Tool			(const CSG_String &Name);
+	virtual bool					Delete_Tool			(CSG_Tool *pTool);
+	virtual bool					Delete_Tools		(void);
+
+	virtual CSG_String				Get_File_Name		(int Index)	const	{	return( Index >= 0 && Index < Get_Count() ? ((CSG_Tool *)m_Tools[Index])->Get_File_Name() : "" );	}
 
 
 protected:
@@ -189,9 +204,7 @@ protected:
 
 private:
 
-	int								m_nTools;
-
-	CSG_Tool_Chain					**m_pTools;
+	CSG_Array_Pointer				m_Tools, m_xTools;
 
 	CSG_String						m_Name, m_Description, m_Menu;
 

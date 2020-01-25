@@ -183,29 +183,52 @@ CLandsat_Scene_Import::CLandsat_Scene_Import(void)
 //---------------------------------------------------------
 int CLandsat_Scene_Import::On_Parameters_Enable(CSG_Parameters *pParameters, CSG_Parameter *pParameter)
 {
-	if( !SG_STR_CMP(pParameter->Get_Identifier(), "METAFILE") )
+	if( pParameter->Cmp_Identifier("METAFILE") )
 	{
-		CSG_MetaData	Metadata;
+		CSG_MetaData	Info_Scene, Metadata;
+		CSG_Table		Info_Bands;
+		CSG_Strings		File_Bands;
 
-		if( Load_Metadata(Metadata, pParameter->asString()) )
+		if( Load_Metadata(Metadata, pParameter->asString()) && Get_Info(Metadata, File_Bands, Info_Bands, Info_Scene) )
 		{
 			int	Sensor	= Get_Info_Sensor(Metadata);
 
 			pParameters->Set_Enabled("SKIP_PAN", Sensor == SENSOR_ETM || Sensor == SENSOR_OLI_TIRS);
+
+			const CSG_Table_Record	&Info_Band	= Info_Bands[0];
+
+			bool	bRadiance	=  (Info_Band.asString("REFLECTANCE_ADD") && Info_Band.asString("REFLECTANCE_MUL"))
+								|| (Info_Band.asString("L_MIN") && Info_Band.asString("QCAL_MIN")
+								&&  Info_Band.asString("L_MAX") && Info_Band.asString("QCAL_MAX"));
+
+			bool	bReflectance	= Info_Band.asString("REFLECTANCE_ADD") && Info_Band.asString("REFLECTANCE_MUL");
+
+			pParameters->Set_Enabled("CALIBRATION", bRadiance || bReflectance);
+
+			if( bRadiance || bReflectance )
+			{
+				CSG_String	Choices(_TL("none"));
+
+				if( bRadiance    )	Choices	+= CSG_String("|") + _TL("radiance"   );
+				if( bReflectance )	Choices	+= CSG_String("|") + _TL("reflectance");
+
+				(*pParameters)("CALIBRATION")->asChoice()->Set_Items(Choices);
+			}
 		}
 		else
 		{
-			pParameters->Set_Enabled("SKIP_PAN", false);
+			pParameters->Set_Enabled("SKIP_PAN"   , false);
+			pParameters->Set_Enabled("CALIBRATION", false);
 		}
 	}
 
-	if( !SG_STR_CMP(pParameter->Get_Identifier(), "CALIBRATION") )
+	if( pParameter->Cmp_Identifier("CALIBRATION") )
 	{
 		pParameters->Set_Enabled("DATA_TYPE", pParameter->asInt() != 0);
 		pParameters->Set_Enabled("TEMP_UNIT", pParameter->asInt() == 2);
 	}
 
-	if( !SG_STR_CMP(pParameter->Get_Identifier(), "PROJECTION") )
+	if( pParameter->Cmp_Identifier("PROJECTION") )
 	{
 		pParameters->Set_Enabled("RESAMPLING", pParameter->asInt() == 2);
 	}
@@ -282,7 +305,7 @@ bool CLandsat_Scene_Import::On_Execute(void)
 			continue;
 		}
 
-		Process_Set_Text(CSG_String::Format("%s: %s", _TL("loading"), File_Bands[i].c_str()));
+		Process_Set_Text("%s: %s", _TL("loading"), File_Bands[i].c_str());
 
 		CSG_Grid	*pBand	= Load_Band(SG_File_Make_Path(Path, File_Bands[i], ""));
 
@@ -298,7 +321,7 @@ bool CLandsat_Scene_Import::On_Execute(void)
 
 			case  2: if( is_Thermal(Sensor, i) )
 				{
-					Get_Thermal    (pBand, Info_Bands[i]);
+					Get_Temperature(pBand, Info_Bands[i]);
 				}
 				else
 				{
@@ -863,13 +886,13 @@ CSG_Grid * CLandsat_Scene_Import::Load_Band(const CSG_String &File)
 	//-----------------------------------------------------
 	else if( Parameters("PROJECTION")->asInt() == 2 )	// Geographic Coordinates
 	{
-		CSG_Tool	*pTool	= SG_Get_Tool_Library_Manager().Get_Tool("pj_proj4", 4);	// Coordinate Transformation (Grid)
+		CSG_Tool	*pTool	= SG_Get_Tool_Library_Manager().Create_Tool("pj_proj4", 4);	// Coordinate Transformation (Grid)
 
 		if(	pTool )
 		{
-			Message_Add(CSG_String::Format("\n%s (%s: %s)\n", _TL("re-projection to geographic coordinates"), _TL("original"), pBand->Get_Projection().Get_Name().c_str()), false);
+			Message_Fmt("\n%s (%s: %s)\n", _TL("re-projection to geographic coordinates"), _TL("original"), pBand->Get_Projection().Get_Name().c_str());
 
-			pTool->Settings_Push(NULL);
+			pTool->Set_Manager(NULL);
 
 			if( pTool->Set_Parameter("CRS_PROJ4" , SG_T("+proj=longlat +ellps=WGS84 +datum=WGS84"))
 			&&  pTool->Set_Parameter("SOURCE"    , pBand)
@@ -882,7 +905,7 @@ CSG_Grid * CLandsat_Scene_Import::Load_Band(const CSG_String &File)
 				pBand	= pTool->Get_Parameters()->Get_Parameter("GRID")->asGrid();
 			}
 
-			pTool->Settings_Pop();
+			SG_Get_Tool_Library_Manager().Delete_Tool(pTool);
 		}
 	}
 
@@ -910,6 +933,29 @@ bool CLandsat_Scene_Import::Get_Float(CSG_Grid *pBand, CSG_Grid &DN)
 //---------------------------------------------------------
 bool CLandsat_Scene_Import::Get_Radiance(CSG_Grid *pBand, const CSG_Table_Record &Info_Band)
 {
+	//-----------------------------------------------------
+	double	Offset, Scale, DNmin;
+
+	if( Info_Band.asString("REFLECTANCE_ADD") && Info_Band.asString("REFLECTANCE_MUL") )
+	{
+		DNmin	=  0.0;
+		Offset	=  Info_Band.asDouble("REFLECTANCE_ADD");
+		Scale	=  Info_Band.asDouble("REFLECTANCE_MUL");
+	}
+	else if( Info_Band.asString("L_MIN") && Info_Band.asString("L_MAX") && Info_Band.asString("QCAL_MIN") && Info_Band.asString("QCAL_MAX") )
+	{
+		DNmin	=  Info_Band.asDouble("QCAL_MIN");
+		Offset	=  Info_Band.asDouble("L_MIN");
+		Scale	= (Info_Band.asDouble("L_MAX") - Offset) / (Info_Band.asDouble("QCAL_MAX") - DNmin);
+	}
+	else
+	{
+		SG_UI_Msg_Add_Error(CSG_String::Format("%s: %s", pBand->Get_Name(), _TL("failed to derive radiances")));
+
+		return( false );
+	}
+
+	//-----------------------------------------------------
 	CSG_Grid	DN(*pBand);
 
 	if( Parameters("DATA_TYPE")->asInt() == 1 )
@@ -926,10 +972,6 @@ bool CLandsat_Scene_Import::Get_Radiance(CSG_Grid *pBand, const CSG_Table_Record
 	pBand->Set_Unit("W/(m2*sr*um");
 
 	//-----------------------------------------------------
-	double	Offset	= Info_Band.asDouble("RADIANCE_ADD");
-	double	Scale	= Info_Band.asDouble("RADIANCE_MUL");
-
-	//-----------------------------------------------------
 	#pragma omp parallel for
 	for(sLong i=0; i<pBand->Get_NCells(); i++)
 	{
@@ -939,7 +981,7 @@ bool CLandsat_Scene_Import::Get_Radiance(CSG_Grid *pBand, const CSG_Table_Record
 		}
 		else
 		{
-			pBand->Set_Value(i, Offset + Scale * DN.asDouble(i));
+			pBand->Set_Value(i, Offset + Scale * (DN.asDouble(i) - DNmin));
 		}
 	}
 
@@ -950,6 +992,24 @@ bool CLandsat_Scene_Import::Get_Radiance(CSG_Grid *pBand, const CSG_Table_Record
 //---------------------------------------------------------
 bool CLandsat_Scene_Import::Get_Reflectance(CSG_Grid *pBand, const CSG_Table_Record &Info_Band, double SunHeight)
 {
+	//-----------------------------------------------------
+	double	Offset, Scale;
+
+	if( Info_Band.asString("REFLECTANCE_ADD") && Info_Band.asString("REFLECTANCE_MUL") )
+	{
+		Offset	= Info_Band.asDouble("REFLECTANCE_ADD");
+		Scale	= Info_Band.asDouble("REFLECTANCE_MUL");
+	}
+	else
+	{
+		SG_UI_Msg_Add_Error(CSG_String::Format("%s: %s", pBand->Get_Name(), _TL("failed to derive reflectances")));
+
+		return( false );
+	}
+
+	SunHeight	= sin(SunHeight * M_DEG_TO_RAD);
+
+	//-----------------------------------------------------
 	CSG_Grid	DN(*pBand);
 
 	if( Parameters("DATA_TYPE")->asInt() == 1 )
@@ -960,16 +1020,10 @@ bool CLandsat_Scene_Import::Get_Reflectance(CSG_Grid *pBand, const CSG_Table_Rec
 	{
 		double	MaxVal	= (pBand->Get_Type() == SG_DATATYPE_Byte ? 256 : 256*256) - 1;
 		pBand->Set_NoData_Value(MaxVal--);
-		pBand->Set_Scaling(100.0 / MaxVal, 0.0);	// 0 to 100 percent
+		pBand->Set_Scaling(1. / MaxVal, 0.0);	// 0 to 1 (reflectance)
 	}
 
-	pBand->Set_Unit("Percent");
-
-	//-----------------------------------------------------
-	double	Offset	= Info_Band.asDouble("REFLECTANCE_ADD");
-	double	Scale	= Info_Band.asDouble("REFLECTANCE_MUL");
-
-	SunHeight	= sin(SunHeight * M_DEG_TO_RAD);
+	pBand->Set_Unit(_TL("Reflectance"));
 
 	//-----------------------------------------------------
 	#pragma omp parallel for
@@ -981,7 +1035,9 @@ bool CLandsat_Scene_Import::Get_Reflectance(CSG_Grid *pBand, const CSG_Table_Rec
 		}
 		else
 		{
-			pBand->Set_Value(i, 100.0 * (Offset + Scale * DN.asDouble(i)) / SunHeight);
+			double	r	= (Offset + Scale * DN.asDouble(i)) / SunHeight;
+
+			pBand->Set_Value(i, r < 0. ? 0. : r > 1. ? 1. : r);
 		}
 	}
 
@@ -990,8 +1046,22 @@ bool CLandsat_Scene_Import::Get_Reflectance(CSG_Grid *pBand, const CSG_Table_Rec
 }
 
 //---------------------------------------------------------
-bool CLandsat_Scene_Import::Get_Thermal(CSG_Grid *pBand, const CSG_Table_Record &Info_Band)
+bool CLandsat_Scene_Import::Get_Temperature(CSG_Grid *pBand, const CSG_Table_Record &Info_Band)
 {
+	if( !Info_Band.asString("RADIANCE_ADD") || !Info_Band.asString("RADIANCE_MUL") || !Info_Band.asString("THERMAL_K1") || !Info_Band.asString("THERMAL_K2") )
+	{
+		SG_UI_Msg_Add_Error(CSG_String::Format("%s: %s", pBand->Get_Name(), _TL("failed to derive temperatures")));
+
+		return( false );
+	}
+
+	double	Offset	= Info_Band.asDouble("RADIANCE_ADD");
+	double	Scale	= Info_Band.asDouble("RADIANCE_MUL");
+
+	double	k1		= Info_Band.asDouble("THERMAL_K1");
+	double	k2		= Info_Band.asDouble("THERMAL_K2");
+
+	//-----------------------------------------------------
 	CSG_Grid	DN(*pBand);
 
 	int	Unit	= Parameters("TEMP_UNIT")->asInt();
@@ -1008,13 +1078,6 @@ bool CLandsat_Scene_Import::Get_Thermal(CSG_Grid *pBand, const CSG_Table_Record 
 	}
 
 	pBand->Set_Unit(Unit == 0 ? "Kelvin" : "Celsius");
-
-	//-----------------------------------------------------
-	double	Offset	= Info_Band.asDouble("RADIANCE_ADD");
-	double	Scale	= Info_Band.asDouble("RADIANCE_MUL");
-
-	double	k1		= Info_Band.asDouble("THERMAL_K1");
-	double	k2		= Info_Band.asDouble("THERMAL_K2");
 
 	//-----------------------------------------------------
 	#pragma omp parallel for

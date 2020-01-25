@@ -85,8 +85,6 @@ CWKSP_Shapes_Line::CWKSP_Shapes_Line(CSG_Shapes *pShapes)
 
 ///////////////////////////////////////////////////////////
 //														 //
-//														 //
-//														 //
 ///////////////////////////////////////////////////////////
 
 //---------------------------------------------------------
@@ -94,14 +92,13 @@ void CWKSP_Shapes_Line::On_Create_Parameters(void)
 {
 	CWKSP_Shapes::On_Create_Parameters();
 
-
 	//-----------------------------------------------------
 	// Display...
 
 	m_Parameters.Add_Choice("NODE_DISPLAY",
 		"DISPLAY_POINTS"	, _TL("Show Vertices"),
 		_TL(""),
-		CSG_String::Format("%s|%s|%s|",
+		CSG_String::Format("%s|%s|%s",
 			_TL("no"),
 			_TL("yes"),
 			_TL("with label")
@@ -120,15 +117,16 @@ void CWKSP_Shapes_Line::On_Create_Parameters(void)
 	m_Parameters.Add_Choice("NODE_SIZE",
 		"SIZE_TYPE"			, _TL("Size relates to..."),
 		_TL(""),
-		CSG_String::Format("%s|%s|",
+		CSG_String::Format("%s|%s",
 			_TL("Screen"),
 			_TL("Map Units")
 		), 0
 	);
 
-	AttributeList_Add("NODE_SIZE",
+	m_Parameters.Add_Choice("NODE_SIZE",
 		"SIZE_ATTRIB"		, _TL("Attribute"),
-		_TL("")
+		_TL(""),
+		_TL("<default>")
 	);
 
 	m_Parameters.Add_Range("SIZE_ATTRIB",
@@ -214,16 +212,14 @@ void CWKSP_Shapes_Line::On_Create_Parameters(void)
 
 ///////////////////////////////////////////////////////////
 //														 //
-//														 //
-//														 //
 ///////////////////////////////////////////////////////////
 
 //---------------------------------------------------------
 void CWKSP_Shapes_Line::On_DataObject_Changed(void)
 {
-	CWKSP_Shapes::On_DataObject_Changed();
-
 	AttributeList_Set(m_Parameters("SIZE_ATTRIB"), true);
+
+	CWKSP_Shapes::On_DataObject_Changed();
 }
 
 //---------------------------------------------------------
@@ -242,8 +238,8 @@ void CWKSP_Shapes_Line::On_Parameters_Changed(void)
 	}
 	else
 	{
-		m_Size		= (int)m_Parameters("SIZE_RANGE")->asRange()->Get_LoVal();
-		m_dSize		=     (m_Parameters("SIZE_RANGE")->asRange()->Get_HiVal() - m_Size) / m_dSize;
+		m_Size		= (int)m_Parameters("SIZE_RANGE")->asRange()->Get_Min();
+		m_dSize		=     (m_Parameters("SIZE_RANGE")->asRange()->Get_Max() - m_Size) / m_dSize;
 	}
 
 	//-----------------------------------------------------
@@ -272,8 +268,6 @@ void CWKSP_Shapes_Line::On_Parameters_Changed(void)
 
 ///////////////////////////////////////////////////////////
 //														 //
-//														 //
-//														 //
 ///////////////////////////////////////////////////////////
 
 //---------------------------------------------------------
@@ -282,7 +276,7 @@ int CWKSP_Shapes_Line::On_Parameter_Changed(CSG_Parameters *pParameters, CSG_Par
 	//-----------------------------------------------------
 	if( Flags & PARAMETER_CHECK_ENABLE )
 	{
-		if(	!SG_STR_CMP(pParameter->Get_Identifier(), "SIZE_ATTRIB") )
+		if(	pParameter->Cmp_Identifier("SIZE_ATTRIB") )
 		{
 			bool	Value	= pParameter->asInt() < Get_Shapes()->Get_Field_Count();
 
@@ -290,14 +284,14 @@ int CWKSP_Shapes_Line::On_Parameter_Changed(CSG_Parameters *pParameters, CSG_Par
 			pParameters->Set_Enabled("SIZE_DEFAULT", Value == false);
 		}
 
-		if(	!SG_STR_CMP(pParameter->Get_Identifier(), "LABEL_STYLE") )
+		if(	pParameter->Cmp_Identifier("LABEL_STYLE") )
 		{
 			pParameters->Set_Enabled("LABEL_ALIGN"    , pParameter->asInt() == 2 || pParameter->asInt() == 3);
 			pParameters->Set_Enabled("LABEL_ORIENT"   , pParameter->asInt() == 2 || pParameter->asInt() == 3);
 			pParameters->Set_Enabled("LABEL_FREQUENCY", pParameter->asInt() == 3);
 		}
 
-		if(	!SG_STR_CMP(pParameter->Get_Identifier(), "BOUNDARY_EFFECT") )
+		if(	pParameter->Cmp_Identifier("BOUNDARY_EFFECT") )
 		{
 			pParameters->Set_Enabled("BOUNDARY_EFFECT_COLOR", pParameter->asInt() != 0);
 		}
@@ -308,8 +302,6 @@ int CWKSP_Shapes_Line::On_Parameter_Changed(CSG_Parameters *pParameters, CSG_Par
 
 
 ///////////////////////////////////////////////////////////
-//														 //
-//														 //
 //														 //
 ///////////////////////////////////////////////////////////
 
@@ -336,8 +328,6 @@ bool CWKSP_Shapes_Line::Get_Style_Size(int &min_Size, int &max_Size, double &min
 
 
 ///////////////////////////////////////////////////////////
-//														 //
-//														 //
 //														 //
 ///////////////////////////////////////////////////////////
 
@@ -443,11 +433,11 @@ void CWKSP_Shapes_Line::_Draw_Shape(CWKSP_Map_DC &dc_Map, CSG_Shape *pShape, int
 	{
 		if( pShape->Get_Point_Count(iPart) > 1 )
 		{
-			TSG_Point_Int	B, A	= dc_Map.World2DC(pShape->Get_Point(0, iPart)); A.x += xOffset; A.y += yOffset;
+			TSG_Point_Int A = dc_Map.World2DC(pShape->Get_Point(0, iPart)); A.x += xOffset; A.y += yOffset;
 
 			for(int iPoint=1; iPoint<pShape->Get_Point_Count(iPart); iPoint++)
 			{
-				B	= A;	A	= dc_Map.World2DC(pShape->Get_Point(iPoint, iPart)); A.x += xOffset; A.y += yOffset;
+				TSG_Point_Int B = A; A = dc_Map.World2DC(pShape->Get_Point(iPoint, iPart)); A.x += xOffset; A.y += yOffset;
 
 				dc_Map.dc.DrawLine(A.x, A.y, B.x, B.y);
 			}
@@ -577,8 +567,6 @@ void CWKSP_Shapes_Line::Draw_Label(CWKSP_Map_DC &dc_Map, CSG_Shape *pShape, cons
 
 ///////////////////////////////////////////////////////////
 //														 //
-//														 //
-//														 //
 ///////////////////////////////////////////////////////////
 
 //---------------------------------------------------------
@@ -624,28 +612,21 @@ void CWKSP_Shapes_Line::Edit_Shape_Draw_Move(wxDC &dc, const CSG_Rect &rWorld, c
 //---------------------------------------------------------
 void CWKSP_Shapes_Line::Edit_Shape_Draw(CWKSP_Map_DC &dc_Map)
 {
-	int			iPart, iPoint;
-	TSG_Point_Int	ptA, ptB;
-
 	if( m_Edit_pShape )
 	{
+		if( m_Edit_bGleam )
+		{
+			dc_Map.dc.SetPen(wxPen(m_Edit_Color, 3));
+			dc_Map.dc.SetLogicalFunction(wxINVERT);
+
+			_Draw_Shape(dc_Map, m_Edit_pShape);
+
+			dc_Map.dc.SetLogicalFunction(wxCOPY);
+		}
+
 		dc_Map.dc.SetPen(wxPen(m_Edit_Color));
 
-		for(iPart=0; iPart<m_Edit_pShape->Get_Part_Count(); iPart++)
-		{
-			if( m_Edit_pShape->Get_Point_Count(iPart) > 1 )
-			{
-				ptA		= dc_Map.World2DC(m_Edit_pShape->Get_Point(0, iPart));
-
-				for(iPoint=1; iPoint<m_Edit_pShape->Get_Point_Count(iPart); iPoint++)
-				{
-					ptB		= ptA;
-					ptA		= dc_Map.World2DC(m_Edit_pShape->Get_Point(iPoint, iPart));
-
-					dc_Map.dc.DrawLine(ptA.x, ptA.y, ptB.x, ptB.y);
-				}
-			}
-		}
+		_Draw_Shape(dc_Map, m_Edit_pShape);
 
 		CWKSP_Shapes::Edit_Shape_Draw(dc_Map);
 	}

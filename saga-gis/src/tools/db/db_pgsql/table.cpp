@@ -269,7 +269,7 @@ CTable_Save::CTable_Save(void)
 	Parameters.Add_Choice("",
 		"EXISTS"	, _TL("If table exists..."),
 		_TL(""),
-		CSG_String::Format("%s|%s|%s|",
+		CSG_String::Format("%s|%s|%s",
 			_TL("abort export"),
 			_TL("replace existing table"),
 			_TL("append records, if table structure allows")
@@ -280,9 +280,16 @@ CTable_Save::CTable_Save(void)
 //---------------------------------------------------------
 int CTable_Save::On_Parameter_Changed(CSG_Parameters *pParameters, CSG_Parameter *pParameter)
 {
-	if( !SG_STR_CMP(pParameter->Get_Identifier(), "TABLE") )
+	if( pParameter->Cmp_Identifier("TABLE") )
 	{
-		pParameters->Get_Parameter("NAME")->Set_Value(pParameter->asTable() ? pParameter->asTable()->Get_Name() : SG_T(""));
+		if( pParameter->asTable() )
+		{
+			pParameters->Set_Parameter("NAME", CSG_PG_Connection::Make_Table_Name(pParameter->asTable()->Get_Name()));
+		}
+		else
+		{
+			pParameters->Set_Parameter("NAME", "");
+		}
 	}
 
 	return( CSG_PG_Tool::On_Parameter_Changed(pParameters, pParameter) );
@@ -303,7 +310,7 @@ bool CTable_Save::On_Execute(void)
 	//-----------------------------------------------------
 	if( Get_Connection()->Table_Exists(Name) )
 	{
-		Message_Add(CSG_String::Format("%s: %s", _TL("table already exists"), Name.c_str()));
+		Message_Fmt("\n%s: %s", _TL("table already exists"), Name.c_str());
 
 		switch( Parameters("EXISTS")->asInt() )
 		{
@@ -311,11 +318,11 @@ bool CTable_Save::On_Execute(void)
 			break;
 
 		case 1:	// replace existing table
-			Message_Add(CSG_String::Format("%s: %s", _TL("dropping table"), Name.c_str()));
+			Message_Fmt("\n%s: %s", _TL("dropping table"), Name.c_str());
 
 			if( !Get_Connection()->Table_Drop(Name, false) )
 			{
-				Message_Add(CSG_String::Format(" ...%s!", _TL("failed")));
+				Message_Fmt("...%s!", _TL("failed"));
 			}
 			else
 			{
@@ -324,11 +331,11 @@ bool CTable_Save::On_Execute(void)
 			break;
 
 		case 2:	// append records, if table structure allows
-			Message_Add(CSG_String::Format("%s: %s", _TL("appending to existing table"), Name.c_str()));
+			Message_Fmt("\n%s: %s", _TL("appending to existing table"), Name.c_str());
 
 			if( !(bResult = Get_Connection()->Table_Insert(Name, *pTable)) )
 			{
-				Message_Add(CSG_String::Format(" ...%s!", _TL("failed")));
+				Message_Fmt("...%s!", _TL("failed"));
 			}
 			break;
 		}
@@ -507,7 +514,7 @@ void CTable_Query_GUI::On_Connection_Changed(CSG_Parameters *pParameters)
 //---------------------------------------------------------
 int CTable_Query_GUI::On_Parameter_Changed(CSG_Parameters *pParameters, CSG_Parameter *pParameter)
 {
-	if( !SG_STR_CMP(pParameter->Get_Identifier(), "TABLES") )
+	if( pParameter->Cmp_Identifier("TABLES") )
 	{
 		CSG_Parameters	&Tables	= *pParameters->Get_Parameter("TABLES")->asParameters();
 		CSG_Parameters	&Fields	= *pParameters->Get_Parameter("FIELDS")->asParameters();

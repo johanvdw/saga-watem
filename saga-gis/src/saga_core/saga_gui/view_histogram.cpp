@@ -83,7 +83,7 @@
 #include "view_histogram.h"
 
 //---------------------------------------------------------
-#define IS_BAND_WISE_FIT(pLayer)	(m_pLayer->Get_Type() == WKSP_ITEM_Grids && m_pLayer->Get_Classifier()->Get_Mode() == CLASSIFY_OVERLAY && m_pLayer->Get_Parameter("OVERLAY_STATISTICS")->asInt() != 0)
+#define IS_BAND_WISE_FIT(pLayer)	(m_pLayer->Get_Type() == WKSP_ITEM_Grids && m_pLayer->Get_Classifier()->Get_Mode() == CLASSIFY_OVERLAY && m_pLayer->Get_Parameter("OVERLAY_FIT")->asInt() != 0)
 
 
 ///////////////////////////////////////////////////////////
@@ -156,7 +156,7 @@ wxToolBarBase * CVIEW_Histogram::_Create_ToolBar(void)
 
 	CMD_ToolBar_Add_Item(pToolBar, true , ID_CMD_HISTOGRAM_CUMULATIVE);
 	CMD_ToolBar_Add_Item(pToolBar, false, ID_CMD_HISTOGRAM_AS_TABLE);
-//	CMD_ToolBar_Add_Item(pToolBar, false, ID_CMD_HISTOGRAM_TO_CLIPBOARD);
+	CMD_ToolBar_Add_Item(pToolBar, false, ID_CMD_HISTOGRAM_TO_CLIPBOARD);
 
 	CMD_ToolBar_Add(pToolBar, _TL("Histogram"));
 
@@ -256,13 +256,9 @@ void CVIEW_Histogram::Draw_Frame(wxDC &dc, wxRect r)
 	}
 
 	//-----------------------------------------------------
-	int	Maximum	= m_bCumulative
-		? Histogram.Get_Element_Count  ()
-		: Histogram.Get_Element_Maximum();
-
-	if( Maximum > 0 )
+	if( Histogram.Get_Element_Maximum() > 0 )
 	{
-		Draw_Scale(dc, wxRect(r.GetLeft() - 20, r.GetTop(), 20, r.GetHeight()), 0, Maximum, false, false, false);
+		Draw_Scale(dc, wxRect(r.GetLeft() - 20, r.GetTop(), 20, r.GetHeight()), 0, m_bCumulative ? 100 : Histogram.Get_Element_Maximum(), false, false, false);
 	}
 
 	//-----------------------------------------------------
@@ -407,17 +403,10 @@ void CVIEW_Histogram::On_Mouse_LUp(wxMouseEvent &event)
 
 		wxRect	r(Draw_Get_rDiagram(wxRect(wxPoint(0, 0), GetClientSize())));
 
-		CWKSP_Layer_Classify	*pClassify	= m_pLayer->Get_Classifier();
-
-		double	Minimum	= pClassify->Get_RelativeToMetric((double)(m_Mouse_Down.x - r.GetLeft()) / (double)r.GetWidth());
-		double	Maximum	= pClassify->Get_RelativeToMetric((double)(m_Mouse_Move.x - r.GetLeft()) / (double)r.GetWidth());
-
-		m_pLayer->Get_Parameter("METRIC_ZRANGE")->asRange()->Set_Range(Minimum, Maximum);
-		pClassify->Set_Metric(pClassify->Get_Metric_Mode(), pClassify->Get_Metric_Mode(), Minimum, Maximum);
-		g_pACTIVE->Update(m_pLayer, false);
-		m_pLayer->Update_Views();
-
-	//	m_pLayer->Set_Color_Range(Minimum, Maximum);
+		m_pLayer->Set_Color_Range(
+			m_pLayer->Get_Classifier()->Get_RelativeToMetric((double)(m_Mouse_Down.x - r.GetLeft()) / (double)r.GetWidth()),
+			m_pLayer->Get_Classifier()->Get_RelativeToMetric((double)(m_Mouse_Move.x - r.GetLeft()) / (double)r.GetWidth())
+		);
 	}
 }
 
@@ -502,7 +491,7 @@ void CVIEW_Histogram::On_AsTable(wxCommandEvent &event)
 
 		CSG_Table	*pTable	= new CSG_Table;
 
-		pTable->Set_Name(CSG_String::Format("%s: %s", _TL("Histogram"), pObject->Get_Name()));
+		pTable->Fmt_Name("%s: %s", _TL("Histogram"), pObject->Get_Name());
 
 		pTable->Add_Field(_TL("CLASS" ), SG_DATATYPE_Int   );
 		pTable->Add_Field(_TL("AREA"  ), SG_DATATYPE_Double);

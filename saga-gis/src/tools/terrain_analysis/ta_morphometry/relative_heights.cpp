@@ -235,10 +235,10 @@ bool CRelative_Heights::Get_Heights_Catchment(CSG_Grid *pDEM, CSG_Grid *pH, doub
 	//-----------------------------------------------------
 	Process_Set_Text(_TL("Relative heights calculation..."));
 
-	C  .Create(*Get_System());
-	W  .Create(*Get_System());
+	C  .Create(Get_System());
+	W  .Create(Get_System());
 
-	C  .Assign(Get_System()->Get_Cellarea());
+	C  .Assign(Get_Cellarea());
 	W  .Assign(0.0);
 	pH->Assign(0.0);
 
@@ -394,7 +394,7 @@ bool CRelative_Heights::Get_Heights_Modified(CSG_Grid *pDEM, CSG_Grid *pH, doubl
 			}
 		}
 
-		Process_Set_Text(CSG_String::Format(SG_T("pass %d (%d > 0)"), Iteration, nChanges));
+		Process_Set_Text("%s %d (%d > 0)", _TL("pass"), Iteration, nChanges);
 	}
 
 	//-----------------------------------------------------

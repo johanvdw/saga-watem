@@ -5,7 +5,7 @@ if DEBUG
 DBGFLAGS = -g -DDEBUG
 endif
 
-DEF_SAGA           = -D_SAGA_LINUX -D_TYPEDEF_BYTE -D_TYPEDEF_WORD -D_SAGA_UNICODE
+DEF_SAGA           = -D_SAGA_LINUX -D_TYPEDEF_BYTE -D_TYPEDEF_WORD
 CXX_INCS           = -I$(top_srcdir)/src/saga_core
 AM_CXXFLAGS        = -fPIC $(CXX_INCS) $(DEF_SAGA) $(DBGFLAGS) $(GOMPFLAGS)
 AM_LDFLAGS         = -fPIC -shared -avoid-version 
@@ -20,6 +20,7 @@ frost_change_frequency.cpp\
 grid_levels_interpolation.cpp\
 growing_degree_days.cpp\
 milankovic.cpp\
+phenips.cpp\
 MLB_Interface.cpp\
 snow_cover.cpp\
 thermal_belts.cpp\
@@ -34,6 +35,7 @@ frost_change_frequency.h\
 grid_levels_interpolation.h\
 growing_degree_days.h\
 milankovic.h\
+phenips.h\
 MLB_Interface.h\
 snow_cover.h\
 thermal_belts.h\

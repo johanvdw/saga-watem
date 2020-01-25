@@ -161,7 +161,7 @@ CShapes_Save::CShapes_Save(void)
 	Parameters.Add_Choice(NULL,
 		"EXISTS"	, _TL("If table exists..."),
 		_TL(""),
-		CSG_String::Format("%s|%s|%s|",
+		CSG_String::Format("%s|%s|%s",
 			_TL("abort export"),
 			_TL("replace existing table"),
 			_TL("append records, if table structure allows")
@@ -174,16 +174,25 @@ CShapes_Save::CShapes_Save(void)
 //---------------------------------------------------------
 int CShapes_Save::On_Parameter_Changed(CSG_Parameters *pParameters, CSG_Parameter *pParameter)
 {
-	if( !SG_STR_CMP(pParameter->Get_Identifier(), "SHAPES") )
+	if( pParameter->Cmp_Identifier("NAME") )
 	{
-		CSG_Shapes	*pShapes	= pParameter->asShapes() ? pParameter->asShapes() : NULL;
+		pParameter->Set_Value(CSG_PG_Connection::Make_Table_Name(pParameter->asString()));
+	}
 
-		if( pShapes && *pShapes->Get_Name() )
+	if( pParameter->Cmp_Identifier("SHAPES") )
+	{
+		if( pParameter->asShapes() )
 		{
-			pParameters->Get_Parameter("NAME")->Set_Value(pShapes->Get_Name());
-		}
+			pParameters->Set_Parameter("NAME", CSG_PG_Connection::Make_Table_Name(pParameter->asShapes()->Get_Name()));
 
-		Set_SRID(pParameters, pShapes ? pShapes->Get_Projection().Get_EPSG() : -1);
+			Set_SRID(pParameters, pParameter->asShapes()->Get_Projection().Get_EPSG());
+		}
+		else
+		{
+			pParameters->Set_Parameter("NAME", "");
+
+			Set_SRID(pParameters, -1);
+		}
 	}
 
 	return( CSG_PG_Tool::On_Parameter_Changed(pParameters, pParameter) );
@@ -288,7 +297,7 @@ bool CShapes_Save::On_Execute(void)
 
 	for(iField=0; iField<pShapes->Get_Field_Count(); iField++)
 	{
-		Insert	+= CSG_String(", ") + pShapes->Get_Field_Name(iField);
+		Insert	+= CSG_String(", ") + CSG_PG_Connection::Make_Table_Field_Name(pShapes, iField);
 	}
 
 	Insert	+= ") VALUES (";
@@ -326,15 +335,8 @@ bool CShapes_Save::On_Execute(void)
 				switch( pShapes->Get_Field_Type(iField) )
 				{
 				case SG_DATATYPE_String:
-				case SG_DATATYPE_Date:
-					if( 1 )
-					{
-						char	*_s	= NULL; if( s.to_ASCII(&_s) ) s = _s; SG_FREE_SAFE(_s);
-					}
-
-					s.Replace("'", "\"");
-
-					s	= "'" + s + "'";
+				case SG_DATATYPE_Date  :
+					s.Replace("'", "\"");	s	= "'" + s + "'";
 					break;
 				}
 
@@ -349,7 +351,7 @@ bool CShapes_Save::On_Execute(void)
 			}
 			else
 			{
-				Message_Add(CSG_String::Format("%s [%d/%d]", _TL("could not save shape"), 1 + iShape, pShapes->Get_Count()));
+				Message_Fmt("\n%s [%d/%d]", _TL("could not save shape"), 1 + iShape, pShapes->Get_Count());
 			}
 		}
 	}
@@ -519,14 +521,14 @@ void CShapes_Join::On_Connection_Changed(CSG_Parameters *pParameters)
 //---------------------------------------------------------
 int CShapes_Join::On_Parameter_Changed(CSG_Parameters *pParameters, CSG_Parameter *pParameter)
 {
-	if( !SG_STR_CMP(pParameter->Get_Identifier(),  "GEO_TABLE")
-	||  !SG_STR_CMP(pParameter->Get_Identifier(), "JOIN_TABLE") )
+	if( pParameter->Cmp_Identifier( "GEO_TABLE")
+	||  pParameter->Cmp_Identifier("JOIN_TABLE") )
 	{
 		Update_Fields(pParameters,  true);
 		Update_Fields(pParameters, false);
 	}
 
-	if( !SG_STR_CMP(pParameters->Get_Identifier(), "FIELDS") && !pParameter->Get_Parent() )
+	if( pParameters->Cmp_Identifier("FIELDS") && !pParameter->Get_Parent() )
 	{
 		for(int i=0; i<pParameter->Get_Children_Count(); i++)
 		{

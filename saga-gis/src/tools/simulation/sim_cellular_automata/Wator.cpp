@@ -257,7 +257,7 @@ bool CWator::On_Execute(void)
 
 	for(i=1; Process_Get_Okay(true) && Next_Cycle(); i++)
 	{
-		Process_Set_Text(CSG_String::Format("%s: %d", _TL("Life Cycle"), i));
+		Process_Set_Text("%s: %d", _TL("Life Cycle"), i);
 
 		CSG_Table_Record	*pRecord	= pTable->Add_Record();
 
@@ -278,7 +278,7 @@ bool CWator::On_Execute(void)
 
 	if( is_Progress() )
 	{
-		Message_Add(CSG_String::Format("%s %d %s", _TL("Dead after"), i, _TL("Life Cycles")));
+		Message_Fmt("\n%s %d %s", _TL("Dead after"), i, _TL("Life Cycles"));
 	}
 
 	return( true );

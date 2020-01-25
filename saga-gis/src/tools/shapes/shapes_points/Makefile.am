@@ -5,7 +5,7 @@ if DEBUG
 DBGFLAGS = -g -DDEBUG
 endif
 
-DEF_SAGA           = -D_SAGA_LINUX -D_TYPEDEF_BYTE -D_TYPEDEF_WORD -D_SAGA_UNICODE
+DEF_SAGA           = -D_SAGA_LINUX -D_TYPEDEF_BYTE -D_TYPEDEF_WORD
 CXX_INCS           = -I$(top_srcdir)/src/saga_core
 AM_CXXFLAGS        = -fPIC $(CXX_INCS) $(DEF_SAGA) $(DBGFLAGS) $(GOMPFLAGS)
 AM_LDFLAGS         = -fPIC -shared -avoid-version
@@ -25,6 +25,7 @@ points_filter.cpp\
 Points_From_Lines.cpp\
 Points_From_Table.cpp\
 points_thinning.cpp\
+random_points.cpp\
 remove_duplicates.cpp\
 select_points.cpp\
 separate_by_direction.cpp\
@@ -45,6 +46,7 @@ points_filter.h\
 Points_From_Lines.h\
 Points_From_Table.h\
 points_thinning.h\
+random_points.h\
 remove_duplicates.h\
 select_points.h\
 separate_by_direction.h\

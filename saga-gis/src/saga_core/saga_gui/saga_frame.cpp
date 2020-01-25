@@ -310,24 +310,29 @@ CSAGA_Frame::CSAGA_Frame(void)
 	m_pLayout->SetFlags(m_pLayout->GetFlags() ^ wxAUI_MGR_TRANSPARENT_DRAG);
 //	m_pLayout->SetFlags(m_pLayout->GetFlags() ^ wxAUI_MGR_ALLOW_ACTIVE_PANE);
 
+	m_pLayout->GetPane(GetClientWindow()).Show().Center();
+
 	//-----------------------------------------------------
 	_Bar_Add(m_pINFO        = new CINFO       (this), 0, 0); m_pINFO       ->Add_Pages();
 	_Bar_Add(m_pWKSP        = new CWKSP       (this), 2, 1); m_pWKSP       ->Add_Pages();
 	_Bar_Add(m_pData_Source = new CData_Source(this), 2, 1); m_pData_Source->Add_Pages();
-	_Bar_Add(m_pActive      = new CACTIVE     (this), 2, 0); m_pActive     ->Add_Pages();
+	_Bar_Add(m_pActive      = new CActive     (this), 2, 0); m_pActive     ->Add_Pages();
 
 	//-----------------------------------------------------
 	_Create_MenuBar();
 
 	//-----------------------------------------------------
-	m_pLayout->GetPane(GetClientWindow()).Show().Center();
-
 	wxString	s;
 
 	if( CONFIG_Read("/FL", "MANAGER", s) )
 	{
-		m_pLayout->LoadPerspective(s);
+		m_pLayout->LoadPerspective(s, false);
 	}
+
+	Set_Pane_Caption(m_pINFO       , m_pINFO       ->GetName());	// captions might have been modified by perspective, so update again...
+	Set_Pane_Caption(m_pWKSP       , m_pWKSP       ->GetName());
+	Set_Pane_Caption(m_pData_Source, m_pData_Source->GetName());
+	Set_Pane_Caption(m_pActive     , m_pActive     ->GetName());
 
 	//-----------------------------------------------------
 	m_pTB_Main			=                      _Create_ToolBar();
@@ -621,7 +626,7 @@ void CSAGA_Frame::On_Frame_Split_UI(wxUpdateUIEvent &event)
 void CSAGA_Frame::Tile(wxOrientation orient)
 {
 #ifndef MDI_TABBED
-	int		n	= Get_Children_Count();
+	int		n	= _Get_MDI_Children_Count();
 
 	if( n == 1 && GetActiveChild() )
 	{
@@ -1019,7 +1024,7 @@ void CSAGA_Frame::Close_Children(void)
 }
 
 //---------------------------------------------------------
-int CSAGA_Frame::Get_Children_Count(void)
+int CSAGA_Frame::_Get_MDI_Children_Count(void)
 {
 #ifdef MDI_TABBED
 	return( GetNotebook()->GetPageCount() );
@@ -1041,11 +1046,16 @@ int CSAGA_Frame::Get_Children_Count(void)
 //---------------------------------------------------------
 void CSAGA_Frame::On_Child_Activates(int View_ID)
 {
-	if( View_ID < 0 && Get_Children_Count() > 1 )	// another child will be activated next!
+#ifdef MDI_TABBED
+	if( View_ID < 0 && GetNotebook()->GetPageCount() > 0 )	// child view closes, but it's not the last one
+#else
+	if( View_ID < 0 && _Get_MDI_Children_Count    () > 1 )	// child view closes, but it's not the last one
+#endif
 	{
-		return;
+		return;	// nothing to do, another child will be activated next!
 	}
 
+	//-----------------------------------------------------
 	wxString		Title;
 	wxMenu			*pMenu		= NULL;
 	wxToolBarBase	*pToolBar	= NULL;

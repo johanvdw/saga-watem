@@ -296,7 +296,7 @@ bool CGrid_Import::On_Execute(void)
 			pImage->Get_Projection().Load(SG_File_Make_Path("", fImage, "prj"));
 			Parameters("OUT_GRID")->Set_Value(pImage);
 			DataObject_Set_Colors(pImage, 100, SG_COLORS_BLACK_WHITE);
-			DataObject_Set_Parameter(pImage, "COLORS_TYPE", 6);	// Color Classification Type: RGB
+			DataObject_Set_Parameter(pImage, "COLORS_TYPE", 5);	// Color Classification Type: RGB Coded Values
 		}
 
 		//-------------------------------------------------
@@ -322,9 +322,9 @@ bool CGrid_Import::On_Execute(void)
 			pG->Get_Projection().Load(fImage, SG_PROJ_FMT_WKT);
 			pB->Get_Projection().Load(fImage, SG_PROJ_FMT_WKT);
 
-			pR->Set_Name(CSG_String::Format("%s [R]", Name.c_str()));
-			pG->Set_Name(CSG_String::Format("%s [G]", Name.c_str()));
-			pB->Set_Name(CSG_String::Format("%s [B]", Name.c_str()));
+			pR->Fmt_Name("%s [R]", Name.c_str());
+			pG->Fmt_Name("%s [G]", Name.c_str());
+			pB->Fmt_Name("%s [B]", Name.c_str());
 
 			pR->Get_Projection().Load(SG_File_Make_Path("", fImage, "prj"));
 			pG->Get_Projection().Load(SG_File_Make_Path("", fImage, "prj"));

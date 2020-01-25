@@ -108,7 +108,7 @@
       <Optimization>MaxSpeed</Optimization>
       <InlineFunctionExpansion>OnlyExplicitInline</InlineFunctionExpansion>
       <AdditionalIncludeDirectories>./..;.;$(WXWIN_32)/include;$(WXWIN_32)/lib/vc_dll/mswu;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>_WINDOWS;NOPCH;WIN32;__WXMSW__;WXUSINGDLL;_TYPEDEF_BYTE;_TYPEDEF_WORD;_SAGA_MSW;_SAGA_UNICODE;MDI_NOT_TABBED;%(PreprocessorDefinitions);_CRT_SECURE_NO_WARNINGS</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_WINDOWS;NOPCH;WIN32;__WXMSW__;WXUSINGDLL;_TYPEDEF_BYTE;_TYPEDEF_WORD;_SAGA_MSW;MDI_NOT_TABBED;%(PreprocessorDefinitions);_CRT_SECURE_NO_WARNINGS</PreprocessorDefinitions>
       <StringPooling>true</StringPooling>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
       <FunctionLevelLinking>true</FunctionLevelLinking>
@@ -177,7 +177,7 @@ copy ..\..\accessories\toolchains\*.xml $(OutDir)\tools\toolchains
       <AdditionalOptions>/EHsc  %(AdditionalOptions)</AdditionalOptions>
       <Optimization>Disabled</Optimization>
       <AdditionalIncludeDirectories>./..;.;$(WXWIN_32)/include;$(WXWIN_32)/lib/vc_dll/mswud;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>_WINDOWS;NOPCH;WIN32;_DEBUG;__WXMSW__;WXUSINGDLL;__WXDEBUG__;_TYPEDEF_BYTE;_TYPEDEF_WORD;_SAGA_MSW;_SAGA_UNICODE;MDI_NOT_TABBED;%(PreprocessorDefinitions);_CRT_SECURE_NO_WARNINGS</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_WINDOWS;NOPCH;WIN32;_DEBUG;__WXMSW__;WXUSINGDLL;__WXDEBUG__;_TYPEDEF_BYTE;_TYPEDEF_WORD;_SAGA_MSW;MDI_NOT_TABBED;%(PreprocessorDefinitions);_CRT_SECURE_NO_WARNINGS</PreprocessorDefinitions>
       <MinimalRebuild>true</MinimalRebuild>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
       <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
@@ -248,7 +248,7 @@ copy ..\..\accessories\toolchains\*.xml $(OutDir)\tools\toolchains
       <Optimization>MaxSpeed</Optimization>
       <InlineFunctionExpansion>OnlyExplicitInline</InlineFunctionExpansion>
       <AdditionalIncludeDirectories>./..;.;$(WXWIN)/include;$(WXWIN)/lib/vc_x64_dll/mswu;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>_WINDOWS;NOPCH;WIN32;__WXMSW__;WXUSINGDLL;_TYPEDEF_BYTE;_TYPEDEF_WORD;_SAGA_MSW;_SAGA_UNICODE;MDI_NOT_TABBED;%(PreprocessorDefinitions);_CRT_SECURE_NO_WARNINGS</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_WINDOWS;NOPCH;WIN32;__WXMSW__;WXUSINGDLL;_TYPEDEF_BYTE;_TYPEDEF_WORD;_SAGA_MSW;MDI_NOT_TABBED;%(PreprocessorDefinitions);_CRT_SECURE_NO_WARNINGS</PreprocessorDefinitions>
       <StringPooling>true</StringPooling>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
       <FunctionLevelLinking>true</FunctionLevelLinking>
@@ -317,7 +317,7 @@ copy ..\..\accessories\toolchains\*.xml $(OutDir)\tools\toolchains
       <AdditionalOptions>/EHsc  %(AdditionalOptions)</AdditionalOptions>
       <Optimization>Disabled</Optimization>
       <AdditionalIncludeDirectories>./..;.;$(WXWIN)/include;$(WXWIN)/lib/vc_x64_dll/mswud;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>_WINDOWS;NOPCH;WIN32;_DEBUG;__WXMSW__;WXUSINGDLL;__WXDEBUG__;_TYPEDEF_BYTE;_TYPEDEF_WORD;_SAGA_MSW;_SAGA_UNICODE;%(PreprocessorDefinitions);_CRT_SECURE_NO_WARNINGS</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_WINDOWS;NOPCH;WIN32;_DEBUG;__WXMSW__;WXUSINGDLL;__WXDEBUG__;_TYPEDEF_BYTE;_TYPEDEF_WORD;_SAGA_MSW;%(PreprocessorDefinitions);_CRT_SECURE_NO_WARNINGS</PreprocessorDefinitions>
       <MinimalRebuild>true</MinimalRebuild>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
       <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
@@ -405,6 +405,7 @@ copy ..\..\accessories\toolchains\*.xml $(OutDir)\tools\toolchains
       <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Release|x64'">%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <ClCompile Include="active_history.cpp" />
+    <ClCompile Include="active_info.cpp" />
     <ClCompile Include="active_legend.cpp">
       <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">%(PreprocessorDefinitions)</PreprocessorDefinitions>
@@ -1142,6 +1143,7 @@ copy ..\..\accessories\toolchains\*.xml $(OutDir)\tools\toolchains
     <ClInclude Include="active_attributes_control.h" />
     <ClInclude Include="active_Description.h" />
     <ClInclude Include="active_history.h" />
+    <ClInclude Include="active_info.h" />
     <ClInclude Include="active_legend.h" />
     <ClInclude Include="active_parameters.h" />
     <ClInclude Include="callback.h" />
@@ -1250,6 +1252,7 @@ copy ..\..\accessories\toolchains\*.xml $(OutDir)\tools\toolchains
     <None Include="RES\XPM\DEFAULT.xpm" />
     <None Include="RES\XPM\NB_ACTIVE_ATTRIBUTES.xpm" />
     <None Include="RES\XPM\NB_ACTIVE_DESCRIPTION.xpm" />
+    <None Include="res\xpm\nb_active_history.xpm" />
     <None Include="res\xpm\nb_active_htmlextrainfo.xpm" />
     <None Include="res\xpm\NB_ACTIVE_LEGEND.xpm" />
     <None Include="RES\XPM\NB_ACTIVE_PARAMETERS.xpm" />
@@ -1263,6 +1266,7 @@ copy ..\..\accessories\toolchains\*.xml $(OutDir)\tools\toolchains
     <None Include="RES\XPM\SAGA_ICON_32.xpm" />
     <None Include="RES\XPM\SAGA_SPLASH.xpm" />
     <None Include="RES\XPM\TB_ACTIVE.xpm" />
+    <None Include="res\xpm\tb_clipboard.xpm" />
     <None Include="RES\XPM\TB_DELETE.xpm" />
     <None Include="RES\XPM\TB_DIAGRAM_PARAMETERS.xpm" />
     <None Include="RES\XPM\TB_EDIT_SHAPE_ADD.xpm" />
@@ -1325,6 +1329,7 @@ copy ..\..\accessories\toolchains\*.xml $(OutDir)\tools\toolchains
     <None Include="RES\XPM\TB_TABLE_ROW_DEL.xpm" />
     <None Include="res\xpm\tb_table_row_del_all.xpm" />
     <None Include="RES\XPM\TB_TABLE_ROW_INS.xpm" />
+    <None Include="res\xpm\tb_update.xpm" />
     <None Include="RES\XPM\TB_WKSP.xpm" />
     <None Include="RES\XPM\WKSP_DATA_MANAGER.xpm" />
     <None Include="RES\XPM\WKSP_GRID.xpm" />
