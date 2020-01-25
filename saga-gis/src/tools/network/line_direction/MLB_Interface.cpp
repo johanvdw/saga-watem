@@ -79,16 +79,16 @@ CSG_String Get_Info(int i)
 		return( _TL("Grid") );
 
 	case TLB_INFO_Author:
-		return( SG_T("O. Conrad (c) 2002-10") );
+        return( SG_T("J. Van de Wauw (c) 2019") );
 
 	case TLB_INFO_Description:
-		return( _TL("Tools for the gridding of points and other vector data.") );
+        return( _TL("Topology grid tools") );
 
 	case TLB_INFO_Version:
 		return( SG_T("1.0") );
 
 	case TLB_INFO_Menu_Path:
-		return( _TL("Network") );
+        return( _TL("Topologize") );
 	}
 }
 

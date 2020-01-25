@@ -13,10 +13,12 @@
 //                                                       //
 //-------------------------------------------------------//
 //                                                       //
-//                    Shapes2Grid.cpp                    //
+//                  LineDirection.cpp                    //
 //                                                       //
-//                 Copyright (C) 2003 by                 //
-//                      Olaf Conrad                      //
+//                 Copyright (C) 2019 by                 //
+//                  Johan Van de Wauw                    //
+//               based on Shapes2grid.cpp by             //
+//                  Olaf Conrad (c) 2003                 //
 //                                                       //
 //-------------------------------------------------------//
 //                                                       //
@@ -90,10 +92,10 @@ CLineDirection::CLineDirection(void)
 	//-----------------------------------------------------
 	Set_Name		(_TL("Line Direction"));
 
-	Set_Author		("O.Conrad (c) 2003");
+	Set_Author		("Johan Van de Wauw (c) 2019");
 
 	Set_Description	(_TW(
-		"Gridding of a shapes layer. If some shapes are selected, only these will be gridded."
+		"Creates a grid of the direction (fat) of a shapes. "
 	));
 
 	//-----------------------------------------------------
@@ -103,27 +105,14 @@ CLineDirection::CLineDirection(void)
 		PARAMETER_INPUT
 	);
 
+    Parameters.Add_Table_Field("INPUT", "ORDER_FIELD", "Order Field", "Field for order in which the shape will be sorted prior to rasterization.", false);
+
 	//-----------------------------------------------------
 	m_Grid_Target.Create(&Parameters, false, NULL, "TARGET_");
 
 	m_Grid_Target.Add_Grid("GRID" , _TL("Grid")            , false);
 }
 
-
-///////////////////////////////////////////////////////////
-//														 //
-///////////////////////////////////////////////////////////
-
-
-///////////////////////////////////////////////////////////
-//														 //
-///////////////////////////////////////////////////////////
-
-
-
-///////////////////////////////////////////////////////////
-//														 //
-///////////////////////////////////////////////////////////
 
 //---------------------------------------------------------
 
@@ -176,7 +165,7 @@ bool CLineDirection::On_Execute(void)
 
 	if( !pShapes->Get_Extent().Intersects(m_pGrid->Get_Extent()) )
 	{
-		Error_Set(_TL("Polygons' and target grid's extent do not intersect."));
+		Error_Set(_TL("Lines' and target grid's extent do not intersect."));
 
 		return( false );
 	}
@@ -184,23 +173,21 @@ bool CLineDirection::On_Execute(void)
 	m_pGrid->Set_Name(CSG_String::Format("%s [Direction]", pShapes->Get_Name()));
 	m_pGrid->Assign_NoData();
 
+    // sort shape if necessary
+    int sort_field=-1;
+    sort_field = Parameters("ORDER_FIELD")->asInt();
+
+    pShapes->Set_Index(sort_field, TABLE_INDEX_Ascending);
+
 	//-----------------------------------------------------
 	for(int i=0; i<pShapes->Get_Count() && Set_Progress(i, pShapes->Get_Count()); i++)
 	{
-		CSG_Shape	*pShape	= pShapes->Get_Shape(i);
+        CSG_Shape	*pShape;
+        pShape	= sort_field>-1?pShapes->Get_Shape_byIndex(i):pShapes->Get_Shape(i);
 
 		if( pShape->Intersects(m_pGrid->Get_Extent()) )
 		{
-			//double	Value	= Field >= 0 ? pShape->asDouble(Field) : Field == OUTPUT_INDEX ? i + 1 : 1;
-
-			switch( pShapes->Get_Type() )
-			{
-
-			case SHAPE_TYPE_Line:
-                Set_Line	(pShape, false, 0);
-				break;
-
-			}
+                Set_Line	(pShape);
 		}
 
 	}
@@ -239,7 +226,7 @@ inline void CLineDirection::Set_Value(int x, int y, double Value)
 ///////////////////////////////////////////////////////////
 
 //---------------------------------------------------------
-void CLineDirection::Set_Line(CSG_Shape *pShape, bool bFat, double Value)
+void CLineDirection::Set_Line(CSG_Shape *pShape)
 {
 	for(int iPart=0; iPart<pShape->Get_Part_Count(); iPart++)
 	{
@@ -257,16 +244,17 @@ void CLineDirection::Set_Line(CSG_Shape *pShape, bool bFat, double Value)
 			b.x	= X_WORLD_TO_GRID(b.x);
 			b.y	= Y_WORLD_TO_GRID(b.y);
 
-		    Set_Line_Fat(a, b, Value);
-
+		    Set_Line_Fat(a, b);
 
 		}
 	}
 }
 
 //---------------------------------------------------------
-void CLineDirection::Set_Line_Fat(TSG_Point a, TSG_Point b, double Value)
+void CLineDirection::Set_Line_Fat(TSG_Point a, TSG_Point b)
 {
+    double Value;
+
 	TSG_Point_Int	A;	A.x	= (int)(a.x	+= 0.5);	A.y	= (int)(a.y	+= 0.5);
 	TSG_Point_Int	B;	B.x	= (int)(b.x	+= 0.5);	B.y	= (int)(b.y	+= 0.5);
 

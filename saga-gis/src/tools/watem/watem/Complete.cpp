@@ -147,7 +147,7 @@ bool Complete::On_Execute(void)
 	ls->Set_Name("LS_" + connectivity_string);
 
 	// C grid genereren op basis van percelengrid
-	CSG_Grid * C = new CSG_Grid(*Get_System(), SG_DATATYPE_Short); // we use a short to save memory
+	CSG_Grid * C = new CSG_Grid(Get_System(), SG_DATATYPE_Short); // we use a short to save memory
 
 	SG_RUN_TOOL_ExitOnError("watem", 8, //watererosie op basis LS,
 		SG_TOOL_PARAMETER_SET("PRC", Parameters("PRC"))
