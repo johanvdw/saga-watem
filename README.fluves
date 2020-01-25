@@ -32,11 +32,17 @@ Momenteel gehost op percy.gisky.be
 
 volgens userguide op https://help.ubuntu.com/community/CreateAuthenticatedRepository
 
+
+# copy deb to /var/www/html/repo-saga-cnws/amd64
+
 apt-ftparchive packages amd64 > Packages
 gzip -c Packages > Packages.gz
 apt-ftparchive release . > Release
+
+scp percy:/var/www/html/repo-saga-cnws/Release .
 gpg --clearsign -o InRelease Release
 gpg -abs -o Release.gpg Release
+scp  Release.gpg InRelease percy:/var/www/html/repo-saga-cnws/
 
 # Gebruik in ubuntu bionic:
 
