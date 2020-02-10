@@ -31,7 +31,7 @@ steps:
     when:
       branch:
         - master
-        - saga_watem
+        - saga-watem
       event:
         exclude:
           - pull_request
