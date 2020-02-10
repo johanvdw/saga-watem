@@ -1,0 +1,36 @@
+---
+kind: pipeline
+type: docker
+name: saga-watem
+
+steps:
+  - name: build
+    image: registry.fluves.net/saga-build
+    commands:
+      - cd saga-gis
+      - apt install -y dh-python
+        # not working as debian is unfortunately not in the main dir
+        #- gbp dch --snapshot --ignore-branch --snapshot-number=$DRONE_BUILD_NUMBER
+        # Alternative version
+      - dch --newversion $(dpkg-parsechangelog --show-field Version)+$DRONE_BUILD_NUMBER "Automated build for $DRONE_COMMIT"
+      - debuild -b -us -uc
+      - mkdir package
+      - mv ../saga-watem*amd64* package
+
+  - name: rsync-apt
+    image: drillster/drone-rsync
+    settings:
+      hosts:
+        - noordzee
+      user: droneci
+      key:
+         from_secret: ssh-key
+      source: package
+      include: [ "saga*.deb" ]
+      target: ~/apt/
+    when:
+      branch:
+        - master
+      event:
+        exclude:
+          - pull_request
