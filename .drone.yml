@@ -30,6 +30,7 @@ steps:
     when:
       branch:
         - master
+        - saga-watem
         - drone
       event:
         exclude:
@@ -59,6 +60,7 @@ steps:
     when:
       branch:
         - master
+        - saga-watem
         - drone
       event:
         exclude:
