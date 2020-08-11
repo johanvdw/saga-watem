@@ -23,6 +23,13 @@ sudo dpkg -i ../*saga*deb
 __Note__ If you get the `running debsign failed` error when using the `debuild -b` command, the build can not be signed. This should not 
  be limiting for the installation itself.
 
+To test your installation, run saga from terminal:
+
+```
+saga_cmd
+```
+
+
 --
 Op schelde staat een vagrant instance die gebruikt kan worden:
 cd /home/johan/nashome/armbian/build
