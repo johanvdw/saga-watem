@@ -7,7 +7,7 @@ Use Visual Studio 2015 or more recent and open the file
 You can also look at the `appveyor.yml` file which provides automated builds.
 
 
-### On debian/ubuntu linux:
+## On debian/ubuntu linux:
 
 Make sure you have `debuild` and all build dependencies installed:
 
