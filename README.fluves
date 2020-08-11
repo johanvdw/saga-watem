@@ -1,54 +1,34 @@
-Builden saga:
+# Building saga
+## On windows
 
-Onder windows met Visual Studio 2015 of recenter.
-
-
-Onder linux:
-apt-get build-dep saga
-apt-get devscripts
-
-fakeroot debian/rules binary
-
---
-Op schelde staat een vagrant instance die gebruikt kan worden:
-cd /home/johan/nashome/armbian/build
-vagrant up # start een bionic vm (origineel voor iets anders)
-vagrant ssh #log in op de bionic machine
-## in ubuntu:
-cd saga-watem
-git pull
-# dch -r
-fakeroot debian/rules binary
-
-exit
-vagrant halt
+Make sure you install the libs4saga package and environment variables as outlined in [the saga wiki](https://sourceforge.net/p/saga-gis/wiki/Compiling%20SAGA%20on%20Windows/).
+Use Visual Studio 2015 or more recent and open the file 
+`src/saga-gis/saga.vc14.sln`
+You can also look at the `appveyor.yml` file which provides automated builds.
 
 
----
+## On debian/ubuntu linux:
 
-# repo opzetten
+Make sure you have `debuild` and all build dependencies installed:
 
-Momenteel gehost op percy.gisky.be
+```
+sudo apt install devscripts build-essential lintian
+sudo apt build-dep saga
+```
 
-volgens userguide op https://help.ubuntu.com/community/CreateAuthenticatedRepository
+Next, build and install from source:
 
+```
+debuild -b  # or 'fakeroot debian/rules binary'
+sudo dpkg -i ../*saga*deb
+```
 
-# copy deb to /var/www/html/repo-saga-cnws/amd64
+To test your installation, run saga from terminal:
 
-apt-ftparchive packages amd64 > Packages
-gzip -c Packages > Packages.gz
-apt-ftparchive release . > Release
+```
+saga_cmd
+```
 
-scp percy:/var/www/html/repo-saga-cnws/Release .
-gpg --clearsign -o InRelease Release
-gpg -abs -o Release.gpg Release
-scp  Release.gpg InRelease percy:/var/www/html/repo-saga-cnws/
-
-# Gebruik in ubuntu bionic:
-
-wget -q -O - https://gisky.be/repo-saga-cnws/A33358C5.pub | apt-key add -
-echo "deb https://gisky.be/repo-saga-cnws/ /">>/etc/apt/sources.list
-apt update
-apt install saga
-
-
+Automated builds for ubuntu bionic are built for every commit on master using drone.
+These are available at:
+https://apt.fluves.net/amd64/
