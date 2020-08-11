@@ -3,11 +3,25 @@ Builden saga:
 Onder windows met Visual Studio 2015 of recenter.
 
 
-Onder linux:
-apt-get build-dep saga
-apt-get devscripts
+### Onder linux:
 
-fakeroot debian/rules binary
+Make sure you have `debuild` installed:
+
+```
+sudo apt-get install devscripts build-essential lintian
+```
+
+Next, build and install from source:
+
+```
+sudo apt-get build-dep saga
+cd saga-gis
+debuild -b  # or 'fakeroot debian/rules binary' # or 'debuild -i -us -uc -b'
+sudo dpkg -i ../*saga*deb
+```
+
+__Note__ If you get the `running debsign failed` error when using the `debuild -b` command, the build can not be signed. This should not 
+ be limiting for the installation itself.
 
 --
 Op schelde staat een vagrant instance die gebruikt kan worden:
