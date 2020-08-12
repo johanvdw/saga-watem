@@ -92,6 +92,8 @@ CSG_String Get_Info(int i)
 // 3. Include the headers of your tools here...
 
 #include "grid_collection.h"
+#include "gridding3d_nearest_neighbour.h"
+#include "gridding3d_idw.h"
 
 
 //---------------------------------------------------------
@@ -101,12 +103,15 @@ CSG_Tool *		Create_Tool(int i)
 {
 	switch( i )
 	{
-	case  0: 	return( new CGrids_Create  );
+	case  0: 	return( new CGrids_Create );
 	case  4: 	return( new CGrids_Add_Grid );
 	case  1: 	return( new CGrids_Extract );
 	case  3: 	return( new CGrids_Extract_Grid );
-	case  2: 	return( new CGrids_Delete  );
+	case  2: 	return( new CGrids_Delete );
 
+	case  5: 	return( new CGridding3D_Nearest_Neighbour );
+	case  6:	return( new CGridding3D_IDW );
+		
 	//-----------------------------------------------------
 	case 10:	return( NULL );
 	default:	return( TLB_INTERFACE_SKIP_TOOL );

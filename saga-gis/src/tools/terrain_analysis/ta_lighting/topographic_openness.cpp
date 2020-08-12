@@ -1,6 +1,3 @@
-/**********************************************************
- * Version $Id$
- *********************************************************/
 
 ///////////////////////////////////////////////////////////
 //                                                       //
@@ -44,19 +41,8 @@
 //    contact:    Olaf Conrad                            //
 //                Institute of Geography                 //
 //                University of Hamburg                  //
-//                Bundesstr. 55                          //
-//                20146 Hamburg                          //
 //                Germany                                //
 //                                                       //
-///////////////////////////////////////////////////////////
-
-//---------------------------------------------------------
-
-
-///////////////////////////////////////////////////////////
-//														 //
-//														 //
-//														 //
 ///////////////////////////////////////////////////////////
 
 //---------------------------------------------------------
@@ -72,84 +58,99 @@
 //---------------------------------------------------------
 CTopographic_Openness::CTopographic_Openness(void)
 {
-	//-----------------------------------------------------
 	Set_Name		(_TL("Topographic Openness"));
 
-	Set_Author		(SG_T("O.Conrad (c) 2012"));
+	Set_Author		("O.Conrad (c) 2012");
 
 	Set_Description	(_TW(
 		"Topographic openness expresses the dominance (positive) or enclosure (negative) "
 		"of a landscape location. See Yokoyama et al. (2002) for a precise definition. "
 		"Openness has been related to how wide a landscape can be viewed from any position. "
-		"It has been proven to be a meaningful input for computer aided geomorphological mapping.\n"
-		"\n"
-		"References:\n"
-		"Anders, N. S. / Seijmonsbergen, A. C. / Bouten, W. (2009): "
-		"Multi-Scale and Object-Oriented Image Analysis of High-Res LiDAR Data for Geomorphological Mapping in Alpine Mountains. "
-		"Proceedings of Geomorphometry 2009. "
-		"<a target=\"_blank\" href=\"http://geomorphometry.org/system/files/anders2009geomorphometry.pdf\">online at geomorphometry.org</a>.\n\n"
-
-		"Prima, O.D.A / Echigo, A. / Yokoyama, R. / Yoshida, T. (2006): "
-		"Supervised landform classification of Northeast Honshu from DEM-derived thematic maps. "
-		"Geomorphology, vol.78, pp.373-386.\n\n"
-
-		"Yokoyama, R. / Shirasawa, M. / Pike, R.J. (2002): "
-		"Visualizing topography by openness: A new application of image processing to digital elevation models. "
-		"Photogrammetric Engineering and Remote Sensing, Vol.68, pp.251-266. "
-		"<a target=\"_blank\" href=\"http://www.asprs.org/a/publications/pers/2002journal/march/2002_mar_257-265.pdf\">online at ASPRS</a>.\n\n"
+		"It has been proven to be a meaningful input for computer aided geomorphological mapping. "
 	));
+
+	Add_Reference("Anders, N. S. / Seijmonsbergen, A. C. / Bouten, W.", "2009",
+		"Multi-Scale and Object-Oriented Image Analysis of High-Res LiDAR Data for Geomorphological Mapping in Alpine Mountains",
+		"Proceedings of Geomorphometry 2009.",
+		SG_T("http://geomorphometry.org/system/files/anders2009geomorphometry.pdf"), SG_T("pdf at geomorphometry.org")
+	);
+
+	Add_Reference("Prima, O.D.A / Echigo, A. / Yokoyama, R. / Yoshida, T.", "2006",
+		"Supervised landform classification of Northeast Honshu from DEM-derived thematic maps",
+		"Geomorphology, vol.78, pp.373-386."
+	);
+
+	Add_Reference("Yokoyama, R. / Shirasawa, M. / Pike, R.J.", "2002",
+		"Visualizing topography by openness: A new application of image processing to digital elevation models",
+		"Photogrammetric Engineering and Remote Sensing, Vol.68, pp.251-266",
+		SG_T("http://www.asprs.org/a/publications/pers/2002journal/march/2002_mar_257-265.pdf"), SG_T("pdf at ASPRS")
+	);
 
 	//-----------------------------------------------------
 	Parameters.Add_Grid(
-		NULL	, "DEM"			, _TL("Elevation"),
+		"", "DEM"		, _TL("Elevation"),
 		_TL(""),
 		PARAMETER_INPUT
 	);
 
 	Parameters.Add_Grid(
-		NULL	, "POS"			, _TL("Positive Openness"),
+		"", "POS"		, _TL("Positive Openness"),
 		_TL(""),
 		PARAMETER_OUTPUT
 	);
 
 	Parameters.Add_Grid(
-		NULL	, "NEG"			, _TL("Negative Openness"),
+		"", "NEG"		, _TL("Negative Openness"),
 		_TL(""),
 		PARAMETER_OUTPUT
 	);
 
-	Parameters.Add_Value(
-		NULL	, "RADIUS"		, _TL("Radial Limit"),
+	Parameters.Add_Double(
+		"", "RADIUS"	, _TL("Radial Limit"),
 		_TL(""),
-		PARAMETER_TYPE_Double	, 10000.0, 0.0, true
+		10000., 0., true
 	);
 
 	Parameters.Add_Choice(
-		NULL	, "METHOD"		, _TL("Method"),
+		"", "METHOD"	, _TL("Method"),
 		_TL(""),
-		CSG_String::Format(SG_T("%s|%s|"),
+		CSG_String::Format("%s|%s",
 			_TL("multi scale"),
-			_TL("sectors")
+			_TL("line tracing")
 		), 1
 	);
 
-	Parameters.Add_Value(
-		NULL	, "DLEVEL"		, _TL("Multi Scale Factor"),
+	Parameters.Add_Double(
+		"", "DLEVEL"	, _TL("Multi Scale Factor"),
 		_TL(""),
-		PARAMETER_TYPE_Double	, 3.0, 1.25, true
+		3., 1.25, true
 	);
 
-	Parameters.Add_Value(
-		NULL	, "NDIRS"		, _TL("Number of Sectors"),
+	Parameters.Add_Int(
+		"", "NDIRS"		, _TL("Number of Sectors"),
 		_TL(""),
-		PARAMETER_TYPE_Int		, 8.0, 2, true
+		8, 2, true
 	);
 }
 
 
 ///////////////////////////////////////////////////////////
 //														 //
-//														 //
+///////////////////////////////////////////////////////////
+
+//---------------------------------------------------------
+int CTopographic_Openness::On_Parameters_Enable(CSG_Parameters *pParameters, CSG_Parameter *pParameter)
+{
+	if( pParameter->Cmp_Identifier("METHOD") )
+	{
+		pParameters->Set_Enabled("DLEVEL", pParameter->asInt() == 0);
+	}
+
+	return( CSG_Tool_Grid::On_Parameters_Enable(pParameters, pParameter) );
+}
+
+
+///////////////////////////////////////////////////////////
 //														 //
 ///////////////////////////////////////////////////////////
 
@@ -165,14 +166,16 @@ bool CTopographic_Openness::On_Execute(void)
 	m_Radius	= Parameters("RADIUS")->asDouble();
 	m_Method	= Parameters("METHOD")->asInt();
 
-	DataObject_Set_Colors(pPos, 100, SG_COLORS_RED_GREY_BLUE, true);
-	DataObject_Set_Colors(pNeg, 100, SG_COLORS_RED_GREY_BLUE, false);
+	DataObject_Set_Colors(pPos, 11, SG_COLORS_RED_GREY_BLUE,  true);
+	DataObject_Set_Colors(pNeg, 11, SG_COLORS_RED_GREY_BLUE, false);
 
 	//-----------------------------------------------------
 	if( m_Method == 0 )	// multi scale
 	{
 		if( !m_Pyramid.Create(m_pDEM, Parameters("DLEVEL")->asDouble(), GRID_PYRAMID_Mean) )
 		{
+			Error_Set(_TL("failed to create pyramids."));
+
 			return( false );
 		}
 
@@ -186,17 +189,16 @@ bool CTopographic_Openness::On_Execute(void)
 			}
 		}
 	}
+	else if( m_Radius <= 0.0 )
+	{
+		m_Radius	= Get_Cellsize() * M_GET_LENGTH(Get_NX(), Get_NY());
+	}
 
 	//-----------------------------------------------------
 	bool	bResult	= Initialise(Parameters("NDIRS")->asInt());
 
 	if( bResult )
 	{
-		if( m_Method != 0 && m_Radius <= 0.0 )
-		{
-			m_Radius	= Get_Cellsize() * M_GET_LENGTH(Get_NX(), Get_NY());
-		}
-
 		for(int y=0; y<Get_NY() && Set_Progress(y); y++)
 		{
 			#pragma omp parallel for
@@ -204,7 +206,7 @@ bool CTopographic_Openness::On_Execute(void)
 			{
 				double	Pos, Neg;
 
-				if( Get_Openness(x, y, Pos, Neg) )
+				if( !m_pDEM->is_NoData(x, y) && Get_Openness(x, y, Pos, Neg) )
 				{
 					if( pPos )	pPos->Set_Value(x, y, Pos);
 					if( pNeg )	pNeg->Set_Value(x, y, Neg);
@@ -219,16 +221,14 @@ bool CTopographic_Openness::On_Execute(void)
 	}
 
 	//-----------------------------------------------------
-	m_Pyramid	.Destroy();
-	m_Direction	.Clear();
+	m_Pyramid  .Destroy();
+	m_Direction.Clear  ();
 
 	return( bResult );
 }
 
 
 ///////////////////////////////////////////////////////////
-//														 //
-//														 //
 //														 //
 ///////////////////////////////////////////////////////////
 
@@ -250,25 +250,17 @@ bool CTopographic_Openness::Initialise(int nDirections)
 
 ///////////////////////////////////////////////////////////
 //														 //
-//														 //
-//														 //
 ///////////////////////////////////////////////////////////
 
 //---------------------------------------------------------
 bool CTopographic_Openness::Get_Openness(int x, int y, double &Pos, double &Neg)
 {
-	if( m_pDEM->is_NoData(x, y) )
-	{
-		return( false );
-	}
-
-	//-----------------------------------------------------
 	CSG_Vector	Max(m_Direction.Get_Count()), Min(m_Direction.Get_Count());
 
 	switch( m_Method )
 	{
-	case 0:	if( !Get_Angles_Multi_Scale(x, y, Max, Min) )	return( false );	break;
-	case 1:	if( !Get_Angles_Sectoral   (x, y, Max, Min) )	return( false );	break;
+	case  0: if( !Get_Angles_Multi_Scale(x, y, Max, Min) ) return( false ); break;
+	default: if( !Get_Angles_Sectoral   (x, y, Max, Min) ) return( false ); break;
 	}
 
 	//-----------------------------------------------------
@@ -290,18 +282,11 @@ bool CTopographic_Openness::Get_Openness(int x, int y, double &Pos, double &Neg)
 
 ///////////////////////////////////////////////////////////
 //														 //
-//														 //
-//														 //
 ///////////////////////////////////////////////////////////
 
 //---------------------------------------------------------
 bool CTopographic_Openness::Get_Angles_Multi_Scale(int x, int y, CSG_Vector &Max, CSG_Vector &Min)
 {
-	if( m_pDEM->is_NoData(x, y) )
-	{
-		return( false );
-	}
-
 	double		z, d;
 	TSG_Point	p, q;
 
@@ -348,15 +333,14 @@ bool CTopographic_Openness::Get_Angles_Multi_Scale(int x, int y, CSG_Vector &Max
 	return( true );
 }
 
+
+///////////////////////////////////////////////////////////
+//														 //
+///////////////////////////////////////////////////////////
+
 //---------------------------------------------------------
 bool CTopographic_Openness::Get_Angles_Sectoral(int x, int y, CSG_Vector &Max, CSG_Vector &Min)
 {
-	if( m_pDEM->is_NoData(x, y) )
-	{
-		return( false );
-	}
-
-	//-----------------------------------------------------
 	for(int i=0; i<m_Direction.Get_Count(); i++)
 	{
 		if(0|| Get_Angle_Sectoral(x, y, i, Max[i], Min[i]) == false )

@@ -48,15 +48,6 @@
 ///////////////////////////////////////////////////////////
 
 //---------------------------------------------------------
-
-
-///////////////////////////////////////////////////////////
-//														 //
-//														 //
-//														 //
-///////////////////////////////////////////////////////////
-
-//---------------------------------------------------------
 #include "res_commands.h"
 #include "res_dialogs.h"
 
@@ -959,17 +950,22 @@ bool CWKSP_Layer::do_Legend(void)
 }
 
 //---------------------------------------------------------
-bool CWKSP_Layer::do_Show(CSG_Rect const &rMap)
+bool CWKSP_Layer::do_Show(CSG_Rect const &Map_Extent, bool bIntersects)
 {
-	double				d;
-	CSG_Parameter_Range	*pRange;
+	if( bIntersects && !Map_Extent.Intersects(Get_Extent()) )
+	{
+		return( false );
+	}
 
 	if( !m_Parameters("SHOW_ALWAYS")->asBool() )
 	{
-		pRange	= m_Parameters("SHOW_RANGE")->asRange();
-		d		= rMap.Get_XRange() > rMap.Get_YRange() ? rMap.Get_XRange() : rMap.Get_YRange();
+		double	d	= Map_Extent.Get_XRange() > Map_Extent.Get_YRange()
+			? Map_Extent.Get_XRange()
+			: Map_Extent.Get_YRange();
 
-		return( pRange->Get_Min() <= d && d <= pRange->Get_Max() );
+		return( m_Parameters("SHOW_RANGE.MIN")->asDouble() <= d
+			&&  m_Parameters("SHOW_RANGE.MAX")->asDouble() >= d 
+		);
 	}
 
 	return( true );
@@ -981,12 +977,27 @@ bool CWKSP_Layer::do_Show(CSG_Rect const &rMap)
 ///////////////////////////////////////////////////////////
 
 //---------------------------------------------------------
-void CWKSP_Layer::Draw(CWKSP_Map_DC &dc_Map, int Flags)
+bool CWKSP_Layer::Draw(CWKSP_Map_DC &dc_Map, int Flags, CSG_Data_Object *pObject)
 {
-	On_Draw(dc_Map, Flags);
+	if( pObject && pObject->is_Valid() && pObject->Get_ObjectType() == m_pObject->Get_ObjectType() )
+	{
+		CSG_Data_Object	*pOriginal	= m_pObject;
+
+		m_pObject	= pObject;
+
+		On_Draw(dc_Map, Flags);
+
+		m_pObject	= pOriginal;
+	}
+	else
+	{
+		On_Draw(dc_Map, Flags);
+	}
 
 	dc_Map.dc.SetBrush(wxNullBrush);
 	dc_Map.dc.SetPen  (wxNullPen  );
+
+	return( true );
 }
 
 
