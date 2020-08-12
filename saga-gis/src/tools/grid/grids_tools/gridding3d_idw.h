@@ -1,6 +1,3 @@
-/**********************************************************
- * Version $Id: TLB_Interface.h 1921 2014-01-09 10:24:11Z oconrad $
- *********************************************************/
 
 ///////////////////////////////////////////////////////////
 //                                                       //
@@ -8,15 +5,14 @@
 //                                                       //
 //      System for Automated Geoscientific Analyses      //
 //                                                       //
-//                     Tool Library                      //
-//                 imagery_segmentation                  //
+//                     Tool Library:                     //
+//                      grids_tools                      //
 //                                                       //
 //-------------------------------------------------------//
 //                                                       //
-//                    TLB_Interface.h                    //
+//                    gridding3d_idw.h                   //
 //                                                       //
-//                 Copyright (C) 2003 by                 //
-//                        Author                         //
+//                  Olaf Conrad (C) 2019                 //
 //                                                       //
 //-------------------------------------------------------//
 //                                                       //
@@ -39,29 +35,82 @@
 //                                                       //
 //-------------------------------------------------------//
 //                                                       //
-//    e-mail:     author@email.de                        //
+//    e-mail:     oconrad@saga-gis.org                   //
 //                                                       //
-//    contact:    Author                                 //
-//                Sesame Street. 7                       //
-//                12345 Metropolis                       //
-//                Nirwana                                //
+//    contact:    Olaf Conrad                            //
+//                Institute of Geography                 //
+//                University of Hamburg                  //
+//                Germany                                //
 //                                                       //
-///////////////////////////////////////////////////////////
-
-
-///////////////////////////////////////////////////////////
-//														 //
-//				Include the SAGA-API here				 //
-//														 //
 ///////////////////////////////////////////////////////////
 
 //---------------------------------------------------------
-#ifndef HEADER_INCLUDED__imagery_segmentation_H
-#define HEADER_INCLUDED__imagery_segmentation_H
+#ifndef HEADER_INCLUDED__gridding3d_idw_H
+#define HEADER_INCLUDED__gridding3d_idw_H
+
+
+///////////////////////////////////////////////////////////
+//														 //
+//														 //
+//														 //
+///////////////////////////////////////////////////////////
 
 //---------------------------------------------------------
 #include <saga_api/saga_api.h>
 
 
+///////////////////////////////////////////////////////////
+//														 //
+//														 //
+//														 //
+///////////////////////////////////////////////////////////
+
 //---------------------------------------------------------
-#endif // #ifndef HEADER_INCLUDED__imagery_segmentation_H
+class CGridding3D_IDW : public CSG_Tool
+{
+public:
+	CGridding3D_IDW(void);
+
+	virtual CSG_String			Get_MenuPath			(void)	{	return( _TL("A:Grid|Gridding|Interpolation (3D)") );	}
+
+
+protected:
+
+	virtual int					On_Parameter_Changed	(CSG_Parameters *pParameters, CSG_Parameter *pParameter);
+	virtual int					On_Parameters_Enable	(CSG_Parameters *pParameters, CSG_Parameter *pParameter);
+
+	virtual bool				On_Execute				(void);
+
+
+private:
+
+	CSG_Parameters_Grid_Target	m_Grid_Target;
+
+	CSG_Parameters_PointSearch	m_Searching;
+
+	CSG_Distance_Weighting		m_Weighting;
+
+	CSG_KDTree_3D				m_Search;
+
+	int							m_zField, m_vField;
+
+	CSG_Shapes					*m_pPoints;
+
+
+	bool						Get_Value				(double Coordinate[3], double zScale, double &Value);
+
+	double						Get_Distance			(double Coordinate[3], CSG_Shape *pPoint);
+	bool						is_Identical			(double Coordinate[3], CSG_Shape *pPoint);
+
+};
+
+
+///////////////////////////////////////////////////////////
+//														 //
+//														 //
+//														 //
+///////////////////////////////////////////////////////////
+
+//---------------------------------------------------------
+#endif // #ifndef HEADER_INCLUDED__gridding3d_idw_H
+

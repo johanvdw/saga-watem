@@ -1,6 +1,3 @@
-/**********************************************************
- * Version $Id$
- *********************************************************/
 
 ///////////////////////////////////////////////////////////
 //                                                       //
@@ -48,15 +45,6 @@
 //                                                       //
 //    e-mail:     oconrad@saga-gis.org                   //
 //                                                       //
-///////////////////////////////////////////////////////////
-
-//---------------------------------------------------------
-
-
-///////////////////////////////////////////////////////////
-//														 //
-//														 //
-//														 //
 ///////////////////////////////////////////////////////////
 
 //---------------------------------------------------------
@@ -109,13 +97,13 @@ public:
 	virtual double					Get_Value_Mean			(void)								= 0;
 	virtual double					Get_Value_StdDev		(void)								= 0;
 
-	void							Draw					(CWKSP_Map_DC &dc_Map, int Flags = 0);
+	bool							Draw					(CWKSP_Map_DC &dc_Map, int Flags = 0, CSG_Data_Object *pObject = NULL);
 
 	class CWKSP_Layer_Classify *	Get_Classifier			(void)	{	return( m_pClassify );	}
 
 	class CWKSP_Layer_Legend *		Get_Legend				(void)	{	return( m_pLegend );	}
 	bool							do_Legend				(void);
-	bool							do_Show					(CSG_Rect const &rMap);
+	bool							do_Show					(CSG_Rect const &Map_Extent, bool bIntersects = true);
 
 	virtual bool					Show					(class CWKSP_Map *pMap);
 	virtual bool					Show					(int Flags = 0);

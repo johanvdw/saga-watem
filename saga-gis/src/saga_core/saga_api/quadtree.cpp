@@ -1,6 +1,3 @@
-/**********************************************************
- * Version $Id$
- *********************************************************/
 
 ///////////////////////////////////////////////////////////
 //                                                       //
@@ -48,15 +45,6 @@
 //                University of Hamburg                  //
 //                Germany                                //
 //                                                       //
-///////////////////////////////////////////////////////////
-
-//---------------------------------------------------------
-
-
-///////////////////////////////////////////////////////////
-//														 //
-//														 //
-//														 //
 ///////////////////////////////////////////////////////////
 
 //---------------------------------------------------------
@@ -303,8 +291,6 @@ void CSG_PRQuadTree::Destroy(void)
 
 ///////////////////////////////////////////////////////////
 //														 //
-//														 //
-//														 //
 ///////////////////////////////////////////////////////////
 
 //---------------------------------------------------------
@@ -328,8 +314,6 @@ bool CSG_PRQuadTree::Add_Point(const TSG_Point &p, double z)
 
 
 ///////////////////////////////////////////////////////////
-//														 //
-//														 //
 //														 //
 ///////////////////////////////////////////////////////////
 
@@ -387,8 +371,6 @@ bool CSG_PRQuadTree::_Check_Root(double x, double y)
 
 
 ///////////////////////////////////////////////////////////
-//														 //
-//														 //
 //														 //
 ///////////////////////////////////////////////////////////
 
@@ -484,8 +466,6 @@ inline bool CSG_PRQuadTree::_Radius_Intersects(double x, double y, double r, int
 
 ///////////////////////////////////////////////////////////
 //														 //
-//														 //
-//														 //
 ///////////////////////////////////////////////////////////
 
 //---------------------------------------------------------
@@ -577,8 +557,6 @@ CSG_PRQuadTree_Leaf	* CSG_PRQuadTree::_Get_Nearest_Point(CSG_PRQuadTree_Item *pI
 
 
 ///////////////////////////////////////////////////////////
-//														 //
-//														 //
 //														 //
 ///////////////////////////////////////////////////////////
 
@@ -764,8 +742,6 @@ void CSG_PRQuadTree::_Select_Nearest_Points(CSG_Array &Selection, CSG_PRQuadTree
 
 ///////////////////////////////////////////////////////////
 //														 //
-//														 //
-//														 //
 ///////////////////////////////////////////////////////////
 
 //---------------------------------------------------------
@@ -804,20 +780,17 @@ size_t CSG_PRQuadTree::Get_Nearest_Points(CSG_Points_Z &Points, double x, double
 #include "parameters.h"
 
 //---------------------------------------------------------
-CSG_Parameters_Search_Points::CSG_Parameters_Search_Points(void)
+CSG_Parameters_PointSearch::CSG_Parameters_PointSearch(void)
 {
 	m_pParameters	= NULL;
 
-	Finalize();
+	m_minPoints		= 1;
+	m_maxPoints		= 0;
+	m_Radius		= 0.;
 }
 
-
-///////////////////////////////////////////////////////////
-//														 //
-///////////////////////////////////////////////////////////
-
 //---------------------------------------------------------
-bool CSG_Parameters_Search_Points::Create(CSG_Parameters *pParameters, CSG_Parameter *pNode, int nPoints_Min)
+bool CSG_Parameters_PointSearch::Create(CSG_Parameters *pParameters, const CSG_String &Parent, size_t minPoints)
 {
 	if( pParameters == NULL || m_pParameters != NULL )
 	{
@@ -826,55 +799,49 @@ bool CSG_Parameters_Search_Points::Create(CSG_Parameters *pParameters, CSG_Param
 
 	m_pParameters	= pParameters;
 
-	//-----------------------------------------------------
-	CSG_String		ParentID(pNode ? pNode->Get_Identifier() : SG_T(""));
+	if( !Parent.is_Empty() && !(*m_pParameters)(Parent) )
+	{
+		m_pParameters->Add_Node("", Parent, _TL("Search Options"), _TL(""));
+	}
 
-	pNode	= m_pParameters->Add_Choice(ParentID,
+	//-----------------------------------------------------
+	m_pParameters->Add_Choice(Parent,
 		"SEARCH_RANGE"		, _TL("Search Range"),
 		_TL(""),
-		CSG_String::Format("%s|%s|",
+		CSG_String::Format("%s|%s",
 			_TL("local"),
 			_TL("global")
 		), 1
 	);
 
-	m_pParameters->Add_Double(pNode->Get_Identifier(),
+	m_pParameters->Add_Double("SEARCH_RANGE",
 		"SEARCH_RADIUS"		, _TL("Maximum Search Distance"),
 		_TL("local maximum search distance given in map units"),
-		1000.0, 0, true
+		1000., 0., true
 	);
 
-	pNode	= m_pParameters->Add_Choice(ParentID,
+	m_pParameters->Add_Choice(Parent,
 		"SEARCH_POINTS_ALL"	, _TL("Number of Points"),
 		_TL(""),
-		CSG_String::Format("%s|%s|",
+		CSG_String::Format("%s|%s",
 			_TL("maximum number of nearest points"),
 			_TL("all points within search distance")
 		), 1
 	);
 
-	if( m_nPoints_Min >= 0 )
+	if( minPoints > 0 )
 	{
-		m_pParameters->Add_Int(pNode->Get_Identifier(),
+		m_pParameters->Add_Int("SEARCH_POINTS_ALL",
 			"SEARCH_POINTS_MIN"	, _TL("Minimum"),
 			_TL("minimum number of points to use"),
-			nPoints_Min, 1, true
+			(int)minPoints, 1, true
 		);
 	}
 
-	m_pParameters->Add_Int(pNode->Get_Identifier(),
+	m_pParameters->Add_Int("SEARCH_POINTS_ALL",
 		"SEARCH_POINTS_MAX"	, _TL("Maximum"),
 		_TL("maximum number of nearest points"),
 		20, 1, true
-	);
-
-	m_pParameters->Add_Choice(pNode->Get_Identifier(),
-		"SEARCH_DIRECTION"	, _TL("Direction"),
-		_TL(""),
-		CSG_String::Format("%s|%s|",
-			_TL("all directions"),
-			_TL("quadrants")
-		)
 	);
 
 	return( true );
@@ -886,10 +853,9 @@ bool CSG_Parameters_Search_Points::Create(CSG_Parameters *pParameters, CSG_Param
 ///////////////////////////////////////////////////////////
 
 //---------------------------------------------------------
-bool CSG_Parameters_Search_Points::On_Parameter_Changed(CSG_Parameters *pParameters, CSG_Parameter *pParameter)
+bool CSG_Parameters_PointSearch::On_Parameter_Changed(CSG_Parameters *pParameters, CSG_Parameter *pParameter)
 {
-	if( !m_pParameters || !pParameters || m_pParameters->Get_Identifier().Cmp(pParameters->Get_Identifier()) || !pParameter
-		|| !pParameter->asShapes() )
+	if( !m_pParameters || !pParameters || m_pParameters->Get_Identifier().Cmp(pParameters->Get_Identifier()) || !pParameter || !pParameter->asShapes() )
 	{
 		return( false );
 	}
@@ -902,7 +868,7 @@ bool CSG_Parameters_Search_Points::On_Parameter_Changed(CSG_Parameters *pParamet
 }
 
 //---------------------------------------------------------
-bool CSG_Parameters_Search_Points::On_Parameters_Enable(CSG_Parameters *pParameters, CSG_Parameter *pParameter)
+bool CSG_Parameters_PointSearch::On_Parameters_Enable(CSG_Parameters *pParameters, CSG_Parameter *pParameter)
 {
 	if( !m_pParameters || !pParameters || m_pParameters->Get_Identifier().Cmp(pParameters->Get_Identifier()) || !pParameter )
 	{
@@ -930,21 +896,96 @@ bool CSG_Parameters_Search_Points::On_Parameters_Enable(CSG_Parameters *pParamet
 ///////////////////////////////////////////////////////////
 
 //---------------------------------------------------------
-bool CSG_Parameters_Search_Points::Do_Use_All(bool bUpdate)
+bool CSG_Parameters_PointSearch::Update(void)
 {
-	if( bUpdate && m_pParameters )
+	if( m_pParameters )
 	{
-		m_nPoints_Min	= m_pParameters->Get_Parameter("SEARCH_POINTS_MIN")
-						? m_pParameters->Get_Parameter("SEARCH_POINTS_MIN")->asInt   () : 0;
-		m_nPoints_Max	= m_pParameters->Get_Parameter("SEARCH_POINTS_ALL")->asInt   () == 0
-						? m_pParameters->Get_Parameter("SEARCH_POINTS_MAX")->asInt   () : 0;
-		m_Radius		= m_pParameters->Get_Parameter("SEARCH_RANGE"     )->asInt   () == 0
-						? m_pParameters->Get_Parameter("SEARCH_RADIUS"    )->asDouble() : 0.0;
-		m_Quadrant		= m_pParameters->Get_Parameter("SEARCH_DIRECTION" )->asInt   () == 0 ? -1 : 4;
+		m_minPoints	= (*m_pParameters)("SEARCH_POINTS_MIN")
+					? (*m_pParameters)("SEARCH_POINTS_MIN")->asInt   () : 0;
+		m_maxPoints	= (*m_pParameters)("SEARCH_POINTS_ALL")->asInt   () == 0
+					? (*m_pParameters)("SEARCH_POINTS_MAX")->asInt   () : 0;
+		m_Radius	= (*m_pParameters)("SEARCH_RANGE"     )->asInt   () == 0
+					? (*m_pParameters)("SEARCH_RADIUS"    )->asDouble() : 0.;
+
+		return( true );
 	}
 
-	return( m_nPoints_Max <= 0 && m_Radius <= 0.0 );
+	return( false );
 }
+
+//---------------------------------------------------------
+bool CSG_Parameters_PointSearch::Do_Use_All(bool bUpdate)
+{
+	if( bUpdate )
+	{
+		Update();
+	}
+
+	return( m_maxPoints == 0 && m_Radius <= 0. );
+}
+
+
+///////////////////////////////////////////////////////////
+//														 //
+//														 //
+//														 //
+///////////////////////////////////////////////////////////
+
+//---------------------------------------------------------
+CSG_Parameters_Search_Points::CSG_Parameters_Search_Points(void)
+{
+	Finalize();
+}
+
+//---------------------------------------------------------
+bool CSG_Parameters_Search_Points::Create(CSG_Parameters *pParameters, CSG_Parameter *pParent, int minPoints)
+{
+	return( pParent ? Create(pParameters, pParent->Get_Identifier(), minPoints) : Create(pParameters, "", minPoints) );
+}
+
+//---------------------------------------------------------
+bool CSG_Parameters_Search_Points::Create(CSG_Parameters *pParameters, const CSG_String &Parent, int minPoints)
+{
+	if( !CSG_Parameters_PointSearch::Create(pParameters, Parent, minPoints) )
+	{
+		return( false );
+	}
+
+	m_pParameters->Add_Choice("SEARCH_POINTS_ALL",
+		"SEARCH_DIRECTION"	, _TL("Direction"),
+		_TL(""),
+		CSG_String::Format("%s|%s",
+			_TL("all directions"),
+			_TL("quadrants")
+		)
+	);
+
+	return( true );
+}
+
+
+///////////////////////////////////////////////////////////
+//														 //
+///////////////////////////////////////////////////////////
+
+//---------------------------------------------------------
+bool CSG_Parameters_Search_Points::Update(void)
+{
+	if( m_pParameters )
+	{
+		m_Quadrant	= (*m_pParameters)("SEARCH_DIRECTION" )->asInt() == 0 ? -1 : 4;
+
+		return( CSG_Parameters_PointSearch::Update() );
+	}
+
+	return( false );
+}
+
+
+///////////////////////////////////////////////////////////
+//														 //
+///////////////////////////////////////////////////////////
+
 //---------------------------------------------------------
 bool CSG_Parameters_Search_Points::Initialize(CSG_Shapes *pPoints, int zField)
 {
@@ -973,7 +1014,8 @@ bool CSG_Parameters_Search_Points::Finalize(void)
 	m_zField	= -1;
 
 	m_Radius	= 0.0;
-	m_nPoints	= m_nPoints_Min	= m_nPoints_Max = 0;
+	m_minPoints	= m_maxPoints = 0;
+	m_nPoints	= 0;
 	m_Quadrant	= -1;
 
 	m_Search.Destroy();
@@ -989,18 +1031,19 @@ bool CSG_Parameters_Search_Points::Finalize(void)
 //---------------------------------------------------------
 int CSG_Parameters_Search_Points::Set_Location(double x, double y)
 {
-	if( m_nPoints_Max > 0 || m_Radius > 0.0 )	// using search engine
-	{
-		m_nPoints	= (int)m_Search.Select_Nearest_Points(x, y, m_nPoints_Max, m_Radius, m_Quadrant);
-	}
-	else										// without search engine
+	if( Do_Use_All() )	// without search engine
 	{
 		m_nPoints	= m_pPoints->Get_Count();
+	}
+	else				// using search engine
+	{
+		m_nPoints	= (int)m_Search.Select_Nearest_Points(x, y, m_maxPoints, m_Radius, m_Quadrant);
 	}
 
 	return( m_nPoints );
 }
 
+//---------------------------------------------------------
 int CSG_Parameters_Search_Points::Set_Location(const TSG_Point &p)
 {
 	return( Set_Location(p.x, p.y) );
@@ -1046,15 +1089,13 @@ bool CSG_Parameters_Search_Points::Get_Point(int Index, double &x, double &y, do
 //---------------------------------------------------------
 bool CSG_Parameters_Search_Points::Get_Points(double x, double y, CSG_Points_Z &Points)
 {
-	CSG_Point	p(x, y);
-
-	return( Get_Points(p, Points) );
+	return( Get_Points(CSG_Point(x, y), Points) );
 }
 
 //---------------------------------------------------------
 bool CSG_Parameters_Search_Points::Get_Points(const TSG_Point &p, CSG_Points_Z &Points)
 {
-	return( m_Search.Get_Nearest_Points(Points, p, m_nPoints_Max, m_Radius, m_Quadrant) >= (size_t)m_nPoints_Min );
+	return( m_Search.Get_Nearest_Points(Points, p, m_maxPoints, m_Radius, m_Quadrant) >= (size_t)m_minPoints );
 }
 
 

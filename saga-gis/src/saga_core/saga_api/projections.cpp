@@ -1,6 +1,3 @@
-/**********************************************************
- * Version $Id$
- *********************************************************/
 
 ///////////////////////////////////////////////////////////
 //                                                       //
@@ -48,15 +45,6 @@
 //                                                       //
 //    e-mail:     oconrad@saga-gis.org                   //
 //                                                       //
-///////////////////////////////////////////////////////////
-
-//---------------------------------------------------------
-
-
-///////////////////////////////////////////////////////////
-//														 //
-//														 //
-//														 //
 ///////////////////////////////////////////////////////////
 
 //---------------------------------------------------------
@@ -2057,14 +2045,14 @@ bool CSG_Projections::_Set_Dictionary(CSG_Translator &Dictionary, int Direction)
 //---------------------------------------------------------
 bool	SG_Get_Projected	(CSG_Shapes *pSource, CSG_Shapes *pTarget, const CSG_Projection &Target)
 {
-	if( !pSource || !pSource->is_Valid() || !pTarget )
+	if( !pSource || !pSource->is_Valid() )
 	{
 		return( false );
 	}
 
 	if( pSource->Get_Projection() == Target )
 	{
-		return( pTarget->Create(*pSource) );
+		return( pTarget ? pTarget->Create(*pSource) : true );
 	}
 
 	if( !pSource->Get_Projection().is_Okay() || !Target.is_Okay() )
@@ -2074,24 +2062,18 @@ bool	SG_Get_Projected	(CSG_Shapes *pSource, CSG_Shapes *pTarget, const CSG_Proje
 
 	CSG_Tool	*pTool	= SG_Get_Tool_Library_Manager().Create_Tool("pj_proj4", 2);	// Coordinate Transformation (Shapes)
 
-	if( !pTool || pTool->is_Executing() )
-	{
-		return( false );
-	}
-
 	SG_UI_ProgressAndMsg_Lock(true);
 
-	pTool->Set_Manager(NULL);
-
-	bool	bResult	=
-	    pTool->Set_Parameter("CRS_PROJ4", Target.Get_Proj4())
+	bool	bResult	= pTool && pTool->Set_Manager(NULL)
+	&&  pTool->Set_Parameter("CRS_PROJ4", Target.Get_Proj4())
 	&&  pTool->Set_Parameter("SOURCE"   , pSource)
 	&&  pTool->Set_Parameter("TARGET"   , pTarget)
+	&&  pTool->Set_Parameter("COPY"     , pTarget ? true : false)
 	&&  pTool->Execute();
 
-	SG_Get_Tool_Library_Manager().Delete_Tool(pTool);
-
 	SG_UI_ProgressAndMsg_Lock(false);
+
+	SG_Get_Tool_Library_Manager().Delete_Tool(pTool);
 
 	return( bResult );
 }
@@ -2108,17 +2090,10 @@ bool	SG_Get_Projected	(const CSG_Projection &Source, const CSG_Projection &Targe
 	{
 		CSG_Tool	*pTool	= SG_Get_Tool_Library_Manager().Create_Tool("pj_proj4", 29);	// Single Coordinate Transformation
 
-		if( !pTool )
-		{
-			return( false );
-		}
-
 		SG_UI_ProgressAndMsg_Lock(true);
 
-		pTool->Set_Manager(NULL);
-
-		bool	bResult	=
-		    pTool->Set_Parameter("TARGET_CRS", Target.Get_Proj4())
+		bool	bResult	= pTool && pTool->Set_Manager(NULL)
+		&&  pTool->Set_Parameter("TARGET_CRS", Target.Get_Proj4())
 		&&	pTool->Set_Parameter("SOURCE_CRS", Source.Get_Proj4())
 		&&  pTool->Set_Parameter("SOURCE_X"  , Point.x)
 		&&  pTool->Set_Parameter("SOURCE_Y"  , Point.y)
@@ -2130,9 +2105,9 @@ bool	SG_Get_Projected	(const CSG_Projection &Source, const CSG_Projection &Targe
 			Point.y	= pTool->Get_Parameter("TARGET_Y")->asDouble();
 		}
 
-		SG_Get_Tool_Library_Manager().Delete_Tool(pTool);
-
 		SG_UI_ProgressAndMsg_Lock(false);
+
+		SG_Get_Tool_Library_Manager().Delete_Tool(pTool);
 
 		return( bResult );
 	}
