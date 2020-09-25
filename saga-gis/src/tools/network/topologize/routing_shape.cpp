@@ -57,7 +57,7 @@ void routing_shape::Add_Line(int col, int row, int t_col, int t_row, double dist
     line->Set_Value("sourceY", orig.y);
     line->Set_Value("targetX", to.x);
     line->Set_Value("targetY", to.y);
-    line->Set_Value("jump", dist > system.Get_Cellsize()*sqrt(2));
+    line->Set_Value("jump", dist > 1.1 * system.Get_Cellsize()*sqrt(2));
 
     // switch to saga grid definition for overlay of landuse
     row = system.Get_NY() - row;
