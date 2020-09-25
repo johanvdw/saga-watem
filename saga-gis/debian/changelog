@@ -1,3 +1,10 @@
+saga (7.4.0+dfsg-0~watem~bionic) bionic; urgency=medium
+
+  * Bump to 7.4.0
+  * Fix jump/nojump for all resolutions
+
+ -- Johan Van de Wauw <johan@gisky.be>  Fri, 28 Aug 2020 11:20:05 +0200
+
 saga (7.3.0+dfsg-0~watem~bionic) bionic; urgency=medium
 
   * Saga Watem version 
