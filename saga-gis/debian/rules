@@ -15,7 +15,7 @@ templates:
 	done
 
 %:
-	dh $@ --with python2 --with autoreconf --parallel
+	dh $@ --with python3 --with autoreconf --parallel
 
 override_dh_clean:
 	dh_clean src/saga_core/saga_api/saga_api.py saga_cmd.1 saga_gui.1
