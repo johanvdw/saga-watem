@@ -323,7 +323,7 @@ delaunay* delaunay_build(int np, point points[], int ns, int segments[], int nh,
 //---------------------------------------------------------
 #else /* USE_QHULL */
 
-#include <qhull/qhull_a.h>
+#include <libqhull/qhull_a.h>
 
 /* returns 1 if a,b,c are clockwise ordered */
 static int cw(delaunay *d, triangle *t)
