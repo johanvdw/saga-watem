@@ -1,7 +1,7 @@
 ---
 kind: pipeline
 type: docker
-name: saga-watem
+name: bullseye build
 
 steps:
   - name: build bullseye
@@ -16,6 +16,30 @@ steps:
       - debuild -b -us -uc
       - mkdir ../package
       - mv ../*saga*deb ../package
+  - name: rsync-apt
+    image: drillster/drone-rsync
+    settings:
+      hosts:
+        - ijzer
+      user: docs
+      key:
+         from_secret: ssh-key
+      source: package/*.deb
+      target: /appdata/static/apt/amd64
+    when:
+      branch:
+        - master
+        - saga-watem
+        - drone
+      event:
+        exclude:
+          - pull_request
+---
+kind: pipeline
+type: docker
+name: focal build
+
+steps:
   - name: build focal
     image: registry.fluves.net/drone/saga-watem/build-focal
     commands:
@@ -48,6 +72,15 @@ steps:
         exclude:
           - pull_request
 
+---
+kind: pipeline
+type: docker
+name: reindex repo
+depends_on:
+- focal build
+- bullseye build
+
+steps:
   # copy all packages from repo and rebuild index
   - name: Update repo
     image: registry.fluves.net/lazarus-build
