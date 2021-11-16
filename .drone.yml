@@ -4,15 +4,27 @@ type: docker
 name: saga-watem
 
 steps:
-  - name: build
-    image: registry.fluves.net/saga-build
+  - name: build bullseye
+    image: registry.fluves.net/drone/saga-watem/build-bullseye
     commands:
       - cd saga-gis
       - apt install -y dh-python
         # not working as debian is unfortunately not in the main dir
         #- gbp dch --snapshot --ignore-branch --snapshot-number=$DRONE_BUILD_NUMBER
         # Alternative version
-      - dch --newversion $(dpkg-parsechangelog --show-field Version)+$DRONE_BUILD_NUMBER "Automated build for $DRONE_COMMIT"
+      - dch --newversion $(dpkg-parsechangelog --show-field Version)+$DRONE_BUILD_NUMBER "Automated build for $DRONE_COMMIT~bullseye"
+      - debuild -b -us -uc
+      - mkdir ../package
+      - mv ../*saga*deb ../package
+  - name: build focal
+    image: registry.fluves.net/drone/saga-watem/build-focal
+    commands:
+      - cd saga-gis
+      - apt install -y dh-python
+        # not working as debian is unfortunately not in the main dir
+        #- gbp dch --snapshot --ignore-branch --snapshot-number=$DRONE_BUILD_NUMBER
+        # Alternative version
+      - dch --newversion $(dpkg-parsechangelog --show-field Version)+$DRONE_BUILD_NUMBER "Automated build for $DRONE_COMMIT~focal"
       - debuild -b -us -uc
       - mkdir ../package
       - mv ../*saga*deb ../package
