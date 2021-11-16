@@ -36,7 +36,7 @@ CTopologize::CTopologize(void)
     );
     Parameters.Add_Grid(
         NULL, "SYSTEM"	, _TL("Target grid (for grid system)"),
-        _TL(""), PARAMETER_INPUT_OPTIONAL
+        _TL("If target grid system is set, tolerance is ignored, and all points are first moved to the middle of their grid cell."), PARAMETER_INPUT_OPTIONAL
     );
     Parameters.Add_Value(
         NULL, "SIMPLIFY", _TL("Simplify"),
