@@ -13,7 +13,7 @@ steps:
         #- gbp dch --snapshot --ignore-branch --snapshot-number=$DRONE_BUILD_NUMBER
         # Alternative version
       - dch --newversion $(dpkg-parsechangelog --show-field Version)+$DRONE_BUILD_NUMBER "Automated build for $DRONE_COMMIT~bullseye"
-      - debuild -b -us -uc
+      - debuild -b -us -uc -j8
       - mkdir ../package
       - mv ../*saga*deb ../package
   - name: rsync-apt
@@ -49,7 +49,7 @@ steps:
         #- gbp dch --snapshot --ignore-branch --snapshot-number=$DRONE_BUILD_NUMBER
         # Alternative version
       - dch --newversion $(dpkg-parsechangelog --show-field Version)+$DRONE_BUILD_NUMBER "Automated build for $DRONE_COMMIT~focal"
-      - debuild -b -us -uc
+      - debuild -b -us -uc -j8
       - mkdir ../package
       - mv ../*saga*deb ../package
 
