@@ -102,6 +102,9 @@ bool Upstream_Edges::On_Execute(void)
     if (pUpstreamEdges->Get_Field("proportion")==-1)
         pUpstreamEdges->Add_Field("proportion", SG_DATATYPE_Double);
 
+    if (pAdjectantEdges->Get_Field("edge")==-1)
+        pAdjectantEdges->Add_Field("edge", SG_DATATYPE_Int);
+    int edge_field = pAdjectantEdges->Get_Field("edge");
     if (pAdjectantEdges->Get_Field("from")==-1)
         pAdjectantEdges->Add_Field("from", SG_DATATYPE_Int);
     int from_field = pAdjectantEdges->Get_Field("from");
@@ -252,12 +255,10 @@ bool Upstream_Edges::On_Execute(void)
     {
         const auto edge_id = it.first;
         const auto &edge = it.second;
-        for (auto const & to: edge.to)
-        {
-            auto *pRecord = pAdjectantEdges->Add_Record();
-            pRecord->Set_Value(from_field, edge_id + add_one);
-            pRecord->Set_Value(to_field, to + add_one);
-        }
+        auto *pRecord = pAdjectantEdges->Add_Record();
+        pRecord->Set_Value(edge_field, edge_id + add_one);
+        pRecord->Set_Value(from_field, edge.start_node + add_one);
+        pRecord->Set_Value(to_field, edge.end_node + add_one);
     }
 
     edges.clear();
