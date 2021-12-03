@@ -1,0 +1,5 @@
+FROM ubuntu:focal
+RUN apt-get update && apt-get upgrade -y && \
+    DEBIAN_FRONTEND=noninteractive apt-get -y install tzdata dh-autoreconf dh-python libdxflib-dev libexpat-dev libgdal-dev libhpdf-dev libogdi-dev libproj-dev \
+      libqhull-dev libsvm-dev libvigraimpex-dev libwxgtk3.0-gtk3-dev python3-dev swig git-buildpackage \
+    libopencv-dev
