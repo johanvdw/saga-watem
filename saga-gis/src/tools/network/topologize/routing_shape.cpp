@@ -87,8 +87,8 @@ bool routing_shape::On_Execute(void)
     lines->Add_Field("target1row", SG_DATATYPE_Int);
     lines->Add_Field("part1", SG_DATATYPE_Double);
     lines->Add_Field("distance1", SG_DATATYPE_Double);
-    lines->Add_Field("lnduSource", SG_DATATYPE_Int);
-    lines->Add_Field("lnduTarg", SG_DATATYPE_Int);
+    lines->Add_Field("lnduSource", landuse->Get_Type());
+    lines->Add_Field("lnduTarg", landuse->Get_Type());
     lines->Add_Field("jump", SG_DATATYPE_Int);
     lines->Add_Field("targetX", SG_DATATYPE_Double);
     lines->Add_Field("targetY", SG_DATATYPE_Double);
