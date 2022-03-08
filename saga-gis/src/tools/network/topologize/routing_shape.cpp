@@ -48,10 +48,10 @@ void routing_shape::Add_Line(int col, int row, int t_col, int t_row, double dist
     line->Add_Point(to);
     line->Set_Value("col", col);
     line->Set_Value("row", row);
-    line->Set_Value("target1col", t_col);
-    line->Set_Value("target1row", t_row);
-    line->Set_Value("part1", part);
-    line->Set_Value("distance1", dist);
+    line->Set_Value("targetcol", t_col);
+    line->Set_Value("targetrow", t_row);
+    line->Set_Value("part", part);
+    line->Set_Value("distance", dist);
 
     line->Set_Value("sourceX", orig.x);
     line->Set_Value("sourceY", orig.y);
@@ -83,10 +83,10 @@ bool routing_shape::On_Execute(void)
 
     lines->Add_Field("col", SG_DATATYPE_Int);
     lines->Add_Field("row", SG_DATATYPE_Int);
-    lines->Add_Field("target1col", SG_DATATYPE_Int);
-    lines->Add_Field("target1row", SG_DATATYPE_Int);
-    lines->Add_Field("part1", SG_DATATYPE_Double);
-    lines->Add_Field("distance1", SG_DATATYPE_Double);
+    lines->Add_Field("targetcol", SG_DATATYPE_Int);
+    lines->Add_Field("targetrow", SG_DATATYPE_Int);
+    lines->Add_Field("part", SG_DATATYPE_Double);
+    lines->Add_Field("distance", SG_DATATYPE_Double);
     lines->Add_Field("lnduSource", landuse->Get_Type());
     lines->Add_Field("lnduTarg", landuse->Get_Type());
     lines->Add_Field("jump", SG_DATATYPE_Int);
