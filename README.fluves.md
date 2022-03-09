@@ -6,6 +6,7 @@ Use Visual Studio 2015 or more recent and open the file
 `src/saga-gis/saga.vc14.sln`
 You can also look at the `appveyor.yml` file which provides automated builds.
 
+To create a release go to saga-gis\src\accessories\helper and run make_saga_snapshot (or make saga_release)
 
 ## On debian/ubuntu linux:
 
