@@ -83,7 +83,7 @@ depends_on:
 steps:
   # copy all packages from repo and rebuild index
   - name: Update repo
-    image: registry.fluves.net/lazarus-build
+    image: registry.fluves.net/drone/cn_ws/debian11-build
     environment:
       GPG_KEY:
          from_secret: gpg-key
