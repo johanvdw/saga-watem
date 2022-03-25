@@ -25,7 +25,7 @@ steps:
       key:
          from_secret: ssh-key
       source: package/*.deb
-      target: /appdata/static/apt/amd64
+      target: /appdata/static/apt/bullseye/amd64
     when:
       branch:
         - master
@@ -102,6 +102,15 @@ steps:
       - gpg --clearsign -o InRelease Release
       - gpg -abs -o Release.gpg Release
       - rsync -av . docs@ijzer:/appdata/static/apt/
+      - cd .. && rm -rf apt-repo
+      - mkdir apt-repo && cd apt-repo
+      - rsync -az -e "ssh -p 22 -o StrictHostKeyChecking=no" docs@ijzer:/appdata/static/apt/bullseye/amd64 .
+      - apt-ftparchive packages amd64 > Packages
+      - gzip -c Packages > Packages.gz
+      - apt-ftparchive release . > Release
+      - gpg --clearsign -o InRelease Release
+      - gpg -abs -o Release.gpg Release
+      - rsync -av . docs@ijzer:/appdata/static/apt/bullseye
     when:
       branch:
         - master
