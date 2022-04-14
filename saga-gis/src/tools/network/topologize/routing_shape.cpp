@@ -81,19 +81,19 @@ bool routing_shape::On_Execute(void)
     for (int i=0; i<lines->Get_Field_Count(); i++)
         lines->Del_Field(i);
 
-    lines->Add_Field("col", SG_DATATYPE_Int);
-    lines->Add_Field("row", SG_DATATYPE_Int);
-    lines->Add_Field("targetcol", SG_DATATYPE_Int);
-    lines->Add_Field("targetrow", SG_DATATYPE_Int);
-    lines->Add_Field("part", SG_DATATYPE_Double);
-    lines->Add_Field("distance", SG_DATATYPE_Double);
+    lines->Add_Field("col", SG_DATATYPE_Word);
+    lines->Add_Field("row", SG_DATATYPE_Word);
+    lines->Add_Field("targetcol", SG_DATATYPE_Word);
+    lines->Add_Field("targetrow", SG_DATATYPE_Word);
+    lines->Add_Field("part", SG_DATATYPE_Float);
+    lines->Add_Field("distance", SG_DATATYPE_Float);
     lines->Add_Field("lnduSource", landuse->Get_Type());
     lines->Add_Field("lnduTarg", landuse->Get_Type());
-    lines->Add_Field("jump", SG_DATATYPE_Int);
-    lines->Add_Field("targetX", SG_DATATYPE_Double);
-    lines->Add_Field("targetY", SG_DATATYPE_Double);
-    lines->Add_Field("sourceX", SG_DATATYPE_Double);
-    lines->Add_Field("sourceY", SG_DATATYPE_Double);
+    lines->Add_Field("jump", SG_DATATYPE_Bit);
+    lines->Add_Field("targetX", SG_DATATYPE_Float);
+    lines->Add_Field("targetY", SG_DATATYPE_Float);
+    lines->Add_Field("sourceX", SG_DATATYPE_Float);
+    lines->Add_Field("sourceY", SG_DATATYPE_Float);
 
     system = landuse->Get_System();
 
