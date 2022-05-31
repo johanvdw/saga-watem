@@ -72,7 +72,7 @@ CSG_String Get_Info(int i)
 		return( _TL("Imagery") );
 
 	case TLB_INFO_Author:
-		return( SG_T("SAGA User Group Assoc. (c) 2009") );
+		return( SG_T("SAGA User Group Assoc. (c) 2009-2021") );
 
 	case TLB_INFO_Description:
 		return( _TL("Image segmentation algorithms.") );
@@ -94,6 +94,7 @@ CSG_String Get_Info(int i)
 #include "grid_seeds.h"
 #include "rga_basic.h"
 #include "slic.h"
+#include "connected_components.h"
 
 
 //---------------------------------------------------------
@@ -108,9 +109,10 @@ CSG_Tool *		Create_Tool(int i)
 	case  2:	return( new CGrid_Seeds );
 	case  3:	return( new CRGA_Basic );
 	case  4:	return( new CSLIC );
+    case  5:    return( new CConnected_Components );
 
 	//-----------------------------------------------------
-	case  5:	return( NULL );
+	case  6:	return( NULL );
 	default:	return( TLB_INTERFACE_SKIP_TOOL );
 	}
 }

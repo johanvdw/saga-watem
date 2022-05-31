@@ -58,6 +58,7 @@
 
 #include "helper.h"
 
+#include "wksp_tool_manager.h"
 #include "wksp_data_manager.h"
 
 #include "parameters_control.h"
@@ -303,9 +304,13 @@ bool CParameters_Control::Load(void)
 	{
 		CSG_File	File(&File_Path);
 
+		m_pParameters->Set_Callback(false);
+
 		if(	m_pParameters->Serialize_Compatibility(File)
 		||	m_pParameters->Serialize(&File_Path, false) )
 		{
+			m_pParameters->Set_Callback(true);
+
 			_Init_Pararameters();
 
 			_Update_Parameters();
@@ -314,6 +319,8 @@ bool CParameters_Control::Load(void)
 
 			return( true );
 		}
+
+		m_pParameters->Set_Callback(true);
 
 		DLG_Message_Show(_TL("Parameters file could not be imported."), _TL("Load Parameters"));
 	}
@@ -351,7 +358,7 @@ bool CParameters_Control::Set_Parameters(CSG_Parameters *pParameters)
 	{
 		m_bFocus++;
 
-		m_pPG->Freeze();
+		GetParent()->Freeze();
 
 		m_bModified	= false;
 		m_pPG->ClearModifiedStatus();
@@ -390,7 +397,7 @@ bool CParameters_Control::Set_Parameters(CSG_Parameters *pParameters)
 			_Init_Pararameters();
 		}
 
-		m_pPG->Thaw();
+		GetParent()->Thaw();
 
 		m_bFocus--;
 	}
@@ -434,6 +441,8 @@ void CParameters_Control::_Add_Properties(CSG_Parameters *pParameters)
 	wxPGProperty *pTINs        = NULL;
 	wxPGProperty *pPointClouds = NULL;
 	wxPGProperty *pOptions     = NULL;
+
+	m_Precision	= g_pTools->Get_Parameter("FLOAT_PRECISION")->asInt();
 
 	for(int i=0; i<pParameters->Get_Count(); i++)
 	{
@@ -573,11 +582,11 @@ wxPGProperty * CParameters_Control::_Get_Property(wxPGProperty *pParent, CSG_Par
 
 	case PARAMETER_TYPE_Double          :
 		ADD_PROPERTY(new wxFloatProperty      (Name, ID, pParameter->asDouble()), false);
-		pProperty->SetAttribute(wxPG_FLOAT_PRECISION, -1);
+		pProperty->SetAttribute(wxPG_FLOAT_PRECISION, m_Precision);
 		break;
 
 	case PARAMETER_TYPE_Range           :
-		ADD_PROPERTY(new CParameters_PG_Range (Name, ID, pParameter            ), false);
+		ADD_PROPERTY(new CParameters_PG_Range (Name, ID, pParameter, m_Precision), false);
 		break;
 
 	case PARAMETER_TYPE_Degree          :
@@ -692,6 +701,8 @@ CSG_Parameter * CParameters_Control::_Get_Parameter(wxPGProperty *pProperty)
 //---------------------------------------------------------
 void CParameters_Control::_Set_Parameter(wxPGProperty *pProperty)
 {
+	Freeze();
+
 	CSG_Parameter	*pParameter	=  _Get_Parameter(pProperty);
 
 	if( pParameter )
@@ -736,6 +747,8 @@ void CParameters_Control::_Set_Parameter(wxPGProperty *pProperty)
 			m_pPG->SelectProperty(pProperty);
 		}
 	}
+
+	Thaw();
 }
 
 //---------------------------------------------------------
@@ -901,6 +914,8 @@ void CParameters_Control::_Update_Parameters(void)
 {
 	if( m_pParameters )
 	{
+		GetParent()->Freeze();
+
 		for(int i=0; i<m_pParameters->Get_Count(); i++)
 		{
 			_Update_Parameter(m_pParameters->Get_Parameter(i));
@@ -914,6 +929,8 @@ void CParameters_Control::_Update_Parameters(void)
 		UPDATE_DATA_NODE("_DATAOBJECT_OPTIONS");
 
 		m_pPG->Refresh();
+
+		GetParent()->Thaw();
 	}
 }
 

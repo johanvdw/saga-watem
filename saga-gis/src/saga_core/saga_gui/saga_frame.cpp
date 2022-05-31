@@ -1,6 +1,3 @@
-/**********************************************************
- * Version $Id$
- *********************************************************/
 
 ///////////////////////////////////////////////////////////
 //                                                       //
@@ -42,21 +39,10 @@
 //    contact:    Olaf Conrad                            //
 //                Institute of Geography                 //
 //                University of Goettingen               //
-//                Goldschmidtstr. 5                      //
-//                37077 Goettingen                       //
 //                Germany                                //
 //                                                       //
 //    e-mail:     oconrad@saga-gis.org                   //
 //                                                       //
-///////////////////////////////////////////////////////////
-
-//---------------------------------------------------------
-
-
-///////////////////////////////////////////////////////////
-//														 //
-//														 //
-//														 //
 ///////////////////////////////////////////////////////////
 
 //---------------------------------------------------------
@@ -118,10 +104,18 @@
 ///////////////////////////////////////////////////////////
 
 //---------------------------------------------------------
-#ifdef _DEBUG
-	#define SAGA_CAPTION	wxT("SAGA [Debug]")
+#if defined(_DEBUG)
+	#if defined(_SAGA_MSW) && !defined(_WIN64)
+		#define SAGA_CAPTION	wxString::Format("DEBUG|32-Bit|SAGA %s", SAGA_VERSION)
+	#else
+		#define SAGA_CAPTION	wxString::Format("DEBUG|SAGA %s", SAGA_VERSION)
+	#endif
 #else
-	#define SAGA_CAPTION	wxT("SAGA")
+	#if defined(_SAGA_MSW) && !defined(_WIN64)
+		#define SAGA_CAPTION	wxString::Format("32-Bit|SAGA %s", SAGA_VERSION)
+	#else
+		#define SAGA_CAPTION	wxString::Format("SAGA %s", SAGA_VERSION)
+	#endif
 #endif
 
 
@@ -246,6 +240,7 @@ BEGIN_EVENT_TABLE(CSAGA_Frame, MDI_ParentFrame)
 	EVT_MENU_RANGE		(ID_CMD_CHILD_FIRST				, ID_CMD_CHILD_LAST		, CSAGA_Frame::On_Command_Child)
 	EVT_UPDATE_UI_RANGE	(ID_CMD_MAP_FIRST				, ID_CMD_MAP_LAST		, CSAGA_Frame::On_Command_Child_UI)
 	EVT_UPDATE_UI_RANGE	(ID_CMD_HISTOGRAM_FIRST			, ID_CMD_HISTOGRAM_LAST	, CSAGA_Frame::On_Command_Child_UI)
+	EVT_UPDATE_UI_RANGE	(ID_CMD_DIAGRAM_FIRST			, ID_CMD_DIAGRAM_LAST	, CSAGA_Frame::On_Command_Child_UI)
 END_EVENT_TABLE()
 
 
@@ -386,7 +381,6 @@ CSAGA_Frame::CSAGA_Frame(void)
 //---------------------------------------------------------
 CSAGA_Frame::~CSAGA_Frame(void)
 {
-	//-----------------------------------------------------
 	if( IsIconized() )
 	{
 		Iconize(false);
@@ -406,7 +400,6 @@ CSAGA_Frame::~CSAGA_Frame(void)
 		CONFIG_Write("/FL", "DY"   , (long)GetSize    ().y);
 	}
 
-	//-----------------------------------------------------
 	CONFIG_Write("/FL", "MANAGER", m_pLayout->SavePerspective());
 
 	m_pLayout->UnInit();
@@ -414,15 +407,18 @@ CSAGA_Frame::~CSAGA_Frame(void)
 	delete(m_pLayout);
 
 	//-----------------------------------------------------
-	On_Child_Activates(-1);
+	if( GetMenuBar()->GetMenuCount() == 5 )
+	{
+		GetMenuBar()->Remove(2);
+	}
 
-	delete(m_pMN_Table);
-	delete(m_pMN_Diagram);
-	delete(m_pMN_Map);
-	delete(m_pMN_Map_3D);
-	delete(m_pMN_Histogram);
+	delete(m_pMN_Table      );
+	delete(m_pMN_Diagram    );
+	delete(m_pMN_Map        );
+	delete(m_pMN_Map_3D     );
+	delete(m_pMN_Histogram  );
 	delete(m_pMN_ScatterPlot);
-	delete(m_pMN_Layout);
+	delete(m_pMN_Layout     );
 
 	//-----------------------------------------------------
 	if( m_pTopWindows )
@@ -445,31 +441,38 @@ CSAGA_Frame::~CSAGA_Frame(void)
 //---------------------------------------------------------
 void CSAGA_Frame::On_Close(wxCloseEvent &event)
 {
-	if( event.CanVeto() )
-	{
-		if( !g_pTool && DLG_Message_Confirm(ID_DLG_CLOSE) && g_pData->Finalise() && g_pData->Close(true) )
-		{
-			g_pTools->Finalise();
-
-			Destroy();
-		}
-		else
-		{
-			if( g_pTool )
-			{
-				DLG_Message_Show(_TL("Please stop tool execution before exiting SAGA."), _TL("Exit SAGA"));
-			}
-
-			event.Veto();
-		}
-	}
-	else
+	if( event.CanVeto() == false )
 	{
 		g_pTools->Finalise();
 
 		g_pData->Close(true);
 
 		event.Skip();
+
+		return;
+	}
+
+	if( g_pTool )
+	{
+		if( g_pTool->is_Executing() )
+		{
+			g_pTool->Finish( true,  true);
+		}
+		else
+		{
+			g_pTool->Finish(false, false);
+		}
+	}
+
+	if( !g_pTool && g_pData->Finalise() && g_pData->Close(true) )
+	{
+		g_pTools->Finalise();
+
+		Destroy();
+	}
+	else
+	{
+		event.Veto();
 	}
 }
 
@@ -944,7 +947,7 @@ void CSAGA_Frame::Set_Project_Name(wxString Project_Name)
 {
 	if( Project_Name.Length() > 0 )
 	{
-		SetTitle(wxString::Format(wxT("%s [%s]"), SAGA_CAPTION, Project_Name.c_str()));
+		SetTitle(wxString::Format("%s [%s]", SAGA_CAPTION, Project_Name.c_str()));
 	}
 	else
 	{
@@ -1017,6 +1020,11 @@ wxWindow * CSAGA_Frame::Top_Window_Get(void)
 //---------------------------------------------------------
 void CSAGA_Frame::Close_Children(void)
 {
+	if( GetActiveChild() && GetActiveChild()->IsMaximized() )
+	{
+		GetActiveChild()->Restore();
+	}
+
 	while( GetActiveChild() != NULL )
 	{
 		delete(GetActiveChild());
@@ -1047,57 +1055,52 @@ int CSAGA_Frame::_Get_MDI_Children_Count(void)
 void CSAGA_Frame::On_Child_Activates(int View_ID)
 {
 #ifdef MDI_TABBED
-	if( View_ID < 0 && GetNotebook()->GetPageCount() > 0 )	// child view closes, but it's not the last one
+	if( View_ID < 0 && _Get_MDI_Children_Count() > 0 )	// child view closes, but it's not the last one
 #else
-	if( View_ID < 0 && _Get_MDI_Children_Count    () > 1 )	// child view closes, but it's not the last one
+	if( View_ID < 0 && _Get_MDI_Children_Count() > 1 )	// child view closes, but it's not the last one
 #endif
 	{
 		return;	// nothing to do, another child will be activated next!
 	}
 
 	//-----------------------------------------------------
-	wxString		Title;
-	wxMenu			*pMenu		= NULL;
-	wxToolBarBase	*pToolBar	= NULL;
+	_Bar_Show(m_pTB_Main       , true                            );
+	_Bar_Show(m_pTB_Table      , View_ID == ID_VIEW_TABLE        );
+	_Bar_Show(m_pTB_Diagram    , View_ID == ID_VIEW_TABLE_DIAGRAM);
+	_Bar_Show(m_pTB_Map        , View_ID == ID_VIEW_MAP          );
+	_Bar_Show(m_pTB_Map_3D     , View_ID == ID_VIEW_MAP_3D       );
+	_Bar_Show(m_pTB_Histogram  , View_ID == ID_VIEW_HISTOGRAM    );
+	_Bar_Show(m_pTB_ScatterPlot, View_ID == ID_VIEW_SCATTERPLOT  );
+	_Bar_Show(m_pTB_Layout     , View_ID == ID_VIEW_LAYOUT       );
+
+	//-----------------------------------------------------
+	wxMenu	*pMenu = NULL; wxString Title;
 
 	switch( View_ID )
 	{
-	case ID_VIEW_TABLE        : pToolBar = m_pTB_Table      ; pMenu	= m_pMN_Table      ; Title = _TL("Table"      ); break;
-	case ID_VIEW_TABLE_DIAGRAM: pToolBar = m_pTB_Diagram    ; pMenu	= m_pMN_Diagram    ; Title = _TL("Diagram"    ); break;
-	case ID_VIEW_MAP          : pToolBar = m_pTB_Map        ; pMenu	= m_pMN_Map        ; Title = _TL("Map"        ); break;
-	case ID_VIEW_MAP_3D       : pToolBar = m_pTB_Map_3D     ; pMenu	= m_pMN_Map_3D     ; Title = _TL("3D View"    ); break;
-	case ID_VIEW_HISTOGRAM    : pToolBar = m_pTB_Histogram  ; pMenu	= m_pMN_Histogram  ; Title = _TL("Histogram"  ); break;
-	case ID_VIEW_SCATTERPLOT  : pToolBar = m_pTB_ScatterPlot; pMenu	= m_pMN_ScatterPlot; Title = _TL("Scatterplot"); break;
-	case ID_VIEW_LAYOUT       : pToolBar = m_pTB_Layout     ; pMenu	= m_pMN_Layout     ; Title = _TL("Layout"     ); break;
+	case ID_VIEW_TABLE        : pMenu = m_pMN_Table      ; Title = _TL("Table"      ); break;
+	case ID_VIEW_TABLE_DIAGRAM: pMenu = m_pMN_Diagram    ; Title = _TL("Diagram"    ); break;
+	case ID_VIEW_MAP          : pMenu = m_pMN_Map        ; Title = _TL("Map"        ); break;
+	case ID_VIEW_MAP_3D       : pMenu = m_pMN_Map_3D     ; Title = _TL("3D View"    ); break;
+	case ID_VIEW_HISTOGRAM    : pMenu = m_pMN_Histogram  ; Title = _TL("Histogram"  ); break;
+	case ID_VIEW_SCATTERPLOT  : pMenu = m_pMN_ScatterPlot; Title = _TL("Scatterplot"); break;
+	case ID_VIEW_LAYOUT       : pMenu = m_pMN_Layout     ; Title = _TL("Layout"     ); break;
 	}
-
-	//-----------------------------------------------------
-	_Bar_Show(m_pTB_Main       , true                         );
-	_Bar_Show(m_pTB_Table      , pToolBar == m_pTB_Table      );
-	_Bar_Show(m_pTB_Diagram    , pToolBar == m_pTB_Diagram    );
-	_Bar_Show(m_pTB_Map        , pToolBar == m_pTB_Map        );
-	_Bar_Show(m_pTB_Map_3D     , pToolBar == m_pTB_Map_3D     );
-	_Bar_Show(m_pTB_Histogram  , pToolBar == m_pTB_Histogram  );
-	_Bar_Show(m_pTB_ScatterPlot, pToolBar == m_pTB_ScatterPlot);
-	_Bar_Show(m_pTB_Layout     , pToolBar == m_pTB_Layout     );
-
-	//-----------------------------------------------------
-	wxMenuBar	*pMenuBar	= GetMenuBar();
 
 	if( pMenu )
 	{
-		if( pMenuBar->GetMenuCount() < 5 )
+		if( GetMenuBar()->GetMenuCount() < 5 )
 		{
-			pMenuBar->Insert (2, pMenu, Title);
+			GetMenuBar()->Insert (2, pMenu, Title);
 		}
-		else if( pMenuBar->GetMenu(2) != pMenu )
+		else if( GetMenuBar()->GetMenu(2) != pMenu )
 		{
-			pMenuBar->Replace(2, pMenu, Title);
+			GetMenuBar()->Replace(2, pMenu, Title);
 		}
 	}
-	else if( pMenuBar->GetMenuCount() == 5 )
+	else if( GetMenuBar()->GetMenuCount() == 5 )
 	{
-		pMenuBar->Remove(2);
+		GetMenuBar()->Remove(2);
 	}
 }
 
@@ -1304,6 +1307,7 @@ wxToolBarBase * CSAGA_Frame::_Create_ToolBar(void)
 	wxToolBarBase	*pToolBar	= TB_Create(ID_TB_MAIN);
 
 	CMD_ToolBar_Add_Item(pToolBar, false, ID_CMD_DATA_OPEN);
+	CMD_ToolBar_Add_Item(pToolBar, false, ID_CMD_DATA_PROJECT_NEW);
 	CMD_ToolBar_Add_Item(pToolBar, false, ID_CMD_DATA_PROJECT_SAVE);
 	CMD_ToolBar_Add_Separator(pToolBar);
 	CMD_ToolBar_Add_Item(pToolBar, true , ID_CMD_FRAME_WKSP_SHOW);

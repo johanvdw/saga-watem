@@ -1,6 +1,3 @@
-/**********************************************************
- * Version $Id: change_detection.cpp 1921 2014-01-09 10:24:11Z oconrad $
- *********************************************************/
 
 ///////////////////////////////////////////////////////////
 //                                                       //
@@ -49,15 +46,6 @@
 ///////////////////////////////////////////////////////////
 
 //---------------------------------------------------------
-
-
-///////////////////////////////////////////////////////////
-//														 //
-//														 //
-//														 //
-///////////////////////////////////////////////////////////
-
-//---------------------------------------------------------
 #include "change_detection.h"
 
 
@@ -70,20 +58,25 @@
 //---------------------------------------------------------
 CChange_Detection::CChange_Detection(void)
 {
-	//-----------------------------------------------------
 	Set_Name		(_TL("Confusion Matrix (Two Grids)"));
 
 	Set_Author		("O.Conrad (c) 2010");
 
 	Set_Description	(_TW(
-		"Compares two classified grids and creates a confusion matrix "
+		"The tool allows one to compare two classified grids. "
+        "It creates a confusion matrix "
 		"and derived coefficients as well as the combinations of both "
-		"classifications as new grid. "
-		"Grid classes have to be defined with a look-up table and "
-		"values of both grids must match each other for the "
-		"subsequent comparison. "
+		"classifications as new grid. The values of both grids must "
+        "match each other in order to do the comparison.\n"
+        "The tool provides three options to define the grid classes:\n"
+        "- by providing a look-up table for each grid\n"
+        "- by coloring each grid with a look-up table (colors type = classified) "
+        " beforehand (only available in the GUI)\n"
+        "- by preparing the grid values appropriately; i.e., if no "
+        "look-up table is provided, the tool simply extracts the classes "
+        "from the grid values found in each grid\n"
 		"A typical application is a change detection analysis "
-		"based on land cover classification of satellite imagery. "
+		"based on land cover classification of satellite imagery.\n"
 	));
 
 	//-----------------------------------------------------
@@ -136,7 +129,7 @@ CChange_Detection::CChange_Detection(void)
 	Parameters.Add_Choice("CONFUSION",
 		"OUTPUT"	, _TL("Output as..."),
 		_TL(""),
-		CSG_String::Format("%s|%s|%s|",
+		CSG_String::Format("%s|%s|%s",
 			_TL("cells"),
 			_TL("percent"),
 			_TL("area")
@@ -195,7 +188,6 @@ int CChange_Detection::On_Parameters_Enable(CSG_Parameters *pParameters, CSG_Par
 //---------------------------------------------------------
 bool CChange_Detection::On_Execute(void)
 {
-	//-----------------------------------------------------
 	CSG_Table	 One;
 
 	CSG_Grid	*pOne	= Parameters("ONE")->asGrid();
@@ -241,7 +233,6 @@ bool CChange_Detection::On_Execute(void)
 
 	for(int y=0; y<Get_NY() && Set_Progress(y); y++)
 	{
-		#pragma omp parallel for
 		for(int x=0; x<Get_NX(); x++)
 		{
 			int	Value	= -1;
@@ -253,7 +244,7 @@ bool CChange_Detection::On_Execute(void)
 			{
 				if( bNoChange || !Identity[iOne][iTwo] )
 				{
-					pConfusion->Get_Record(iOne)->Add_Value(1 + iTwo, 1);
+					pConfusion->Get_Record(iOne)->Add_Value(1 + iTwo, 1.);
 
 					Value	= nTwo * iOne + iTwo;
 				}
@@ -302,12 +293,12 @@ bool CChange_Detection::On_Execute(void)
 
 	switch( Parameters("OUTPUT")->asInt() )
 	{
-	default:	Factor	= 1.0;					break;	// cells
-	case  1:	Factor	= 100.0 / Get_NCells();	break;	// percent
-	case  2:	Factor	= Get_Cellarea();		break;	// area
+	default: Factor = 1.                 ; break; // cells
+	case  1: Factor = 100. / Get_NCells(); break; // percent
+	case  2: Factor = Get_Cellarea()     ; break; // area
 	}
 
-	if( Factor != 1.0 )
+	if( Factor != 1. )
 	{
 		for(int iOne=0; iOne<nOne; iOne++)
 		{
@@ -358,9 +349,9 @@ bool CChange_Detection::Get_Quality(CSG_Table &Confusion, CSG_Table &Classes, CS
 	//-----------------------------------------------------
 	Classes.Destroy();
 	Classes.Add_Field("Class"        , SG_DATATYPE_String);
-	Classes.Add_Field("SumRef"       , SG_DATATYPE_Int);
+	Classes.Add_Field("SumRef"       , SG_DATATYPE_Int   );
 	Classes.Add_Field("AccProd"      , SG_DATATYPE_Double);
-	Classes.Add_Field("SumClassified", SG_DATATYPE_Int);
+	Classes.Add_Field("SumClassified", SG_DATATYPE_Int   );
 	Classes.Add_Field("AccUser"      , SG_DATATYPE_Double);
 	Classes.Set_Record_Count(nClasses);
 
@@ -393,8 +384,8 @@ bool CChange_Detection::Get_Quality(CSG_Table &Confusion, CSG_Table &Classes, CS
 		nTrue	+= Confusion[i].asLong(1 + i);
 		nProd	+= nOne * nTwo;
 
-		double	AccOne	= nOne < 1 ? -1.0 : Confusion[i].asLong(1 + i) / (double)nOne;
-		double	AccTwo	= nTwo < 1 ? -1.0 : Confusion[i].asLong(1 + i) / (double)nTwo;
+		double	AccOne	= nOne < 1 ? -1. : Confusion[i].asDouble(1 + i) / (double)nOne;
+		double	AccTwo	= nTwo < 1 ? -1. : Confusion[i].asDouble(1 + i) / (double)nTwo;
 
 		Classes[i].Set_Value(0, Confusion[i].asString(0));
 		Classes[i].Set_Value(1, nOne); if( AccOne < 0 ) Classes[i].Set_NoData(1); else
@@ -403,14 +394,14 @@ bool CChange_Detection::Get_Quality(CSG_Table &Confusion, CSG_Table &Classes, CS
 		Classes[i].Set_Value(4, AccTwo);
 
 		n	= Confusion.Get_Count() - 2;
-		Confusion[n + 0].Set_Value (1 + i, nOne); if( AccOne < 0.0 )
+		Confusion[n + 0].Set_Value (1 + i, nOne); if( AccOne < 0. )
 		Confusion[n + 1].Set_NoData(1 + i); else
-		Confusion[n + 1].Set_Value (1 + i, AccOne * 100.0);
+		Confusion[n + 1].Set_Value (1 + i, AccOne * 100.);
 
 		n	= Confusion.Get_Field_Count() - 2;
-		Confusion[i    ].Set_Value (n + 0, nTwo); if( AccTwo < 0.0 )
+		Confusion[i    ].Set_Value (n + 0, nTwo); if( AccTwo < 0. )
 		Confusion[i    ].Set_NoData(n + 1); else
-		Confusion[i    ].Set_Value (n + 1, AccTwo * 100.0);
+		Confusion[i    ].Set_Value (n + 1, AccTwo * 100.);
 	}
 
 	//-----------------------------------------------------
@@ -419,9 +410,9 @@ bool CChange_Detection::Get_Quality(CSG_Table &Confusion, CSG_Table &Classes, CS
 	Summary.Add_Field("VALUE", SG_DATATYPE_Double);
 	Summary.Set_Record_Count(2);
 
-	double	k	= nTotal*nTotal - nProd, OA = 0.0;
+	double	k	= (double)(nTotal*nTotal - nProd), OA = 0.;
 
-	if( k != 0.0 )
+	if( k != 0. )
 	{
 		Summary[0].Set_Value(0, "Kappa"           ); Summary[0].Set_Value(1, k  = (nTotal * nTrue - nProd) / k);
 		Summary[1].Set_Value(0, "Overall Accuracy"); Summary[1].Set_Value(1, OA = nTrue / (double)nTotal);
@@ -484,7 +475,9 @@ bool CChange_Detection::Get_Classes(CSG_Table &Classes, CSG_Grid *pGrid, bool bI
 	}
 
 	//-----------------------------------------------------
-	else if( DataObject_Get_Parameter(pGrid, "LUT") && (pClasses = DataObject_Get_Parameter(pGrid, "LUT")->asTable()) != NULL )
+	else if( DataObject_Get_Parameter(pGrid, "COLORS_TYPE")->asInt() == 1
+          && DataObject_Get_Parameter(pGrid, "LUT") 
+          && (pClasses = DataObject_Get_Parameter(pGrid, "LUT")->asTable()) != NULL )
 	{
 		pClasses->Set_Index(3, TABLE_INDEX_Ascending);
 
@@ -544,16 +537,13 @@ bool CChange_Detection::Get_Classes(CSG_Table &Classes, CSG_Grid *pGrid, bool bI
 //---------------------------------------------------------
 bool CChange_Detection::Get_Changes(CSG_Table &One, CSG_Table &Two, CSG_Table *pConfusion, CSG_Matrix &Identity, bool bUnclassified)
 {
-	int		iOne, iTwo;
-
-	//-----------------------------------------------------
 	Identity.Create(Two.Get_Count() + 1, One.Get_Count() + 1);
 
-	for(iOne=0; iOne<One.Get_Count(); iOne++)
+	for(int iOne=0; iOne<One.Get_Count(); iOne++)
 	{
 		CSG_String	s	= One[iOne].asString(CLASS_NAM);
 
-		for(iTwo=0; iTwo<Two.Get_Count(); iTwo++)
+		for(int iTwo=0; iTwo<Two.Get_Count(); iTwo++)
 		{
 			Identity[iOne][iTwo]	= s.Cmp(Two[iTwo].asString(CLASS_NAM)) ? 0 : 1;
 		}
@@ -566,7 +556,7 @@ bool CChange_Detection::Get_Changes(CSG_Table &One, CSG_Table &Two, CSG_Table *p
 
 	pConfusion->Add_Field(_TL("Name"), SG_DATATYPE_String);
 
-	for(iTwo=0; iTwo<Two.Get_Count(); iTwo++)
+	for(int iTwo=0; iTwo<Two.Get_Count(); iTwo++)
 	{
 		pConfusion->Add_Field(Two[iTwo].asString(CLASS_NAM), SG_DATATYPE_Double);
 	}
@@ -577,7 +567,7 @@ bool CChange_Detection::Get_Changes(CSG_Table &One, CSG_Table &Two, CSG_Table *p
 	}
 
 	//-----------------------------------------------------
-	for(iOne=0; iOne<One.Get_Count(); iOne++)
+	for(int iOne=0; iOne<One.Get_Count(); iOne++)
 	{
 		pConfusion->Add_Record()->Set_Value(0, One[iOne].asString(CLASS_NAM));
 	}
@@ -618,14 +608,14 @@ inline int CChange_Detection::Cmp_Class(CSG_Table &Classes, double Value, int iC
 //---------------------------------------------------------
 int CChange_Detection::Get_Class(CSG_Table &Classes, double Value)
 {
-	int		a, b, i, c;
-
 	if( Classes.Get_Count() > 0 )
 	{
+		int	a, b;
+
 		for(a=0, b=Classes.Get_Record_Count()-1; a < b; )
 		{
-			i	= a + (b - a) / 2;
-			c	= Cmp_Class(Classes, Value, i);
+			int	i	= a + (b - a) / 2;
+			int	c	= Cmp_Class(Classes, Value, i);
 
 			if( c > 0 )
 			{

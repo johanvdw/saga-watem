@@ -45,15 +45,6 @@
 ///////////////////////////////////////////////////////////
 
 //---------------------------------------------------------
-
-
-///////////////////////////////////////////////////////////
-//														 //
-//           The Tool Link Library Interface             //
-//														 //
-///////////////////////////////////////////////////////////
-
-//---------------------------------------------------------
 // 1. Include the appropriate SAGA-API header...
 
 #include <saga_api/saga_api.h>
@@ -67,22 +58,22 @@ CSG_String Get_Info(int i)
 	switch( i )
 	{
 	case TLB_INFO_Name:	default:
-		return( _TL("Climate Tools") );
+		return( _TL("Climate and Weather Tools") );
 
 	case TLB_INFO_Category:
-		return( _TL("Climate") );
+		return( _TL("Climate and Weather") );
 
 	case TLB_INFO_Author:
 		return( "O.Conrad (c) 2012" );
 
 	case TLB_INFO_Description:
-		return( _TL("Tools for weather and climate data.") );
+		return( _TL("Tools for the processing and analysis of climate and weather data.") );
 
 	case TLB_INFO_Version:
 		return( "1.0" );
 
 	case TLB_INFO_Menu_Path:
-		return( _TL("Climate") );
+		return( _TL("Climate and Weather") );
 	}
 }
 
@@ -92,7 +83,7 @@ CSG_String Get_Info(int i)
 
 #include "grid_levels_interpolation.h"
 #include "milankovic.h"
-#include "etp_hargreave.h"
+#include "evapotranspiration.h"
 #include "daily_sun.h"
 #include "bioclimatic_vars.h"
 #include "treeline.h"
@@ -103,6 +94,13 @@ CSG_String Get_Info(int i)
 #include "growing_degree_days.h"
 #include "climate_classification.h"
 #include "phenips.h"
+#include "soil_water_balance.h"
+#include "cloud_overlap.h"
+#include "temperature_lapse_rates.h"
+#include "air_pressure.h"
+#include "land_surface_temperature.h"
+#include "air_humidity.h"
+#include "temperature_lapse_downscaling.h"
 
 
 //---------------------------------------------------------
@@ -120,11 +118,12 @@ CSG_Tool *		Create_Tool(int i)
 	case  4:	return( new CMilankovic_SR_Day_Location );
 	case  5:	return( new CMilankovic_SR_Monthly_Global );
 
-	case  8:	return( new CPET_Hargreave_Grid );
-	case  6:	return( new CPET_Hargreave_Table );
-	case  7:	return( new CPET_Day_To_Hour );
+	case  7:	return( new CETpot_Day_To_Hour );
+	case  6:	return( new CETpot_Table );
+	case  8:	return( new CETpot_Grid );
 
 	case  9:	return( new CDaily_Sun );
+	case 31:	return( new CSolarRadiation );
 
 	case 10:	return( new CBioclimatic_Vars );
 	case 11:	return( new CTree_Growth );
@@ -143,10 +142,22 @@ CSG_Tool *		Create_Tool(int i)
 	case 19:	return( new CClimate_Classification );
 
 	case 21:	return( new CPhenIps_Table );
-	case 22:	return( new CPhenIps_Grids );
+	case 22:	return( new CPhenIps_Grids_Annual );
+	case 23:	return( new CPhenIps_Grids_Days );
+
+	case 24:	return( new CSoil_Water_Balance );
+
+	case 25:	return( new CCloud_Overlap );
+	case 26:	return( new CTemperature_Lapse_Rates );
+	case 30:	return( new CTemperature_Lapse_Downscaling );
+
+	case 27:	return( new CAirPressure_Scaling );
+	case 29:	return( new CAirHumidity_Conversion );
+
+	case 28:	return( new CLand_Surface_Temperature );
 
 	//-----------------------------------------------------
-	case 23:	return( NULL );
+	case 32:	return( NULL );
 	default:	return( TLB_INTERFACE_SKIP_TOOL );
 	}
 }

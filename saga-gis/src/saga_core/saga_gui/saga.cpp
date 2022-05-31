@@ -1,6 +1,3 @@
-/**********************************************************
- * Version $Id$
- *********************************************************/
 
 ///////////////////////////////////////////////////////////
 //                                                       //
@@ -41,22 +38,11 @@
 //                                                       //
 //    contact:    Olaf Conrad                            //
 //                Institute of Geography                 //
-//                University of Goettingen               //
-//                Goldschmidtstr. 5                      //
-//                37077 Goettingen                       //
+//                University of Hamburg                  //
 //                Germany                                //
 //                                                       //
 //    e-mail:     oconrad@saga-gis.org                   //
 //                                                       //
-///////////////////////////////////////////////////////////
-
-//---------------------------------------------------------
-
-
-///////////////////////////////////////////////////////////
-//														 //
-//														 //
-//														 //
 ///////////////////////////////////////////////////////////
 
 //---------------------------------------------------------
@@ -66,6 +52,7 @@
 #include <wx/splash.h>
 #include <wx/filename.h>
 #include <wx/stdpaths.h>
+#include <wx/wfstream.h>
 
 #include <saga_api/saga_api.h>
 
@@ -94,23 +81,11 @@ IMPLEMENT_APP(CSAGA)
 
 //---------------------------------------------------------
 BEGIN_EVENT_TABLE(CSAGA, wxApp)
-	EVT_KEY_DOWN		(CSAGA::On_Key_Down)
+	EVT_KEY_DOWN(CSAGA::On_Key_Down)
 END_EVENT_TABLE()
 
 
 ///////////////////////////////////////////////////////////
-//														 //
-//														 //
-//														 //
-///////////////////////////////////////////////////////////
-
-//---------------------------------------------------------
-#define SAGA_GUI_BUILD	"20140214"
-
-
-///////////////////////////////////////////////////////////
-//														 //
-//														 //
 //														 //
 ///////////////////////////////////////////////////////////
 
@@ -125,14 +100,11 @@ CSAGA::~CSAGA(void)
 
 ///////////////////////////////////////////////////////////
 //														 //
-//														 //
-//														 //
 ///////////////////////////////////////////////////////////
 
 //---------------------------------------------------------
 bool CSAGA::OnInit(void)
 {
-	//-----------------------------------------------------
 	g_pSAGA	= this;
 
 	SetVendorName("www.saga-gis.org");
@@ -144,9 +116,9 @@ bool CSAGA::OnInit(void)
 
 	m_App_Path	= App_Path.GetPath();
 
-#if !defined(_DEBUG)
-	wxSetAssertHandler(NULL);		// disable all wx asserts in SAGA release builds
-#endif
+	#if !defined(_DEBUG)
+		wxSetAssertHandler(NULL);	// disable all wx asserts in SAGA release builds
+	#endif
 
 	/* workaround: wxwidgets 2.9.3 is complaining about setlocale
 	 * mismatch between c setlocale and wxLocale. since saga has its own
@@ -177,26 +149,8 @@ bool CSAGA::OnInit(void)
 	wxYield();
 
 	//-----------------------------------------------------
-#if defined(_SAGA_MSW)
-	wxString	Path;
-
-	if( wxGetEnv("PATH", &Path) && Path.Length() > 0 )
-	{
-		wxSetEnv("PATH", Get_App_Path() + "\\dll;" + Path);
-	}
-	else
-	{
-		wxSetEnv("PATH", Get_App_Path() + "\\dll");
-	}
-
-	wxSetEnv("GDAL_DRIVER_PATH", Get_App_Path() + "\\dll");
-	wxSetEnv("GDAL_DATA"       , Get_App_Path() + "\\dll\\gdal-data");
-#endif // defined(_SAGA_MSW)
-
-	//-----------------------------------------------------
 	wxString	File;
 
-	//-----------------------------------------------------
 	if( !CONFIG_Read("/TOOLS", "LNG_FILE_DIC", File) || !wxFileExists(File) )
 	{
 		File	= wxFileName(Get_App_Path(), "saga", "lng").GetFullPath();
@@ -208,40 +162,7 @@ bool CSAGA::OnInit(void)
 	}
 
 	//-----------------------------------------------------
-	long oldstyle; if( CONFIG_Read("/TOOLS", "LNG_OLDSTYLE", oldstyle) && oldstyle ) SG_Set_OldStyle_Naming();
-	//-----------------------------------------------------
-
-	//-----------------------------------------------------
-	if( !CONFIG_Read("/TOOLS", "CRS_FILE_DIC", File) || !wxFileExists(File) )
-	{
-#if defined(_SAGA_LINUX)
-		File	= wxFileName(SHARE_PATH, "saga_prj", "dic").GetFullPath();
-#endif
-#if defined(_SAGA_MSW)
-		File	= wxFileName(Get_App_Path(), "saga_prj", "dic").GetFullPath();
-#endif
-	}
-
-	if( !SG_Get_Projections().Load_Dictionary(&File) )
-	{
-		CONFIG_Delete("/TOOLS", "CRS_FILE_DIC");
-	}
-
-	//-----------------------------------------------------
-	if( !CONFIG_Read("/TOOLS", "CRS_FILE_SRS", File) || !wxFileExists(File) )
-	{
-#if defined(_SAGA_LINUX)
-		File	= wxFileName(SHARE_PATH, "saga_prj", "srs").GetFullPath();
-#endif
-#if defined(_SAGA_MSW)
-		File	= wxFileName(Get_App_Path(), "saga_prj", "srs").GetFullPath();
-#endif
-	}
-
-	if( !SG_Get_Projections().Load_DB(&File) )
-	{
-		CONFIG_Delete("/TOOLS", "CRS_FILE_SRS");
-	}
+	SG_Initialize_Environment(false, true, NULL, false);
 
 	//-----------------------------------------------------
 	SetTopWindow(new CSAGA_Frame());
@@ -284,75 +205,49 @@ int CSAGA::OnExit(void)
 
 ///////////////////////////////////////////////////////////
 //														 //
-//														 //
-//														 //
 ///////////////////////////////////////////////////////////
-
-//---------------------------------------------------------
-#include <wx/wfstream.h>
 
 //---------------------------------------------------------
 void CSAGA::_Init_Config(void)
 {
 	wxConfigBase	*pConfig;
 
-#if defined(_SAGA_MSW)
-	wxFileName	fLocal(Get_App_Path(), "saga_gui", "ini");
+	#if defined(_SAGA_MSW)
+		wxFileName	fLocal(Get_App_Path(), "saga_gui", "ini");
 
-	if( ( fLocal.FileExists() && (!fLocal.IsFileReadable() || !fLocal.IsFileWritable()))
-	||  (!fLocal.FileExists() && (!fLocal.IsDirReadable () || !fLocal.IsDirWritable ())) )
-	{
-		wxFileName	fUser (wxGetHomeDir(), "saga_gui", "ini");
-	//	wxFileName	fUser (wxStandardPaths::Get().GetUserConfigDir(), "saga_gui", "ini");
-
-		if(	fLocal.FileExists() && fLocal.IsFileReadable() && !fUser.FileExists() )	// create a copy in user's home directory
+		if( ( fLocal.FileExists() && (!fLocal.IsFileReadable() || !fLocal.IsFileWritable()))
+		||  (!fLocal.FileExists() && (!fLocal.IsDirReadable () || !fLocal.IsDirWritable ())) )
 		{
-			wxFileInputStream	is(fLocal.GetFullPath());
-			wxFileOutputStream	os(fUser .GetFullPath());
-			wxFileConfig		ic(is);	ic.Save(os);
+			wxFileName	fUser (wxGetHomeDir(), "saga_gui", "ini");
+		//	wxFileName	fUser (wxStandardPaths::Get().GetUserConfigDir(), "saga_gui", "ini");
+
+			if(	fLocal.FileExists() && fLocal.IsFileReadable() && !fUser.FileExists() )	// create a copy in user's home directory
+			{
+				wxFileInputStream	is(fLocal.GetFullPath());
+				wxFileOutputStream	os(fUser .GetFullPath());
+				wxFileConfig		ic(is);	ic.Save(os);
+			}
+
+			fLocal	= fUser;
 		}
 
-		fLocal	= fUser;
-	}
-
-	if( (fLocal.FileExists() && fLocal.IsFileWritable()) || (!fLocal.FileExists() && fLocal.IsDirWritable()) )
-	{
-		pConfig = new wxFileConfig(wxEmptyString, wxEmptyString, fLocal.GetFullPath(), fLocal.GetFullPath(), wxCONFIG_USE_LOCAL_FILE|wxCONFIG_USE_GLOBAL_FILE|wxCONFIG_USE_RELATIVE_PATH);
-	}
-	else
-	{
-		pConfig	= new wxConfig;	// this might go to registry
-	}
-#else
-	pConfig	= new wxConfig;
-#endif
+		if( (fLocal.FileExists() && fLocal.IsFileWritable()) || (!fLocal.FileExists() && fLocal.IsDirWritable()) )
+		{
+			pConfig = new wxFileConfig(wxEmptyString, wxEmptyString, fLocal.GetFullPath(), fLocal.GetFullPath(), wxCONFIG_USE_LOCAL_FILE|wxCONFIG_USE_GLOBAL_FILE|wxCONFIG_USE_RELATIVE_PATH);
+		}
+		else
+		{
+			pConfig	= new wxConfig;	// this might go to registry !
+		}
+	#else
+		pConfig	= new wxConfig;
+	#endif
 
 	wxConfigBase::Set(pConfig);
-
-	//-----------------------------------------------------
-	wxString	s;
-
-	if( !CONFIG_Read("Version", "Build", s) || s.Cmp(SAGA_GUI_BUILD) )
-	{
-		long	l;
-
-		pConfig->SetPath("/");
-
-		while( pConfig->GetFirstGroup(s, l) )
-		{
-			pConfig->DeleteGroup(s);
-		}
-
-		pConfig->Flush();
-
-		CONFIG_Write("Version", "Build", SAGA_GUI_BUILD);
-	}
 }
 
 
 ///////////////////////////////////////////////////////////
-//														 //
-//														 //
 //														 //
 ///////////////////////////////////////////////////////////
 

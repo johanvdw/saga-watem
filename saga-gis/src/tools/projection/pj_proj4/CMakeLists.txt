@@ -1,14 +1,11 @@
-option(WITH_TOOL_PJ_PROJ4 "Check to install tool pj_proj4" OFF)
+option(WITH_TOOLS_PROJ "Check to create build targets for Proj tools" ON)
 
-if (WITH_TOOL_PJ_PROJ4 OR WITH_ALL_STANDARD_TOOLS OR WITH_ALL_TOOLS)
-	project(pj_proj4)
-
-	# load common tool template
-	include(../../CMakePluginTemplate.cmake )
-
-	# link proj4
-	# Ubuntu 16.04 package libproj-dev
-	find_package(proj REQUIRED)
-	target_include_directories(${PROJECT_NAME} PRIVATE ${proj_INCLUDE_DIRS})
-	target_link_libraries(${PROJECT_NAME} ${proj_LIBRARIES})
+if(WITH_TOOLS_PROJ)
+	find_package(Proj QUIET)	# Ubuntu package libproj-dev
+	if(PROJ_FOUND)
+		project(pj_proj4)
+		include(../../CMakePluginTemplate.cmake)	# load common tool template
+		target_include_directories(${PROJECT_NAME} PRIVATE ${PROJ_INCLUDE_DIR})
+		target_link_libraries(${PROJECT_NAME} ${PROJ_LIBRARY})
+	endif()
 endif()

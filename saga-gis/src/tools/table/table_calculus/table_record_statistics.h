@@ -46,6 +46,9 @@
 ///////////////////////////////////////////////////////////
 
 //---------------------------------------------------------
+#ifndef HEADER_INCLUDED__table_record_statistics_H
+#define HEADER_INCLUDED__table_record_statistics_H
+
 
 ///////////////////////////////////////////////////////////
 //														 //
@@ -102,7 +105,7 @@ class CTable_Record_Statistics_Shapes : public CTable_Record_Statistics_Base
 public:
 	CTable_Record_Statistics_Shapes(void);
 
-	virtual CSG_String		Get_MenuPath		(void)	{	return( _TL("A:Shapes|Table") );	}
+	virtual CSG_String		Get_MenuPath		(void)	{	return( _TL("A:Shapes|Attributes") );	}
 
 };
 
@@ -114,3 +117,4 @@ public:
 ///////////////////////////////////////////////////////////
 
 //---------------------------------------------------------
+#endif // #ifndef HEADER_INCLUDED__table_record_statistics_H

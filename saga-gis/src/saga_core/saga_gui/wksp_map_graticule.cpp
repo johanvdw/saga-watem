@@ -1,6 +1,3 @@
-/**********************************************************
- * Version $Id: wksp_map_graticule.cpp 1921 2014-01-09 10:24:11Z oconrad $
- *********************************************************/
 
 ///////////////////////////////////////////////////////////
 //                                                       //
@@ -49,21 +46,12 @@
 ///////////////////////////////////////////////////////////
 
 //---------------------------------------------------------
-
-
-///////////////////////////////////////////////////////////
-//														 //
-//														 //
-//														 //
-///////////////////////////////////////////////////////////
-
-//---------------------------------------------------------
 #include <wx/window.h>
 
 #include <saga_api/saga_api.h>
+#include <saga_gdi/sgdi_helper.h>
 
 #include "helper.h"
-#include "dc_helper.h"
 
 #include "res_commands.h"
 
@@ -81,7 +69,7 @@
 //---------------------------------------------------------
 CWKSP_Map_Graticule::CWKSP_Map_Graticule(CSG_MetaData *pEntry)
 {
-	m_bShow		= true;
+	m_bShow	= true;
 
 	//-----------------------------------------------------
 	m_Parameters.Set_Name      ("GRATICULE");
@@ -97,41 +85,41 @@ CWKSP_Map_Graticule::CWKSP_Map_Graticule(CSG_MetaData *pEntry)
 	);
 
 	m_Parameters.Add_Choice("NODE_GENERAL",
-		"INTERVAL"		, _TL("Interval"),
+		"INTERVAL"	, _TL("Interval"),
 		_TL(""),
-		CSG_String::Format(SG_T("%s|%s|"),
+		CSG_String::Format("%s|%s",
 			_TL("fixed interval"),
 			_TL("fitted interval")
 		), 1
 	);
 
 	m_Parameters.Add_Double("INTERVAL",
-		"FIXED"			, _TL("Fixed Interval (Degree)"),
+		"FIXED"		, _TL("Fixed Interval (Degree)"),
 		_TL(""),
 		5.0, 0.0, true, 20.0
 	);
 
 	m_Parameters.Add_Int("INTERVAL",
-		"FITTED"		, _TL("Number of Intervals"),
+		"FITTED"	, _TL("Number of Intervals"),
 		_TL(""),
 		5, 1, true
 	);
 
 	m_Parameters.Add_Double("NODE_GENERAL",
-		"RESOLUTION"	, _TL("Minimum Resolution (Degree)"),
+		"RESOLUTION", _TL("Minimum Resolution (Degree)"),
 		_TL(""),
 		0.5, 0.0, true
 	);
 
 	//-----------------------------------------------------
 	m_Parameters.Add_Bool("NODE_GENERAL",
-		"SHOW_ALWAYS"	, _TL("Show at all scales"),
+		"SHOW_ALWAYS", _TL("Show at all scales"),
 		_TL(""),
 		true
 	);
 
 	m_Parameters.Add_Range("SHOW_ALWAYS",
-		"SHOW_RANGE"	, _TL("Scale Range"),
+		"SHOW_RANGE", _TL("Scale Range"),
 		_TL("only show within scale range; values are given as extent measured in map units"),
 		100.0, 1000.0, 0.0, true
 	);
@@ -160,7 +148,7 @@ CWKSP_Map_Graticule::CWKSP_Map_Graticule(CSG_MetaData *pEntry)
 	m_Parameters.Add_Choice("NODE_DISPLAY",
 		"LINE_STYLE"	, _TL("Line Style"),
 		_TL(""),
-		CSG_String::Format("%s|%s|%s|%s|%s|%s|%s|%s|%s|%s|%s|",
+		CSG_String::Format("%s|%s|%s|%s|%s|%s|%s|%s|%s|%s|%s",
 			_TL("Solid style"            ),
 			_TL("Dotted style"           ),
 			_TL("Long dashed style"      ),
@@ -180,9 +168,25 @@ CWKSP_Map_Graticule::CWKSP_Map_Graticule(CSG_MetaData *pEntry)
 
 	//-----------------------------------------------------
 	m_Parameters.Add_Bool("NODE_DISPLAY",
-		"LABEL"		, _TL("Label"),
+		"LABEL"			, _TL("Label"),
 		_TL(""),
 		true
+	);
+
+	m_Parameters.Add_Choice("LABEL",
+		"LABEL_UNITS"	, _TL("Units"),
+		_TL(""),
+		CSG_String::Format("%s|%s|%s",
+			_TL("Decimal Degrees"),
+			_TL("Degrees, Minutes, Seconds"),
+			_TL("Degrees, Minutes, Seconds (significant)")
+		), 0
+	);
+
+	m_Parameters.Add_Int("LABEL",
+		"LABEL_DECIMALS", _TL("Decimals"),
+		_TL("Maximum number of decimals of a second to be printed."),
+		2, 1, true
 	);
 
 	m_Parameters.Add_Font("LABEL",
@@ -257,12 +261,7 @@ wxString CWKSP_Map_Graticule::Get_Name(void)
 {
 	wxString	Name(m_Parameters("NAME")->asString());
 
-	if( !m_bShow )
-	{
-		return( "[" + Name + "]" );
-	}
-
-	return( Name );
+	return( !m_bShow ? "* " + Name : Name );
 }
 
 //---------------------------------------------------------
@@ -393,10 +392,7 @@ int CWKSP_Map_Graticule::On_Parameter_Changed(CSG_Parameters *pParameters, CSG_P
 
 		if(	pParameter->Cmp_Identifier("LABEL") )
 		{
-			pParameters->Set_Enabled("LABEL_FONT"  , pParameter->asBool());
-			pParameters->Set_Enabled("LABEL_SIZE"  , pParameter->asBool());
-			pParameters->Set_Enabled("LABEL_EFFECT", pParameter->asBool());
-			pParameters->Set_Enabled("LABEL_EFFCOL", pParameter->asBool());
+			pParameter->Set_Children_Enabled(pParameter->asBool());
 		}
 	}
 
@@ -538,7 +534,7 @@ bool CWKSP_Map_Graticule::Draw(CWKSP_Map_DC &dc_Map)
 
 		if( Size > 2 )
 		{
-			int			Effect;
+			int			Effect, Units	= m_Parameters("LABEL_UNITS")->asInt(), Decimals = m_Parameters("LABEL_DECIMALS")->asInt();
 			wxColour	Effect_Color	= Get_Color_asWX(m_Parameters("LABEL_EFFCOL")->asInt());
 			wxFont		Font	= Get_Font(m_Parameters("LABEL_FONT"));
 
@@ -574,7 +570,9 @@ bool CWKSP_Map_Graticule::Draw(CWKSP_Map_DC &dc_Map)
 							: !Type.Cmp("LON_MAX") ? TEXTALIGN_TOPCENTER
 							: TEXTALIGN_CENTER;
 
-				Draw_Text(dc.dc, Align, p.x, p.y, 0.0, pPoint->asString(1), Effect, Effect_Color);
+				CSG_String	Coordinate(Get_Unit(pPoint, Units, Decimals, (Align & TEXTALIGN_YCENTER) != 0));
+
+				Draw_Text(dc.dc, Align, p.x, p.y, 0.0, Coordinate.c_str(), Effect, Effect_Color);
 			}
 		}
 	}
@@ -588,6 +586,69 @@ bool CWKSP_Map_Graticule::Draw(CWKSP_Map_DC &dc_Map)
 	}
 
 	return( true );
+}
+
+
+//---------------------------------------------------------
+CSG_String CWKSP_Map_Graticule::Get_Unit(CSG_Shape *pPoint, int Units, int Decimals, bool bLatitude)
+{
+	double	Value	= pPoint->asDouble(1);
+
+	const SG_Char	*D	= SG_T("\xb0");
+
+	const SG_Char	*C	= bLatitude
+		? (Value < 0. ? SG_T("S") : SG_T("N"))
+		: (Value > 0. ? SG_T("E") : SG_T("W"));
+
+	CSG_String	String;
+
+	//-----------------------------------------------------
+	if( Units == 0 )	// decimal degrees
+	{
+	//	String.Printf("%s%s", pPoint->asString(1) + (Value < 0 ? 1 : 0), D); // no! label already includes degree symbol
+		String.Printf("%s", pPoint->asString(1) + (Value < 0 ? 1 : 0));
+	}
+
+	//-----------------------------------------------------
+	else				// degrees, minutes, seconds
+	{
+		if( Value < 0. )
+		{
+			Value	= -Value;
+		}
+
+		Value	= fmod(Value, 360.);
+		int d	= (int)Value;
+		Value	= (Value - d) * 60.;
+		int h	= (int)Value;
+		Value	= (Value - h) * 60.;
+		int s	= (int)Value;
+		Value	= (Value - s);
+
+		//-------------------------------------------------
+		if( Value > 0. )	// floating point remainder
+		{
+			int	n	= SG_Get_Significant_Decimals(Value, Decimals);
+
+			String.Printf("%d%s%02d'%02d.%d''", d, D, h, s, (int)(Value * pow(10, n)));
+		}
+		else if( s > 0 || Units == 1 )
+		{
+			String.Printf("%d%s%02d'%02d''"   , d, D, h, s);
+		}
+		else if( h > 0 )
+		{
+			String.Printf("%d%s%02d'"         , d, D, h);
+		}
+		else
+		{
+			String.Printf("%d%s"              , d, D);
+		}
+	}
+
+	String	+= C;
+
+	return( String );
 }
 
 

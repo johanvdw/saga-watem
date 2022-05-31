@@ -1,6 +1,3 @@
-/**********************************************************
- * Version $Id: TLB_Interface.cpp 1921 2014-01-09 10:24:11Z oconrad $
- *********************************************************/
 
 ///////////////////////////////////////////////////////////
 //                                                       //
@@ -62,7 +59,7 @@
 //---------------------------------------------------------
 // 1. Include the appropriate SAGA-API header...
 
-#include "MLB_Interface.h"
+#include <saga_api/saga_api.h>
 
 
 //---------------------------------------------------------
@@ -111,6 +108,7 @@ CSG_String Get_Info(int i)
 #include "wktb.h"
 #include "citygml_import.h"
 #include "html_imagemap.h"
+#include "pts.h"
 
 
 //---------------------------------------------------------
@@ -143,9 +141,10 @@ CSG_Tool *		Create_Tool(int i)
 	case 20:	return( new CWKT_Export );
 	case 21:	return( new CCityGML_Import );
 	case 22:	return( new CHTML_ImageMap );
+	case 23:	return( new CPTS_Import );
 
 	//-----------------------------------------------------
-	case 23:	return( NULL );
+	case 24:	return( NULL );
 	default:	return( TLB_INTERFACE_SKIP_TOOL );
 	}
 }

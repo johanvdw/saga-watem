@@ -1,6 +1,3 @@
-/**********************************************************
- * Version $Id: Flow_AreaDownslope.cpp 1921 2014-01-09 10:24:11Z oconrad $
- *********************************************************/
 
 ///////////////////////////////////////////////////////////
 //                                                       //
@@ -51,15 +48,6 @@
 ///////////////////////////////////////////////////////////
 
 //---------------------------------------------------------
-
-
-///////////////////////////////////////////////////////////
-//														 //
-//														 //
-//														 //
-///////////////////////////////////////////////////////////
-
-//---------------------------------------------------------
 #include "Flow_AreaDownslope.h"
 #include "Flow_Parallel.h"
 #include "Flow_RecursiveDown.h"
@@ -94,42 +82,43 @@ CFlow_AreaDownslope::CFlow_AreaDownslope(void)
 	Add_Reference("Costa-Cabral, M. & Burges, S.J.", "1994",
 		"Digital Elevation Model Networks (DEMON): a model of flow over hillslopes for computation of contributing and dispersal areas",
 		"Water Resources Research, 30:1681-1692.",
-		SG_T("https://www.researchgate.net/profile/Mariza_Costa-Cabral/publication/233756725_Digital_Elevation_Model_Networks_DEMON_A_model_of_flow_over_hillslopes_for_computation_of_contributing_and_dispersal_areas/links/0912f50b3c13976e7d000000.pdf"),
-		SG_T("ResearchGate")
+		SG_T("https://doi.org/10.1029/93WR03512"), SG_T("doi:10.1029/93WR03512")
 	);
 
 	Add_Reference("Fairfield, J. & Leymarie, P.", "1991",
 		"Drainage networks from grid digital elevation models",
-		"Water Resources Research, 27:709-717."
+		"Water Resources Research, 27:709-717.",
+		SG_T("https://doi.org/10.1029/90WR02658"), SG_T("doi:10.1029/90WR02658")
 	);
 
 	Add_Reference("Freeman, G.T.", "1991",
 		"Calculating catchment area with divergent flow based on a regular grid",
-		"Computers and Geosciences, 17:413-22."
+		"Computers and Geosciences, 17:413-22.",
+		SG_T("https://doi.org/10.1016/0098-3004(91)90048-I"), SG_T("doi:10.1016/0098-3004(91)90048-I")
 	);
 
 	Add_Reference("Lea, N.L.", "1992",
 		"An aspect driven kinematic routing algorithm",
-		"In: Parsons, A.J. & Abrahams, A.D. [Eds.], 'Overland Flow: hydraulics and erosion mechanics', London, 147-175."
+		"In: Parsons, A.J. & Abrahams, A.D. [Eds.], 'Overland Flow: hydraulics and erosion mechanics', London, 147-175.",
+		SG_T("https://doi.org/10.1201/b12648"), SG_T("doi:10.1201/b12648")
 	);
 
 	Add_Reference("O'Callaghan, J.F. & Mark, D.M.", "1984",
 		"The extraction of drainage networks from digital elevation data",
-		"Computer Vision, Graphics and Image Processing, 28:323-344."
+		"Computer Vision, Graphics and Image Processing, 28:323-344.",
+		SG_T("https://doi.org/10.1016/S0734-189X(84)80011-0"), SG_T("doi:10.1016/S0734-189X(84)80011-0")
 	);
 
 	Add_Reference("Quinn, P.F., Beven, K.J., Chevallier, P. & Planchon, O.", "1991",
 		"The prediction of hillslope flow paths for distributed hydrological modelling using digital terrain models",
 		"Hydrological Processes, 5:59-79.",
-		SG_T("https://www.researchgate.net/profile/Olivier_Planchon/publication/32978462_The_Prediction_of_Hillslope_Flow_Paths_for_Distributed_Hydrological_Modeling_Using_Digital_Terrain_Model/links/0912f5130c356c86e6000000.pdf"),
-		SG_T("ResearchGate")
+		SG_T("https://doi.org/10.1002/hyp.3360050106"), SG_T("doi:10.1002/hyp.3360050106")
 	);
 
 	Add_Reference("Tarboton, D.G.", "1997",
 		"A new method for the determination of flow directions and upslope areas in grid digital elevation models",
 		"Water Resources Research, Vol.33, No.2, p.309-319.",
-		SG_T("http://onlinelibrary.wiley.com/doi/10.1029/96WR03137/pdf"),
-		SG_T("Wiley")
+		SG_T("https://doi.org/10.1029/96WR03137"), SG_T("doi:10.1029/96WR03137")
 	);
 
 	//-----------------------------------------------------
@@ -154,7 +143,7 @@ CFlow_AreaDownslope::CFlow_AreaDownslope(void)
 	Parameters.Add_Choice("",
 		"METHOD"	, _TL("Method"),
 		_TL(""),
-		CSG_String::Format("%s|%s|%s|%s|%s|%s|%s|%s|%s|",
+		CSG_String::Format("%s|%s|%s|%s|%s|%s|%s|%s|%s",
 			_TL("Deterministic 8"),
 			_TL("Rho 8"),
 			_TL("Braunschweiger Reliefmodell"),
@@ -168,13 +157,21 @@ CFlow_AreaDownslope::CFlow_AreaDownslope(void)
 	);
 
 	Parameters.Add_Double("",
-		"CONVERG"	, _TL("Convergence"),
-		_TL("Convergence factor for Multiple Flow Direction algorithm"),
+		"CONVERGENCE"	, _TL("Convergence"),
+		_TL("Convergence factor for Multiple Flow Direction Algorithm (Freeman 1991).\nApplies also to the Multiple Triangular Flow Directon Algorithm."),
 		1.1, 0.001, true
 	);
 
+	Parameters.Add_Bool("",
+		"MFD_CONTOUR"	, _TL("Contour Length"),
+		_TL("Include (pseudo) contour length as additional weighting factor in multiple flow direction routing, reduces flow to diagonal neighbour cells by a factor of 0.71 (s. Quinn et al. 1991 for details)."),
+		false
+	);
+
 	//-----------------------------------------------------
-	pFlow	= NULL;
+	Set_Drag_Mode(TOOL_INTERACTIVE_DRAG_NONE);
+
+	m_pTool	= NULL;
 }
 
 //---------------------------------------------------------
@@ -189,77 +186,97 @@ CFlow_AreaDownslope::~CFlow_AreaDownslope(void)
 ///////////////////////////////////////////////////////////
 
 //---------------------------------------------------------
-bool CFlow_AreaDownslope::On_Execute(void)
+int CFlow_AreaDownslope::On_Parameters_Enable(CSG_Parameters *pParameters, CSG_Parameter *pParameter)
 {
-	CSG_Parameters	*pParameters;
-
-	if( On_Execute_Finish() )
+	if( pParameter->Cmp_Identifier("METHOD") )
 	{
-		switch( Parameters("METHOD")->asInt() )
-		{
-		// Parallel...
-		case 0:	// Deterministic 8...
-			pFlow	= new CFlow_Parallel;
-			pFlow->Get_Parameters()->Get_Parameter("METHOD")->Set_Value(0.0);
-			break;
-
-		case 1:	// Rho 8...
-			pFlow	= new CFlow_RecursiveDown;
-			pFlow->Get_Parameters()->Get_Parameter("METHOD")->Set_Value(0.0);
-			break;
-
-		case 2:	// BRM...
-			pFlow	= new CFlow_Parallel;
-			pFlow->Get_Parameters()->Get_Parameter("METHOD")->Set_Value(2);
-			break;
-
-		case 3:	// Deterministic Infinity...
-			pFlow	= new CFlow_Parallel;
-			pFlow->Get_Parameters()->Get_Parameter("METHOD")->Set_Value(3);
-			break;
-
-		case 4:	// MFD...
-			pFlow	= new CFlow_Parallel;
-			pFlow->Get_Parameters()->Get_Parameter("METHOD")->Set_Value(4);
-			break;
-
-		case 5:	// Triangular MFD...
-			pFlow	= new CFlow_Parallel;
-			pFlow->Get_Parameters()->Get_Parameter("METHOD")->Set_Value(5);
-			break;
-
-		case 6:	// Multiple Maximum Downslope Gradient Based Flow Directon...
-			pFlow	= new CFlow_Parallel;
-			pFlow->Get_Parameters()->Get_Parameter("METHOD")->Set_Value(6);
-			break;
-
-		// Downward Recursive...
-		case 7:	// KRA...
-			pFlow	= new CFlow_RecursiveDown;
-			pFlow->Get_Parameters()->Get_Parameter("METHOD")->Set_Value(1);
-			break;
-
-		case 8:	// DEMON...
-			pFlow	= new CFlow_RecursiveDown;
-			pFlow->Get_Parameters()->Get_Parameter("METHOD")->Set_Value(2);
-			//pFlow->Parameters(DEMON_minDQV)-Set_Value(0)	 = 0;
-			break;
-		}
-
-		//-------------------------------------------------
-		if( pFlow )
-		{
-			pParameters	= pFlow->Get_Parameters();
-
-			pFlow->Set_System(Parameters("ELEVATION")->asGrid()->Get_System());
-
-			pParameters->Get_Parameter("ELEVATION")->Set_Value(Parameters("ELEVATION")->asGrid());
-			pParameters->Get_Parameter("SINKROUTE")->Set_Value(Parameters("SINKROUTE")->asGrid());
-			pParameters->Get_Parameter("FLOW"     )->Set_Value(Parameters("AREA"     )->asGrid());
-		}
+		pParameters->Set_Enabled("CONVERGENCE", pParameter->asInt() == 4 || pParameter->asInt() == 5);
+		pParameters->Set_Enabled("MFD_CONTOUR", pParameter->asInt() == 4 || pParameter->asInt() == 5);
 	}
 
-	return( pFlow != NULL );
+	return( CSG_Tool_Grid::On_Parameters_Enable(pParameters, pParameter) );
+}
+
+
+///////////////////////////////////////////////////////////
+//														 //
+///////////////////////////////////////////////////////////
+
+//---------------------------------------------------------
+bool CFlow_AreaDownslope::On_Execute(void)
+{
+	On_Execute_Finish();
+
+	switch( Parameters("METHOD")->asInt() )
+	{
+	case 0:	// Deterministic 8...
+		m_pTool	= new CFlow_Parallel;
+		m_pTool->Set_Parameter("METHOD", 0.);
+		break;
+
+	case 1:	// Rho 8...
+		m_pTool	= new CFlow_RecursiveDown;
+		m_pTool->Set_Parameter("METHOD", 0.);
+		break;
+
+	case 2:	// BRM...
+		m_pTool	= new CFlow_Parallel;
+		m_pTool->Set_Parameter("METHOD", 2);
+		break;
+
+	case 3:	// Deterministic Infinity...
+		m_pTool	= new CFlow_Parallel;
+		m_pTool->Set_Parameter("METHOD", 3);
+		break;
+
+	case 4:	// MFD...
+		m_pTool	= new CFlow_Parallel;
+		m_pTool->Set_Parameter("METHOD", 4);
+		break;
+
+	case 5:	// Triangular MFD...
+		m_pTool	= new CFlow_Parallel;
+		m_pTool->Set_Parameter("METHOD", 5);
+		break;
+
+	case 6:	// Multiple Maximum Downslope Gradient Based Flow Directon...
+		m_pTool	= new CFlow_Parallel;
+		m_pTool->Set_Parameter("METHOD", 6);
+		break;
+
+	case 7:	// KRA...
+		m_pTool	= new CFlow_RecursiveDown;
+		m_pTool->Set_Parameter("METHOD", 1);
+		break;
+
+	case 8:	// DEMON...
+		m_pTool	= new CFlow_RecursiveDown;
+		m_pTool->Set_Parameter("METHOD", 2);
+		break;
+	}
+
+	//-----------------------------------------------------
+	if( m_pTool )
+	{
+		m_pTool->Set_Manager(NULL);
+
+		m_pTool->Set_System(Parameters("ELEVATION")->asGrid()->Get_System());
+
+		m_Weights.Create(m_pTool->Get_System(), SG_DATATYPE_Byte);
+
+		m_pTool->Set_Parameter("WEIGHTS"    , &m_Weights);
+		m_pTool->Set_Parameter("ELEVATION"  , Parameters("ELEVATION"  )->asGrid  ());
+		m_pTool->Set_Parameter("SINKROUTE"  , Parameters("SINKROUTE"  )->asGrid  ());
+		m_pTool->Set_Parameter("FLOW"       , Parameters("AREA"       )->asGrid  ());
+		m_pTool->Set_Parameter("CONVERGENCE", Parameters("CONVERGENCE")->asDouble());
+		m_pTool->Set_Parameter("MFD_CONTOUR", Parameters("MFD_CONTOUR")->asBool  ());
+
+		DataObject_Set_Colors(Parameters("AREA")->asGrid(), 11, SG_COLORS_WHITE_BLUE);
+		Parameters("AREA")->asGrid()->Set_NoData_Value(0.);
+		DataObject_Update    (Parameters("AREA")->asGrid(), SG_UI_DATAOBJECT_SHOW);
+	}
+
+	return( m_pTool != NULL );
 }
 
 
@@ -270,28 +287,42 @@ bool CFlow_AreaDownslope::On_Execute(void)
 //---------------------------------------------------------
 bool CFlow_AreaDownslope::On_Execute_Finish(void)
 {
-	if( pFlow )
-	{
-		delete( pFlow );
+	m_Weights.Destroy();
 
-		pFlow	= NULL;
+	if( m_pTool )
+	{
+		delete(m_pTool);
+
+		m_pTool	= NULL;
 	}
 
-	return( pFlow == NULL );
+	return( true );
 }
 
 //---------------------------------------------------------
 bool CFlow_AreaDownslope::On_Execute_Position(CSG_Point ptWorld, TSG_Tool_Interactive_Mode Mode)
 {
-	if( pFlow && Mode == TOOL_INTERACTIVE_LDOWN )
+	if( m_pTool && Get_System().Get_Extent().Contains(ptWorld) )
 	{
-		pFlow->Set_Point(Get_xGrid(), Get_yGrid());
+		switch( Mode )
+		{
+		case TOOL_INTERACTIVE_LDOWN:
+			m_Weights.Assign(0.);
+			m_Weights.Set_Value(Get_xGrid(), Get_yGrid(), 1.);
+			break;
 
-		pFlow->Execute();
+		case TOOL_INTERACTIVE_MOVE_LDOWN:
+			m_Weights.Set_Value(Get_xGrid(), Get_yGrid(), 1.);
+			break;
 
-		DataObject_Update(Parameters("AREA")->asGrid(), 0.0, 100.0, true);
-
-		return( true );
+		case TOOL_INTERACTIVE_LUP:
+			SG_UI_ProgressAndMsg_Lock(true);
+			m_Weights.Set_Value(Get_xGrid(), Get_yGrid(), 1.);
+			m_pTool->Execute();
+			DataObject_Update(Parameters("AREA")->asGrid());
+			SG_UI_ProgressAndMsg_Lock(false);
+			break;
+		}
 	}
 
 	return( false );

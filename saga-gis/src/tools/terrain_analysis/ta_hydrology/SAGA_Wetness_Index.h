@@ -48,17 +48,15 @@
 ///////////////////////////////////////////////////////////
 
 //---------------------------------------------------------
-
-
-///////////////////////////////////////////////////////////
-//														 //
-//														 //
-//														 //
-///////////////////////////////////////////////////////////
-
-//---------------------------------------------------------
 #ifndef HEADER_INCLUDED__SAGA_Wetness_Index_H
 #define HEADER_INCLUDED__SAGA_Wetness_Index_H
+
+
+///////////////////////////////////////////////////////////
+//														 //
+//														 //
+//														 //
+///////////////////////////////////////////////////////////
 
 //---------------------------------------------------------
 #include <saga_api/saga_api.h>
@@ -76,7 +74,7 @@ class CSAGA_Wetness_Index : public CSG_Tool_Grid
 public:
 	CSAGA_Wetness_Index(void);
 
-	virtual CSG_String		Get_MenuPath	(void)	{	return( _TL("Topographic Indices" ));	}
+	virtual CSG_String		Get_MenuPath		(void)	{	return( _TL("Topographic Indices" ));	}
 
 
 protected:
@@ -86,7 +84,7 @@ protected:
 
 private:
 
-	CSG_Grid				*m_pDEM, *m_pSlope, *m_pArea, *m_pAreaMod, *m_pTWI, m_Suction;
+	CSG_Grid				*m_pDEM, *m_pSlope, *m_pArea, *m_pAmod, *m_pTWI, m_Suction;
 
 
 	double					Get_Local_Maximum	(CSG_Grid *pGrid, int x, int y);

@@ -1,6 +1,3 @@
-/**********************************************************
- * Version $Id$
- *********************************************************/
 
 ///////////////////////////////////////////////////////////
 //                                                       //
@@ -53,6 +50,8 @@
 ///////////////////////////////////////////////////////////
 
 //---------------------------------------------------------
+#ifndef HEADER_INCLUDED__SAGA_API__parameters_H
+#define HEADER_INCLUDED__SAGA_API__parameters_H
 
 
 ///////////////////////////////////////////////////////////
@@ -62,8 +61,12 @@
 ///////////////////////////////////////////////////////////
 
 //---------------------------------------------------------
-#ifndef HEADER_INCLUDED__SAGA_API__parameters_H
-#define HEADER_INCLUDED__SAGA_API__parameters_H
+/** \file parameters.h
+* The core classes defining the parameters for SAGA tool
+* interfaces.
+* @see CSG_Parameters
+* @see CSG_Parameter
+*/
 
 
 ///////////////////////////////////////////////////////////
@@ -203,7 +206,7 @@ class SAGA_API_DLL_EXPORT CSG_Parameter
 {
 public:	///////////////////////////////////////////////////
 
-	CSG_Parameters *				Get_Owner				(void)	const;
+	CSG_Parameters *				Get_Parameters			(void)	const;
 	CSG_Parameter *					Get_Parent				(void)	const;
 	class CSG_Data_Manager *		Get_Manager				(void)	const;
 
@@ -220,8 +223,8 @@ public:	///////////////////////////////////////////////////
 	CSG_String						Get_Description			(int Flags)								const;
 	CSG_String						Get_Description			(int Flags, const SG_Char *Separator)	const;
 
-	bool							Set_Enabled				(bool bEnabled = true);
-	bool							is_Enabled				(void)	const;
+	bool							Set_Enabled				(bool bEnabled  = true);
+	bool							is_Enabled				(bool bCheckEnv = true)	const;
 
 	virtual bool					is_Valid				(void)	const	{	return( true );	}
 	bool							is_Input				(void)	const	{	return( !!(m_Constraint & PARAMETER_INPUT      ) );	}
@@ -353,7 +356,7 @@ private: //////////////////////////////////////////////////
 
 	CSG_Parameter					*m_pParent;
 
-	CSG_Parameters					*m_pOwner;
+	CSG_Parameters					*m_pParameters;
 
 };
 
@@ -644,6 +647,7 @@ public:
 	virtual TSG_Parameter_Type	Get_Type				(void)	const	{	return( PARAMETER_TYPE_Choice );	}
 
 	void						Set_Items				(const SG_Char *String);
+	CSG_String					Get_Items				(void)		const;
 
 	const SG_Char *				Get_Item				(int Index)	const;
 	CSG_String					Get_Item_Data			(int Index)	const;
@@ -695,6 +699,7 @@ public:
 
 	void						Set_Items				(const CSG_String  &Items);
 	void						Set_Items				(const CSG_Strings &Items);
+	CSG_String					Get_Items				(void)	const;
 	void						Del_Items				(void);
 	void						Add_Item				(const CSG_String &Item, const CSG_String &Data = "");
 
@@ -910,6 +915,8 @@ protected:
 
 	CSG_Colors					m_Colors;
 
+
+	virtual int					_Set_Value				(int Value);
 
 	virtual void				_Set_String				(void);
 
@@ -1574,8 +1581,6 @@ public:
 
 private:
 
-	bool						m_bFitToCells;
-
 	CSG_String					m_Prefix;
 
 	CSG_Parameters				*m_pParameters;
@@ -1605,16 +1610,25 @@ public:
 								CSG_Parameters			(const CSG_Parameters &Parameters);
 	bool						Create					(const CSG_Parameters &Parameters);
 
-								CSG_Parameters			(void *pOwner, const SG_Char *Name, const SG_Char *Description, const SG_Char *Identifier = NULL, bool bGrid_System = false);
-	bool						Create					(void *pOwner, const SG_Char *Name, const SG_Char *Description, const SG_Char *Identifier = NULL, bool bGrid_System = false);
+								CSG_Parameters			(const SG_Char *Name, const SG_Char *Description = NULL, const SG_Char *Identifier = NULL, bool bGrid_System = false);
+	bool						Create					(const SG_Char *Name, const SG_Char *Description = NULL, const SG_Char *Identifier = NULL, bool bGrid_System = false);
+
+								CSG_Parameters			(void *pOwner, const SG_Char *Name, const SG_Char *Description = NULL, const SG_Char *Identifier = NULL, bool bGrid_System = false);
+	bool						Create					(void *pOwner, const SG_Char *Name, const SG_Char *Description = NULL, const SG_Char *Identifier = NULL, bool bGrid_System = false);
 
 	void						Destroy					(void);
 
 	//-----------------------------------------------------
-	void *						Get_Owner				(void)	const	{	return( m_pOwner );			}
+	void *						Get_Owner				(void)	const	{	return( m_pOwner      );	}
 
-	class CSG_Data_Manager *	Get_Manager				(void)	const	{	return( m_pManager );		}
+	class CSG_Tool *			Get_Tool				(void)	const	{	return( m_pTool       );	}
+
+	class CSG_Data_Manager *	Get_Manager				(void)	const	{	return( m_pManager    );	}
 	void						Set_Manager				(class CSG_Data_Manager *pManager);
+
+	bool						Use_Grid_System			(void);
+
+	bool						has_GUI					(void)	const;
 
 	int							Get_Count				(void)	const	{	return( m_nParameters );	}
 
@@ -1630,6 +1644,7 @@ public:
 
 	void						Add_Reference			(const CSG_String &Authors, const CSG_String &Year, const CSG_String &Title, const CSG_String &Where, const SG_Char *Link = NULL, const SG_Char *Link_Text = NULL);
 	void						Add_Reference			(const CSG_String &Link, const SG_Char *Link_Text = NULL);
+	void						Del_References			(void);
 	const CSG_Strings &			Get_References			(void)	const	{	return( m_References );		}
 
 	void						Set_Enabled				(bool bEnabled = true);
@@ -1754,8 +1769,17 @@ public:
 	bool						Assign_Values			(CSG_Parameters *pSource);
 	bool						Assign_Parameters		(CSG_Parameters *pSource);
 
-	bool						Serialize				(const CSG_String &File_Name, bool bSave);
-	bool						Serialize				(CSG_MetaData &Entry        , bool bSave);
+	bool						Load					(const CSG_MetaData &Data);
+	bool						Save					(      CSG_MetaData &Data)	const;
+
+	bool						Load					(const CSG_String   &File);
+	bool						Save					(const CSG_String   &File)	const;
+
+	bool						Serialize				(      CSG_MetaData &Data, bool bSave)       { return( bSave ? Save(Data) : Load(Data) ); }
+	bool						Serialize				(      CSG_MetaData &Data            ) const { return(         Save(Data) );              }
+	bool						Serialize				(const CSG_String   &File, bool bSave)       { return( bSave ? Save(File) : Load(File) ); }
+	bool						Serialize				(const CSG_String   &File            ) const { return(         Save(File)              ); }
+
 	bool						Serialize_Compatibility	(CSG_File &Stream);
 
 	//-----------------------------------------------------
@@ -1778,6 +1802,8 @@ public:
 private:
 
 	void						*m_pOwner;
+
+	class CSG_Tool				*m_pTool;
 
 	class CSG_Data_Manager		*m_pManager;
 

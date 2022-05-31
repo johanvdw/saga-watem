@@ -222,7 +222,7 @@ bool CSG_Shapes::Create(const CSG_String &File_Name)
 {
 	Destroy();
 
-	SG_UI_Msg_Add(CSG_String::Format("%s: %s...", _TL("Load shapes"), File_Name.c_str()), true);
+	SG_UI_Msg_Add(CSG_String::Format("%s %s: %s...", _TL("Loading"), _TL("shapes"), File_Name.c_str()), true);
 
 	bool	bResult	= false;
 
@@ -236,7 +236,7 @@ bool CSG_Shapes::Create(const CSG_String &File_Name)
 		s	= s.AfterFirst(':');	CSG_String	DBName(s.BeforeFirst(':'));
 		s	= s.AfterFirst(':');	CSG_String	Table (s.BeforeFirst(':'));
 
-		CSG_Tool	*pTool	= SG_Get_Tool_Library_Manager().Create_Tool("db_pgsql", 0);	// CGet_Connections
+		CSG_Tool	*pTool	= SG_Get_Tool_Library_Manager().Create_Tool("db_pgsql", 0, true);	// CGet_Connections
 
 		if(	pTool != NULL )
 		{
@@ -263,7 +263,7 @@ bool CSG_Shapes::Create(const CSG_String &File_Name)
 			SG_Get_Tool_Library_Manager().Delete_Tool(pTool);
 
 			//---------------------------------------------
-			if( bResult && (bResult = (pTool = SG_Get_Tool_Library_Manager().Create_Tool("db_pgsql", 20)) != NULL) == true )	// CPGIS_Shapes_Load
+			if( bResult && (bResult = (pTool = SG_Get_Tool_Library_Manager().Create_Tool("db_pgsql", 20, true)) != NULL) == true )	// CPGIS_Shapes_Load
 			{
 				pTool->Set_Manager(NULL);
 				pTool->On_Before_Execution();
@@ -281,7 +281,15 @@ bool CSG_Shapes::Create(const CSG_String &File_Name)
 	}
 	else
 	{
-		bResult	= _Load_ESRI(File_Name) || _Load_GDAL(File_Name);
+		if( SG_File_Cmp_Extension(File_Name, "shp") )
+		{
+			bResult	= _Load_ESRI(File_Name);
+		}
+
+		if( !bResult )
+		{
+			bResult	= _Load_GDAL(File_Name);
+		}
 	}
 
 	//-----------------------------------------------------
@@ -436,7 +444,7 @@ CSG_String				SG_Shapes_Get_File_Extension_Default	(void)
 //---------------------------------------------------------
 bool CSG_Shapes::Save(const CSG_String &File_Name, int Format)
 {
-	SG_UI_Msg_Add(CSG_String::Format("%s: %s...", _TL("Save shapes"), File_Name.c_str()), true);
+	SG_UI_Msg_Add(CSG_String::Format("%s %s: %s...", _TL("Saving"), _TL("shapes"), File_Name.c_str()), true);
 
 	//-----------------------------------------------------
 	if( Format == SHAPE_FILE_FORMAT_Undefined )
@@ -605,7 +613,7 @@ bool CSG_Shapes::On_Update(void)
 ///////////////////////////////////////////////////////////
 
 //---------------------------------------------------------
-CSG_Shape * CSG_Shapes::Get_Shape(TSG_Point Point, double Epsilon)
+CSG_Shape * CSG_Shapes::Get_Shape(const TSG_Point &Point, double Epsilon)
 {
 	CSG_Rect	r(Point.x - Epsilon, Point.y - Epsilon, Point.x + Epsilon, Point.y + Epsilon);
 
@@ -613,7 +621,7 @@ CSG_Shape * CSG_Shapes::Get_Shape(TSG_Point Point, double Epsilon)
 
 	if( r.Intersects(Get_Extent()) != INTERSECTION_None )
 	{
-		double	dNearest	= -1.0;
+		double	dNearest	= -1.;
 
 		for(int iShape=0; iShape<Get_Count(); iShape++)
 		{
@@ -627,11 +635,11 @@ CSG_Shape * CSG_Shapes::Get_Shape(TSG_Point Point, double Epsilon)
 					{
 						double	d	= pShape->Get_Distance(Point, iPart);
 
-						if( d == 0.0 )
+						if( d == 0. )
 						{
 							return( pShape );
 						}
-						else if( d > 0.0 && d <= Epsilon && (pNearest == NULL || d < dNearest) )
+						else if( d > 0. && d <= Epsilon && (pNearest == NULL || d < dNearest) )
 						{
 							dNearest	= d;
 							pNearest	= pShape;

@@ -1,6 +1,3 @@
-/**********************************************************
- * Version $Id$
- *********************************************************/
 
 ///////////////////////////////////////////////////////////
 //                                                       //
@@ -51,15 +48,6 @@
 ///////////////////////////////////////////////////////////
 
 //---------------------------------------------------------
-
-
-///////////////////////////////////////////////////////////
-//														 //
-//														 //
-//														 //
-///////////////////////////////////////////////////////////
-
-//---------------------------------------------------------
 #ifndef _HEADER_INCLUDED__SAGA_GUI__WKSP_Base_Control_H
 #define _HEADER_INCLUDED__SAGA_GUI__WKSP_Base_Control_H
 
@@ -103,7 +91,7 @@ public:
 	void						On_Item_Delete		(wxTreeEvent     &event);
 	void						On_Item_KeyDown		(wxTreeEvent     &event);
 
-	wxMenu *					Get_Context_Menu	(void);
+	wxMenu *					Get_Menu			(void);
 
 	CWKSP_Base_Item	*			Search_Item			(const wxString &Caption, TWKSP_Item Type = WKSP_ITEM_Undefined);
 
@@ -125,19 +113,12 @@ protected:
 
 	bool						_Show_Active		(void);
 
-	bool						_Load_Settings		(void);
-	bool						_Load_Settings		(class CSG_MetaData *pData, class CWKSP_Base_Item *pItem);
-
-	bool						_Copy_Settings		(void);
-	bool						_Copy_Settings		(class CSG_Parameters *pParameters, class CWKSP_Base_Item *pItem);
-
 	bool						_Search_Compare		(wxString A, wxString B, bool bCase);
 	bool						_Search_Get_List	(class CSG_Table *pList, class CWKSP_Base_Item *pItem, const wxString &String, bool bName, bool bDesc, bool bCase, TWKSP_Item Type);
 	bool						_Search_Item		(void);
 
 
-//---------------------------------------------------------
-DECLARE_EVENT_TABLE()
+	DECLARE_EVENT_TABLE()
 };
 
 

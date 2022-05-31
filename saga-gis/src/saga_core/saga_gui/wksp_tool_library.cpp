@@ -1,6 +1,3 @@
-/**********************************************************
- * Version $Id$
- *********************************************************/
 
 ///////////////////////////////////////////////////////////
 //                                                       //
@@ -51,15 +48,6 @@
 ///////////////////////////////////////////////////////////
 
 //---------------------------------------------------------
-
-
-///////////////////////////////////////////////////////////
-//														 //
-//														 //
-//														 //
-///////////////////////////////////////////////////////////
-
-//---------------------------------------------------------
 #include <wx/filename.h>
 
 #include <saga_api/saga_api.h>
@@ -102,16 +90,12 @@ CWKSP_Tool_Library::~CWKSP_Tool_Library(void)
 
 ///////////////////////////////////////////////////////////
 //														 //
-//														 //
-//														 //
 ///////////////////////////////////////////////////////////
 
 //---------------------------------------------------------
 void CWKSP_Tool_Library::Update(void)
 {
-	int		i;
-
-	for(i=Get_Count()-1; i>=0; i--)	// first remove tools that are not available anymore
+	for(int i=Get_Count()-1; i>=0; i--)	// first remove tools that are not available anymore
 	{
 		CWKSP_Tool	*pItem	= Get_Tool(i);
 
@@ -123,7 +107,7 @@ void CWKSP_Tool_Library::Update(void)
 		}
 	}
 
-	for(i=0; i<m_pLibrary->Get_Count(); i++)	// then add tools that are not yet present in the list
+	for(int i=0; i<m_pLibrary->Get_Count(); i++)	// then add tools that are not yet present in the list
 	{
 		CSG_Tool	*pTool	= m_pLibrary->Get_Tool(i);
 
@@ -187,8 +171,6 @@ void CWKSP_Tool_Library::_Del_Tools(void)
 
 ///////////////////////////////////////////////////////////
 //														 //
-//														 //
-//														 //
 ///////////////////////////////////////////////////////////
 
 //---------------------------------------------------------
@@ -216,19 +198,19 @@ wxString CWKSP_Tool_Library::Get_Description(void)
 //---------------------------------------------------------
 wxMenu * CWKSP_Tool_Library::Get_Menu(void)
 {
-	wxMenu	*pMenu;
+	wxMenu	*pMenu	= new wxMenu(Get_Name());
 
-	pMenu	= new wxMenu(Get_Name());
-
+	CMD_Menu_Add_Item(pMenu, false, ID_CMD_TOOL_OPEN);
+	CMD_Menu_Add_Item(pMenu, false, ID_CMD_TOOL_RELOAD);
 	CMD_Menu_Add_Item(pMenu, false, ID_CMD_WKSP_ITEM_CLOSE);
+	pMenu->AppendSeparator();
+	CMD_Menu_Add_Item(pMenu, false, ID_CMD_WKSP_ITEM_SEARCH);
 
 	return( pMenu );
 }
 
 
 ///////////////////////////////////////////////////////////
-//														 //
-//														 //
 //														 //
 ///////////////////////////////////////////////////////////
 
@@ -270,8 +252,6 @@ bool CWKSP_Tool_Library::On_Command_UI(wxUpdateUIEvent &event)
 
 ///////////////////////////////////////////////////////////
 //														 //
-//														 //
-//														 //
 ///////////////////////////////////////////////////////////
 
 //---------------------------------------------------------
@@ -304,8 +284,6 @@ CWKSP_Tool * CWKSP_Tool_Library::Get_Tool_byID(int CMD_ID)
 
 
 ///////////////////////////////////////////////////////////
-//														 //
-//														 //
 //														 //
 ///////////////////////////////////////////////////////////
 

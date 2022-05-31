@@ -1,6 +1,3 @@
-/**********************************************************
- * Version $Id: Morphometry.cpp 1921 2014-01-09 10:24:11Z oconrad $
- *********************************************************/
 
 ///////////////////////////////////////////////////////////
 //                                                       //
@@ -48,15 +45,6 @@
 //                37077 Goettingen                       //
 //                Germany                                //
 //                                                       //
-///////////////////////////////////////////////////////////
-
-//---------------------------------------------------------
-
-
-///////////////////////////////////////////////////////////
-//														 //
-//														 //
-//														 //
 ///////////////////////////////////////////////////////////
 
 //---------------------------------------------------------
@@ -137,91 +125,97 @@ CMorphometry::CMorphometry(void)
 		"Computer Vision, Graphics and Image Processing, Vol.22, No.1, p.28-38."
 	);
 
+	Add_Reference("Florinsky, I.V.", "2009",
+		"Computation of the third?order partial derivatives from a digital elevation model",
+		"International Journal of Geographical Information Science, 23(2), p.213-231.",
+		SG_T("https://doi.org/10.1080/13658810802527499"), SG_T("doi: 10.1080/13658810802527499")
+	);
+
 	//-----------------------------------------------------
 	Parameters.Add_Grid(
-		NULL	, "ELEVATION"	, _TL("Elevation"),
+		"", "ELEVATION"	, _TL("Elevation"),
 		_TL(""),
 		PARAMETER_INPUT
 	);
 
 	//-----------------------------------------------------
 	Parameters.Add_Grid(
-		NULL	, "SLOPE"		, _TL("Slope"),
+		"", "SLOPE"		, _TL("Slope"),
 		_TL(""),
 		PARAMETER_OUTPUT
 	);
 
 	Parameters.Add_Grid(
-		NULL	, "ASPECT"		, _TL("Aspect"),
+		"", "ASPECT"	, _TL("Aspect"),
 		_TL(""),
 		PARAMETER_OUTPUT
 	);
 
 	Parameters.Add_Grid(
-		NULL	, "C_GENE"		, _TL("General Curvature"),
+		"", "C_GENE"	, _TL("General Curvature"),
 		_TL(""),
 		PARAMETER_OUTPUT_OPTIONAL
 	);
 
 	Parameters.Add_Grid(
-		NULL	, "C_PROF"		, _TL("Profile Curvature"),
+		"", "C_PROF"	, _TL("Profile Curvature"),
 		_TL(""),
 		PARAMETER_OUTPUT_OPTIONAL
 	);
 
 	Parameters.Add_Grid(
-		NULL	, "C_PLAN"		, _TL("Plan Curvature"),
+		"", "C_PLAN"	, _TL("Plan Curvature"),
 		_TL(""),
 		PARAMETER_OUTPUT_OPTIONAL
 	);
 
 	Parameters.Add_Grid(
-		NULL	, "C_TANG"		, _TL("Tangential Curvature"),
+		"", "C_TANG"	, _TL("Tangential Curvature"),
 		_TL(""),
 		PARAMETER_OUTPUT_OPTIONAL
 	);
 
 	Parameters.Add_Grid(
-		NULL	, "C_LONG"		, _TL("Longitudinal Curvature"),
+		"", "C_LONG"	, _TL("Longitudinal Curvature"),
 		_TL("Zevenbergen & Thorne (1987) refer to this as profile curvature"),
 		PARAMETER_OUTPUT_OPTIONAL
 	);
 
 	Parameters.Add_Grid(
-		NULL	, "C_CROS"		, _TL("Cross-Sectional Curvature"),
+		"", "C_CROS"	, _TL("Cross-Sectional Curvature"),
 		_TL("Zevenbergen & Thorne (1987) refer to this as plan curvature"),
 		PARAMETER_OUTPUT_OPTIONAL
 	);
 
 	Parameters.Add_Grid(
-		NULL	, "C_MINI"		, _TL("Minimal Curvature"),
+		"", "C_MINI"	, _TL("Minimal Curvature"),
 		_TL(""),
 		PARAMETER_OUTPUT_OPTIONAL
 	);
 
 	Parameters.Add_Grid(
-		NULL	, "C_MAXI"		, _TL("Maximal Curvature"),
+		"", "C_MAXI"	, _TL("Maximal Curvature"),
 		_TL(""),
 		PARAMETER_OUTPUT_OPTIONAL
 	);
 
 	Parameters.Add_Grid(
-		NULL	, "C_TOTA"		, _TL("Total Curvature"),
+		"", "C_TOTA"	, _TL("Total Curvature"),
 		_TL(""),
 		PARAMETER_OUTPUT_OPTIONAL
 	);
 
 	Parameters.Add_Grid(
-		NULL	, "C_ROTO"		, _TL("Flow Line Curvature"),
+		"", "C_ROTO"	, _TL("Flow Line Curvature"),
 		_TL(""),
 		PARAMETER_OUTPUT_OPTIONAL
 	);
 
 	//-----------------------------------------------------
 	Parameters.Add_Choice(
-		NULL	, "METHOD"		, _TL("Method"),
+		"", "METHOD"	, _TL("Method"),
 		_TL(""),
-		CSG_String::Format(SG_T("%s|%s|%s|%s|%s|%s|%s|%s|"),
+		CSG_String::Format("%s|%s|%s|%s|%s|%s|%s|%s|%s",
 			_TL("maximum slope (Travis et al. 1975)"),
 			_TL("maximum triangle slope (Tarboton 1997)"),
 			_TL("least squares fitted plane (Horn 1981, Costa-Cabral & Burgess 1996)"),
@@ -229,24 +223,25 @@ CMorphometry::CMorphometry(void)
 			_TL("6 parameter 2nd order polynom (Heerdegen & Beran 1982)"),
 			_TL("6 parameter 2nd order polynom (Bauer, Rohdenburg, Bork 1985)"),
 			_TL("9 parameter 2nd order polynom (Zevenbergen & Thorne 1987)"),
-			_TL("10 parameter 3rd order polynom (Haralick 1983)")
+			_TL("10 parameter 3rd order polynom (Haralick 1983)"),
+			_TL("10 parameter 3rd order polynom (Florinsky 2009)")
 		), 6
 	);
 
 	Parameters.Add_Choice(
-		NULL	, "UNIT_SLOPE"	, _TL("Slope Units"),
+		"SLOPE" , "UNIT_SLOPE"	, _TL("Unit"),
 		_TL(""),
-		CSG_String::Format(SG_T("%s|%s|%s|"),
+		CSG_String::Format("%s|%s|%s",
 			_TL("radians"),
 			_TL("degree"),
-			_TL("percent")
+			_TL("percent rise")
 		), 0
 	);
 
 	Parameters.Add_Choice(
-		NULL	, "UNIT_ASPECT"	, _TL("Aspect Units"),
+		"ASPECT", "UNIT_ASPECT"	, _TL("Unit"),
 		_TL(""),
-		CSG_String::Format(SG_T("%s|%s|"),
+		CSG_String::Format("%s|%s",
 			_TL("radians"),
 			_TL("degree")
 		), 0
@@ -256,47 +251,40 @@ CMorphometry::CMorphometry(void)
 
 ///////////////////////////////////////////////////////////
 //														 //
-//														 //
-//														 //
 ///////////////////////////////////////////////////////////
 
 //---------------------------------------------------------
 int CMorphometry::On_Parameters_Enable(CSG_Parameters *pParameters, CSG_Parameter *pParameter)
 {
-	if(	pParameter->Cmp_Identifier(SG_T("METHOD")) )
+	if(	pParameter->Cmp_Identifier("METHOD") )
 	{
 		bool	bOn;
 		
 		bOn	= pParameter->asInt() >= 3 || pParameter->asInt() == 0;
-		pParameters->Get_Parameter("C_GENE")->Set_Enabled(bOn);
-		pParameters->Get_Parameter("C_PROF")->Set_Enabled(bOn);
-		pParameters->Get_Parameter("C_PLAN")->Set_Enabled(bOn);
+		pParameters->Set_Enabled("C_GENE", bOn);
+		pParameters->Set_Enabled("C_PROF", bOn);
+		pParameters->Set_Enabled("C_PLAN", bOn);
 
 		bOn	= pParameter->asInt() >= 3;
-		pParameters->Get_Parameter("C_TANG")->Set_Enabled(bOn);
-		pParameters->Get_Parameter("C_LONG")->Set_Enabled(bOn);
-		pParameters->Get_Parameter("C_CROS")->Set_Enabled(bOn);
-		pParameters->Get_Parameter("C_MINI")->Set_Enabled(bOn);
-		pParameters->Get_Parameter("C_MAXI")->Set_Enabled(bOn);
-		pParameters->Get_Parameter("C_TOTA")->Set_Enabled(bOn);
+		pParameters->Set_Enabled("C_TANG", bOn);
+		pParameters->Set_Enabled("C_LONG", bOn);
+		pParameters->Set_Enabled("C_CROS", bOn);
+		pParameters->Set_Enabled("C_MINI", bOn);
+		pParameters->Set_Enabled("C_MAXI", bOn);
+		pParameters->Set_Enabled("C_TOTA", bOn);
 	}
 
-	return( 1 );
+	return( CSG_Tool::On_Parameters_Enable(pParameters, pParameter) );
 }
 
 
 ///////////////////////////////////////////////////////////
-//														 //
-//														 //
 //														 //
 ///////////////////////////////////////////////////////////
 
 //---------------------------------------------------------
 bool CMorphometry::On_Execute(void)
 {
-	//-----------------------------------------------------
-	int	Method	= Parameters("METHOD"   )->asInt ();
-
 	m_pDTM		= Parameters("ELEVATION")->asGrid();
 
 	m_pSlope	= Parameters("SLOPE"    )->asGrid();
@@ -313,6 +301,8 @@ bool CMorphometry::On_Execute(void)
 	m_pC_Tota	= Parameters("C_TOTA"   )->asGrid();
 	m_pC_Roto	= Parameters("C_ROTO"   )->asGrid();
 
+	int	Method	= Parameters("METHOD"   )->asInt ();
+
 	if( Method == 0 )
 	{
 		m_pC_Tang = m_pC_Long = m_pC_Cros = m_pC_Mini = m_pC_Maxi = m_pC_Tota = m_pC_Roto = NULL;
@@ -324,18 +314,18 @@ bool CMorphometry::On_Execute(void)
 	}
 
 	//-----------------------------------------------------
-	DataObject_Set_Colors(m_pSlope , 11, SG_COLORS_YELLOW_RED   , false);
+	DataObject_Set_Colors(m_pSlope , 11, SG_COLORS_RED_GREEN    ,  true);
 	DataObject_Set_Colors(m_pAspect, 11, SG_COLORS_ASPECT_3     , false);
-	DataObject_Set_Colors(m_pC_Gene, 11, SG_COLORS_RED_GREY_BLUE, true);
-	DataObject_Set_Colors(m_pC_Prof, 11, SG_COLORS_RED_GREY_BLUE, true);
-	DataObject_Set_Colors(m_pC_Plan, 11, SG_COLORS_RED_GREY_BLUE, true);
-	DataObject_Set_Colors(m_pC_Tang, 11, SG_COLORS_RED_GREY_BLUE, true);
-	DataObject_Set_Colors(m_pC_Long, 11, SG_COLORS_RED_GREY_BLUE, true);
-	DataObject_Set_Colors(m_pC_Cros, 11, SG_COLORS_RED_GREY_BLUE, true);
-	DataObject_Set_Colors(m_pC_Mini, 11, SG_COLORS_RED_GREY_BLUE, true);
-	DataObject_Set_Colors(m_pC_Maxi, 11, SG_COLORS_RED_GREY_BLUE, true);
+	DataObject_Set_Colors(m_pC_Gene, 11, SG_COLORS_RED_GREY_BLUE,  true);
+	DataObject_Set_Colors(m_pC_Prof, 11, SG_COLORS_RED_GREY_BLUE,  true);
+	DataObject_Set_Colors(m_pC_Plan, 11, SG_COLORS_RED_GREY_BLUE,  true);
+	DataObject_Set_Colors(m_pC_Tang, 11, SG_COLORS_RED_GREY_BLUE,  true);
+	DataObject_Set_Colors(m_pC_Long, 11, SG_COLORS_RED_GREY_BLUE,  true);
+	DataObject_Set_Colors(m_pC_Cros, 11, SG_COLORS_RED_GREY_BLUE,  true);
+	DataObject_Set_Colors(m_pC_Mini, 11, SG_COLORS_RED_GREY_BLUE,  true);
+	DataObject_Set_Colors(m_pC_Maxi, 11, SG_COLORS_RED_GREY_BLUE,  true);
 	DataObject_Set_Colors(m_pC_Tota, 11, SG_COLORS_YELLOW_RED   , false);
-	DataObject_Set_Colors(m_pC_Roto, 11, SG_COLORS_RED_GREY_BLUE, true);
+	DataObject_Set_Colors(m_pC_Roto, 11, SG_COLORS_RED_GREY_BLUE,  true);
 
 	//-----------------------------------------------------
 	m_Unit_Slope	= Parameters("UNIT_SLOPE" )->asInt();
@@ -377,14 +367,15 @@ bool CMorphometry::On_Execute(void)
 			}
 			else switch( Method )
 			{
-			case 0:	Set_MaximumSlope (x, y);	break;
-			case 1:	Set_Tarboton     (x, y);	break;
-			case 2:	Set_LeastSquare  (x, y);	break;
-			case 3:	Set_Evans        (x, y);	break;
-			case 4:	Set_Heerdegen    (x, y);	break;
-			case 5:	Set_BRM          (x, y);	break;
-			case 6:	Set_Zevenbergen  (x, y);	break;
-			case 7:	Set_Haralick     (x, y);	break;
+			case  0: Set_MaximumSlope(x, y); break;
+			case  1: Set_Tarboton    (x, y); break;
+			case  2: Set_LeastSquare (x, y); break;
+			case  3: Set_Evans       (x, y); break;
+			case  4: Set_Heerdegen   (x, y); break;
+			case  5: Set_BRM         (x, y); break;
+			default: Set_Zevenbergen (x, y); break;
+			case  7: Set_Haralick    (x, y); break;
+			case  8: Set_Florinsky   (x, y); break;
 			}
 		}
 	}
@@ -421,7 +412,7 @@ inline void CMorphometry::Get_SubMatrix3x3(int x, int y, double Z[9], int Orient
 
 	double	z	= m_pDTM->asDouble(x, y);
 
-	Z[4]		= 0.0;
+	Z[4]		= 0.;
 
 	for(int i=0; i<8; i++)
 	{
@@ -443,34 +434,49 @@ inline void CMorphometry::Get_SubMatrix3x3(int x, int y, double Z[9], int Orient
 			}
 			else
 			{
-				Z[Index[i]]	= 0.0;
+				Z[Index[i]]	= 0.;
 			}
 		}
 	}
 }
 
 //---------------------------------------------------------
-inline void CMorphometry::Get_SubMatrix5x5(int x, int y, double Z[25])
+inline void CMorphometry::Get_SubMatrix5x5(int x, int y, double Z[25], int Orientation)
 {
 	double	z	= m_pDTM->asDouble(x,y);
 
-	for(int i=0, iy=y-2; iy<=y+2; iy++)
+	if( Orientation == 0 )
 	{
-		int	jy	= iy < 0 ? 0 : (iy >= Get_NY() ? Get_NY() - 1 : iy);
-
-		for(int ix=x-2; ix<=x+2; ix++, i++)
+		for(int i=0, iy=y-2; iy<=y+2; iy++)
 		{
-			int	jx	= ix < 0 ? 0 : (ix >= Get_NX() ? Get_NX() - 1 : ix);
+			int	jy	= iy < 0 ? 0 : (iy >= Get_NY() ? Get_NY() - 1 : iy);
 
-			Z[i]	= m_pDTM->is_InGrid(jx, jy) ? m_pDTM->asDouble(jx, jy) - z : 0.0;
+			for(int ix=x-2; ix<=x+2; ix++, i++)
+			{
+				int	jx	= ix < 0 ? 0 : (ix >= Get_NX() ? Get_NX() - 1 : ix);
+
+				Z[i]	= m_pDTM->is_InGrid(jx, jy) ? m_pDTM->asDouble(jx, jy) - z : 0.;
+			}
+		}
+	}
+	else
+	{
+		for(int i=0, iy=y+2; iy>=y-2; iy--)
+		{
+			int	jy	= iy < 0 ? 0 : (iy >= Get_NY() ? Get_NY() - 1 : iy);
+
+			for(int ix=x-2; ix<=x+2; ix++, i++)
+			{
+				int	jx	= ix < 0 ? 0 : (ix >= Get_NX() ? Get_NX() - 1 : ix);
+
+				Z[i]	= m_pDTM->is_InGrid(jx, jy) ? m_pDTM->asDouble(jx, jy) - z : 0.;
+			}
 		}
 	}
 }
 
 
 ///////////////////////////////////////////////////////////
-//														 //
-//														 //
 //														 //
 ///////////////////////////////////////////////////////////
 
@@ -498,22 +504,21 @@ inline void CMorphometry::Set_NoData(int x, int y)
 //---------------------------------------------------------
 inline void CMorphometry::Set_Gradient(int x, int y, double Slope, double Aspect)
 {
-	//-----------------------------------------------------
-	if( m_Unit_Slope == 1 )
+	if     ( m_Unit_Slope == 2 )
 	{
-		SET_VALUE(m_pSlope, Slope * M_RAD_TO_DEG);
+		SET_VALUE(m_pSlope, 100. * Slope);
 	}
-	else if( m_Unit_Slope == 2 )
+	else if( m_Unit_Slope == 1 )
 	{
-		SET_VALUE(m_pSlope, 100.0 * tan(Slope));
+		SET_VALUE(m_pSlope, atan(Slope) * M_RAD_TO_DEG);
 	}
 	else
 	{
-		SET_VALUE(m_pSlope, Slope);
+		SET_VALUE(m_pSlope, atan(Slope));
 	}
 
 	//-----------------------------------------------------
-	if( m_Unit_Aspect == 1 && Aspect >= 0.0 )
+	if( m_Unit_Aspect == 1 && Aspect >= 0. )
 	{
 		SET_VALUE(m_pAspect, Aspect * M_RAD_TO_DEG);
 	}
@@ -526,8 +531,6 @@ inline void CMorphometry::Set_Gradient(int x, int y, double Slope, double Aspect
 
 ///////////////////////////////////////////////////////////
 //														 //
-//														 //
-//														 //
 ///////////////////////////////////////////////////////////
 
 //---------------------------------------------------------
@@ -536,17 +539,17 @@ inline void CMorphometry::Set_From_Polynom(int x, int y, double r, double t, dou
 	//-----------------------------------------------------
 	double	p2_q2	= p*p + q*q;
 
-	Set_Gradient(x, y, atan(sqrt(p2_q2)),
-		  p != 0.0 ? M_PI_180 + atan2(q, p)
-		: q >  0.0 ? M_PI_270
-		: q <  0.0 ? M_PI_090
+	Set_Gradient(x, y, sqrt(p2_q2),
+		  p != 0. ? M_PI_180 + atan2(q, p)
+		: q >  0. ? M_PI_270
+		: q <  0. ? M_PI_090
 		: m_pAspect ? m_pAspect->Get_NoData_Value() : -1
 	);
 
 	//-----------------------------------------------------
 	if( p2_q2 )
 	{
-		double	spq = s * p * q, p2 = p*p, q2 = q*q;	r	*= 2;	t	*= 2;
+		double	spq = s * p * q, p2 = p*p, q2 = q*q;
 
 		SET_VALUE(m_pC_Gene, -2 * (r + t));
 		SET_VALUE(m_pC_Prof, -(r * p2 + t * q2 + 2 * spq) / (p2_q2 * pow(1 + p2_q2, 1.5)));
@@ -584,18 +587,18 @@ void CMorphometry::Set_MaximumSlope(int x, int y)
 
 	//-----------------------------------------------------
 	z		= m_pDTM->asDouble(x, y);
-    Slope	= Curv	= 0.0;
+    Slope	= Curv	= 0.;
 	Aspect	= -1;
 
 	for(i=0; i<8; i++)
 	{
 		if( !m_pDTM->is_InGrid(ix = Get_xTo(i, x), iy = Get_yTo(i, y)) )
 		{
-			Z[i]	= 0.0;
+			Z[i]	= 0.;
 		}
 		else
 		{
-			Z[i]	= atan((z - m_pDTM->asDouble(ix, iy)) / Get_Length(i));
+			Z[i]	= (z - m_pDTM->asDouble(ix, iy)) / Get_Length(i);
 			Curv	+= Z[i];
 
 			if( Z[i] > Slope )
@@ -609,7 +612,7 @@ void CMorphometry::Set_MaximumSlope(int x, int y)
 	Set_Gradient(x, y, Slope, Aspect * M_PI_045);
 
 	//-------------------------------------------------
-	if( Aspect < 0.0 )
+	if( Aspect < 0. )
 	{
 		SET_NODATA(m_pAspect);
 
@@ -622,31 +625,31 @@ void CMorphometry::Set_MaximumSlope(int x, int y)
 		//---------------------------------------------
 		// Let's now estimate the plan curvature...
 
-		for(i=Aspect+1, j=0, a=0.0; i<Aspect+8; i++, j++)
+		for(i=Aspect+1, j=0, a=0.; i<Aspect+8; i++, j++)
 		{
-			if( Z[i % 8] < 0.0 )
+			if( Z[i % 8] < 0. )
 			{
 				a	= j + Z[(i - 1) % 8] / (Z[(i - 1) % 8] - Z[i % 8]);
 				break;
 			}
 		}
 
-		if( a != 0.0 )
+		if( a != 0. )
 		{
-			for(i=Aspect+7, j=0, b=0.0; i>Aspect; i--, j++)
+			for(i=Aspect+7, j=0, b=0.; i>Aspect; i--, j++)
 			{
-				if( Z[i % 8] < 0.0 )
+				if( Z[i % 8] < 0. )
 				{
 					b	= j + Z[(i + 1) % 8] / (Z[(i + 1) % 8] - Z[i % 8]);
 					break;
 				}
 			}
 
-			hCurv	=  45.0 * (a + b) - 180.0;
+			hCurv	=  45. * (a + b) - 180.;
 		}
 		else
 		{
-			hCurv	=  180.0;
+			hCurv	=  180.;
 		}
 
 		//---------------------------------------------
@@ -698,8 +701,8 @@ void CMorphometry::Set_Tarboton(int x, int y)
 	}
 
 	//---------------------------------------------
-    Slope	=  0.0;
-	Aspect	= -1.0;
+    Slope	=  0.;
+	Aspect	= -1.;
 
 	for(i=0, j=1; i<8; i++, j=(j+1)%8)
 	{
@@ -714,15 +717,15 @@ void CMorphometry::Set_Tarboton(int x, int y)
 			H		= (Z[i]	- Z[j]) / Get_Cellsize();
 		}
 
-		if( H < 0.0 )
+		if( H < 0. )
 		{
-			iAspect	= 0.0;
+			iAspect	= 0.;
 			iSlope	= G;
 		}
 		else if( H > G )
 		{
 			iAspect	= M_PI_045;
-			iSlope	= (z - Z[i % 2 ? i : j]) / (sqrt(2.0) * Get_Cellsize());
+			iSlope	= (z - Z[i % 2 ? i : j]) / (sqrt(2.) * Get_Cellsize());
 		}
 		else
 		{
@@ -738,13 +741,13 @@ void CMorphometry::Set_Tarboton(int x, int y)
 	}
 
 	//---------------------------------------------
-	if( Aspect < 0.0 )
+	if( Aspect < 0. )
 	{
 		Set_NoData(x, y);
 	}
 	else
 	{
-		Set_Gradient(x, y, atan(Slope), Aspect);
+		Set_Gradient(x, y, Slope, Aspect);
 	}
 }
 
@@ -773,10 +776,10 @@ void CMorphometry::Set_LeastSquare(int x, int y)
 	a		= ((Z[2] + 2 * Z[5] + Z[8]) - (Z[0] + 2 * Z[3] + Z[6])) / (8 * Get_Cellsize());
 	b		= ((Z[6] + 2 * Z[7] + Z[8]) - (Z[0] + 2 * Z[1] + Z[2])) / (8 * Get_Cellsize());
 
-	Set_Gradient(x, y, atan(sqrt(a*a + b*b)),
-		  a != 0.0 ? M_PI_180 + atan2(b, a)
-		: b >  0.0 ? M_PI_270
-		: b <  0.0 ? M_PI_090
+	Set_Gradient(x, y, sqrt(a*a + b*b),
+		  a != 0. ? M_PI_180 + atan2(b, a)
+		: b >  0. ? M_PI_270
+		: b <  0. ? M_PI_090
 		: m_pAspect ? m_pAspect->Get_NoData_Value() : -1
 	);
 }
@@ -880,8 +883,8 @@ void CMorphometry::Set_Zevenbergen(int x, int y)
 
 	Get_SubMatrix3x3(x, y, Z);
 
-	D	= ((Z[3] + Z[5]) / 2.0 - Z[4]) / (    Get_Cellarea());
-	E	= ((Z[1] + Z[7]) / 2.0 - Z[4]) / (    Get_Cellarea());
+	D	= ((Z[3] + Z[5]) / 2.  - Z[4]) / (    Get_Cellarea());
+	E	= ((Z[1] + Z[7]) / 2.  - Z[4]) / (    Get_Cellarea());
 	F	=  (Z[0] - Z[2] - Z[6] + Z[8]) / (4 * Get_Cellarea());
 	G	=  (Z[5] - Z[3])               / (2 * Get_Cellsize());
     H	=  (Z[7] - Z[1])               / (2 * Get_Cellsize());
@@ -912,28 +915,78 @@ void CMorphometry::Set_Haralick(int x, int y)
 	{	{  4,  2,  0,- 2,- 4}, {  2,  1,  0,- 1,- 2}, {  0,  0,  0,  0,  0}, {- 2,- 1,  0,  1,  2}, {- 4,- 2,  0,  2,  4}	},
 	{	{  2,- 1,- 2,- 1,  2}, {  2,- 1,- 2,- 1,  2}, {  2,- 1,- 2,- 1,  2}, {  2,- 1,- 2,- 1,  2}, {  2,- 1,- 2,- 1,  2}	},	};
 
-	const int	QMtrx[]			= { 4200, 4200, 700, 1000, 700 };
-
 	//-----------------------------------------------------
-	int		i, ix, iy, n;
-	double	Sum, Z[25], k[5];
+	double	Z[25], k[5];
 
 	Get_SubMatrix5x5(x, y, Z);
 
-	for(i=0; i<5; i++)
+	for(int i=0; i<5; i++)
 	{
-		for(n=0, Sum=0.0, iy=0; iy<5; iy++)
+		k[i]	= 0.;
+
+		for(int iy=0, n=0; iy<5; iy++)
 		{
-			for(ix=0; ix<5; ix++, n++)
+			for(int ix=0; ix<5; ix++, n++)
 			{
-				Sum	+= Z[n] * Mtrx[i][ix][iy];
+				k[i]	+= Z[n] * Mtrx[i][ix][iy];
 			}
 		}
-
-		k[i]	= Sum / QMtrx[i];
 	}
 
+	k[0] /= 420. * Get_Cellsize();
+	k[1] /= 420. * Get_Cellsize();
+	k[2] /=  70. * Get_Cellarea();
+	k[3] /= 100. * Get_Cellarea();
+	k[4] /=  70. * Get_Cellarea();
+
 	Set_From_Polynom(x, y, k[4], k[2], k[3], k[1], k[0]);
+}
+
+//---------------------------------------------------------
+// Cubic Function Approximation (Florinsky, 2009)
+//
+// I.V. Florinsky (2009):
+//		'Computation of the third-order partial derivatives from a digital elevation model',
+//		International Journal of Geographical Information Science, 23(2), p.213-231.
+//
+//---------------------------------------------------------
+// f(z) = a/6x^3 + d/6y^3 + b/2x^2y + c/2xy^2 + r/2x^2 + t/2y^2 + sxy + px + qy + u
+//
+//---------------------------------------------------------
+void CMorphometry::Set_Florinsky(int x, int y)
+{
+	double	z[26], r, t, s, p, q;
+
+	Get_SubMatrix5x5(x, y, z + 1, 1);
+
+	r = ( (z[ 1] + z[ 5] + z[ 6] + z[10] + z[11] + z[15] + z[16] + z[20] + z[21] + z[25]) * 2.
+		- (z[ 3] + z[ 8] + z[13] + z[18] + z[23]) * 2.
+		-  z[ 2] - z[ 4] - z[ 7] - z[ 9] - z[12] - z[14] - z[17] - z[19] - z[22] - z[24]
+		) / ( 35. * Get_Cellarea());
+
+	t = ( (z[ 1] + z[ 2] + z[ 3] + z[ 4] + z[ 5] + z[21] + z[22] + z[23] + z[24] + z[25]) * 2.
+		- (z[11] + z[12] + z[13] + z[14] + z[15]) * 2.
+		-  z[ 6] - z[ 7] - z[ 8] - z[ 9] - z[10] - z[16] - z[17] - z[18] - z[19] - z[20]
+		) / ( 35. * Get_Cellarea());
+
+	s = (  z[ 9] + z[17] - z[ 7] - z[19]
+		+ (z[ 5] + z[21] - z[ 1] - z[25]) * 4.
+		+ (z[ 4] + z[10] + z[16] + z[22] - z[ 2] - z[ 6] - z[20] - z[24]) * 2.
+		) / (100. * Get_Cellarea());
+
+	p = ( (z[ 4] + z[24] - z[ 2] - z[22]) * 44.
+		+ (z[ 1] + z[21] - z[ 5] - z[25] + (z[ 9] + z[19] - z[ 7] - z[17]) * 2.) * 31.
+		+ (z[15] - z[11] +(z[14] - z[12]) * 4.) * 17.
+		+ (z[10] + z[20] - z[ 6] - z[16]) * 5.
+		) / (420. * Get_Cellsize());
+
+	q = ( (z[ 6] + z[10] - z[16] - z[20]) * 44.
+		+ (z[21] + z[25] - z[ 1] - z[ 5] + (z[ 7] + z[ 9] - z[17] - z[19]) * 2.) * 31.
+		+ (z[ 3] - z[23] +(z[ 8] - z[18]) * 4.) * 17.
+		+ (z[ 2] + z[ 4] - z[22] - z[24]) * 5.
+		) / (420. * Get_Cellsize());
+
+	Set_From_Polynom(x, y, r / 2., t / 2., s, q, p);
 }
 
 

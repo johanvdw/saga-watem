@@ -1,6 +1,3 @@
-/**********************************************************
- * Version $Id$
- *********************************************************/
 
 ///////////////////////////////////////////////////////////
 //                                                       //
@@ -46,15 +43,6 @@
 //                                                       //
 //    e-mail:     oconrad@saga-gis.org                   //
 //                                                       //
-///////////////////////////////////////////////////////////
-
-//---------------------------------------------------------
-
-
-///////////////////////////////////////////////////////////
-//														 //
-//														 //
-//														 //
 ///////////////////////////////////////////////////////////
 
 //---------------------------------------------------------
@@ -121,6 +109,8 @@ protected:
 	bool						Get_Image_Grid			(wxBitmap &BMP, bool bFitSize = true);
 	bool						Get_Image_Legend		(wxBitmap &BMP, double Zoom);
 
+	bool						Set_Grid_Choices		(CSG_Parameters *pParameters);
+
 	virtual void				On_Create_Parameters	(void);
 	virtual void				On_DataObject_Changed	(void);
 	virtual void				On_Parameters_Changed	(void);
@@ -133,6 +123,8 @@ protected:
 private:
 
 	int							m_Fit_Colors;
+
+	double						m_Alpha[2];
 
 	CWKSP_Layer_Classify		m_Classify[3];
 
@@ -147,7 +139,7 @@ private:
 	void						_Save_Image				(void);
 
 	void						_Draw_Grid_Nodes		(CWKSP_Map_DC &dc_Map, TSG_Grid_Resampling Resampling);
-	void						_Draw_Grid_Nodes		(CWKSP_Map_DC &dc_Map, TSG_Grid_Resampling Resampling, CSG_Grid *pBands[3], bool bBandWise, int yDC, int axDC, int bxDC);
+	void						_Draw_Grid_Nodes		(CWKSP_Map_DC &dc_Map, TSG_Grid_Resampling Resampling, CSG_Grid *pBands[4], bool bBandWise, int yDC, int axDC, int bxDC);
 	void						_Draw_Grid_Cells		(CWKSP_Map_DC &dc_Map);
 
 };

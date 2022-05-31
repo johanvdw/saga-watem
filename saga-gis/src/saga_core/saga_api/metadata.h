@@ -1,6 +1,3 @@
-/**********************************************************
- * Version $Id$
- *********************************************************/
 
 ///////////////////////////////////////////////////////////
 //                                                       //
@@ -51,6 +48,8 @@
 ///////////////////////////////////////////////////////////
 
 //---------------------------------------------------------
+#ifndef HEADER_INCLUDED__SAGA_API__metadata_H
+#define HEADER_INCLUDED__SAGA_API__metadata_H
 
 
 ///////////////////////////////////////////////////////////
@@ -60,8 +59,12 @@
 ///////////////////////////////////////////////////////////
 
 //---------------------------------------------------------
-#ifndef HEADER_INCLUDED__SAGA_API__metadata_H
-#define HEADER_INCLUDED__SAGA_API__metadata_H
+/** \file metadata.h
+* A flexible class for the storage and management of meta data.
+* Standard storage format is the extended markup language (XML).
+* @see CSG_MetaData
+* @see CSG_HTTP
+*/
 
 
 ///////////////////////////////////////////////////////////
@@ -132,6 +135,9 @@ public:
 	const CSG_String &			Get_Content			(void)						const	{	return( m_Content );	}
 	const SG_Char *				Get_Content			(int Index)					const	{	return( Get_Child(Index) ? Get_Child(Index)->Get_Content().c_str() : NULL );	}
 	const SG_Char *				Get_Content			(const CSG_String &Name)	const	{	return( Get_Content(_Get_Child(Name)) );	}
+	bool						Get_Content			(const CSG_String &Name, CSG_String &Value)	const;
+	bool						Get_Content			(const CSG_String &Name, double     &Value)	const;
+	bool						Get_Content			(const CSG_String &Name, int        &Value)	const;
 	void						Set_Content			(const CSG_String &Content)			{	m_Content	= Content;	}
 	void						Fmt_Content			(const char    *Format, ...);
 	void						Fmt_Content			(const wchar_t *Format, ...);

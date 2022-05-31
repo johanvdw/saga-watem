@@ -1,6 +1,3 @@
-/**********************************************************
- * Version $Id$
- *********************************************************/
 
 ///////////////////////////////////////////////////////////
 //                                                       //
@@ -52,6 +49,8 @@
 ///////////////////////////////////////////////////////////
 
 //---------------------------------------------------------
+#ifndef HEADER_INCLUDED__SAGA_API__grids_H
+#define HEADER_INCLUDED__SAGA_API__grids_H
 
 
 ///////////////////////////////////////////////////////////
@@ -61,8 +60,14 @@
 ///////////////////////////////////////////////////////////
 
 //---------------------------------------------------------
-#ifndef HEADER_INCLUDED__SAGA_API__grids_H
-#define HEADER_INCLUDED__SAGA_API__grids_H
+/** \file grids.h
+* Classes for multi-dimensional raster data management, so
+* called grid collections.
+* @see CSG_Data_Object
+* @see CSG_Grid_System
+* @see CSG_Grid
+* @see CSG_Grids
+*/
 
 
 ///////////////////////////////////////////////////////////
@@ -86,7 +91,8 @@ typedef enum ESG_Grids_File_Format
 {
 	GRIDS_FILE_FORMAT_Undefined	= 0,
 	GRIDS_FILE_FORMAT_Normal,
-	GRIDS_FILE_FORMAT_Compressed
+	GRIDS_FILE_FORMAT_Compressed,
+	GRIDS_FILE_FORMAT_GeoTIFF
 }
 TSG_Grids_File_Format;
 
@@ -127,14 +133,14 @@ public:		///////////////////////////////////////////////
 									CSG_Grids			(const CSG_String &FileName, bool bLoadData = true);
 	virtual bool					Create				(const CSG_String &FileName, bool bLoadData = true);
 
-									CSG_Grids			(const CSG_Grid_System &System, int NZ = 0, double zMin = 0.0, TSG_Data_Type Type = SG_DATATYPE_Undefined);
-	virtual bool					Create				(const CSG_Grid_System &System, int NZ = 0, double zMin = 0.0, TSG_Data_Type Type = SG_DATATYPE_Undefined);
+									CSG_Grids			(const CSG_Grid_System &System, int NZ = 0, double zMin = 0., TSG_Data_Type Type = SG_DATATYPE_Undefined);
+	virtual bool					Create				(const CSG_Grid_System &System, int NZ = 0, double zMin = 0., TSG_Data_Type Type = SG_DATATYPE_Undefined);
 
 									CSG_Grids			(const CSG_Grid_System &System, const CSG_Table &Attributes, int zAttribute = 0, TSG_Data_Type Type = SG_DATATYPE_Undefined, bool bCreateGrids = false);
 	virtual bool					Create				(const CSG_Grid_System &System, const CSG_Table &Attributes, int zAttribute = 0, TSG_Data_Type Type = SG_DATATYPE_Undefined, bool bCreateGrids = false);
 
-									CSG_Grids			(int NX, int NY, int NZ = 0, double Cellsize = 0.0, double xMin = 0.0, double yMin = 0.0, double zMin = 0.0, TSG_Data_Type Type = SG_DATATYPE_Undefined);
-	virtual bool					Create				(int NX, int NY, int NZ = 0, double Cellsize = 0.0, double xMin = 0.0, double yMin = 0.0, double zMin = 0.0, TSG_Data_Type Type = SG_DATATYPE_Undefined);
+									CSG_Grids			(int NX, int NY, int NZ = 0, double Cellsize = 0., double xMin = 0., double yMin = 0., double zMin = 0., TSG_Data_Type Type = SG_DATATYPE_Undefined);
+	virtual bool					Create				(int NX, int NY, int NZ = 0, double Cellsize = 0., double xMin = 0., double yMin = 0., double zMin = 0., TSG_Data_Type Type = SG_DATATYPE_Undefined);
 
 	virtual bool					Destroy				(void);
 
@@ -169,6 +175,8 @@ public:		///////////////////////////////////////////////
 	// Georeference...
 
 	const CSG_Grid_System &			Get_System			(void)	const	{	return( m_pGrids[0]->Get_System() );		}
+
+	virtual const CSG_Rect &		Get_Extent			(void)			{	return( Get_System().Get_Extent() );		}
 
 	int								Get_NX				(void)	const	{	return( m_pGrids[0]->Get_System().Get_NX() );	}
 	int								Get_NY				(void)	const	{	return( m_pGrids[0]->Get_System().Get_NY() );	}
@@ -242,7 +250,7 @@ public:		///////////////////////////////////////////////
 	//-----------------------------------------------------
 	// Values...
 
-	void							Set_Scaling			(double Scale = 1.0, double Offset = 0.0);
+	void							Set_Scaling			(double Scale = 1., double Offset = 0.);
 	double							Get_Scaling			(void)	const	{	return( m_pGrids[0]->Get_Scaling() );	}
 	double							Get_Offset			(void)	const	{	return( m_pGrids[0]->Get_Offset () );	}
 	bool							is_Scaled			(void)	const	{	return( m_pGrids[0]->is_Scaled  () );	}
@@ -310,7 +318,7 @@ public:		///////////////////////////////////////////////
 
 	void							Assign_NoData				(void);
 
-	virtual bool					Assign						(double Value = 0.0);
+	virtual bool					Assign						(double Value = 0.);
 	virtual bool					Assign						(CSG_Data_Object *pObject);
 	virtual bool					Assign						(CSG_Grids *pGrids, TSG_Grid_Resampling Interpolation);
 
@@ -334,6 +342,8 @@ public:		///////////////////////////////////////////////
 	virtual CSG_Grids &				Divide			(double Value          );
 
 	virtual double					operator ()		(int x, int y, int z) const	{	return( asDouble(x, y, z) );	}
+
+	virtual CSG_Grid &				operator []		(int i)	{	return( *m_pGrids[i] );	}
 
 
 	//-----------------------------------------------------
@@ -561,13 +571,13 @@ SAGA_API_DLL_EXPORT CSG_Grids *		SG_Create_Grids		(const CSG_Grids *pGrids, bool
 SAGA_API_DLL_EXPORT CSG_Grids *		SG_Create_Grids		(const CSG_String &FileName, bool bLoadData = true);
 
 /** Safe construction of a grid collection */
-SAGA_API_DLL_EXPORT CSG_Grids *		SG_Create_Grids		(const CSG_Grid_System &System, int NZ = 0, double zMin = 0.0, TSG_Data_Type Type = SG_DATATYPE_Undefined);
+SAGA_API_DLL_EXPORT CSG_Grids *		SG_Create_Grids		(const CSG_Grid_System &System, int NZ = 0, double zMin = 0., TSG_Data_Type Type = SG_DATATYPE_Undefined);
 
 /** Safe construction of a grid collection */
 SAGA_API_DLL_EXPORT CSG_Grids *		SG_Create_Grids		(const CSG_Grid_System &System, const CSG_Table &Attributes, int zAttribute = 0, TSG_Data_Type Type = SG_DATATYPE_Undefined, bool bCreateGrids = false);
 
 /** Safe construction of a grid collection */
-SAGA_API_DLL_EXPORT CSG_Grids *		SG_Create_Grids		(int NX, int NY, int NZ = 0, double Cellsize = 0.0, double xMin = 0.0, double yMin = 0.0, double zMin = 0.0, TSG_Data_Type Type = SG_DATATYPE_Undefined);
+SAGA_API_DLL_EXPORT CSG_Grids *		SG_Create_Grids		(int NX, int NY, int NZ = 0, double Cellsize = 0., double xMin = 0., double yMin = 0., double zMin = 0., TSG_Data_Type Type = SG_DATATYPE_Undefined);
 
 
 ///////////////////////////////////////////////////////////

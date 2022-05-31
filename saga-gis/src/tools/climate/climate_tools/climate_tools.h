@@ -45,15 +45,6 @@
 ///////////////////////////////////////////////////////////
 
 //---------------------------------------------------------
-
-
-///////////////////////////////////////////////////////////
-//														 //
-//														 //
-//														 //
-///////////////////////////////////////////////////////////
-
-//---------------------------------------------------------
 #ifndef HEADER_INCLUDED__climate_tools_H
 #define HEADER_INCLUDED__climate_tools_H
 
@@ -75,7 +66,7 @@
 ///////////////////////////////////////////////////////////
 
 //---------------------------------------------------------
-bool	SG_Grid_Get_Geographic_Coordinates		(CSG_Grid *pGrid, CSG_Grid *pLon, CSG_Grid *pLat);
+double	CT_Get_Radiation_Daily_TopOfAtmosphere	(int DayOfYear, double Latitude, bool bWaterEquivalent = true);
 
 
 ///////////////////////////////////////////////////////////
@@ -83,13 +74,15 @@ bool	SG_Grid_Get_Geographic_Coordinates		(CSG_Grid *pGrid, CSG_Grid *pLon, CSG_G
 ///////////////////////////////////////////////////////////
 
 //---------------------------------------------------------
-double	CT_Get_Radiation_Daily_TopOfAtmosphere	(int DayOfYear, double Latitude, bool bWaterEquivalent = true);
+double	CT_Get_ETpot_Hargreave					(double T, double Tmin, double Tmax, double R0);
+double	CT_Get_ETpot_Hargreave					(double T, double Tmin, double Tmax, int DayOfYear, double Latitude);
 
-//---------------------------------------------------------
-double	CT_Get_ETpot_Hargreave					(double R0                     , double T, double Tmin, double Tmax);
-double	CT_Get_ETpot_Hargreave					(int DayOfYear, double Latitude, double T, double Tmin, double Tmax);
+double	CT_Get_ETpot_Turc						(double T, double Rg, double rH);
 
-bool	CT_Get_ETpot_Hargreave_DailyFromMonthly	(CSG_Vector &ETpot, double Latitude, const double T[12], const double Tmin[12], const double Tmax[12]);
+double	CT_Get_ETpot_Penman						(double T, double Rg, double rH, double V, double S0);
+double	CT_Get_ETpot_Penman						(double T, double Rg, double rH, double V, int DayOfYear, double Latitude);
+
+double	CT_Get_ETpot_FAORef						(double T, double Tmin, double Tmax, double Rg, double rH, double V, double P=101.325, double dZ = 0.);
 
 
 ///////////////////////////////////////////////////////////

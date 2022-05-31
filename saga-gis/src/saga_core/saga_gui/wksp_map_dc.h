@@ -1,6 +1,3 @@
-/**********************************************************
- * Version $Id$
- *********************************************************/
 
 ///////////////////////////////////////////////////////////
 //                                                       //
@@ -51,15 +48,6 @@
 ///////////////////////////////////////////////////////////
 
 //---------------------------------------------------------
-
-
-///////////////////////////////////////////////////////////
-//														 //
-//														 //
-//														 //
-///////////////////////////////////////////////////////////
-
-//---------------------------------------------------------
 #ifndef _HEADER_INCLUDED__SAGA_GUI__WKSP_Map_DC_H
 #define _HEADER_INCLUDED__SAGA_GUI__WKSP_Map_DC_H
 
@@ -86,9 +74,9 @@
 //---------------------------------------------------------
 enum
 {
-	IMG_MODE_OPAQUE			= 0,
-	IMG_MODE_TRANSPARENT,
+	IMG_MODE_OPAQUE	= 0,
 	IMG_MODE_SHADING,
+	IMG_MODE_TRANSPARENT,
 	IMG_MODE_TRANSPARENT_ALPHA
 };
 
@@ -120,14 +108,14 @@ public:
 	{
 		x	= (x - m_rWorld.Get_XMin()) * m_World2DC;
 
-		return( bRound ? (int)(x < 0.0 ? x - 0.5 : x + 0.5) : x );
+		return( bRound ? (int)(x < 0. ? x - 0.5 : x + 0.5) : x );
 	}
 
 	double						yWorld2DC				(double y, bool bRound = true)
 	{
 		y	= (m_rWorld.Get_YMax() - y) * m_World2DC - 1;
 
-		return( bRound ? (int)(y < 0.0 ? y - 0.5 : y + 0.5) : y );
+		return( bRound ? (int)(y < 0. ? y - 0.5 : y + 0.5) : y );
 	}
 
 	TSG_Point_Int				World2DC				(TSG_Point p)	{	TSG_Point_Int _p; _p.x = (int)xWorld2DC(p.x), _p.y = (int)yWorld2DC(p.y); return( _p );	}
@@ -151,53 +139,61 @@ public:
 	void						Draw_Polygon			(CSG_Shape_Polygon *pPolygon);
 
 	//-----------------------------------------------------
-	bool						IMG_Draw_Begin			(double Transparency);
+	bool						IMG_Draw_Begin			(double Transparency, int Mode = IMG_MODE_TRANSPARENT);
 	bool						IMG_Draw_End			(void);
 
 	//-----------------------------------------------------
-	void						IMG_Set_Pixel_Direct	(int n, int Color)
+	void						IMG_Set_Pixel_Direct	(int i, int Color)
 	{
-		if( n >= 0 && n < m_img_nBytes )
+		if( i >= 0 && i < m_img_nBytes )
 		{
-			BYTE	r	= SG_GET_R(Color), g	= SG_GET_G(Color), b	= SG_GET_B(Color);
-			double	d;
+			BYTE r = SG_GET_R(Color);
+			BYTE g = SG_GET_G(Color);
+			BYTE b = SG_GET_B(Color);
 
 			switch( m_img_mode )
 			{
-			case IMG_MODE_OPAQUE: default:
-				m_img_rgb[n + 0]	= r;
-				m_img_rgb[n + 1]	= g;
-				m_img_rgb[n + 2]	= b;
-				break;
+			case IMG_MODE_OPAQUE: default: {
+				break; }
 
-			case IMG_MODE_SHADING:
-				m_img_rgb[n + 0]	= (int)(r / 255.0 * m_img_dc_rgb[n + 0]);
-				m_img_rgb[n + 1]	= (int)(g / 255.0 * m_img_dc_rgb[n + 1]);
-				m_img_rgb[n + 2]	= (int)(b / 255.0 * m_img_dc_rgb[n + 2]);
-				break;
+			case IMG_MODE_SHADING: {
+				r = (BYTE)(r * m_img_dc_rgb[i + 0] / 255.);
+				g = (BYTE)(g * m_img_dc_rgb[i + 1] / 255.);
+				b = (BYTE)(b * m_img_dc_rgb[i + 2] / 255.);
+				break; }
 
-			case IMG_MODE_TRANSPARENT:
-				d					= 1.0 - m_Transparency;
-				m_img_rgb[n + 0]	= (int)(d * r + m_Transparency * m_img_dc_rgb[n + 0]);
-				m_img_rgb[n + 1]	= (int)(d * g + m_Transparency * m_img_dc_rgb[n + 1]);
-				m_img_rgb[n + 2]	= (int)(d * b + m_Transparency * m_img_dc_rgb[n + 2]);
-				break;
-
-			case IMG_MODE_TRANSPARENT_ALPHA:
-				if( (d = SG_GET_A(Color) / 256.0) < 1.0 )
+			case IMG_MODE_TRANSPARENT: {
+				if( m_Opacity <= 0. ) { return; }
+				if( m_Opacity <  1. )
 				{
-					m_img_rgb[n + 0]	= (int)((1.0 - d) * r + d * m_img_dc_rgb[n + 0]);
-					m_img_rgb[n + 1]	= (int)((1.0 - d) * g + d * m_img_dc_rgb[n + 1]);
-					m_img_rgb[n + 2]	= (int)((1.0 - d) * b + d * m_img_dc_rgb[n + 2]);
+					r = (BYTE)(r * m_Opacity + (1. - m_Opacity) * m_img_dc_rgb[i + 0]);
+					g = (BYTE)(g * m_Opacity + (1. - m_Opacity) * m_img_dc_rgb[i + 1]);
+					b = (BYTE)(b * m_Opacity + (1. - m_Opacity) * m_img_dc_rgb[i + 2]);
 				}
-				break;
+				break; }
+
+			case IMG_MODE_TRANSPARENT_ALPHA: {
+				double	Opacity	= m_Opacity * SG_GET_A(Color) / 255.;
+
+				if( Opacity <= 0. ) { return; }
+				if( Opacity <  1. )
+				{
+					r = (BYTE)(r *   Opacity + (1. -   Opacity) * m_img_dc_rgb[i + 0]);
+					g = (BYTE)(g *   Opacity + (1. -   Opacity) * m_img_dc_rgb[i + 1]);
+					b = (BYTE)(b *   Opacity + (1. -   Opacity) * m_img_dc_rgb[i + 2]);
+				}
+				break; }
 			}
+
+			m_img_rgb[i + 0] = r;
+			m_img_rgb[i + 1] = g;
+			m_img_rgb[i + 2] = b;
 		}
 	}
 
-	void						IMG_Set_Pixel			(int n, int Color)
+	void						IMG_Set_Pixel			(int i, int Color)
 	{
-		IMG_Set_Pixel_Direct(3 * n, Color);
+		IMG_Set_Pixel_Direct(3 * i, Color);
 	}
 
 	void						IMG_Set_Pixel			(int x, int y, int Color)
@@ -220,15 +216,11 @@ private:
 
 	int							m_img_nx, m_img_nBytes, m_img_mode;
 
-	double						m_Transparency;
+	double						m_Opacity;
 
 	wxImage						m_img, m_img_dc;
 
 	wxBitmap					dc_BMP;
-
-
-	void						TEST_Draw_Polygon		(CSG_Shape_Polygon *pPolygon);
-	void						TEST_Draw_Polygon_Line	(CSG_Grid &Mask, int ax, int ay, int bx, int by, bool bDirChanged);
 
 };
 

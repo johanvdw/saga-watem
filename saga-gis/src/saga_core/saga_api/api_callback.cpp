@@ -1,6 +1,3 @@
-/**********************************************************
- * Version $Id$
- *********************************************************/
 
 ///////////////////////////////////////////////////////////
 //                                                       //
@@ -53,6 +50,11 @@
 ///////////////////////////////////////////////////////////
 
 //---------------------------------------------------------
+#include <wx/stdpaths.h>
+
+#include "api_core.h"
+#include "grid.h"
+#include "parameters.h"
 
 
 ///////////////////////////////////////////////////////////
@@ -62,11 +64,13 @@
 ///////////////////////////////////////////////////////////
 
 //---------------------------------------------------------
-#include <wx/stdpaths.h>
-
-#include "api_core.h"
-#include "grid.h"
-#include "parameters.h"
+#if defined(_SAGA_MSW)
+	#define CONSOLE_STDIO      printf(        CSG_String::Format
+	#define CONSOLE_STDERR    fprintf(stderr, CSG_String::Format
+#else
+	#define CONSOLE_STDIO   SG_Printf(        CSG_String::Format
+	#define CONSOLE_STDERR SG_FPrintf(stderr, CSG_String::Format
+#endif
 
 
 ///////////////////////////////////////////////////////////
@@ -133,6 +137,16 @@ int			SG_UI_Progress_Lock(bool bOn)
 }
 
 //---------------------------------------------------------
+int			SG_UI_Progress_Reset(void)
+{
+	int Locked = gSG_UI_Progress_Lock;
+
+	gSG_UI_Progress_Lock = 0;
+
+	return( Locked );
+}
+
+//---------------------------------------------------------
 bool		SG_UI_Process_Get_Okay(bool bBlink)
 {
 	if( gSG_UI_Callback )
@@ -148,7 +162,7 @@ bool		SG_UI_Process_Get_Okay(bool bBlink)
 
 		static int	iBuisy	= 0;
 
-		SG_Printf("\r%c   ", Buisy[iBuisy++]);
+		CONSOLE_STDIO("\r%c   ", Buisy[iBuisy++]));
 
 		iBuisy	%= 4;
 	}
@@ -193,14 +207,14 @@ bool		SG_UI_Process_Set_Progress(double Position, double Range)
 	{
 		if( iPercent < 0 || i < iPercent )
 		{
-			SG_Printf("\n");
+			CONSOLE_STDIO("\n"));
 		}
 
 		iPercent	= i;
 
 		if( iPercent >= 0 )
 		{
-			SG_Printf("\r%3d%%", iPercent > 100 ? 100 : iPercent);
+			CONSOLE_STDIO("\r%3d%%", iPercent > 100 ? 100 : iPercent));
 		}
 	}
 
@@ -238,7 +252,7 @@ void		SG_UI_Process_Set_Text(const CSG_String &Text)
 		}
 		else
 		{
-			SG_Printf("%s\n", Text.c_str());
+			CONSOLE_STDIO("%s\n", Text.c_str()));
 		}
 	}
 }
@@ -283,7 +297,7 @@ void		SG_UI_Dlg_Message(const CSG_String &Message, const CSG_String &Caption)
 		}
 		else
 		{
-			SG_Printf("%s: %s\n", Caption.c_str(), Message.c_str());
+			CONSOLE_STDIO("%s: %s\n", Caption.c_str(), Message.c_str()));
 		}
 	}
 }
@@ -371,6 +385,16 @@ int			SG_UI_Msg_Lock(bool bOn)
 }
 
 //---------------------------------------------------------
+int			SG_UI_Msg_Reset(void)
+{
+	int Locked = gSG_UI_Msg_Lock;
+
+	gSG_UI_Msg_Lock = 0;
+
+	return( Locked );
+}
+
+//---------------------------------------------------------
 void		SG_UI_Msg_Add(const CSG_String &Message, bool bNewLine, TSG_UI_MSG_STYLE Style)
 {
 	if( gSG_UI_Msg_Lock )
@@ -389,7 +413,7 @@ void		SG_UI_Msg_Add(const CSG_String &Message, bool bNewLine, TSG_UI_MSG_STYLE S
 	}
 	else
 	{
-		SG_Printf("%s\n", Message.c_str());
+		CONSOLE_STDIO("%s\n", Message.c_str()));
 	}
 }
 
@@ -407,7 +431,7 @@ void		SG_UI_Msg_Add_Error(const CSG_String &Message)
 	}
 	else
 	{
-		SG_FPrintf(stderr, "%s: %s\n", _TL("Error"), Message.c_str());
+		CONSOLE_STDERR("%s: %s\n", _TL("Error"), Message.c_str()));
 	}
 }
 
@@ -430,7 +454,7 @@ void		SG_UI_Msg_Add_Execution(const CSG_String &Message, bool bNewLine, TSG_UI_M
 	}
 	else
 	{
-		SG_Printf("%s\n", Message.c_str());
+		CONSOLE_STDIO("%s\n", Message.c_str()));
 	}
 }
 
@@ -446,6 +470,13 @@ void		SG_UI_ProgressAndMsg_Lock	(bool bOn)
 {
 	SG_UI_Progress_Lock(bOn);
 	SG_UI_Msg_Lock     (bOn);
+}
+
+//---------------------------------------------------------
+void		SG_UI_ProgressAndMsg_Reset	(void)
+{
+	SG_UI_Progress_Reset();
+	SG_UI_Msg_Reset     ();
 }
 
 
@@ -557,7 +588,7 @@ bool		SG_UI_DataObject_Params_Get	(CSG_Data_Object *pDataObject, CSG_Parameters 
 //---------------------------------------------------------
 bool		SG_UI_DataObject_Params_Set	(CSG_Data_Object *pDataObject, CSG_Parameters *pParameters)
 {
-	if( gSG_UI_Callback && pDataObject && pParameters )
+	if( gSG_UI_Progress_Lock == 0 && gSG_UI_Callback && pDataObject && pParameters )
 	{
 		CSG_UI_Parameter	p1(pDataObject), p2(pParameters);
 
@@ -603,9 +634,16 @@ void *		SG_UI_Get_Window_Main(void)
 }
 
 //---------------------------------------------------------
-CSG_String	SG_UI_Get_Application_Path(void)
+CSG_String	SG_UI_Get_Application_Path(bool bPathOnly)
 {
-	return( CSG_String(wxStandardPaths::Get().GetExecutablePath().wc_str()) );
+	CSG_String	App_Path(wxStandardPaths::Get().GetExecutablePath().wc_str());
+
+	if( bPathOnly )
+	{
+		App_Path = SG_File_Get_Path(App_Path);
+	}
+
+	return( SG_File_Get_Path_Absolute(App_Path) );
 }
 
 

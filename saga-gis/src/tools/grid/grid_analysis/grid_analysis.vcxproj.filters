@@ -74,6 +74,24 @@
     <ClCompile Include="diversity_analysis.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="diversity_shannon.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="diversity_simpson.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="diversity_raos_q.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="coverage_of_categories.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="soil_water_capacity.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Grid_Iterative_Truncation.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Cost_Isotropic.h">
@@ -167,6 +185,24 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="diversity_analysis.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="diversity_shannon.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="diversity_simpson.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="diversity_raos_q.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="coverage_of_categories.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="soil_water_capacity.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Grid_Iterative_Truncation.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

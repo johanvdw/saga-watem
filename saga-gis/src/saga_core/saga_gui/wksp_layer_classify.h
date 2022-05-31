@@ -1,6 +1,3 @@
-/**********************************************************
- * Version $Id$
- *********************************************************/
 
 ///////////////////////////////////////////////////////////
 //                                                       //
@@ -51,15 +48,6 @@
 ///////////////////////////////////////////////////////////
 
 //---------------------------------------------------------
-
-
-///////////////////////////////////////////////////////////
-//														 //
-//														 //
-//														 //
-///////////////////////////////////////////////////////////
-
-//---------------------------------------------------------
 #ifndef _HEADER_INCLUDED__SAGA_GUI__WKSP_Layer_Classify_H
 #define _HEADER_INCLUDED__SAGA_GUI__WKSP_Layer_Classify_H
 
@@ -85,9 +73,9 @@
 //---------------------------------------------------------
 enum
 {
-	CLASSIFY_UNIQUE	= 0,
+	CLASSIFY_SINGLE	= 0,
 	CLASSIFY_LUT,
-	CLASSIFY_METRIC,
+	CLASSIFY_DISCRETE,
 	CLASSIFY_GRADUATED,
 	CLASSIFY_OVERLAY,
 	CLASSIFY_RGB,
@@ -149,17 +137,17 @@ public:
 	bool						Create				(double Minimum, double Maximum, double Interval = 0.);
 
 	//-----------------------------------------------------
-	bool						Set_Linear			(CSG_Table *pTable, int Field, double Interval, double Percent);
+	bool						Set_Linear			(CSG_Table *pTable, int Field, double Interval, double Minimum, double Maximum);
 	bool						Set_StdDev			(CSG_Table *pTable, int Field, double Interval, double StdDev, bool bKeepInRange);
-	bool						Set_Percentile		(CSG_Table *pTable, int Field, double Interval, double Percentile);
+	bool						Set_Percentile		(CSG_Table *pTable, int Field, double Interval, double Minimum, double Maximum);
 
-	bool						Set_Linear			(CSG_Grid  *pGrid            , double Interval, double Percent);
+	bool						Set_Linear			(CSG_Grid  *pGrid            , double Interval, double Minimum, double Maximum);
 	bool						Set_StdDev			(CSG_Grid  *pGrid            , double Interval, double StdDev, bool bKeepInRange);
-	bool						Set_Percentile		(CSG_Grid  *pGrid            , double Interval, double Percentile);
+	bool						Set_Percentile		(CSG_Grid  *pGrid            , double Interval, double Minimum, double Maximum);
 
-	bool						Set_Linear			(CSG_Grids *pGrids           , double Interval, double Percent);
+	bool						Set_Linear			(CSG_Grids *pGrids           , double Interval, double Minimum, double Maximum);
 	bool						Set_StdDev			(CSG_Grids *pGrids           , double Interval, double StdDev, bool bKeepInRange);
-	bool						Set_Percentile		(CSG_Grids *pGrids           , double Interval, double Percentile);
+	bool						Set_Percentile		(CSG_Grids *pGrids           , double Interval, double Minimum, double Maximum);
 
 	//-----------------------------------------------------
 	double						Get_Minimum			(void)	const	{	return( m_Minimum           );	}
@@ -201,6 +189,9 @@ public:
 		{
 			switch( m_Interval )
 			{
+			default:
+				break;
+
 			case INCREASING:
 				Value	=      ((exp(log(1. + m_LogRange) * (     Value)) - 1.) / m_LogRange);
 				break;
@@ -256,22 +247,22 @@ public: ///////////////////////////////////////////////////
 	//-----------------------------------------------------
 	bool						Set_Class_Count			(int Count);
 
-	int							Get_Class_Count			(void)
+	int							Get_Class_Count			(void)	const
 	{
 		switch( m_Mode )
 		{
-		case CLASSIFY_UNIQUE   : default:
+		case CLASSIFY_SINGLE   : default:
 			return( 1 );
 
 		case CLASSIFY_LUT      :
-			return( m_pLUT->Get_Record_Count() );
+			return( m_pLUT->Get_Count() );
 
 		case CLASSIFY_GRADUATED:
 		case CLASSIFY_SHADE    :
 		case CLASSIFY_OVERLAY  :
 			return( m_Count );
 
-		case CLASSIFY_METRIC   :
+		case CLASSIFY_DISCRETE :
 			return( m_pColors->Get_Count() );
 		}
 	}
@@ -281,14 +272,14 @@ public: ///////////////////////////////////////////////////
 	{
 		switch( m_Mode )
 		{
-		case CLASSIFY_UNIQUE   : default:
+		case CLASSIFY_SINGLE   : default:
 			return( 0 );
 
 		case CLASSIFY_LUT      :
 			return( _LUT_Get_Class(Value) );
 
 		case CLASSIFY_GRADUATED:
-		case CLASSIFY_METRIC   :
+		case CLASSIFY_DISCRETE :
 		case CLASSIFY_SHADE    :
 		case CLASSIFY_OVERLAY  :
 			return( _METRIC_Get_Class(Value) );
@@ -317,16 +308,19 @@ public: ///////////////////////////////////////////////////
 	///////////////////////////////////////////////////////
 
 	//-----------------------------------------------------
-	bool						Get_Class_Color			(int iClass, int &Color)
+	CSG_Colors					Get_Class_Colors		(void)	const;
+
+	//-----------------------------------------------------
+	bool						Get_Class_Color			(int iClass, int &Color)	const
 	{
 		switch( m_Mode )
 		{
-		case CLASSIFY_UNIQUE   : default:
+		case CLASSIFY_SINGLE   : default:
 			Color	= m_UNI_Color;
 			break;
 
 		case CLASSIFY_LUT      :
-			if( iClass < 0 || iClass >= m_pLUT->Get_Record_Count() )
+			if( iClass < 0 || iClass >= m_pLUT->Get_Count() )
 			{
 				Color	= m_UNI_Color;
 
@@ -337,7 +331,7 @@ public: ///////////////////////////////////////////////////
 			break;
 
 
-		case CLASSIFY_METRIC   :
+		case CLASSIFY_DISCRETE :
 			Color	= m_pColors->Get_Color(iClass < 0 ? 0 : iClass >= m_pColors->Get_Count() ? m_pColors->Get_Count() - 1 : iClass);
 			break;
 
@@ -352,7 +346,7 @@ public: ///////////////////////////////////////////////////
 	}
 
 	//-----------------------------------------------------
-	int							Get_Class_Color			(int iClass)
+	int							Get_Class_Color			(int iClass)	const
 	{
 		int		Color;
 
@@ -360,11 +354,11 @@ public: ///////////////////////////////////////////////////
 	}
 
 	//-----------------------------------------------------
-	bool						Get_Class_Color_byValue	(double Value, int &Color)
+	bool						Get_Class_Color_byValue	(double Value, int &Color)	const
 	{
 		switch( m_Mode )
 		{
-		case CLASSIFY_UNIQUE   : default:
+		case CLASSIFY_SINGLE   : default:
 			{
 				return( Get_Class_Color(0, Color) );
 			}
@@ -374,7 +368,7 @@ public: ///////////////////////////////////////////////////
 				return( Get_Class_Color(_LUT_Get_Class(Value), Color) );
 			}
 
-		case CLASSIFY_METRIC   :
+		case CLASSIFY_DISCRETE :
 			{
 				return( Get_Class_Color(_METRIC_Get_Class(Value), Color) );
 			}
@@ -449,7 +443,7 @@ public: ///////////////////////////////////////////////////
 		}
 	}
 
-	bool						Get_Class_Color_byValue	(const CSG_String &Value, int &Color)
+	bool						Get_Class_Color_byValue	(const CSG_String &Value, int &Color)	const
 	{
 		if( m_Mode == CLASSIFY_LUT )
 		{
@@ -460,14 +454,14 @@ public: ///////////////////////////////////////////////////
 	}
 
 	//-----------------------------------------------------
-	int							Get_Class_Color_byValue	(double Value)
+	int							Get_Class_Color_byValue	(double Value)	const
 	{
 		int		Color;
 
 		return( Get_Class_Color_byValue(Value, Color) ? Color : 0 );
 	}
 
-	int							Get_Class_Color_byValue	(const CSG_String &Value)
+	int							Get_Class_Color_byValue	(const CSG_String &Value)	const
 	{
 		int		Color;
 
@@ -479,17 +473,17 @@ public: ///////////////////////////////////////////////////
 
 	//-----------------------------------------------------
 	void						Set_Metric				(int Mode, double LogFactor, double zMin, double zMax);
-	int							Get_Metric_Mode			(void)		{	return( m_zMode );		}
-	CSG_Colors *				Get_Metric_Colors		(void)		{	return( m_pColors );	}
+	int							Get_Metric_Mode			(void)	const	{	return( m_zMode           );	}
+	CSG_Colors *				Get_Metric_Colors		(void)	const	{	return( m_pColors         );	}
 	double						Get_Metric_Minimum		(void)	const	{	return( m_zMin            );	}
 	double						Get_Metric_Maximum		(void)	const	{	return( m_zMin + m_zRange );	}
 	double						Get_Metric_Range		(void)	const	{	return(          m_zRange );	}
-	double						Get_Metric_LogFactor	(void)	const	{	return( m_zLogRange );	}
+	double						Get_Metric_LogFactor	(void)	const	{	return( m_zLogRange       );	}
 
 	void						Metric2EqualElements	(void);
 
 	//-----------------------------------------------------
-	double						Get_MetricToRelative	(double Value)
+	double						Get_MetricToRelative	(double Value)	const
 	{
 		if( m_zRange > 0.0 )
 		{
@@ -512,7 +506,7 @@ public: ///////////////////////////////////////////////////
 	}
 
 	//-----------------------------------------------------
-	double						Get_RelativeToMetric	(double Value)
+	double						Get_RelativeToMetric	(double Value)	const
 	{
 		switch( m_zMode )
 		{
@@ -532,9 +526,11 @@ public: ///////////////////////////////////////////////////
 	///////////////////////////////////////////////////////
 
 	//-----------------------------------------------------
-	bool						Histogram_Update		(void);
+	bool							Histogram_Update	(void);
 
-	const CSG_Histogram &		Histogram_Get			(void)	const	{	return( m_Histogram );	}
+	const CSG_Histogram &			Histogram_Get		(void)	const	{	return( m_Histogram );	}
+
+	const CSG_Simple_Statistics &	Statistics_Get		(void)	const	{	return( m_Statistics );	}
 
 
 protected: ////////////////////////////////////////////////
@@ -545,6 +541,8 @@ protected: ////////////////////////////////////////////////
 
 	CSG_Histogram				m_Histogram;
 
+	CSG_Simple_Statistics		m_Statistics;
+
 	CSG_Colors					*m_pColors;
 
 	CSG_Table					*m_pLUT;
@@ -553,13 +551,13 @@ protected: ////////////////////////////////////////////////
 
 
 	//-----------------------------------------------------
-	int							_LUT_Cmp_Class			(double Value, int iClass);
-	int							_LUT_Get_Class			(double Value);
+	int							_LUT_Cmp_Class			(double            Value, int iClass)	const;
+	int							_LUT_Get_Class			(double            Value            )	const;
 
-	int							_LUT_Cmp_Class			(const CSG_String &Value, int iClass);
-	int							_LUT_Get_Class			(const CSG_String &Value);
+	int							_LUT_Cmp_Class			(const CSG_String &Value, int iClass)	const;
+	int							_LUT_Get_Class			(const CSG_String &Value            )	const;
 
-	int							_METRIC_Get_Class		(double Value)
+	int							_METRIC_Get_Class		(double Value)	const
 	{
 		if( Value < m_zMin )
 		{
@@ -580,7 +578,7 @@ protected: ////////////////////////////////////////////////
 	//-----------------------------------------------------
 	bool						_Histogram_Update		(CSG_Grid  *pGrid );
 	bool						_Histogram_Update		(CSG_Grids *pGrids);
-	bool						_Histogram_Update		(CSG_Shapes *pShapes, int Attribute, int Normalize = -1);
+	bool						_Histogram_Update		(CSG_Shapes *pShapes, int Attribute, int Normalize = -1, double Scale = 1.);
 
 };
 

@@ -1,6 +1,3 @@
-/**********************************************************
- * Version $Id$
- *********************************************************/
 
 ///////////////////////////////////////////////////////////
 //                                                       //
@@ -48,14 +45,6 @@
 //                                                       //
 //    e-mail:     oconrad@saga-gis.org                   //
 //                                                       //
-///////////////////////////////////////////////////////////
-
-//---------------------------------------------------------
-
-///////////////////////////////////////////////////////////
-//														 //
-//														 //
-//														 //
 ///////////////////////////////////////////////////////////
 
 //---------------------------------------------------------
@@ -148,10 +137,11 @@ CWKSP_Data_Manager::CWKSP_Data_Manager(void)
 	m_Parameters.Add_Choice("NODE_GENERAL",
 		"PROJECT_MAP_ARRANGE"	, _TL("Map Window Arrangement"),
 		_TL("initial map window arrangement after a project is loaded"),
-		CSG_String::Format("%s|%s|%s",
+		CSG_String::Format("%s|%s|%s|%s",
 			_TL("Cascade"),
 			_TL("Tile Horizontally"),
-			_TL("Tile Vertically")
+			_TL("Tile Vertically"),
+			_TL("Maximized")
 		), 2
 	);
 
@@ -162,10 +152,16 @@ CWKSP_Data_Manager::CWKSP_Data_Manager(void)
 	m_Parameters.Add_Choice("NODE_GENERAL",
 		"PROJECT_DB_REOPEN"		, _TL("Reopen Database Connections"),
 		_TL("Reopen PostgreSQL database connections. Warning: if set to true account information including unencrypted passwords for automatic connection will be stored."),
-		CSG_String::Format("%s|%s|",
+		CSG_String::Format("%s|%s",
 			_TL("no"),
 			_TL("yes")
 		), 0
+	);
+
+	m_Parameters.Add_Int("PROJECT_DB_REOPEN",
+		"PROJECT_DB_WAIT"		, _TL("Response Time"),
+		_TL("Maximum time (seconds) to wait for server response. If zero it waits until the PostgreSQL connection is established or refused."),
+		2, 0, true
 	);
 
 	m_Parameters.Add_Bool("NODE_GENERAL",
@@ -232,7 +228,7 @@ CWKSP_Data_Manager::CWKSP_Data_Manager(void)
 	m_Parameters.Add_Int("NODE_THUMBNAILS",
 		"THUMBNAIL_SIZE"		, _TL("Thumbnail Size"),
 		_TL(""),
-		75, 10, true
+		50, 10, true
 	);
 
 	m_Parameters.Add_Bool("NODE_THUMBNAILS",
@@ -256,10 +252,11 @@ CWKSP_Data_Manager::CWKSP_Data_Manager(void)
 	m_Parameters.Add_Choice("NODE_GRID",
 		"GRID_FMT_DEFAULT"		, _TL("Default Output Format"),
 		_TL(""),
-		CSG_String::Format("%s|%s|%s",
-			_TL("SAGA Compressed Grid File (*.sg-grd-z)"),
-			_TL("SAGA Grid File (*.sg-grd)"),
-			_TL("SAGA Grid File (*.sgrd)")
+		CSG_String::Format("%s (*.sg-grd-z)|%s (*.sg-grd)|%s (*.sgrd)|%s (*.tif)",
+			_TL("SAGA Compressed Grid Files"),
+			_TL("SAGA Grid Files"),
+			_TL("SAGA Grid Files (old extension)"),
+			_TL("GeoTIFF")
 		), 2
 	);
 
@@ -320,7 +317,7 @@ CWKSP_Data_Manager::CWKSP_Data_Manager(void)
 		_TL(""),
 		CSG_String::Format("%s|%s|%s",
 			_TL("system default"),
-			_TL("maximum number of significant decimals"),
+			_TL("compact"),
 			_TL("fix number of decimals")
 		), 1
 	);
@@ -366,6 +363,7 @@ CWKSP_Data_Manager::CWKSP_Data_Manager(void)
 	default: SG_Grid_Set_File_Format_Default(GRID_FILE_FORMAT_Compressed); break;
 	case  1: SG_Grid_Set_File_Format_Default(GRID_FILE_FORMAT_Binary    ); break;
 	case  2: SG_Grid_Set_File_Format_Default(GRID_FILE_FORMAT_Binary_old); break;
+	case  3: SG_Grid_Set_File_Format_Default(GRID_FILE_FORMAT_GeoTIFF   ); break;
 	}
 
 	switch( m_Parameters("SHAPES_FMT_DEFAULT")->asInt() )
@@ -540,10 +538,12 @@ wxMenu * CWKSP_Data_Manager::Get_Menu(void)
 	{
 		wxMenu	*pMenu	= new wxMenu;
 
-		CMD_Menu_Add_Item(pMenu, false, ID_CMD_WKSP_ITEM_CLOSE);
 		CMD_Menu_Add_Item(pMenu, false, ID_CMD_WKSP_ITEM_SHOW);
-		CMD_Menu_Add_Item(pMenu, false, ID_CMD_WKSP_ITEM_SETTINGS_LOAD);
-		CMD_Menu_Add_Item(pMenu, false, ID_CMD_WKSP_ITEM_SETTINGS_COPY);
+		CMD_Menu_Add_Item(pMenu, false, ID_CMD_WKSP_ITEM_CLOSE);
+		pMenu->AppendSeparator();
+		CMD_Menu_Add_Item(pMenu, false, ID_CMD_DATA_SETTINGS_LOAD);
+		CMD_Menu_Add_Item(pMenu, false, ID_CMD_DATA_SETTINGS_COPY);
+		CMD_Menu_Add_Item(pMenu, false, ID_CMD_DATA_FORCE_UPDATE);
 
 		return( pMenu );
 	}
@@ -551,9 +551,20 @@ wxMenu * CWKSP_Data_Manager::Get_Menu(void)
 	//-----------------------------------------------------
 	wxMenu	*pMenu	= new wxMenu(_TL("Data"));
 
+	if( wxGetKeyState(WXK_CONTROL) ) // add advanced/hidden commands
+	{
+		wxMenu *pAdvanced = new wxMenu;
+
+		CMD_Menu_Add_Item(pAdvanced, false, ID_CMD_DATA_MANAGER_LIST);
+
+		pMenu->AppendSubMenu(pAdvanced, _TL("Advanced"));
+		pMenu->AppendSeparator();
+	}
+
+	//-----------------------------------------------------
 	CMD_Menu_Add_Item(pMenu, false, ID_CMD_DATA_PROJECT_OPEN);
 //	CMD_Menu_Add_Item(pMenu, false, ID_CMD_DATA_PROJECT_OPEN_ADD);
-	CMD_Menu_Add_Item(pMenu, false, ID_CMD_DATA_PROJECT_CLOSE);
+	CMD_Menu_Add_Item(pMenu, false, ID_CMD_DATA_PROJECT_NEW);
 
 	if( Get_Count() > 0 )
 	{
@@ -565,6 +576,7 @@ wxMenu * CWKSP_Data_Manager::Get_Menu(void)
 		CMD_Menu_Add_Item(pMenu, false, ID_CMD_WKSP_ITEM_SEARCH);
 	}
 
+	//-----------------------------------------------------
 	return( pMenu );
 }
 
@@ -576,7 +588,6 @@ wxMenu * CWKSP_Data_Manager::Get_Menu(void)
 //---------------------------------------------------------
 bool CWKSP_Data_Manager::On_Command(int Cmd_ID)
 {
-	//-----------------------------------------------------
 	if( Open_CMD(Cmd_ID) )
 	{
 		return( true );
@@ -619,30 +630,68 @@ bool CWKSP_Data_Manager::On_Command(int Cmd_ID)
 		return( CWKSP_Base_Manager::On_Command(Cmd_ID) );
 
 	//-----------------------------------------------------
-	case ID_CMD_DATA_PROJECT_OPEN    :	m_pProject->Load(false);	break;
-	case ID_CMD_DATA_PROJECT_OPEN_ADD:	m_pProject->Load( true);	break;
-	case ID_CMD_DATA_PROJECT_BROWSE  :	Open_Browser();				break;
-	case ID_CMD_DATA_PROJECT_CLOSE   :	Close(false);				break;
-	case ID_CMD_DATA_PROJECT_SAVE    :	m_pProject->Save(true);		break;
-	case ID_CMD_DATA_PROJECT_SAVE_AS :	m_pProject->Save();			break;
-	case ID_CMD_DATA_PROJECT_COPY    :	m_pProject->Copy();			break;
-	case ID_CMD_DATA_PROJECT_COPY_DB :	m_pProject->CopyToDB();		break;
+	case ID_CMD_WKSP_ITEM_RETURN     :                                      break;
+	case ID_CMD_WKSP_ITEM_CLOSE      : Close(false);                        break;
 
 	//-----------------------------------------------------
-	case ID_CMD_TABLE_OPEN           :	Open(SG_DATAOBJECT_TYPE_Table     );	break;
-	case ID_CMD_SHAPES_OPEN          :	Open(SG_DATAOBJECT_TYPE_Shapes    );	break;
-	case ID_CMD_TIN_OPEN             :	Open(SG_DATAOBJECT_TYPE_TIN       );	break;
-	case ID_CMD_POINTCLOUD_OPEN      :	Open(SG_DATAOBJECT_TYPE_PointCloud);	break;
-	case ID_CMD_GRID_OPEN            :	Open(SG_DATAOBJECT_TYPE_Grid      );	break;
-	case ID_CMD_GRIDS_OPEN           :	Open(SG_DATAOBJECT_TYPE_Grids     );	break;
+	case ID_CMD_DATA_PROJECT_OPEN    : m_pProject->Load(false);             break;
+	case ID_CMD_DATA_PROJECT_OPEN_ADD: m_pProject->Load( true);             break;
+	case ID_CMD_DATA_PROJECT_BROWSE  : Open_Browser();                      break;
+	case ID_CMD_DATA_PROJECT_NEW     : Close(false);                        break;
+	case ID_CMD_DATA_PROJECT_SAVE    : m_pProject->Save(true);              break;
+	case ID_CMD_DATA_PROJECT_SAVE_AS : m_pProject->Save();                  break;
+	case ID_CMD_DATA_PROJECT_COPY    : m_pProject->Copy();                  break;
+	case ID_CMD_DATA_PROJECT_COPY_DB : m_pProject->CopyToDB();              break;
 
 	//-----------------------------------------------------
-	case ID_CMD_WKSP_ITEM_RETURN:
-		break;
+	case ID_CMD_TABLE_OPEN           : Open(SG_DATAOBJECT_TYPE_Table     ); break;
+	case ID_CMD_SHAPES_OPEN          : Open(SG_DATAOBJECT_TYPE_Shapes    ); break;
+	case ID_CMD_TIN_OPEN             : Open(SG_DATAOBJECT_TYPE_TIN       ); break;
+	case ID_CMD_POINTCLOUD_OPEN      : Open(SG_DATAOBJECT_TYPE_PointCloud); break;
+	case ID_CMD_GRID_OPEN            : Open(SG_DATAOBJECT_TYPE_Grid      ); break;
+	case ID_CMD_GRIDS_OPEN           : Open(SG_DATAOBJECT_TYPE_Grids     ); break;
 
-	case ID_CMD_WKSP_ITEM_CLOSE:
-		Close(false);
-		break;
+	//-----------------------------------------------------
+	case ID_CMD_DATA_MANAGER_LIST    : {
+		CSG_String s(SG_Get_Data_Manager().Get_Summary());
+		MSG_General_Add_Line();
+		MSG_General_Add(s.c_str());
+		MSG_General_Add_Line();
+		break; }
+
+	//-----------------------------------------------------
+	case ID_CMD_DATA_FORCE_UPDATE: {
+		{
+			for(size_t i=0; i<MultiSelect_Count(); i++)
+			{
+				((CWKSP_Data_Item *)Get_Control()->GetItemData(m_Sel_Items[i]))->Force_Update();
+			}
+		}
+		break; }
+
+	case ID_CMD_DATA_SETTINGS_LOAD: {
+		wxString File; CSG_MetaData Data;
+
+		if( DLG_Open(File, ID_DLG_PARAMETERS_OPEN) && Data.Load(&File) )
+		{
+			for(size_t i=0; i<MultiSelect_Count(); i++)
+			{
+				((CWKSP_Data_Item *)Get_Control()->GetItemData(m_Sel_Items[i]))->Load_Settings(Data);
+			}
+		}
+		break; }
+
+	case ID_CMD_DATA_SETTINGS_COPY: {
+		CSG_Parameters *pParameters = Get_Settings_Dialog();
+
+		if( pParameters )
+		{
+			for(size_t i=0; i<MultiSelect_Count(); i++)
+			{
+				((CWKSP_Data_Item *)Get_Control()->GetItemData(m_Sel_Items[i]))->Copy_Settings(pParameters);
+			}
+		}
+		break; }
 	}
 
 	//-----------------------------------------------------
@@ -656,10 +705,6 @@ bool CWKSP_Data_Manager::On_Command_UI(wxUpdateUIEvent &event)
 	{
 	default:
 		return( CWKSP_Base_Manager::On_Command_UI(event) );
-
-	case ID_CMD_DATA_PROJECT_CLOSE:
-		event.Enable(Get_Count() > 0 && g_pTool == NULL);
-		break;
 
 	case ID_CMD_WKSP_ITEM_CLOSE:
 		event.Enable(Get_Count() > 0 && g_pTool == NULL);
@@ -717,6 +762,7 @@ void CWKSP_Data_Manager::Parameters_Changed(void)
 	default: SG_Grid_Set_File_Format_Default(GRID_FILE_FORMAT_Compressed); break;
 	case  1: SG_Grid_Set_File_Format_Default(GRID_FILE_FORMAT_Binary    ); break;
 	case  2: SG_Grid_Set_File_Format_Default(GRID_FILE_FORMAT_Binary_old); break;
+	case  3: SG_Grid_Set_File_Format_Default(GRID_FILE_FORMAT_GeoTIFF   ); break;
 	}
 
 	switch( m_Parameters("SHAPES_FMT_DEFAULT")->asInt() )
@@ -757,7 +803,7 @@ int CWKSP_Data_Manager::On_Parameter_Changed(CSG_Parameters *pParameters, CSG_Pa
 
 		if(	pParameter->Cmp_Identifier("TABLE_FLT_STYLE") )
 		{
-			pParameters->Set_Enabled("TABLE_FLT_DECIMALS", pParameter->asInt() != 0);
+			pParameters->Set_Enabled("TABLE_FLT_DECIMALS", pParameter->asInt() == 2);
 		}
 	}
 
@@ -811,6 +857,26 @@ CWKSP_Base_Item * CWKSP_Data_Manager::Open(const wxString &File, int DataType)
 //---------------------------------------------------------
 bool CWKSP_Data_Manager::Open(const wxString &File)
 {
+	if( SG_File_Cmp_Extension(&File, "txt") && File.Right(8).CmpNoCase("_MTL.txt") == 0 )
+	{
+		CSG_Tool *pTool = SG_Get_Tool_Library_Manager().Get_Tool("imagery_tools", 14); // Import Landsat Scene
+
+		return(	pTool && pTool->On_Before_Execution() && pTool->Set_Parameter("METAFILE", &File)
+			&& DLG_Parameters(pTool->Get_Parameters()) && pTool->Execute()
+		);
+	}
+
+	//-----------------------------------------------------
+	if( SG_File_Cmp_Extension(&File, "xml") && SG_File_Get_Name(&File, false).Find("MTD_MSI") == 0 )
+	{
+		CSG_Tool *pTool = SG_Get_Tool_Library_Manager().Get_Tool("imagery_tools", 15); // Import Sentinel-2 Scene
+
+		return(	pTool && pTool->On_Before_Execution() && pTool->Set_Parameter("METAFILE", &File)
+			&& DLG_Parameters(pTool->Get_Parameters()) && pTool->Execute()
+		);
+	}
+
+	//-----------------------------------------------------
 	if( SG_File_Cmp_Extension(&File, "sprj") )
 	{
 		return( m_pProject->Load(File, false, true) );
@@ -870,7 +936,7 @@ bool CWKSP_Data_Manager::Open(int DataType)
 	case SG_DATAOBJECT_TYPE_PointCloud: ID = ID_DLG_POINTCLOUD_OPEN; break;
 	case SG_DATAOBJECT_TYPE_Grid      : ID = ID_DLG_GRID_OPEN      ; break;
 	case SG_DATAOBJECT_TYPE_Grids     : ID = ID_DLG_GRIDS_OPEN     ; break;
-	default                        : return( false );
+	default                           : return( false );
 	}
 
 	//-----------------------------------------------------
@@ -979,9 +1045,9 @@ bool CWKSP_Data_Manager::Open_Browser(wxArrayString &Projects, const wxString &D
 //---------------------------------------------------------
 bool CWKSP_Data_Manager::Save_Modified(CWKSP_Base_Item *pItem, bool bSelections)
 {
-	CSG_Parameters	Parameters(this, _TL("Save Modified Data"), _TL(""));
+	CSG_Parameters	Parameters(_TL("Save Modified Data"));
 
-	Parameters.Add_Bool(NULL, "SAVE_ALL", _TL("Save all"), _TL(""), false);
+	Parameters.Add_Bool("", "SAVE_ALL", _TL("Save all"), _TL(""), false);
 
 	wxFileName	Directory(m_pProject->Get_File_Name());
 
@@ -1012,42 +1078,41 @@ bool CWKSP_Data_Manager::Save_Modified(CWKSP_Base_Item *pItem, bool bSelections)
 //---------------------------------------------------------
 int CWKSP_Data_Manager::_Modified_Changed(CSG_Parameter *pParameter, int Flags)
 {
-	if( !pParameter || !pParameter->Get_Owner() || !pParameter->Get_Owner()->Get_Owner() )
-	{
-		return( 0 );
-	}
+	CSG_Parameters	*pParameters	= pParameter ? pParameter->Get_Parameters() : NULL;
 
-	CSG_Parameters	*pParameters	= pParameter->Get_Owner();
-
-	if( pParameter->Cmp_Identifier("SAVE_ALL") )
+	if( pParameters )
 	{
-		for(int i=0; i<pParameters->Get_Count(); i++)
+		if( pParameter->Cmp_Identifier("SAVE_ALL") )
 		{
-			CSG_Parameter	*pFile	= pParameters->Get_Parameter(i);
-
-			if( pFile->Get_Type() == PARAMETER_TYPE_Bool )
+			for(int i=0; i<pParameters->Get_Count(); i++)
 			{
-				pFile->Set_Value(pParameter->asBool());
+				CSG_Parameter	*pFile	= pParameters->Get_Parameter(i);
 
-				for(int j=0; j<pFile->Get_Children_Count(); j++)
+				if( pFile->Get_Type() == PARAMETER_TYPE_Bool )
 				{
-					pFile->Get_Child(j)->Set_Enabled(pParameter->asBool());
+					pFile->Set_Value(pParameter->asBool());
+
+					for(int j=0; j<pFile->Get_Children_Count(); j++)
+					{
+						pFile->Get_Child(j)->Set_Enabled(pParameter->asBool());
+					}
 				}
 			}
 		}
-	}
-
-	else if( pParameter->Get_Type() == PARAMETER_TYPE_Bool )
-	{
-		if( !pParameter->asBool() && pParameters->Get_Parameter("SAVE_ALL") )
+		else if( pParameter->Get_Type() == PARAMETER_TYPE_Bool )
 		{
-			pParameters->Get_Parameter("SAVE_ALL")->Set_Value(0);
+			if( !pParameter->asBool() && pParameters->Get_Parameter("SAVE_ALL") )
+			{
+				pParameters->Get_Parameter("SAVE_ALL")->Set_Value(0);
+			}
+
+			for(int j=0; j<pParameter->Get_Children_Count(); j++)
+			{
+				pParameter->Get_Child(j)->Set_Enabled(pParameter->asBool());
+			}
 		}
 
-		for(int j=0; j<pParameter->Get_Children_Count(); j++)
-		{
-			pParameter->Get_Child(j)->Set_Enabled(pParameter->asBool());
-		}
+		return( 1 );
 	}
 
 	return( 0 );
@@ -1066,14 +1131,14 @@ bool CWKSP_Data_Manager::_Modified_Get(CSG_Parameters *pParameters, CWKSP_Base_I
 			break;
 
 		//-------------------------------------------------
-		case WKSP_ITEM_Data_Manager:
-		case WKSP_ITEM_Table_Manager:
-		case WKSP_ITEM_Shapes_Manager:
-		case WKSP_ITEM_Shapes_Type:
-		case WKSP_ITEM_TIN_Manager:
+		case WKSP_ITEM_Data_Manager      :
+		case WKSP_ITEM_Table_Manager     :
+		case WKSP_ITEM_Shapes_Manager    :
+		case WKSP_ITEM_Shapes_Type       :
+		case WKSP_ITEM_TIN_Manager       :
 		case WKSP_ITEM_PointCloud_Manager:
-		case WKSP_ITEM_Grid_Manager:
-		case WKSP_ITEM_Grid_System:
+		case WKSP_ITEM_Grid_Manager      :
+		case WKSP_ITEM_Grid_System       :
 			for(i=0; i<((CWKSP_Base_Manager *)pItem)->Get_Count(); i++)
 			{
 				_Modified_Get(pParameters, ((CWKSP_Base_Manager *)pItem)->Get_Item(i), Directory, bSelections && !pItem->is_Selected());
@@ -1088,11 +1153,11 @@ bool CWKSP_Data_Manager::_Modified_Get(CSG_Parameters *pParameters, CWKSP_Base_I
 			}
 			break;
 
-		case WKSP_ITEM_Shapes:
-		case WKSP_ITEM_TIN:
+		case WKSP_ITEM_Shapes    :
+		case WKSP_ITEM_TIN       :
 		case WKSP_ITEM_PointCloud:
-		case WKSP_ITEM_Grid:
-		case WKSP_ITEM_Grids:
+		case WKSP_ITEM_Grid      :
+		case WKSP_ITEM_Grids     :
 			if( !bSelections || pItem->is_Selected() )
 			{
 				_Modified_Get(pParameters, pItem, Directory, ((CWKSP_Layer *)pItem)->Get_Object());
@@ -1216,14 +1281,7 @@ bool CWKSP_Data_Manager::Save_Modified_Sel(void)
 //---------------------------------------------------------
 bool CWKSP_Data_Manager::Close(bool bSilent)
 {
-	if( Get_Count() == 0 )
-	{
-		m_pProject->Clr_File_Name();
-
-		return( true );
-	}
-
-	if( (bSilent || DLG_Message_Confirm(_TL("Close all data sets"), _TL("Close"))) && Save_Modified(this) )
+	if( Get_Count() == 0 || ((bSilent || DLG_Message_Confirm(_TL("Close all data sets"), _TL("Close"))) && Save_Modified(this)) )
 	{
 		m_pProject->Clr_File_Name();
 
@@ -1233,7 +1291,9 @@ bool CWKSP_Data_Manager::Close(bool bSilent)
 
 		g_pMaps->Close(true);
 
-		return( g_pData_Ctrl->Close(true) );
+		g_pData_Ctrl->Close(true);
+
+		return( true );
 	}
 
 	return( false );
@@ -1245,10 +1305,10 @@ bool CWKSP_Data_Manager::Close(bool bSilent)
 ///////////////////////////////////////////////////////////
 
 //---------------------------------------------------------
-#define GET_MANAGER(pManager, Class)	if( !pManager && bAdd ) Add_Item(pManager = new Class); return( pManager );
-
 CWKSP_Base_Manager * CWKSP_Data_Manager::Get_Manager(TSG_Data_Object_Type Type, bool bAdd)
 {
+	#define GET_MANAGER(pManager, Class)	if( !pManager && bAdd ) Add_Item(pManager = new Class); return( pManager );
+
 	switch( Type )
 	{
 	case SG_DATAOBJECT_TYPE_Table     : GET_MANAGER(m_pTables     , CWKSP_Table_Manager     );
@@ -1613,6 +1673,72 @@ bool CWKSP_Data_Manager::MultiSelect_Update(void)
 	m_Sel_Parms[1].Assign_Values(&m_Sel_Parms[0]);		// update backup list with changed values
 
 	return( true );
+}
+
+
+///////////////////////////////////////////////////////////
+//														 //
+///////////////////////////////////////////////////////////
+
+//---------------------------------------------------------
+void CWKSP_Data_Manager::_Get_Settings_Dialog(CSG_Table &List, CWKSP_Base_Item *pItem)
+{
+	if( pItem )
+	{
+		if( pItem->is_Manager() )
+		{
+			for(int i=0; i<((CWKSP_Base_Manager *)pItem)->Get_Count(); i++)
+			{
+				_Get_Settings_Dialog(List, ((CWKSP_Base_Manager *)pItem)->Get_Item(i));
+			}
+		}
+		else if( pItem->Get_Parameters() )
+		{
+			CSG_Table_Record	*pEntry	= List.Add_Record();
+
+			pEntry->Set_Value(0, CSG_String(wxString::Format("[%s] %s", pItem->Get_Manager()->Get_Name(), pItem->Get_Name()).wc_str()));
+			pEntry->Set_Value(1, CSG_String::Format("%p", pItem->Get_Parameters()));
+		}
+	}
+}
+
+//---------------------------------------------------------
+CSG_Parameters * CWKSP_Data_Manager::Get_Settings_Dialog(void)
+{
+	CSG_Table	List;
+
+	List.Add_Field("NAME", SG_DATATYPE_String);
+	List.Add_Field("PRMS", SG_DATATYPE_String);
+
+	_Get_Settings_Dialog(List, g_pData->Get_Grids      ());
+	_Get_Settings_Dialog(List, g_pData->Get_Shapes     ());
+	_Get_Settings_Dialog(List, g_pData->Get_TINs       ());
+	_Get_Settings_Dialog(List, g_pData->Get_PointClouds());
+
+	if( List.Get_Count() > 0 )
+	{
+		wxArrayString	Items;
+
+		for(int i=0; i<List.Get_Count(); i++)
+		{
+			Items.Add(List.Get_Record(i)->asString(0));
+		}
+
+		wxSingleChoiceDialog	dlg(MDI_Get_Top_Window(),
+			_TL("Copy Settings from..."),
+			_TL("Select a layer to copy settings from it."),
+			Items
+		);
+
+		void	*pParameters;
+
+		if( dlg.ShowModal() == wxID_OK && SG_SSCANF(List.Get_Record(dlg.GetSelection())->asString(1), SG_T("%p"), &pParameters) == 1 )
+		{
+			return( (CSG_Parameters *)pParameters );
+		}
+	}
+
+	return( NULL );
 }
 
 

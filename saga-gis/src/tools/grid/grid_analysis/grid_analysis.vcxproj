@@ -1,5 +1,5 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
-<Project DefaultTargets="Build" ToolsVersion="14.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+<Project DefaultTargets="Build" ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="Debug|Win32">
       <Configuration>Debug</Configuration>
@@ -20,19 +20,20 @@
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{299C86F5-B0AE-44BC-87EC-7B09067AE1AD}</ProjectGuid>
+    <WindowsTargetPlatformVersion>8.1</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
     <ConfigurationType>DynamicLibrary</ConfigurationType>
     <UseOfMfc>false</UseOfMfc>
     <CharacterSet>Unicode</CharacterSet>
-    <PlatformToolset>v140</PlatformToolset>
+    <PlatformToolset>v141</PlatformToolset>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
     <ConfigurationType>DynamicLibrary</ConfigurationType>
     <UseOfMfc>false</UseOfMfc>
     <CharacterSet>Unicode</CharacterSet>
-    <PlatformToolset>v140</PlatformToolset>
+    <PlatformToolset>v141</PlatformToolset>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
     <ConfigurationType>DynamicLibrary</ConfigurationType>
@@ -44,7 +45,7 @@
     <ConfigurationType>DynamicLibrary</ConfigurationType>
     <UseOfMfc>false</UseOfMfc>
     <CharacterSet>Unicode</CharacterSet>
-    <PlatformToolset>v140</PlatformToolset>
+    <PlatformToolset>v141</PlatformToolset>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
   <ImportGroup Label="ExtensionSettings">
@@ -311,6 +312,7 @@
       <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Release|x64'">%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Release|x64'">%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
+    <ClCompile Include="coverage_of_categories.cpp" />
     <ClCompile Include="CoveredDistance.cpp">
       <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">%(PreprocessorDefinitions)</PreprocessorDefinitions>
@@ -332,6 +334,9 @@
       <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Release|x64'">%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <ClCompile Include="diversity_analysis.cpp" />
+    <ClCompile Include="diversity_raos_q.cpp" />
+    <ClCompile Include="diversity_shannon.cpp" />
+    <ClCompile Include="diversity_simpson.cpp" />
     <ClCompile Include="fragmentation_base.cpp" />
     <ClCompile Include="fragmentation_classify.cpp" />
     <ClCompile Include="fragmentation_resampling.cpp" />
@@ -368,6 +373,7 @@
       <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Release|x64'">%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <ClCompile Include="Grid_IMCORR.cpp" />
+    <ClCompile Include="Grid_Iterative_Truncation.cpp" />
     <ClCompile Include="Grid_LayerOfMaximumValue.cpp">
       <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">%(PreprocessorDefinitions)</PreprocessorDefinitions>
@@ -420,12 +426,17 @@
       <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Release|x64'">%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <ClCompile Include="Soil_Texture.cpp" />
+    <ClCompile Include="soil_water_capacity.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Cost_Isotropic.h" />
+    <ClInclude Include="coverage_of_categories.h" />
     <ClInclude Include="CoveredDistance.h" />
     <ClInclude Include="CrossClassification.h" />
     <ClInclude Include="diversity_analysis.h" />
+    <ClInclude Include="diversity_raos_q.h" />
+    <ClInclude Include="diversity_shannon.h" />
+    <ClInclude Include="diversity_simpson.h" />
     <ClInclude Include="fragmentation_base.h" />
     <ClInclude Include="fragmentation_classify.h" />
     <ClInclude Include="fragmentation_resampling.h" />
@@ -435,6 +446,7 @@
     <ClInclude Include="Grid_AHP.h" />
     <ClInclude Include="Grid_CVA.h" />
     <ClInclude Include="Grid_IMCORR.h" />
+    <ClInclude Include="Grid_Iterative_Truncation.h" />
     <ClInclude Include="Grid_LayerOfMaximumValue.h" />
     <ClInclude Include="Grid_Pattern.h" />
     <ClInclude Include="LeastCostPathProfile.h" />
@@ -453,6 +465,7 @@
     <ClInclude Include="..\..\..\saga_core\saga_api\shapes.h" />
     <ClInclude Include="..\..\..\saga_core\saga_api\table.h" />
     <ClInclude Include="..\..\..\saga_core\saga_api\tin.h" />
+    <ClInclude Include="soil_water_capacity.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

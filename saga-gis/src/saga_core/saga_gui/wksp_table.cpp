@@ -1,6 +1,3 @@
-/**********************************************************
- * Version $Id$
- *********************************************************/
 
 ///////////////////////////////////////////////////////////
 //                                                       //
@@ -41,22 +38,11 @@
 //                                                       //
 //    contact:    Olaf Conrad                            //
 //                Institute of Geography                 //
-//                University of Goettingen               //
-//                Goldschmidtstr. 5                      //
-//                37077 Goettingen                       //
+//                University of Hamburg                  //
 //                Germany                                //
 //                                                       //
 //    e-mail:     oconrad@saga-gis.org                   //
 //                                                       //
-///////////////////////////////////////////////////////////
-
-//---------------------------------------------------------
-
-
-///////////////////////////////////////////////////////////
-//														 //
-//														 //
-//														 //
 ///////////////////////////////////////////////////////////
 
 //---------------------------------------------------------
@@ -123,15 +109,16 @@ wxString CWKSP_Table::Get_Description(void)
 
 	if( SG_File_Exists(m_pObject->Get_File_Name(false)) )
 	{
-		DESC_ADD_STR(_TL("File"           ), m_pObject->Get_File_Name(false));
+		DESC_ADD_STR(_TL("Data Source"    ), SG_File_Get_Path(m_pObject->Get_File_Name(false)      ).c_str());
+		DESC_ADD_STR(_TL("File"           ), SG_File_Get_Name(m_pObject->Get_File_Name(false), true).c_str());
 	}
 	else if( m_pObject->Get_MetaData_DB().Get_Children_Count() )
 	{
-		DESC_ADD_STR(_TL("File"           ), m_pObject->Get_File_Name(false));
+		DESC_ADD_STR(_TL("Data Source"    ), m_pObject->Get_File_Name(false));
 	}
 	else
 	{
-		DESC_ADD_STR(_TL("File"           ), _TL("memory"));
+		DESC_ADD_STR(_TL("Data Source"    ), _TL("memory"));
 	}
 
 	DESC_ADD_STR  (_TL("Modified"         ), m_pObject->is_Modified() ? _TL("yes") : _TL("no"));
@@ -155,9 +142,7 @@ wxString CWKSP_Table::Get_Description(void)
 //---------------------------------------------------------
 wxMenu * CWKSP_Table::Get_Menu(void)
 {
-	wxMenu	*pMenu;
-
-	pMenu	= new wxMenu(m_pObject->Get_Name());
+	wxMenu	*pMenu	= new wxMenu(m_pObject->Get_Name());
 
 	if( m_pObject->Get_ObjectType() == SG_DATAOBJECT_TYPE_Table )
 	{
@@ -275,13 +260,39 @@ void CWKSP_Table::On_DataObject_Changed(void)
 ///////////////////////////////////////////////////////////
 
 //---------------------------------------------------------
+int CWKSP_Table::On_Parameter_Changed(CSG_Parameters *pParameters, CSG_Parameter *pParameter, int Flags)
+{
+	if( Flags & PARAMETER_CHECK_ENABLE )
+	{
+		if( pParameter->Cmp_Identifier("TABLE_FLT_STYLE") )
+		{
+			pParameters->Set_Enabled("TABLE_FLT_DECIMALS", pParameter->asInt() == 2); // fix number of decimals
+		}
+	}
+
+	return( CWKSP_Data_Item::On_Parameter_Changed(pParameters, pParameter, Flags) );
+}
+
+
+///////////////////////////////////////////////////////////
+//														 //
+///////////////////////////////////////////////////////////
+
+//---------------------------------------------------------
 void CWKSP_Table::Set_View(bool bShow)
 {
-	if( bShow && !m_pView )
+	if( bShow )
 	{
-		m_pView	= new CVIEW_Table(this);
+		if( !m_pView )
+		{
+			m_pView	= new CVIEW_Table(this);
+		}
+		else
+		{
+			m_pView->Activate();
+		}
 	}
-	else if( !bShow && m_pView )
+	else if( m_pView )
 	{
 		m_pView->Destroy();
 	}
@@ -333,8 +344,8 @@ bool CWKSP_Table::Show(int Flags)
 //---------------------------------------------------------
 bool CWKSP_Table::View_Closes(MDI_ChildFrame *pView)
 {
-	if( pView == m_pView    )	m_pView		= NULL;
-	if( pView == m_pDiagram )	m_pDiagram	= NULL;
+	if( pView == m_pView    ) m_pView    = NULL;
+	if( pView == m_pDiagram ) m_pDiagram = NULL;
 
 	return( CWKSP_Data_Item::View_Closes(pView) );
 }

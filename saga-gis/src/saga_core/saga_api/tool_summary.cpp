@@ -48,15 +48,6 @@
 ///////////////////////////////////////////////////////////
 
 //---------------------------------------------------------
-
-
-///////////////////////////////////////////////////////////
-//														 //
-//														 //
-//														 //
-///////////////////////////////////////////////////////////
-
-//---------------------------------------------------------
 #include "saga_api.h"
 
 
@@ -265,9 +256,6 @@ void SG_XML_Add_Parameter(CSG_MetaData *pParent, CSG_Parameter *pParameter, CSG_
 //---------------------------------------------------------
 CSG_String CSG_Tool::Get_Summary(bool bParameters, const CSG_String &Menu, const CSG_String &Description, int Format)
 {
-	#define SUMMARY_DO_ADD	(SG_UI_Get_Window_Main() ? Parameters(i)->do_UseInGUI() : Parameters(i)->do_UseInCMD())
-
-	int			i;
 	CSG_String	s;
 
 	//-----------------------------------------------------
@@ -293,7 +281,7 @@ CSG_String CSG_Tool::Get_Summary(bool bParameters, const CSG_String &Menu, const
 
 			if( bParameters )
 			{
-				for(i=0; i<Parameters.Get_Count(); i++)
+				for(int i=0; i<Parameters.Get_Count(); i++)
 				{
 					if( Parameters(i)->is_Input() )
  					{
@@ -301,7 +289,7 @@ CSG_String CSG_Tool::Get_Summary(bool bParameters, const CSG_String &Menu, const
 					}
 				}
 
-				for(i=0; i<Parameters.Get_Count(); i++)
+				for(int i=0; i<Parameters.Get_Count(); i++)
 				{
 					if( Parameters(i)->is_Output() )
  					{
@@ -309,7 +297,7 @@ CSG_String CSG_Tool::Get_Summary(bool bParameters, const CSG_String &Menu, const
 					}
 				}
 
-				for(i=0; i<Parameters.Get_Count(); i++)
+				for(int i=0; i<Parameters.Get_Count(); i++)
 				{
 					if( Parameters(i)->is_Option()
 					&&  Parameters(i)->Get_Type() != PARAMETER_TYPE_Node
@@ -380,7 +368,7 @@ CSG_String CSG_Tool::Get_Summary(bool bParameters, const CSG_String &Menu, const
 			{
 				s	+= CSG_String::Format("<hr><h4>%s</h4><ul>", _TL("References"));
 
-				for(i=0; i<Get_References().Get_Count(); i++)
+				for(int i=0; i<Get_References().Get_Count(); i++)
 				{
 					s	+= "<li>" + Get_References()[i] + "</li>";
 				}
@@ -391,95 +379,81 @@ CSG_String CSG_Tool::Get_Summary(bool bParameters, const CSG_String &Menu, const
 			//---------------------------------------------
 			if( bParameters )
 			{
-				bool	bFirst, bOptionals	= false;
-
 				s	+= CSG_String::Format("<hr><h4>%s</h4>", _TL("Parameters"));
 				s	+= CSG_String::Format("<table border=\"1\" width=\"100%%\" valign=\"top\" cellpadding=\"5\" rules=\"all\"><tr><th>%s</th><th>%s</th><th>%s</th><th>%s</th><th>%s</th></tr>\n",
 						_TL("Name"), _TL("Type"), _TL("Identifier"), _TL("Description"), _TL("Constraints")
 					);
 
 				//-----------------------------------------
-				for(i=0, bFirst=true; i<Parameters.Get_Count(); i++)
+				for(int i=0, bFirst=1; i<Parameters.Get_Count(); i++)
 				{
 					CSG_Parameter	*pParameter	= Parameters(i);
 
-					if( SUMMARY_DO_ADD && pParameter->is_Input() )
+					if( pParameter->is_Input() )
 					{
 						if( bFirst )
 						{
-							bFirst	= false;
-							s	+= CSG_String::Format("<tr><th colspan=\"5\">%s</th></tr>", _TL("Input"));
-						}
-
-						s	+= CSG_String::Format("<tr><td>%s%s</td><td>%s</td><td>%s</td><td>%s</td><td>%s</td></tr>",
-							pParameter->Get_Name(),
-							pParameter->is_Optional() ? SG_T(" (*)") : SG_T(" "),
-							pParameter->Get_Description(PARAMETER_DESCRIPTION_TYPE).c_str(),
-							pParameter->Get_Identifier(),
-							pParameter->Get_Description(),
-							pParameter->Get_Description(PARAMETER_DESCRIPTION_PROPERTIES).c_str()
-						);
-					}
-				}
-
-				//-----------------------------------------
-				for(i=0, bFirst=true; i<Parameters.Get_Count(); i++)
-				{
-					CSG_Parameter	*pParameter	= Parameters(i);
-
-					if( SUMMARY_DO_ADD && pParameter->is_Output() )
-					{
-						if( bFirst )
-						{
-							bFirst	= false;
-							s	+= CSG_String::Format("<tr><th colspan=\"5\">%s</th></tr>", _TL("Output"));
-						}
-
-						s	+= CSG_String::Format("<tr><td>%s%s</td><td>%s</td><td>%s</td><td>%s</td><td>%s</td></tr>",
-							pParameter->Get_Name(),
-							pParameter->is_Optional() ? SG_T(" (*)") : SG_T(""),
-							pParameter->Get_Description(PARAMETER_DESCRIPTION_TYPE).c_str(),
-							pParameter->Get_Identifier(),
-							pParameter->Get_Description(),
-							pParameter->Get_Description(PARAMETER_DESCRIPTION_PROPERTIES).c_str()
-						);
-					}
-				}
-
-				//-----------------------------------------
-				for(i=0, bFirst=true; i<Parameters.Get_Count(); i++)
-				{
-					CSG_Parameter	*pParameter	= Parameters(i);
-
-					if( SUMMARY_DO_ADD && pParameter->is_Option() && pParameter->Get_Type() != PARAMETER_TYPE_Grid_System )
-					{
-						if( bFirst )
-						{
-							bFirst	= false;
-							s	+= CSG_String::Format("<tr><th colspan=\"5\">%s</th></tr>", _TL("Options"));
+							bFirst = 0; s += CSG_String::Format("<tr><th colspan=\"5\">%s</th></tr>", _TL("Input"));
 						}
 
 						s	+= CSG_String::Format("<tr><td>%s</td><td>%s</td><td>%s</td><td>%s</td><td>%s</td></tr>",
 							pParameter->Get_Name(),
-							pParameter->Get_Description(PARAMETER_DESCRIPTION_TYPE).c_str(),
-							pParameter->Get_Identifier(),
+							pParameter->Get_Description(PARAMETER_DESCRIPTION_TYPE      ).c_str(),
+							pParameter->Get_Identifier (),
 							pParameter->Get_Description(),
 							pParameter->Get_Description(PARAMETER_DESCRIPTION_PROPERTIES).c_str()
 						);
 					}
-					else if( pParameter->is_Optional() )
+				}
+
+				//-----------------------------------------
+				for(int i=0, bFirst=1; i<Parameters.Get_Count(); i++)
+				{
+					CSG_Parameter	*pParameter	= Parameters(i);
+
+					if( pParameter->is_Output() )
 					{
-						bOptionals	= true;
+						if( bFirst )
+						{
+							bFirst = 0; s += CSG_String::Format("<tr><th colspan=\"5\">%s</th></tr>", _TL("Output"));
+						}
+
+						s	+= CSG_String::Format("<tr><td>%s</td><td>%s</td><td>%s</td><td>%s</td><td>%s</td></tr>",
+							pParameter->Get_Name(),
+							pParameter->Get_Description(PARAMETER_DESCRIPTION_TYPE      ).c_str(),
+							pParameter->Get_Identifier (),
+							pParameter->Get_Description(),
+							pParameter->Get_Description(PARAMETER_DESCRIPTION_PROPERTIES).c_str()
+						);
+					}
+				}
+
+				//-----------------------------------------
+				for(int i=0, bFirst=1; i<Parameters.Get_Count(); i++)
+				{
+					CSG_Parameter	*pParameter	= Parameters(i);
+
+					if( pParameter->is_Option() && pParameter->Get_Type() != PARAMETER_TYPE_Grid_System )
+					{
+						if( bFirst )
+						{
+							bFirst = 0; s += CSG_String::Format("<tr><th colspan=\"5\">%s</th></tr>", _TL("Options"));
+						}
+
+						s	+= CSG_String::Format("<tr><td>%s</td><td>%s</td><td>%s</td><td>%s</td><td>%s</td></tr>",
+							pParameter->Get_Name(),
+							pParameter->Get_Description(PARAMETER_DESCRIPTION_TYPE      ).c_str(),
+							pParameter->Get_Identifier (),
+							pParameter->Get_Description(),
+							pParameter->Get_Description(PARAMETER_DESCRIPTION_PROPERTIES).c_str()
+						);
 					}
 				}
 
 				//-----------------------------------------
 				s	+= "</table>";
 
-				if( bOptionals )
-				{
-					s	+= CSG_String::Format("(*) <i>%s</i>", _TL("optional"));
-				}
+				s.Replace("\n", "<br>");
 			}
 		}
 		break;
@@ -539,7 +513,7 @@ CSG_String CSG_Tool::Get_Summary(bool bParameters, const CSG_String &Menu, const
 
 				s	+= CSG_String::Format("\n%s:\n", _TL("References"));
 
-				for(i=0; i<Get_References().Get_Count(); i++)
+				for(int i=0; i<Get_References().Get_Count(); i++)
 				{
 					s	+= " - " + Get_References()[i] + "\n";
 				}
@@ -548,28 +522,26 @@ CSG_String CSG_Tool::Get_Summary(bool bParameters, const CSG_String &Menu, const
 			//---------------------------------------------
 			if( bParameters )
 			{
-				bool	bFirst;
-
 				s	+= "\n";
 
 				//-----------------------------------------
-				for(i=0, bFirst=true; i<Parameters.Get_Count(); i++)
+				for(int i=0, bFirst=1; i<Parameters.Get_Count(); i++)
 				{
 					CSG_Parameter	*pParameter	= Parameters(i);
 
-					if( SUMMARY_DO_ADD && pParameter->is_Input() )
+					if( pParameter->is_Input() )
 					{
 						if( bFirst )
 						{
-							bFirst	= false;
+							bFirst	= 0;
 							s	+= "____________________________\n";
 							s	+= CSG_String::Format("%s:\n", _TL("Input"));
 						}
 
 						s	+= CSG_String::Format("_\n%s\n%s\n%s\n%s\n%s\n",
-							pParameter->Get_Name(),
-							pParameter->Get_Identifier(),
-							pParameter->Get_Description(PARAMETER_DESCRIPTION_TYPE).c_str(),
+							pParameter->Get_Name       (),
+							pParameter->Get_Identifier (),
+							pParameter->Get_Description(PARAMETER_DESCRIPTION_TYPE      ).c_str(),
 							pParameter->Get_Description(),
 							pParameter->Get_Description(PARAMETER_DESCRIPTION_PROPERTIES).c_str()
 						);
@@ -577,23 +549,23 @@ CSG_String CSG_Tool::Get_Summary(bool bParameters, const CSG_String &Menu, const
 				}
 
 				//-----------------------------------------
-				for(i=0, bFirst=true; i<Parameters.Get_Count(); i++)
+				for(int i=0, bFirst=1; i<Parameters.Get_Count(); i++)
 				{
 					CSG_Parameter	*pParameter	= Parameters(i);
 
-					if( SUMMARY_DO_ADD && pParameter->is_Output() )
+					if( pParameter->is_Output() )
 					{
 						if( bFirst )
 						{
-							bFirst	= false;
+							bFirst	= 0;
 							s	+= "____________________________\n";
 							s	+= CSG_String::Format("%s:\n", _TL("Output"));
 						}
 
 						s	+= CSG_String::Format("_\n%s\n%s\n%s\n%s\n%s\n",
-							pParameter->Get_Name(),
-							pParameter->Get_Identifier(),
-							pParameter->Get_Description(PARAMETER_DESCRIPTION_TYPE).c_str(),
+							pParameter->Get_Name       (),
+							pParameter->Get_Identifier (),
+							pParameter->Get_Description(PARAMETER_DESCRIPTION_TYPE      ).c_str(),
 							pParameter->Get_Description(),
 							pParameter->Get_Description(PARAMETER_DESCRIPTION_PROPERTIES).c_str()
 						);
@@ -601,23 +573,23 @@ CSG_String CSG_Tool::Get_Summary(bool bParameters, const CSG_String &Menu, const
 				}
 
 				//-----------------------------------------
-				for(i=0, bFirst=true; i<Parameters.Get_Count(); i++)
+				for(int i=0, bFirst=1; i<Parameters.Get_Count(); i++)
 				{
 					CSG_Parameter	*pParameter	= Parameters(i);
 
-					if( SUMMARY_DO_ADD && pParameter->is_Option() && pParameter->Get_Type() != PARAMETER_TYPE_Grid_System )
+					if( pParameter->is_Option() && pParameter->Get_Type() != PARAMETER_TYPE_Grid_System )
 					{
 						if( bFirst )
 						{
-							bFirst	= false;
+							bFirst	= 0;
 							s	+= "____________________________\n";
 							s	+= CSG_String::Format("%s:\n", _TL("Options"));
 						}
 
 						s	+= CSG_String::Format("_\n%s\n%s\n%s\n%s\n%s\n",
-							pParameter->Get_Name(),
-							pParameter->Get_Identifier(),
-							pParameter->Get_Description(PARAMETER_DESCRIPTION_TYPE).c_str(),
+							pParameter->Get_Name       (),
+							pParameter->Get_Identifier (),
+							pParameter->Get_Description(PARAMETER_DESCRIPTION_TYPE      ).c_str(),
 							pParameter->Get_Description(),
 							pParameter->Get_Description(PARAMETER_DESCRIPTION_PROPERTIES).c_str()
 						);
@@ -644,9 +616,7 @@ CSG_String CSG_Tool_Library::Get_Summary(int Format, bool bWithGUINeeded) const
 {
 	bool	bToolChains	= Get_File_Name().is_Empty();
 
-	int			i;
 	CSG_String	s;
-	CSG_String	tool_name;
 
 	switch( Format )
 	{
@@ -659,15 +629,15 @@ CSG_String CSG_Tool_Library::Get_Summary(int Format, bool bWithGUINeeded) const
 		s	+= CSG_String::Format("\t<%s>%s</%s>\n", SG_XML_LIBRARY_NAME, Get_Info(TLB_INFO_Name).c_str(), SG_XML_LIBRARY_NAME);
 		s	+= CSG_String::Format("\t<%s>%s</%s>\n", SG_XML_LIBRARY_CATEGORY, Get_Info(TLB_INFO_Category).c_str(), SG_XML_LIBRARY_CATEGORY);
 
-		for(i=0; i<Get_Count(); i++)
+		for(int i=0; i<Get_Count(); i++)
 		{
 			if( Get_Tool(i) && (bWithGUINeeded || !Get_Tool(i)->needs_GUI()) )
 			{
-				tool_name = Get_Tool(i)->Get_Name();
-				tool_name.Replace("&", "&amp;");
+				CSG_String Name(Get_Tool(i)->Get_Name());
+				Name.Replace("&", "&amp;");
 				s	+= CSG_String::Format("\t<%s %s=\"%s\" %s=\"%s\"/>\n", SG_XML_TOOL,
-					SG_XML_TOOL_ATT_ID  , Get_Tool(i)->Get_ID  ().c_str(),
-					SG_XML_TOOL_ATT_NAME, tool_name.c_str()
+					SG_XML_TOOL_ATT_ID  , Get_Tool(i)->Get_ID().c_str(),
+					SG_XML_TOOL_ATT_NAME, Name.c_str()
 				);
 			}
 		}
@@ -686,11 +656,10 @@ CSG_String CSG_Tool_Library::Get_Summary(int Format, bool bWithGUINeeded) const
 
 		s	+= "<table border=\"0\">";
 
-		s	+= SUMMARY_ADD_STR(_TL("Name"   ), Get_Info(TLB_INFO_Name   ).c_str());
-		s	+= SUMMARY_ADD_STR(_TL("Author" ), Get_Info(TLB_INFO_Author ).c_str());
-		s	+= SUMMARY_ADD_STR(_TL("Version"), Get_Info(TLB_INFO_Version).c_str());
-		s	+= SUMMARY_ADD_STR(_TL("ID"     ), Get_Library_Name        ().c_str());
-		s	+= SUMMARY_ADD_STR(_TL("File"   ), Get_File_Name           ().c_str());
+		s	+= SUMMARY_ADD_STR(_TL("Name"  ), Get_Info(TLB_INFO_Name   ).c_str());
+		s	+= SUMMARY_ADD_STR(_TL("Author"), Get_Info(TLB_INFO_Author ).c_str());
+		s	+= SUMMARY_ADD_STR(_TL("ID"    ), Get_Library_Name        ().c_str());
+		s	+= SUMMARY_ADD_STR(_TL("File"  ), Get_File_Name           ().c_str());
 
 		s	+= "</table>";
 
@@ -699,6 +668,18 @@ CSG_String CSG_Tool_Library::Get_Summary(int Format, bool bWithGUINeeded) const
 
 		s	+= Get_Info(TLB_INFO_Description);
 
+		if( Get_References().Get_Count() > 0 )
+		{
+			s	+= CSG_String::Format("<hr><h4>%s</h4><ul>", _TL("References"));
+
+			for(int i=0; i<Get_References().Get_Count(); i++)
+			{
+				s	+= "<li>" + Get_References()[i] + "</li>";
+			}
+
+			s	+= "</ul>";
+		}
+
 		//-------------------------------------------------
 		s	+= CSG_String::Format("<hr><h4>%s</h4>", _TL("Tools"));
 
@@ -706,7 +687,7 @@ CSG_String CSG_Tool_Library::Get_Summary(int Format, bool bWithGUINeeded) const
 
 		s	+= CSG_String::Format("<tr align=\"left\"><th>%s</th><th>%s</th></tr>", _TL("ID"), _TL("Name"));
 
-		for(i=0; i<Get_Count(); i++)
+		for(int i=0; i<Get_Count(); i++)
 		{
 			if( Get_Tool(i) && (bWithGUINeeded || !Get_Tool(i)->needs_GUI()) )
 			{
@@ -739,9 +720,19 @@ CSG_String CSG_Tool_Library::Get_Summary(int Format, bool bWithGUINeeded) const
 
 		s	+= CSG_String::Format("\n%s:\n", _TL("Description")) + Get_Info(TLB_INFO_Description);
 
+		if( Get_References().Get_Count() > 0 )
+		{
+			s	+= CSG_String::Format("\n%s:\n", _TL("References"));
+
+			for(int i=0; i<Get_References().Get_Count(); i++)
+			{
+				s	+= " - " + Get_References()[i] + "\n";
+			}
+		}
+
 		s	+= CSG_String::Format("\n\n%s:\n", _TL("Tools"));
 
-		for(i=0; i<Get_Count(); i++)
+		for(int i=0; i<Get_Count(); i++)
 		{
 			if( Get_Tool(i) && (bWithGUINeeded || !Get_Tool(i)->needs_GUI()) )
 			{

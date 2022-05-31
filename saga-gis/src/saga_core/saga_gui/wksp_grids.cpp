@@ -46,25 +46,17 @@
 ///////////////////////////////////////////////////////////
 
 //---------------------------------------------------------
-
-
-///////////////////////////////////////////////////////////
-//														 //
-//														 //
-//														 //
-///////////////////////////////////////////////////////////
-
-//---------------------------------------------------------
 #include <wx/dc.h>
 #include <wx/dcmemory.h>
 #include <wx/image.h>
 #include <wx/filename.h>
 
+#include <saga_gdi/sgdi_helper.h>
+
 #include "res_commands.h"
 #include "res_dialogs.h"
 
 #include "helper.h"
-#include "dc_helper.h"
 
 #include "active.h"
 #include "active_attributes.h"
@@ -116,23 +108,27 @@ wxString CWKSP_Grids::Get_Description(void)
 
 	if( SG_File_Exists(m_pObject->Get_File_Name(false)) )
 	{
-		DESC_ADD_STR (_TL("File"           ), m_pObject->Get_File_Name(false));
+		DESC_ADD_STR(_TL("Data Source"     ), SG_File_Get_Path(m_pObject->Get_File_Name(false)      ).c_str());
+		DESC_ADD_STR(_TL("File"            ), SG_File_Get_Name(m_pObject->Get_File_Name(false), true).c_str());
 
 		if( m_pObject->Get_MetaData()("GDAL_DRIVER") )
-			DESC_ADD_STR (_TL("Driver"     ), m_pObject->Get_MetaData()["GDAL_DRIVER"].Get_Content().c_str());
+		{
+			DESC_ADD_STR(_TL("Driver"      ), m_pObject->Get_MetaData()["GDAL_DRIVER"].Get_Content().c_str());
+		}
 	}
 	else if( m_pObject->Get_MetaData_DB().Get_Children_Count() )
 	{
-		DESC_ADD_STR(_TL("File"            ), m_pObject->Get_File_Name(false));
-		//const CSG_MetaData	&DB	= m_pObject->Get_MetaData_DB();
-		//if( DB("DBMS") ) DESC_ADD_STR (_TL("DBMS"    ), DB["DBMS"].Get_Content().c_str());
-		//if( DB("HOST") ) DESC_ADD_STR (_TL("Host"    ), DB["DBMS"].Get_Content().c_str());
-		//if( DB("PORT") ) DESC_ADD_STR (_TL("Port"    ), DB["DBMS"].Get_Content().c_str());
-		//if( DB("NAME") ) DESC_ADD_STR (_TL("Database"), DB["NAME"].Get_Content().c_str());
+		DESC_ADD_STR(_TL("Data Source"     ), m_pObject->Get_File_Name(false));
+
+		//	const CSG_MetaData	&DB	= m_pObject->Get_MetaData_DB();
+	//	if( DB("DBMS") ) DESC_ADD_STR(_TL("DBMS"    ), DB["DBMS"].Get_Content().c_str());
+	//	if( DB("HOST") ) DESC_ADD_STR(_TL("Host"    ), DB["DBMS"].Get_Content().c_str());
+	//	if( DB("PORT") ) DESC_ADD_STR(_TL("Port"    ), DB["DBMS"].Get_Content().c_str());
+	//	if( DB("NAME") ) DESC_ADD_STR(_TL("Database"), DB["NAME"].Get_Content().c_str());
 	}
 	else
 	{
-		DESC_ADD_STR (_TL("File"          ), _TL("memory"));
+		DESC_ADD_STR(_TL("Data Source"    ), _TL("memory"));
 	}
 
 	DESC_ADD_STR (_TL("Modified"          ), m_pObject->is_Modified() ? _TL("yes") : _TL("no"));
@@ -154,7 +150,7 @@ wxString CWKSP_Grids::Get_Description(void)
 	DESC_ADD_FLT (_TL("Value Minimum"     ), Get_Grids()->Get_Min         ());
 	DESC_ADD_FLT (_TL("Value Maximum"     ), Get_Grids()->Get_Max         ());
 	DESC_ADD_FLT (_TL("Value Range"       ), Get_Grids()->Get_Range       ());
-	DESC_ADD_STR (_TL("No Data Value"     ), Get_Grids()->Get_NoData_Value() < Get_Grids()->Get_NoData_hiValue() ? CSG_String::Format("%f - %f", Get_Grids()->Get_NoData_Value(), Get_Grids()->Get_NoData_hiValue()).c_str() : SG_Get_String(Get_Grids()->Get_NoData_Value(), -2).c_str());
+	DESC_ADD_STR (_TL("No Data Value"     ), Get_Grids()->Get_NoData_Value() < Get_Grids()->Get_NoData_Value(true) ? CSG_String::Format("%f - %f", Get_Grids()->Get_NoData_Value(), Get_Grids()->Get_NoData_Value(true)).c_str() : SG_Get_String(Get_Grids()->Get_NoData_Value(), -2).c_str());
 	DESC_ADD_FLT (_TL("Arithmetic Mean"   ), Get_Grids()->Get_Mean        ());
 	DESC_ADD_FLT (_TL("Standard Deviation"), Get_Grids()->Get_StdDev      ());
 	DESC_ADD_STR (_TL("Memory Size"       ), Get_nBytes_asString(Get_Grids()->Get_Memory_Size(), 2).c_str());
@@ -199,11 +195,11 @@ wxMenu * CWKSP_Grids::Get_Menu(void)
 	pMenu->AppendSeparator();
 	CMD_Menu_Add_Item(pMenu, true , ID_CMD_GRID_HISTOGRAM);
 	CMD_Menu_Add_Item(pMenu, false, ID_CMD_GRID_SCATTERPLOT);
-	CMD_Menu_Add_Item(pMenu, false, ID_CMD_DATA_FORCE_UPDATE);
 
 	pMenu->AppendSeparator();
-	CMD_Menu_Add_Item(pMenu, false, ID_CMD_WKSP_ITEM_SETTINGS_COPY);
 	CMD_Menu_Add_Item(pMenu, false, ID_CMD_GRID_SET_LUT);
+	CMD_Menu_Add_Item(pMenu, false, ID_CMD_DATA_SETTINGS_COPY);
+	CMD_Menu_Add_Item(pMenu, false, ID_CMD_DATA_FORCE_UPDATE);
 
 	return( pMenu );
 }
@@ -277,7 +273,7 @@ void CWKSP_Grids::On_Create_Parameters(void)
 	m_Parameters.Add_Double("NODE_GENERAL",
 		"MAX_SAMPLES"	, _TL("Maximum Samples"),
 		_TL("Maximum number of samples used to build statistics and histograms expressed as percent of the total number of cells."),
-		100.0 * (double)Get_Grids()->Get_Max_Samples() / (double)Get_Grids()->Get_NCells(), 0., true, 100., true
+		100. * (double)Get_Grids()->Get_Max_Samples() / (double)Get_Grids()->Get_NCells(), 0., true, 100., true
 	);
 
 	//-----------------------------------------------------
@@ -305,13 +301,22 @@ void CWKSP_Grids::On_Create_Parameters(void)
 	);
 
 	//-----------------------------------------------------
+	// Transparency...
+
+	m_Parameters.Add_Choice("DISPLAY_TRANSPARENCY", "BAND_A", _TL("Alpha Channel"),
+		_TL("Alpha channel values are adjusted to the specified range minimum (full transparency) and maximum (full opacity)"),
+		""
+	);
+
+	m_Parameters.Add_Range("BAND_A", "BAND_A_RANGE", _TL("Adjustment"),
+		_TL(""),
+		0., 255.
+	);
+
+	//-----------------------------------------------------
 	// Classification...
 
-	CSG_String	List(_Get_List_Bands());
-
-	m_Parameters["BAND_R"].asChoice()->Set_Items(List); m_Parameters["BAND_R"].Set_Value(0);
-	m_Parameters["BAND_G"].asChoice()->Set_Items(List); m_Parameters["BAND_G"].Set_Value(1);
-	m_Parameters["BAND_B"].asChoice()->Set_Items(List); m_Parameters["BAND_B"].Set_Value(2);
+	Set_Grid_Choices(&m_Parameters);
 
 	//-----------------------------------------------------
 	m_Fit_Colors	= g_pData->Get_Parameter("GRID_STRETCH_DEFAULT")->asInt();
@@ -321,6 +326,32 @@ void CWKSP_Grids::On_Create_Parameters(void)
 ///////////////////////////////////////////////////////////
 //														 //
 ///////////////////////////////////////////////////////////
+
+//---------------------------------------------------------
+bool CWKSP_Grids::Set_Grid_Choices(CSG_Parameters *pParameters)
+{
+	CSG_String	List(_Get_List_Bands((*pParameters)("DIM_NAME")->asInt()));
+
+	bool	bReset	= (*pParameters)("BAND")->asChoice()->Get_Count() != Get_Grids()->Get_NZ();
+
+	if( (*pParameters)("BAND"  ) ) { (*pParameters)("BAND"  )->asChoice()->Set_Items(List); }
+
+	if( (*pParameters)("BAND_R") ) { (*pParameters)("BAND_R")->asChoice()->Set_Items(List); if( bReset ) (*pParameters)("BAND_R")->Set_Value(0); }
+	if( (*pParameters)("BAND_G") ) { (*pParameters)("BAND_G")->asChoice()->Set_Items(List); if( bReset ) (*pParameters)("BAND_G")->Set_Value(1); }
+	if( (*pParameters)("BAND_B") ) { (*pParameters)("BAND_B")->asChoice()->Set_Items(List); if( bReset ) (*pParameters)("BAND_B")->Set_Value(2); }
+
+	if( (*pParameters)("BAND_A") )
+	{
+		(*pParameters)("BAND_A")->asChoice()->Set_Items(List + "|<" + _TL("not set") + ">");
+
+		if( bReset )
+		{
+			(*pParameters)("BAND_A")->Set_Value((*pParameters)("BAND_A")->asChoice()->Get_Count() - 1);
+		}
+	}
+
+	return( true );
+}
 
 //---------------------------------------------------------
 CSG_Grid * CWKSP_Grids::Get_Grid(void)
@@ -338,6 +369,8 @@ CSG_Grid * CWKSP_Grids::Get_Grid(int i)
 	default: i	= m_Parameters("BAND_R")->asInt(); break;
 	case  1: i	= m_Parameters("BAND_G")->asInt(); break;
 	case  2: i	= m_Parameters("BAND_B")->asInt(); break;
+	case  3: i	= m_Parameters("BAND_A")->asInt();
+		return( i >= 0 && i < Get_Grids()->Get_NZ() ? Get_Grids()->Get_Grid_Ptr(i) : NULL );
 	}
 
 	if( i >= Get_Grids()->Get_NZ() )
@@ -424,12 +457,7 @@ void CWKSP_Grids::On_DataObject_Changed(void)
 	m_Parameters("DIM_NAME"     )->Set_Value(Get_Grids()->Get_Z_Name_Field());
 
 	//-----------------------------------------------------
-	List	= _Get_List_Bands();
-
-	m_Parameters("BAND"  )->asChoice()->Set_Items(List);
-	m_Parameters("BAND_R")->asChoice()->Set_Items(List);
-	m_Parameters("BAND_G")->asChoice()->Set_Items(List);
-	m_Parameters("BAND_B")->asChoice()->Set_Items(List);
+	Set_Grid_Choices(&m_Parameters);
 
 	if( m_Parameters("BAND_R")->asInt() == 0
 	&&  m_Parameters("BAND_G")->asInt() == 0
@@ -467,12 +495,7 @@ void CWKSP_Grids::On_Parameters_Changed(void)
 	{
 		Get_Grids()->Set_Z_Name_Field(m_Parameters("DIM_NAME")->asInt());
 
-		CSG_String	List	= _Get_List_Bands();
-
-		m_Parameters("BAND"  )->asChoice()->Set_Items(List);
-		m_Parameters("BAND_R")->asChoice()->Set_Items(List);
-		m_Parameters("BAND_G")->asChoice()->Set_Items(List);
-		m_Parameters("BAND_B")->asChoice()->Set_Items(List);
+		Set_Grid_Choices(&m_Parameters);
 	}
 
 	//-----------------------------------------------------
@@ -547,7 +570,7 @@ int CWKSP_Grids::On_Parameter_Changed(CSG_Parameters *pParameters, CSG_Parameter
 			double	newFactor	= (*pParameters)("OBJECT_Z_FACTOR")->asDouble(), oldFactor	= m_Parameters("OBJECT_Z_FACTOR")->asDouble();
 			double	newOffset	= (*pParameters)("OBJECT_Z_OFFSET")->asDouble(), oldOffset	= m_Parameters("OBJECT_Z_OFFSET")->asDouble();
 
-			if( newFactor != 0.0 && oldFactor != 0.0 )
+			if( newFactor != 0. && oldFactor != 0. )
 			{
 				CSG_Parameter_Range	*newRange	= (*pParameters)("METRIC_ZRANGE")->asRange();
 				CSG_Parameter_Range	*oldRange	=  m_Parameters ("METRIC_ZRANGE")->asRange();
@@ -559,12 +582,7 @@ int CWKSP_Grids::On_Parameter_Changed(CSG_Parameters *pParameters, CSG_Parameter
 
 		if( pParameter->Cmp_Identifier("DIM_NAME") )
 		{
-			CSG_String	List	= _Get_List_Bands(pParameter->asInt());
-
-			(*pParameters)("BAND"  )->asChoice()->Set_Items(List);
-			(*pParameters)("BAND_R")->asChoice()->Set_Items(List);
-			(*pParameters)("BAND_G")->asChoice()->Set_Items(List);
-			(*pParameters)("BAND_B")->asChoice()->Set_Items(List);
+			Set_Grid_Choices(pParameters);
 		}
 
 		if( Type == CLASSIFY_OVERLAY && (*pParameters)["OVERLAY_FIT"].asInt() == 1
@@ -601,26 +619,33 @@ int CWKSP_Grids::On_Parameter_Changed(CSG_Parameters *pParameters, CSG_Parameter
 	if( Flags & PARAMETER_CHECK_ENABLE )
 	{
 		if( pParameter->Cmp_Identifier("COLORS_TYPE")
-		||  pParameter->Cmp_Identifier("OVERLAY_FIT") )
+		||  pParameter->Cmp_Identifier("OVERLAY_FIT")
+		||  pParameter->Cmp_Identifier("DISPLAY_TRANSPARENCY") )
 		{
-			pParameters->Set_Enabled("DISPLAY_RESAMPLING", Type != CLASSIFY_LUT && Type != CLASSIFY_UNIQUE);
+			pParameters->Set_Enabled("DISPLAY_RESAMPLING", Type != CLASSIFY_LUT && Type != CLASSIFY_SINGLE);
 
-			pParameters->Set_Enabled("NODE_UNISYMBOL"    , Type == CLASSIFY_UNIQUE);
+			pParameters->Set_Enabled("NODE_SINGLE"       , Type == CLASSIFY_SINGLE);
 			pParameters->Set_Enabled("NODE_LUT"          , Type == CLASSIFY_LUT);
-			pParameters->Set_Enabled("NODE_METRIC"       , Type != CLASSIFY_UNIQUE && Type != CLASSIFY_LUT);
+			pParameters->Set_Enabled("NODE_METRIC"       , Type != CLASSIFY_SINGLE && Type != CLASSIFY_LUT);
 
-			pParameters->Set_Enabled("BAND"              , Type == CLASSIFY_METRIC || Type == CLASSIFY_GRADUATED || Type == CLASSIFY_LUT);
+			pParameters->Set_Enabled("BAND"              , Type == CLASSIFY_DISCRETE || Type == CLASSIFY_GRADUATED || Type == CLASSIFY_LUT);
 
-			pParameters->Set_Enabled("METRIC_ZRANGE"     , Type == CLASSIFY_METRIC || Type == CLASSIFY_GRADUATED || (Type == CLASSIFY_OVERLAY && (*pParameters)["OVERLAY_FIT"].asInt() == 0));
-			pParameters->Set_Enabled("METRIC_SCALE_MODE" , Type == CLASSIFY_METRIC || Type == CLASSIFY_GRADUATED ||  Type == CLASSIFY_OVERLAY);
+			pParameters->Set_Enabled("METRIC_ZRANGE"     , Type == CLASSIFY_DISCRETE || Type == CLASSIFY_GRADUATED || (Type == CLASSIFY_OVERLAY && (*pParameters)["OVERLAY_FIT"].asInt() == 0));
+			pParameters->Set_Enabled("METRIC_SCALE_MODE" , Type == CLASSIFY_DISCRETE || Type == CLASSIFY_GRADUATED ||  Type == CLASSIFY_OVERLAY);
 
 			pParameters->Set_Enabled("BAND_R"            , Type == CLASSIFY_OVERLAY);
 			pParameters->Set_Enabled("BAND_G"            , Type == CLASSIFY_OVERLAY);
 			pParameters->Set_Enabled("BAND_B"            , Type == CLASSIFY_OVERLAY);
+			pParameters->Set_Enabled("BAND_A"            , Type == CLASSIFY_OVERLAY);
 			pParameters->Set_Enabled("OVERLAY_FIT"       , Type == CLASSIFY_OVERLAY);
 			pParameters->Set_Enabled("METRIC_ZRANGE_R"   , Type == CLASSIFY_OVERLAY && (*pParameters)["OVERLAY_FIT"].asInt() == 1);
 			pParameters->Set_Enabled("METRIC_ZRANGE_G"   , Type == CLASSIFY_OVERLAY && (*pParameters)["OVERLAY_FIT"].asInt() == 1);
 			pParameters->Set_Enabled("METRIC_ZRANGE_B"   , Type == CLASSIFY_OVERLAY && (*pParameters)["OVERLAY_FIT"].asInt() == 1);
+		}
+
+		if( pParameter->Cmp_Identifier("BAND_A") )
+		{
+			pParameters->Set_Enabled("BAND_A_RANGE", pParameter->asInt() < pParameter->asChoice()->Get_Count() - 1);
 		}
 	}
 
@@ -640,7 +665,7 @@ void CWKSP_Grids::_LUT_Create(void)
 
 	if( Parameters.Get_Count() == 0 )
 	{
-		Parameters.Create(NULL, _TL("Classify"), _TL(""));
+		Parameters.Create(_TL("Classify"));
 		Parameters.Add_Colors("", "COLOR" , _TL("Colors"        ), _TL(""))->asColors()->Set_Count(11);
 		Parameters.Add_Choice("", "METHOD", _TL("Classification"), _TL(""),
 			CSG_String::Format("%s|%s|%s|%s",
@@ -710,7 +735,7 @@ void CWKSP_Grids::_LUT_Create(void)
 
 			for(int iClass=0; iClass<Colors.Get_Count(); iClass++, Minimum+=Interval)
 			{
-				Maximum	= iClass < Colors.Get_Count() - 1 ? Minimum + Interval : Get_Grids()->Get_Max() + 1.0;
+				Maximum	= iClass < Colors.Get_Count() - 1 ? Minimum + Interval : Get_Grids()->Get_Max() + 1.;
 
 				CSG_String	Name	= SG_Get_String(Minimum, -2)
 							+ " - " + SG_Get_String(Maximum, -2);
@@ -734,7 +759,7 @@ void CWKSP_Grids::_LUT_Create(void)
 				Colors.Set_Count(Get_Grids()->Get_NCells());
 			}
 
-			double	Minimum, Maximum	= Get_Grids()->Get_Histogram().Get_Quantile(0.0);
+			double	Minimum, Maximum	= Get_Grids()->Get_Histogram().Get_Quantile(0.);
 
 			double	Step	= 1. / Colors.Get_Count();
 
@@ -813,7 +838,7 @@ wxString CWKSP_Grids::Get_Value(CSG_Point ptWorld, double Epsilon)
 
 		switch( m_pClassify->Get_Mode() )
 		{
-		case CLASSIFY_METRIC:
+		case CLASSIFY_DISCRETE:
 		case CLASSIFY_GRADUATED:
 			if( Get_Grid()->Get_Value(ptWorld, Value, GRID_RESAMPLING_NearestNeighbour) )
 			{
@@ -871,7 +896,7 @@ double CWKSP_Grids::Get_Value_StdDev (void)	{	return( ((CSG_Grids *)m_pObject)->
 //---------------------------------------------------------
 bool CWKSP_Grids::Fit_Colors(const CSG_Rect &rWorld)
 {
-	if( m_Parameters("COLORS_TYPE")->asInt() == CLASSIFY_METRIC
+	if( m_Parameters("COLORS_TYPE")->asInt() == CLASSIFY_DISCRETE
 	||  m_Parameters("COLORS_TYPE")->asInt() == CLASSIFY_GRADUATED )
 	{
 		if( _Fit_Colors(rWorld, Get_Grid(), m_pClassify) )
@@ -926,9 +951,8 @@ bool CWKSP_Grids::_Fit_Colors(const CSG_Rect &rWorld, CSG_Data_Object *pObject, 
 		break;	}
 
 	case  2: {	CSG_Histogram			h;	if( !GET_HIST ) return( false );
-		double	d	= m_Parameters("STRETCH_PCTL")->asDouble() * 0.01;
-		Minimum	= h.Get_Quantile(    d);
-		Maximum	= h.Get_Quantile(1 - d);
+		Minimum	= h.Get_Quantile(m_Parameters("STRETCH_PCTL.MIN")->asDouble() / 100.);
+		Maximum	= h.Get_Quantile(m_Parameters("STRETCH_PCTL.MAX")->asDouble() / 100.);
 		break;	}
 	}
 
@@ -990,7 +1014,7 @@ void CWKSP_Grids::_Save_Image(void)
 
 	Parms.Add_Bool  ("", "WORLD", _TL("Save Georeference"), _TL(""), true);
 	Parms.Add_Bool  ("", "LG"   , _TL("Legend: Save"     ), _TL(""), true);
-	Parms.Add_Double("", "LZ"   , _TL("Legend: Zoom"     ), _TL(""), 1.0, 0.0, true);
+	Parms.Add_Double("", "LZ"   , _TL("Legend: Zoom"     ), _TL(""), 1., 0., true);
 
 	//-----------------------------------------------------
 	if( DLG_Image_Save(file, type) && DLG_Parameters(&Parms) )
@@ -1026,8 +1050,7 @@ void CWKSP_Grids::_Save_Image(void)
 			if( Stream.Open(fn.GetFullPath().wx_str(), SG_FILE_W, false) )
 			{
 				Stream.Printf("%.10f\n%.10f\n%.10f\n%.10f\n%.10f\n%.10f\n",
-					 Get_Grids()->Get_Cellsize(),
-					 0.0, 0.0,
+					 Get_Grids()->Get_Cellsize(), 0., 0.,
 					-Get_Grids()->Get_Cellsize(),
 					 Get_Grids()->Get_XMin(),
 					 Get_Grids()->Get_YMax()
@@ -1051,7 +1074,7 @@ bool CWKSP_Grids::Get_Image_Grid(wxBitmap &BMP, bool bFitSize)
 
 		wxMemoryDC		dc;
 		wxRect			r(0, 0, BMP.GetWidth(), BMP.GetHeight());
-		CWKSP_Map_DC	dc_Map(Get_Extent(), r, 1.0, SG_GET_RGB(255, 255, 255));
+		CWKSP_Map_DC	dc_Map(Get_Extent(), r, 1., SG_GET_RGB(255, 255, 255));
 
 		On_Draw(dc_Map, false);
 
@@ -1074,10 +1097,10 @@ bool CWKSP_Grids::Get_Image_Grid(wxBitmap &BMP, bool bFitSize)
 //---------------------------------------------------------
 bool CWKSP_Grids::Get_Image_Legend(wxBitmap &BMP, double Zoom)
 {
-	if( Zoom > 0.0 )
+	if( Zoom > 0. )
 	{
 		wxMemoryDC	dc;
-		wxSize		s(Get_Legend()->Get_Size(Zoom, 1.0));
+		wxSize		s(Get_Legend()->Get_Size(Zoom, 1.));
 
 		BMP.Create(s.GetWidth(), s.GetHeight());
 
@@ -1085,7 +1108,7 @@ bool CWKSP_Grids::Get_Image_Legend(wxBitmap &BMP, double Zoom)
 		dc.SetBackground(*wxWHITE_BRUSH);
 		dc.Clear();
 
-		Get_Legend()->Draw(dc, Zoom, 1.0, wxPoint(0, 0));
+		Get_Legend()->Draw(dc, Zoom, 1., wxPoint(0, 0));
 
 		dc.SelectObject(wxNullBitmap);
 
@@ -1109,27 +1132,30 @@ void CWKSP_Grids::On_Draw(CWKSP_Map_DC &dc_Map, int Flags)
 	}
 
 	//-----------------------------------------------------
-	double	Transparency	= m_Parameters("DISPLAY_TRANSPARENCY")->asDouble() / 100.0;
+	int	Mode = m_pClassify->Get_Mode() == CLASSIFY_OVERLAY && Get_Grid(3) ? IMG_MODE_TRANSPARENT_ALPHA : IMG_MODE_TRANSPARENT;
 
-	if( !dc_Map.IMG_Draw_Begin(Transparency) )
+	if( !dc_Map.IMG_Draw_Begin(m_Parameters("DISPLAY_TRANSPARENCY")->asDouble() / 100., Mode) )
 	{
 		return;
 	}
 
+	m_Alpha[0] = m_Parameters("BAND_A_RANGE.MIN")->asDouble();
+	m_Alpha[1] = m_Parameters("BAND_A_RANGE.MAX")->asDouble() - m_Alpha[0]; m_Alpha[1] = m_Alpha[1] ? 255. / m_Alpha[1] : 1.;
+
 	//-----------------------------------------------------
 	switch( m_Parameters("COLORS_TYPE")->asInt() )
 	{
-	case CLASSIFY_UNIQUE   :	m_pClassify->Set_Mode(CLASSIFY_UNIQUE   );	break;
-	case CLASSIFY_LUT      :	m_pClassify->Set_Mode(CLASSIFY_LUT      );	break;
-	case CLASSIFY_METRIC   :	m_pClassify->Set_Mode(CLASSIFY_METRIC   );	break;
-	case CLASSIFY_GRADUATED:	m_pClassify->Set_Mode(CLASSIFY_GRADUATED);	break;
-	case CLASSIFY_OVERLAY  :	m_pClassify->Set_Mode(CLASSIFY_OVERLAY  );	break;
+	case CLASSIFY_SINGLE   : m_pClassify->Set_Mode(CLASSIFY_SINGLE   ); break;
+	case CLASSIFY_LUT      : m_pClassify->Set_Mode(CLASSIFY_LUT      ); break;
+	case CLASSIFY_DISCRETE   : m_pClassify->Set_Mode(CLASSIFY_DISCRETE   ); break;
+	case CLASSIFY_GRADUATED: m_pClassify->Set_Mode(CLASSIFY_GRADUATED); break;
+	case CLASSIFY_OVERLAY  : m_pClassify->Set_Mode(CLASSIFY_OVERLAY  ); break;
 	}
 
 	//-----------------------------------------------------
 	TSG_Grid_Resampling	Resampling;
 
-	if( m_pClassify->Get_Mode() == CLASSIFY_UNIQUE
+	if( m_pClassify->Get_Mode() == CLASSIFY_SINGLE
 	||  m_pClassify->Get_Mode() == CLASSIFY_LUT )
 	{
 		Resampling	= GRID_RESAMPLING_NearestNeighbour;
@@ -1159,17 +1185,19 @@ void CWKSP_Grids::On_Draw(CWKSP_Map_DC &dc_Map, int Flags)
 //---------------------------------------------------------
 void CWKSP_Grids::_Draw_Grid_Nodes(CWKSP_Map_DC &dc_Map, TSG_Grid_Resampling Resampling)
 {
-	CSG_Grid	*pBands[3];
+	CSG_Grid	*pBands[4];
 
 	if( m_pClassify->Get_Mode() == CLASSIFY_OVERLAY )
 	{
-		pBands[0]	= Get_Grid(0);
-		pBands[1]	= Get_Grid(1);
-		pBands[2]	= Get_Grid(2);
+		pBands[0] = Get_Grid(0);
+		pBands[1] = Get_Grid(1);
+		pBands[2] = Get_Grid(2);
+		pBands[3] = Get_Grid(3);
 	}
 	else
 	{
 		pBands[0] = pBands[1] = pBands[2] = Get_Grid();
+		pBands[3] = NULL;
 	}
 
 	//-----------------------------------------------------
@@ -1191,7 +1219,7 @@ void CWKSP_Grids::_Draw_Grid_Nodes(CWKSP_Map_DC &dc_Map, TSG_Grid_Resampling Res
 }
 
 //---------------------------------------------------------
-void CWKSP_Grids::_Draw_Grid_Nodes(CWKSP_Map_DC &dc_Map, TSG_Grid_Resampling Resampling, CSG_Grid *pBands[3], bool bBandWise, int yDC, int axDC, int bxDC)
+void CWKSP_Grids::_Draw_Grid_Nodes(CWKSP_Map_DC &dc_Map, TSG_Grid_Resampling Resampling, CSG_Grid *pBands[4], bool bBandWise, int yDC, int axDC, int bxDC)
 {
 	double	xMap	= dc_Map.xDC2World(axDC);
 	double	yMap	= dc_Map.yDC2World( yDC);
@@ -1204,7 +1232,7 @@ void CWKSP_Grids::_Draw_Grid_Nodes(CWKSP_Map_DC &dc_Map, TSG_Grid_Resampling Res
 
 			if( pBands[0]->Get_Value(xMap, yMap, z, Resampling, false) )
 			{
-				int		c;
+				int  c;
 
 				if( m_pClassify->Get_Class_Color_byValue(z, c) )
 				{
@@ -1214,32 +1242,46 @@ void CWKSP_Grids::_Draw_Grid_Nodes(CWKSP_Map_DC &dc_Map, TSG_Grid_Resampling Res
 		}
 		else
 		{
-			double	z[3];
+			double	z[4];	bool	bOkay;
 
-			if( pBands[0]->Get_Value(xMap, yMap, z[0], Resampling, false)
-			&&  pBands[1]->Get_Value(xMap, yMap, z[1], Resampling, false)
-			&&  pBands[2]->Get_Value(xMap, yMap, z[2], Resampling, false) )
+			if( pBands[3] == NULL )
 			{
-				int		c[3];
+				bOkay	= pBands[0]->Get_Value(xMap, yMap, z[0], Resampling, false)
+					&&    pBands[1]->Get_Value(xMap, yMap, z[1], Resampling, false)
+					&&    pBands[2]->Get_Value(xMap, yMap, z[2], Resampling, false);
+				z[3]	= 255.;
+			}
+			else
+			{
+				z[3]	= (pBands[3]->Get_Value(xMap, yMap, Resampling) - m_Alpha[0]) * m_Alpha[1];
 
-				if( bBandWise )
+				if( (bOkay = z[3] > 0.) == true )
 				{
-					c[0]	= (int)(255.0 * m_Classify[0].Get_MetricToRelative(z[0]));
-					c[1]	= (int)(255.0 * m_Classify[1].Get_MetricToRelative(z[1]));
-					c[2]	= (int)(255.0 * m_Classify[2].Get_MetricToRelative(z[2]));
+					if( z[3] > 255. )
+					{
+						z[3]	= 255.;
+					}
+
+					z[0]	= pBands[0]->Get_Value(xMap, yMap, Resampling);
+					z[1]	= pBands[1]->Get_Value(xMap, yMap, Resampling);
+					z[2]	= pBands[2]->Get_Value(xMap, yMap, Resampling);
 				}
-				else
+			}
+
+			if( bOkay )
+			{
+				BYTE c[4];	c[3] = (BYTE)z[3];
+
+				for(int i=0; i<3; i++)
 				{
-					c[0]	= (int)(255.0 * m_pClassify ->Get_MetricToRelative(z[0]));
-					c[1]	= (int)(255.0 * m_pClassify ->Get_MetricToRelative(z[1]));
-					c[2]	= (int)(255.0 * m_pClassify ->Get_MetricToRelative(z[2]));
+					double	d	= bBandWise
+						? 255. * m_Classify[i].Get_MetricToRelative(z[i])
+						: 255. * m_pClassify ->Get_MetricToRelative(z[i]);
+
+					c[i] = d < 0. ? 0 : d > 255. ? 255 : (BYTE)d;
 				}
 
-				if( c[0] < 0 ) c[0] = 0; else if( c[0] > 255 ) c[0] = 255;
-				if( c[1] < 0 ) c[1] = 0; else if( c[1] > 255 ) c[1] = 255;
-				if( c[2] < 0 ) c[2] = 0; else if( c[2] > 255 ) c[2] = 255;
-
-				dc_Map.IMG_Set_Pixel(xDC, yDC, SG_GET_RGB(c[0], c[1], c[2]));
+				dc_Map.IMG_Set_Pixel(xDC, yDC, *(int *)&c);
 			}
 		}
 	}
@@ -1250,75 +1292,80 @@ void CWKSP_Grids::_Draw_Grid_Cells(CWKSP_Map_DC &dc_Map)
 {
 	bool	bBandWise	= m_Parameters("OVERLAY_FIT")->asInt() != 0;	// bandwise statistics
 
-	CSG_Grid	*pBands[3];
+	CSG_Grid	*pBands[4];
 
 	if( m_pClassify->Get_Mode() == CLASSIFY_OVERLAY )
 	{
-		pBands[0]	= Get_Grid(0);
-		pBands[1]	= Get_Grid(1);
-		pBands[2]	= Get_Grid(2);
+		pBands[0] = Get_Grid(0);
+		pBands[1] = Get_Grid(1);
+		pBands[2] = Get_Grid(2);
+		pBands[3] = Get_Grid(3);
 	}
 	else
 	{
 		pBands[0] = pBands[1] = pBands[2] = Get_Grid();
+		pBands[3] = NULL;
 	}
 
 	//-----------------------------------------------------
-	int		x, y, xa, ya, xb, yb, xaDC, yaDC, xbDC, ybDC;
-	double	xDC, yDC, axDC, ayDC, dDC;
+	int xa	= Get_Grids()->Get_System().Get_xWorld_to_Grid(dc_Map.m_rWorld.Get_XMin()); if( xa <  0                     ) xa = 0;
+	int	ya	= Get_Grids()->Get_System().Get_yWorld_to_Grid(dc_Map.m_rWorld.Get_YMin()); if( ya <  0                     ) ya = 0;
+	int	xb	= Get_Grids()->Get_System().Get_xWorld_to_Grid(dc_Map.m_rWorld.Get_XMax()); if( xb >= Get_Grids()->Get_NX() ) xb = Get_Grids()->Get_NX() - 1;
+	int	yb	= Get_Grids()->Get_System().Get_yWorld_to_Grid(dc_Map.m_rWorld.Get_YMax()); if( yb >= Get_Grids()->Get_NY() ) yb = Get_Grids()->Get_NY() - 1;
+
+	double	dDC  = Get_Grids()->Get_Cellsize() * dc_Map.m_World2DC;
+
+	double	axDC = dc_Map.xWorld2DC(Get_Grids()->Get_System().Get_xGrid_to_World(xa)) + dDC / 2.;
+	double	ayDC = dc_Map.yWorld2DC(Get_Grids()->Get_System().Get_yGrid_to_World(ya)) - dDC / 2.;
 
 	//-----------------------------------------------------
-	dDC		= Get_Grids()->Get_Cellsize() * dc_Map.m_World2DC;
+	double	yDC	= ayDC;
 
-	xa		= Get_Grids()->Get_System().Get_xWorld_to_Grid(dc_Map.m_rWorld.Get_XMin());
-	ya		= Get_Grids()->Get_System().Get_yWorld_to_Grid(dc_Map.m_rWorld.Get_YMin());
-	xb		= Get_Grids()->Get_System().Get_xWorld_to_Grid(dc_Map.m_rWorld.Get_XMax());
-	yb		= Get_Grids()->Get_System().Get_yWorld_to_Grid(dc_Map.m_rWorld.Get_YMax());
-
-	if( xa < 0 )	xa	= 0;	if( xb >= Get_Grids()->Get_NX() )	xb	= Get_Grids()->Get_NX() - 1;
-	if( ya < 0 )	ya	= 0;	if( yb >= Get_Grids()->Get_NY() )	yb	= Get_Grids()->Get_NY() - 1;
-
-	axDC	= dc_Map.xWorld2DC(Get_Grids()->Get_System().Get_xGrid_to_World(xa)) + dDC / 2.0;
-	ayDC	= dc_Map.yWorld2DC(Get_Grids()->Get_System().Get_yGrid_to_World(ya)) - dDC / 2.0;
-
-	//-----------------------------------------------------
-	for(y=ya, yDC=ayDC, yaDC=(int)(ayDC), ybDC=(int)(ayDC+dDC); y<=yb; y++, ybDC=yaDC, yaDC=(int)(yDC-=dDC))
+	for(int y=ya, yaDC=(int)(ayDC), ybDC=(int)(ayDC+dDC); y<=yb; y++, ybDC=yaDC, yaDC=(int)(yDC-=dDC))
 	{
-		for(x=xa, xDC=axDC, xaDC=(int)(axDC-dDC), xbDC=(int)(axDC); x<=xb; x++, xaDC=xbDC, xbDC=(int)(xDC+=dDC))
+		double	xDC	= axDC;
+
+		for(int x=xa, xaDC=(int)(axDC-dDC), xbDC=(int)(axDC); x<=xb; x++, xaDC=xbDC, xbDC=(int)(xDC+=dDC))
 		{
 			if( m_pClassify->Get_Mode() != CLASSIFY_OVERLAY )
 			{
-				int		c;
+				int  c;
 
 				if( pBands[0]->is_InGrid(x, y) && m_pClassify->Get_Class_Color_byValue(pBands[0]->asDouble(x, y), c) )
 				{
 					dc_Map.IMG_Set_Rect(xaDC, yaDC, xbDC, ybDC, c);
 				}
 			}
-			else
+			else if( pBands[0]->is_InGrid(x, y, !pBands[3])
+				&&   pBands[1]->is_InGrid(x, y, !pBands[3])
+				&&   pBands[2]->is_InGrid(x, y, !pBands[3])
+				&& (!pBands[3] || pBands[3]->is_InGrid(x, y, false)) )
 			{
-				if( pBands[0]->is_InGrid(x, y) && pBands[1]->is_InGrid(x, y) && pBands[2]->is_InGrid(x, y) )
+				BYTE c[4];
+
+				for(int i=0; i<3; i++)
 				{
-					int		c[3];
+					double	d	= bBandWise
+						? 255. * m_Classify[i].Get_MetricToRelative(pBands[i]->asDouble(x, y))
+						: 255. * m_pClassify ->Get_MetricToRelative(pBands[i]->asDouble(x, y));
 
-					if( bBandWise )
+					c[i] = d < 0. ? 0 : d > 255. ? 255 : (BYTE)d;
+				}
+
+				if( pBands[3] )
+				{
+					double	d	= (pBands[3]->asDouble(x, y) - m_Alpha[0]) * m_Alpha[1];
+
+					if( d > 0. )
 					{
-						c[0]	= (int)(255.0 * m_Classify[0].Get_MetricToRelative(pBands[0]->asDouble(x, y)));
-						c[1]	= (int)(255.0 * m_Classify[1].Get_MetricToRelative(pBands[1]->asDouble(x, y)));
-						c[2]	= (int)(255.0 * m_Classify[2].Get_MetricToRelative(pBands[2]->asDouble(x, y)));
-					}
-					else
-					{
-						c[0]	= (int)(255.0 * m_pClassify ->Get_MetricToRelative(pBands[0]->asDouble(x, y)));
-						c[1]	= (int)(255.0 * m_pClassify ->Get_MetricToRelative(pBands[1]->asDouble(x, y)));
-						c[2]	= (int)(255.0 * m_pClassify ->Get_MetricToRelative(pBands[2]->asDouble(x, y)));
-					}
+						c[3] = d < 255. ? (BYTE)d : 255;
 
-					if( c[0] < 0 ) c[0] = 0; else if( c[0] > 255 ) c[0] = 255;
-					if( c[1] < 0 ) c[1] = 0; else if( c[1] > 255 ) c[1] = 255;
-					if( c[2] < 0 ) c[2] = 0; else if( c[2] > 255 ) c[2] = 255;
-
-					dc_Map.IMG_Set_Rect(xaDC, yaDC, xbDC, ybDC, SG_GET_RGB(c[0], c[1], c[2]));
+						dc_Map.IMG_Set_Rect(xaDC, yaDC, xbDC, ybDC, *(int *)&c);
+					}
+				}
+				else
+				{
+					dc_Map.IMG_Set_Rect(xaDC, yaDC, xbDC, ybDC, *(int *)&c);
 				}
 			}
 		}

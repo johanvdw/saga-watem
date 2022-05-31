@@ -48,15 +48,6 @@
 ///////////////////////////////////////////////////////////
 
 //---------------------------------------------------------
-
-
-///////////////////////////////////////////////////////////
-//														 //
-//                                                       //
-//														 //
-///////////////////////////////////////////////////////////
-
-//---------------------------------------------------------
 #ifndef HEADER_INCLUDED__Flow_H
 #define HEADER_INCLUDED__Flow_H
 
@@ -111,7 +102,9 @@ protected:
 
 	int						m_Step;
 
-	double					m_Converge;
+	bool					m_MFD_bContour;
+
+	double					m_MFD_Converge;
 
 	CSG_Grid				*m_pDTM, *m_pRoute, *m_pWeights, *m_pFlow, *m_pFlow_Length,
 							*m_pVal_Input, *m_pVal_Mean,

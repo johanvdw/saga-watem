@@ -72,7 +72,7 @@ class COGR_Import : public CSG_Tool
 public:
 	COGR_Import(void);
 
-	virtual CSG_String			Get_MenuPath	(void)	{	return( _TL("Shapes|Import") );	}
+	virtual CSG_String			Get_MenuPath	(void)	{	return( _TL("Shapes") );	}
 
 
 protected:
@@ -87,7 +87,7 @@ protected:
 ///////////////////////////////////////////////////////////
 
 //---------------------------------------------------------
-io_gdal_EXPORT	bool			SG_OGR_Import	(const CSG_String &File_Name);
+bool			SG_OGR_Import	(const CSG_String &File_Name);
 
 
 ///////////////////////////////////////////////////////////

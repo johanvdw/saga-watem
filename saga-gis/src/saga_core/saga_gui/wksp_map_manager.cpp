@@ -1,6 +1,3 @@
-/**********************************************************
- * Version $Id$
- *********************************************************/
 
 ///////////////////////////////////////////////////////////
 //                                                       //
@@ -48,15 +45,6 @@
 //                                                       //
 //    e-mail:     oconrad@saga-gis.org                   //
 //                                                       //
-///////////////////////////////////////////////////////////
-
-//---------------------------------------------------------
-
-
-///////////////////////////////////////////////////////////
-//														 //
-//														 //
-//														 //
 ///////////////////////////////////////////////////////////
 
 //---------------------------------------------------------
@@ -127,7 +115,7 @@ CWKSP_Map_Manager::CWKSP_Map_Manager(void)
 	m_Parameters.Add_Choice("",
 		"CROSSHAIR"	, _TL("Cross Hair"),
 		_TL("Display a cross hair of a map's current mouse position in all maps."),
-		CSG_String::Format("%s|%s|%s|",
+		CSG_String::Format("%s|%s|%s",
 			_TL("no"),
 			_TL("yes"),
 			_TL("projected")
@@ -140,7 +128,7 @@ CWKSP_Map_Manager::CWKSP_Map_Manager(void)
 	m_Parameters.Add_Bool("NODE_DEFAULTS",
 		"GOTO_NEWLAYER"	, _TL("Zoom to added layer"),
 		_TL(""),
-		true
+		false
 	);
 
 	m_Parameters.Add_Bool("NODE_DEFAULTS",
@@ -164,7 +152,7 @@ CWKSP_Map_Manager::CWKSP_Map_Manager(void)
 	m_Parameters.Add_Int("FRAME_SHOW",
 		"FRAME_WIDTH"	, _TL("Width"),
 		_TL(""),
-		17, 5, true
+		17, 10, true
 	);
 
 	//-----------------------------------------------------
@@ -261,16 +249,16 @@ wxString CWKSP_Map_Manager::Get_Description(void)
 //---------------------------------------------------------
 wxMenu * CWKSP_Map_Manager::Get_Menu(void)
 {
-	wxMenu	*pMenu;
-
-	pMenu	= new wxMenu(_TL("Maps"));
-
-	if( Get_Count() > 0 )
+	if( Get_Count() < 1 )
 	{
-		CMD_Menu_Add_Item(pMenu, false, ID_CMD_WKSP_ITEM_CLOSE);
-		pMenu->AppendSeparator();
-		CMD_Menu_Add_Item(pMenu, false, ID_CMD_WKSP_ITEM_SEARCH);
+		return( NULL );
 	}
+
+	wxMenu	*pMenu	= new wxMenu(Get_Name());
+
+	CMD_Menu_Add_Item(pMenu, false, ID_CMD_WKSP_ITEM_CLOSE);
+	pMenu->AppendSeparator();
+	CMD_Menu_Add_Item(pMenu, false, ID_CMD_WKSP_ITEM_SEARCH);
 
 	return( pMenu );
 }
@@ -367,9 +355,9 @@ bool CWKSP_Map_Manager::Add(CWKSP_Map *pMap)
 
 bool CWKSP_Map_Manager::Add(CWKSP_Layer *pLayer)
 {
-	int		iMap;
+	int	iMap = DLG_Maps_Add();
 
-	if( (iMap = DLG_Maps_Add()) >= 0 && Add(pLayer, Get_Map(iMap)) )
+	if( iMap >= 0 && Add(pLayer, Get_Map(iMap)) )
 	{
 		Get_Map(iMap)->View_Show(true);
 

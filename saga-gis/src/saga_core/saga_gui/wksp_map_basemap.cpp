@@ -1,6 +1,3 @@
-/**********************************************************
- * Version $Id: wksp_map_basemap.cpp 1921 2014-01-09 10:24:11Z oconrad $
- *********************************************************/
 
 ///////////////////////////////////////////////////////////
 //                                                       //
@@ -49,21 +46,12 @@
 ///////////////////////////////////////////////////////////
 
 //---------------------------------------------------------
-
-
-///////////////////////////////////////////////////////////
-//														 //
-//														 //
-//														 //
-///////////////////////////////////////////////////////////
-
-//---------------------------------------------------------
 #include <wx/window.h>
 
 #include <saga_api/saga_api.h>
+#include <saga_gdi/sgdi_helper.h>
 
 #include "helper.h"
-#include "dc_helper.h"
 
 #include "res_commands.h"
 #include "res_dialogs.h"
@@ -102,7 +90,7 @@ CWKSP_Map_BaseMap::CWKSP_Map_BaseMap(CSG_MetaData *pEntry)
 	m_Parameters.Add_Choice("NODE_GENERAL",
 		"SERVER"	, _TL("Server"),
 		_TL(""),
-		CSG_String::Format("%s|%s|%s|%s|%s|%s|%s|%s|",
+		CSG_String::Format("%s|%s|%s|%s|%s|%s|%s|%s|%s",
 			_TL("Open Street Map"),
 			_TL("Google Map"),
 			_TL("Google Satellite"),
@@ -110,6 +98,7 @@ CWKSP_Map_BaseMap::CWKSP_Map_BaseMap(CSG_MetaData *pEntry)
 			_TL("Google Terrain"),
 			_TL("Google Terrain, Streets and Water"),
 			_TL("ArcGIS MapServer Tiles"),
+			_TL("TopPlusOpen"),
 			_TL("user defined")
 		), 0
 	);
@@ -142,7 +131,7 @@ CWKSP_Map_BaseMap::CWKSP_Map_BaseMap(CSG_MetaData *pEntry)
 	m_Parameters.Add_Range("NODE_GENERAL",
 		"SHOW_RANGE"	, _TL("Scale Range"),
 		_TL("only show within scale range; values are given as extent measured in map units"),
-		100.0, 1000.0, 0.0, true
+		100., 1000., 0., true
 	);
 
 	//-----------------------------------------------------
@@ -151,13 +140,13 @@ CWKSP_Map_BaseMap::CWKSP_Map_BaseMap(CSG_MetaData *pEntry)
 	m_Parameters.Add_Double("NODE_DISPLAY",
 		"TRANSPARENCY"	, _TL("Transparency [%]"),
 		_TL(""),
-		0.0, 0.0, true, 100.0, true
+		0., 0., true, 100., true
 	);
 
 	m_Parameters.Add_Double("NODE_DISPLAY",
 		"BRIGHTNESS"	, _TL("Maximum Brightness [%]"),
 		_TL("Brightness threshold below a pixel is displayed. Set to 100% to display all (default)."),
-		100.0, 0.0, true, 100.0, true
+		100., 0., true, 100., true
 	);
 
 	m_Parameters.Add_Bool("NODE_DISPLAY",
@@ -169,14 +158,14 @@ CWKSP_Map_BaseMap::CWKSP_Map_BaseMap(CSG_MetaData *pEntry)
 	m_Parameters.Add_Double("NODE_DISPLAY",
 		"RESOLUTION"	, _TL("Resolution"),
 		_TL("resolution measured in screen pixels"),
-		1.0, 1.0, true
+		1., 1., true
 	);
 
 	//-----------------------------------------------------
 	m_Parameters.Add_Choice("NODE_DISPLAY",
 		"POSITION"	, _TL("Position"),
 		_TL(""),
-		CSG_String::Format("%s|%s|",
+		CSG_String::Format("%s|%s",
 			_TL("top"),
 			_TL("bottom")
 		), 1
@@ -220,12 +209,7 @@ wxString CWKSP_Map_BaseMap::Get_Name(void)
 {
 	wxString	Name(m_Parameters("NAME")->asString());
 
-	if( !m_bShow )
-	{
-		return( "[" + Name + "]" );
-	}
-
-	return( Name );
+	return( !m_bShow ? "* " + Name : Name );
 }
 
 //---------------------------------------------------------
@@ -248,9 +232,10 @@ wxString CWKSP_Map_BaseMap::Get_Description(void)
 	s	+= _TL("Be sure to read and understand the usage agreement or terms of service before you use a base map server.");
 	s	+= "<ul>";
 	s	+= "<li><a href=\"www.openstreetmap.org\">Open Street Map</a></li>";
-	s	+= "<li><a href=\"open.mapquest.co.uk\">MapQuest</a></li>";
+//	s	+= "<li><a href=\"open.mapquest.co.uk\">MapQuest</a></li>";
 	s	+= "<li><a href=\"maps.google.com/intl/en/help/terms_maps.html\">Google Maps</a></li>";
 	s	+= "<li><a href=\"services.arcgisonline.com\">ArcGIS MapServer</a></li>";
+	s	+= "<li><a href=\"www.geodatenzentrum.de/geodaten/gdz_rahmen.gdz_div\">TopPlusOpen</a></li>";
 	s	+= "</ul>";
 
 	//-----------------------------------------------------
@@ -421,7 +406,7 @@ bool CWKSP_Map_BaseMap::Set_BaseMap(const CSG_Grid_System &System)
 	//-----------------------------------------------------
 	CSG_Grid	BaseMap;
 
-	if( m_Parameters("RESOLUTION")->asDouble() > 1.0 )
+	if( m_Parameters("RESOLUTION")->asDouble() > 1. )
 	{
 		BaseMap.Create(CSG_Grid_System(m_Parameters("RESOLUTION")->asDouble() * System.Get_Cellsize(), System.Get_Extent(true)), SG_DATATYPE_Int);
 	}
@@ -466,9 +451,9 @@ bool CWKSP_Map_BaseMap::Set_BaseMap(const CSG_Grid_System &System)
 			}
 		}
 
-		if( m_Parameters("BRIGHTNESS")->asDouble() < 100.0 )
+		if( m_Parameters("BRIGHTNESS")->asDouble() < 100. )
 		{
-			int	Threshold	= (int)(0.5 + 3 * 255 * m_Parameters("BRIGHTNESS")->asDouble() / 100.0);
+			int	Threshold	= (int)(0.5 + 3 * 255 * m_Parameters("BRIGHTNESS")->asDouble() / 100.);
 
 			#pragma omp parallel for
 			for(int i=0; i<m_BaseMap.Get_NCells(); i++)
@@ -525,7 +510,7 @@ bool CWKSP_Map_BaseMap::Draw(CWKSP_Map_DC &dc_Map)
 	}
 
 	//-----------------------------------------------------
-	if( dc_Map.IMG_Draw_Begin(m_Parameters("TRANSPARENCY")->asDouble() / 100.0) )
+	if( dc_Map.IMG_Draw_Begin(m_Parameters("TRANSPARENCY")->asDouble() / 100.) )
 	{
 		#pragma omp parallel for
 		for(int y=0; y<m_BaseMap.Get_NY(); y++)	for(int x=0, yy=m_BaseMap.Get_NY()-y-1; x<m_BaseMap.Get_NX(); x++)

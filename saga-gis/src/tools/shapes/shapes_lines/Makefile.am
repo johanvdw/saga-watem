@@ -11,6 +11,7 @@ AM_CXXFLAGS        = -fPIC $(CXX_INCS) $(DEF_SAGA) $(DBGFLAGS) $(GOMPFLAGS)
 AM_LDFLAGS         = -fPIC -shared -avoid-version
 pkglib_LTLIBRARIES = libshapes_lines.la
 libshapes_lines_la_SOURCES =\
+extract_closed_lines.cpp\
 line_crossings.cpp\
 line_dissolve.cpp\
 Lines_From_Points.cpp\
@@ -19,8 +20,10 @@ line_polygon_intersection.cpp\
 line_properties.cpp\
 line_simplification.cpp\
 line_smoothing.cpp\
+line_split.cpp\
 line_split_with_lines.cpp\
 MLB_Interface.cpp\
+extract_closed_lines.h\
 line_crossings.h\
 line_dissolve.h\
 Lines_From_Points.h\
@@ -29,6 +32,7 @@ line_polygon_intersection.h\
 line_properties.h\
 line_simplification.h\
 line_smoothing.h\
+line_split.h\
 line_split_with_lines.h\
 MLB_Interface.h
 

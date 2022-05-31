@@ -371,7 +371,7 @@ bool CClassification_Quality::Get_Classes(CSG_Shapes *pPolygons, int Field, CSG_
 
 	Confusion.Destroy();
 
-	Confusion.Add_Field("CLASS", pPolygons->Get_Field_Type(Field));
+	Confusion.Add_Field("CLASS", SG_DATATYPE_String);
 
 	for(int iClass=0; iClass<Classes.Get_Count(); iClass++)
 	{
@@ -436,7 +436,9 @@ bool CClassification_Quality::Get_Classes(CSG_Grid *pGrid, CSG_Table *pConfusion
 		if( fNam < 0 || fNam >= pLUT->Get_Field_Count() )	{	fNam	= fMin;	}
 		if( fMax < 0 || fMax >= pLUT->Get_Field_Count() )	{	fMax	= fMin;	}
 	}
-	else if( DataObject_Get_Parameter(pGrid, "LUT") && (pLUT = DataObject_Get_Parameter(pGrid, "LUT")->asTable()) != NULL )
+	else if( DataObject_Get_Parameter(pGrid, "COLORS_TYPE")->asInt() == 1
+          && DataObject_Get_Parameter(pGrid, "LUT")
+          && (pLUT = DataObject_Get_Parameter(pGrid, "LUT")->asTable()) != NULL )
 	{
 		fNam	= 1;
 		fMin	= 3;

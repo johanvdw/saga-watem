@@ -1,6 +1,3 @@
-/**********************************************************
- * Version $Id: daily_sun.h 911 2011-02-14 16:38:15Z reklov_w $
- *********************************************************/
 
 ///////////////////////////////////////////////////////////
 //                                                       //
@@ -49,15 +46,6 @@
 ///////////////////////////////////////////////////////////
 
 //---------------------------------------------------------
-
-
-///////////////////////////////////////////////////////////
-//														 //
-//                                                       //
-//														 //
-///////////////////////////////////////////////////////////
-
-//---------------------------------------------------------
 #ifndef HEADER_INCLUDED__daily_sun_H
 #define HEADER_INCLUDED__daily_sun_H
 
@@ -83,6 +71,28 @@ class CDaily_Sun : public CSG_Tool_Grid
 {
 public:
 	CDaily_Sun(void);
+
+	virtual CSG_String	Get_MenuPath			(void)	{	return( _TL("Tools") );	}
+
+
+protected:
+
+	virtual int			On_Parameters_Enable	(CSG_Parameters *pParameters, CSG_Parameter *pParameter);
+
+	virtual bool		On_Execute				(void);
+
+};
+
+
+///////////////////////////////////////////////////////////
+//														 //
+///////////////////////////////////////////////////////////
+
+//---------------------------------------------------------
+class CSolarRadiation : public CSG_Tool_Grid
+{
+public:
+	CSolarRadiation(void);
 
 	virtual CSG_String	Get_MenuPath			(void)	{	return( _TL("Tools") );	}
 

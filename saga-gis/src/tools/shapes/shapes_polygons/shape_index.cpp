@@ -1,6 +1,3 @@
-/**********************************************************
- * Version $Id$
- *********************************************************/
 
 ///////////////////////////////////////////////////////////
 //                                                       //
@@ -51,15 +48,6 @@
 ///////////////////////////////////////////////////////////
 
 //---------------------------------------------------------
-
-
-///////////////////////////////////////////////////////////
-//														 //
-//														 //
-//														 //
-///////////////////////////////////////////////////////////
-
-//---------------------------------------------------------
 #include "shape_index.h"
 
 
@@ -89,8 +77,8 @@ CShape_Index::CShape_Index(void)
 		"<li><b>P/A</b> interior edge ratio</li>"
 		"<li><b>P/sqrt(A)</b></li>"
 		"<li><b>Deqpc</b> equivalent projected circle diameter (=2*sqrt(A/pi))</li>"
-		"<li><b>Sphericity</b> the ratio of the perimeter of the equivalent circle to the real perimeter (=P/(2*sqrt(A*pi)))</li>"
-		"<li><b>Shape Index</b> the inverse of the spericity</li>"
+		"<li><b>Sphericity</b> the ratio of the perimeter of the equivalent circle to the real perimeter (=(2*sqrt(A*pi))/P)</li>"
+		"<li><b>Shape Index</b> the inverse of the sphericity (=P/(2*sqrt(A*pi)))</li>"
 		"<li><b>Dmax</b> maximum diameter calculated as maximum distance between two polygon part's vertices</li>"
 		"<li><b>DmaxDir</b> direction of maximum diameter</li>"
 		"<li><b>Dmax/A</b></li>"
@@ -115,6 +103,12 @@ CShape_Index::CShape_Index(void)
 	Add_Reference("Forman, R.T.T. & Godron, M.", "1986",
 		"Landscape Ecology",
 		"Cambridge."
+	);
+
+	Add_Reference("Merkus, H.G.", "2009",
+		"Particle Size Measurements: Fundamentals, Practice, Quality",
+		"Springer.",
+		SG_T("https://link.springer.com/book/10.1007/978-1-4020-9016-5")
 	);
 
 	//-----------------------------------------------------

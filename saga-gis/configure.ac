@@ -3,7 +3,7 @@
 # Process this file with autoconf to produce a configure script.
 
 AC_PREREQ(2.59)
-AC_INIT(saga, 7.4.0, BUG-REPORT-ADDRESS)
+AC_INIT(saga, 8.2.0, BUG-REPORT-ADDRESS)
 AC_CONFIG_SRCDIR([src/saga_core/saga_gui/wksp_data_menu_files.cpp])
 AC_CONFIG_HEADER([config.h])
 AC_CONFIG_MACRO_DIR([m4])
@@ -98,12 +98,8 @@ if test "`wx-config --list | grep unicode`" == "" ; then
 fi
 
 # postgresql/postgis
+# can be disabled by passing --with-postgresql=no
 AX_LIB_POSTGRESQL([8.0])
-if test "x$found_postgresql" = "xyes"; then
-  echo "checking whether to enable postgresql... yes"
-else
-  echo "checking whether to enable postgresql... no"
-fi
 AM_CONDITIONAL(HAVE_POSTGRESQL, test "x$found_postgresql" = "xyes")
 
 # debug
@@ -177,7 +173,7 @@ AC_ARG_ENABLE(openmp,
 AC_SUBST(GOMPFLAGS)
 
 
-# proj.4
+# proj
 PROJ_INC_DIR=
 PROJ_LIB_DIR=
 
@@ -202,15 +198,15 @@ fi
 
 if test -n "$PROJ5FOUND" ; then 
   AC_MSG_RESULT([        using PROJ version 5])
-  PROJ6FLAGS=""
+  PROJ6FLAGS="-DPROJ_VERSION_MAJOR=5"
 else
   if test -n "$PROJ6FOUND" ; then 
     AC_MSG_RESULT([        using PROJ version 6]) 
-    PROJ6FLAGS="-DPROJ6 -std=c++0x"
+    PROJ6FLAGS="-DPROJ_VERSION_MAJOR=6 -std=c++0x"
   else
     if test -n "$PROJ4FOUND" ; then 
       AC_MSG_RESULT([        using PROJ version 4]) 
-      PROJ6FLAGS=""
+      PROJ6FLAGS="-DPROJ_VERSION_MAJOR=4"
     else
       AC_MSG_ERROR(SAGA requires the PROJ library)
       exit
@@ -225,13 +221,79 @@ AC_SUBST(PROJ6FLAGS)
 
 # gdal
 AX_LIB_GDAL([1.7])
-if test `echo $GDAL_VERSION|cut -d. -f1` -ge 2; then
-  GDAL2FLAGS="-DUSE_GDAL_V2"
-else
-   GDAL2FLAGS=""
-fi
-AC_SUBST(GDAL2FLAGS)
 
+
+# pdal
+HAVE_PDAL=
+PDAL_INC=
+PDAL_LIBS=
+PDAL_CPPFLAGS=
+
+AC_ARG_WITH(pdal,
+[  --with-pdal[=[ARG]]
+                          Enable PDAL support, specify full path to
+                          pdal-config script, e.g. 
+                          '--with-pdal=/usr/bin/pdal-config',
+                          default: no)],, with_pdal="no")
+
+AC_MSG_CHECKING(whether to build with PDAL)
+
+if test "`basename xx/$with_pdal`" = "pdal-config" ; then
+  PDAL_CONFIG="$with_pdal"
+fi
+
+if test "$with_pdal" = "no" ; then
+  AC_MSG_RESULT(no)
+else
+  AC_MSG_RESULT(yes)
+  AC_PATH_PROG(PDAL_CONFIG, pdal-config, no)
+
+  if test "$PDAL_CONFIG" = "no" ; then
+    AC_MSG_ERROR([*** could not find pdal-config])
+  fi
+
+  if test "$PDAL_CONFIG" != "" ; then
+    PDAL_INC=`"$PDAL_CONFIG" --includes`
+    PDAL_CPPFLAGS=`"$PDAL_CONFIG" --cxxflags`
+    PDAL_LIBS=`"$PDAL_CONFIG" --libs`
+  fi
+
+  AC_LANG_SAVE
+  AC_LANG_CPLUSPLUS
+  
+  ac_save_cppflags="$CPPFLAGS"
+  ac_save_libs="$LIBS"
+  
+  LIBS="$LIBS $PDAL_LIBS"
+  CPPFLAGS="$CPPFLAGS $PDAL_CPPFLAGS $PDAL_INC"
+  
+  AC_TRY_LINK([#include <pdal/PointTable.hpp>],[pdal::PointTable table;],,[
+  AC_TRY_LINK([#include <pdal/PointTable.hpp>],[pdal::PointTable table;],PDAL_LIBS="$PDAL_LIBS",[
+  AC_MSG_ERROR([*** Unable to locate PDAL library.])
+  ])
+  ])
+  
+  CPPFLAGS=${ac_save_cppflags}
+  LIBS=${ac_save_libs}
+  
+  AC_LANG_C
+  AC_LANG_RESTORE
+
+  PDALFOUND=1
+    
+  AC_SUBST(PDAL_INC)
+  AC_SUBST(PDAL_CPPFLAGS)
+  AC_SUBST(PDAL_LIBS)
+fi
+
+AM_CONDITIONAL(HAVE_PDAL, test -n "$PDALFOUND")
+
+if test -n "$PDALFOUND" ; then 
+  AC_MSG_RESULT([        Building with PDAL])
+fi
+
+
+# triangle/qhull
 AC_ARG_ENABLE(triangle,
         AS_HELP_STRING([--disable-triangle],[ Compile without triangle.c (only free for non-commercial usage), and use qhull instead (requires qhull)]),
 	,
@@ -239,11 +301,33 @@ AC_ARG_ENABLE(triangle,
 
 AM_CONDITIONAL(TRIANGLE, [test x$use_triangle = xyes])
 
+QHULLFLAGS=""
+
 if test "x$use_triangle" != xyes; then
-    AC_MSG_RESULT([        Triangle disabled])
-    AC_CHECK_LIB(qhull, qh_qhull, , 
-      AC_MSG_FAILURE([--disable-triangle was given but test for qhull failed]))
- fi
+  AC_MSG_RESULT([        Triangle disabled])
+  AC_CHECK_HEADER([qhull/qhull_a.h],[AC_CHECK_LIB([qhull], [qh_qhull], QHULLFOUND=1,,)])
+  AC_CHECK_HEADER([libqhull/qhull_a.h],[AC_CHECK_LIB([qhull], [qh_qhull], LIBQHULLFOUND=1,,)])
+  AC_CHECK_HEADER([libqhull_r/qhull_ra.h],[AC_CHECK_LIB([qhull_r], [qh_qhull], LIBQHULL_R_FOUND=1,,)])
+  if test -n "$LIBQHULL_R_FOUND" ; then 
+    AC_MSG_RESULT([        Building with libqhull_r])
+    QHULLFLAGS="-DHAVE_LIBQHULL_R_QHULL_RA_H"
+    AM_CONDITIONAL(QHULL_R, true)
+  elif test -n "$LIBQHULLFOUND" ; then 
+    AC_MSG_RESULT([        Building with libqhull])
+    QHULLFLAGS="-DHAVE_LIBQHULL_QHULL_A_H"
+    AM_CONDITIONAL(QHULL_R, false)
+  elif test -n "$QHULLFOUND" ; then 
+    AC_MSG_RESULT([        Building with qhull])
+    QHULLFLAGS="-DHAVE_QHULL_QHULL_A_H"
+    AM_CONDITIONAL(QHULL_R, false)
+  else
+    AC_MSG_FAILURE([--disable-triangle was given but test for qhull failed])
+  fi
+else
+  AM_CONDITIONAL(QHULL_R, false)
+fi
+
+AC_SUBST(QHULLFLAGS)
 
 AC_ARG_ENABLE(libfire,
         AS_HELP_STRING([--disable-libfire],[ Compile without libfire (only free for non-commercial usage)]),
@@ -338,6 +422,7 @@ AX_PKG_SWIG(1.3.17,[],[])
 AX_SWIG_ENABLE_CXX
 AX_SWIG_PYTHON
 fi
+
 #AC_CONFIG_FILES([Makefile])
 AC_OUTPUT(Makefile \
 	src/Makefile \
@@ -363,7 +448,6 @@ AC_OUTPUT(Makefile \
 	src/tools/garden/garden_3d_viewer/Makefile \
 	src/tools/garden/garden_fractals/Makefile \
 	src/tools/garden/garden_games/Makefile \
-	src/tools/garden/garden_learn_to_program/Makefile \
 	src/tools/garden/garden_webservices/Makefile \
 	src/tools/grid/Makefile \
 	src/tools/grid/grid_analysis/Makefile \
@@ -377,6 +461,7 @@ AC_OUTPUT(Makefile \
 	src/tools/grid/grids_tools/Makefile \
 	src/tools/imagery/Makefile \
 	src/tools/imagery/imagery_classification/Makefile \
+	src/tools/imagery/imagery_isocluster/Makefile \
 	src/tools/imagery/imagery_opencv/Makefile \
 	src/tools/imagery/imagery_maxent/Makefile \
 	src/tools/imagery/imagery_photogrammetry/Makefile \
@@ -390,11 +475,13 @@ AC_OUTPUT(Makefile \
 	src/tools/io/io_gps/Makefile \
 	src/tools/io/io_grid/Makefile \
 	src/tools/io/io_grid_image/Makefile \
+	src/tools/io/io_pdal/Makefile \
 	src/tools/io/io_shapes/Makefile \
 	src/tools/io/io_shapes_dxf/Makefile \
 	src/tools/io/io_shapes_las/Makefile \
 	src/tools/io/io_table/Makefile \
 	src/tools/io/io_virtual/Makefile \
+	src/tools/io/io_webservices/Makefile \
 	src/tools/pointcloud/Makefile \
 	src/tools/pointcloud/pointcloud_tools/Makefile \
 	src/tools/pointcloud/pointcloud_viewer/Makefile \
@@ -409,6 +496,7 @@ AC_OUTPUT(Makefile \
 	src/tools/shapes/shapes_tools/Makefile \
 	src/tools/shapes/shapes_transect/Makefile \
 	src/tools/simulation/Makefile \
+	src/tools/simulation/sim_air_flow/Makefile \
 	src/tools/simulation/sim_cellular_automata/Makefile \
 	src/tools/simulation/sim_ecosystems_hugget/Makefile \
 	src/tools/simulation/sim_erosion/Makefile \
@@ -429,6 +517,7 @@ AC_OUTPUT(Makefile \
 	src/tools/table/table_tools/Makefile \
 	src/tools/terrain_analysis/Makefile \
 	src/tools/terrain_analysis/ta_channels/Makefile \
+	src/tools/terrain_analysis/ta_cliffmetrics/Makefile \
 	src/tools/terrain_analysis/ta_compound/Makefile \
 	src/tools/terrain_analysis/ta_hydrology/Makefile \
 	src/tools/terrain_analysis/ta_lighting/Makefile \

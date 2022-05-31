@@ -67,7 +67,7 @@
 ///////////////////////////////////////////////////////////
 
 //---------------------------------------------------------
-class io_gdal_EXPORT CGDAL_Import_NetCDF : public CSG_Tool
+class CGDAL_Import_NetCDF : public CSG_Tool
 {
 public:
 	CGDAL_Import_NetCDF(void);

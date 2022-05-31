@@ -1,14 +1,24 @@
-option(WITH_TOOL_DB_PGSQL "Check to install tool db_pgsql" OFF)
+option(WITH_TOOLS_POSTGRES "Check to create build targets for PostgreSQL tools" ON)
 
-if (WITH_TOOL_DB_PGSQL OR WITH_ALL_TOOLS)
-	project(db_pgsql)
-
-	# load common tool template
-	include(../../CMakePluginTemplate.cmake )
-
-	# load postgresql
-	# ubuntu 16.04 packages libpq-dev and postgresql-server-dev-9.5
-	find_package(PostgreSQL REQUIRED)
-	target_include_directories(${PROJECT_NAME} PRIVATE "${PostgreSQL_INCLUDE_DIRS}")
-	target_link_libraries(${PROJECT_NAME} "${PostgreSQL_LIBRARIES}")
+if(WITH_TOOLS_POSTGRES)
+	if(MSVC AND DEPS_FROM_ENVARS)
+		if("${CMAKE_GENERATOR_PLATFORM}" STREQUAL "Win32")
+			set(LIB4SAGA $ENV{GDAL_32})
+		else()
+			set(LIB4SAGA $ENV{GDAL})
+		endif()
+		find_path   (POSTGRES_INCLUDE_DIR NAMES libpq-fe.h    PATHS "${LIB4SAGA}/include")
+		find_library(POSTGRES_LIBRARY NAMES pq libpq libpqdll PATHS "${LIB4SAGA}/lib")
+		include(FindPackageHandleStandardArgs)
+		FIND_PACKAGE_HANDLE_STANDARD_ARGS(POSTGRES REQUIRED_VARS POSTGRES_LIBRARY POSTGRES_INCLUDE_DIR)
+	endif()
+	if(NOT POSTGRES_FOUND)
+		find_package(Postgres QUIET)	# ubuntu package libpq-dev
+	endif()
+	if(POSTGRES_FOUND)
+		project(db_pgsql)
+		include(../../CMakePluginTemplate.cmake)	# load common tool template
+		target_include_directories(${PROJECT_NAME} PRIVATE "${POSTGRES_INCLUDE_DIR}")
+		target_link_libraries(${PROJECT_NAME} "${POSTGRES_LIBRARY}")
+	endif(POSTGRES_FOUND)
 endif()

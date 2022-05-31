@@ -1,6 +1,3 @@
-/**********************************************************
- * Version $Id$
- *********************************************************/
 
 ///////////////////////////////////////////////////////////
 //                                                       //
@@ -51,18 +48,9 @@
 ///////////////////////////////////////////////////////////
 
 //---------------------------------------------------------
-
-
-///////////////////////////////////////////////////////////
-//														 //
-//           The Tool Link Library Interface             //
-//														 //
-///////////////////////////////////////////////////////////
-
-//---------------------------------------------------------
 // 1. Include the appropriate SAGA-API header...
 
-#include "MLB_Interface.h"
+#include <saga_api/saga_api.h>
 
 
 //---------------------------------------------------------
@@ -79,13 +67,13 @@ CSG_String Get_Info(int i)
 		return( _TL("Import/Export") );
 
 	case TLB_INFO_Author:
-		return( SG_T("SAGA User Group Associaton (c) 2014") );
+		return( "SAGA User Group Associaton (c) 2014" );
 
 	case TLB_INFO_Description:
 		return( _TL("Tools for the handling of virtual datasets.") );
 
 	case TLB_INFO_Version:
-		return( SG_T("1.0") );
+		return( "1.0" );
 
 	case TLB_INFO_Menu_Path:
 		return( _TL("File|Virtual") );
@@ -110,16 +98,17 @@ CSG_Tool *		Create_Tool(int i)
 {
 	switch( i )
 	{
-	case 0:		return( new CPointCloud_Create_SPCVF );
-	case 1:		return( new CPointCloud_Get_Subset_SPCVF );
-	case 2:		return( new CPointCloud_Create_Tileshape_From_SPCVF );
-	case 3:		return( new CPointCloud_Get_Subset_SPCVF_Interactive );
-	case 4:		return( new CPointCloud_Get_Grid_SPCVF );
-	case 5:		return( new CPointCloud_Get_Grid_SPCVF_Interactive );
-	case 6:		return( new CPointCloud_Remove_Overlap_From_SPCVF );
-	}
+	case  0:	return( new CPointCloud_Create_SPCVF );
+	case  1:	return( new CPointCloud_Get_Subset_SPCVF );
+	case  2:	return( new CPointCloud_Create_Tileshape_From_SPCVF );
+	case  3:	return( new CPointCloud_Get_Subset_SPCVF_Interactive );
+	case  4:	return( new CPointCloud_Get_Grid_SPCVF );
+	case  5:	return( new CPointCloud_Get_Grid_SPCVF_Interactive );
+	case  6:	return( new CPointCloud_Remove_Overlap_From_SPCVF );
 
-	return( NULL );
+	case  7:	return( NULL );
+	default:	return( TLB_INTERFACE_SKIP_TOOL );
+	}
 }
 
 

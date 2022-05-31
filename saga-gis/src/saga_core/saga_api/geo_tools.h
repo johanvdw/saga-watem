@@ -1,6 +1,3 @@
-/**********************************************************
- * Version $Id$
- *********************************************************/
 
 ///////////////////////////////////////////////////////////
 //                                                       //
@@ -53,6 +50,8 @@
 ///////////////////////////////////////////////////////////
 
 //---------------------------------------------------------
+#ifndef HEADER_INCLUDED__SAGA_API__geo_tools_H
+#define HEADER_INCLUDED__SAGA_API__geo_tools_H
 
 
 ///////////////////////////////////////////////////////////
@@ -62,8 +61,12 @@
 ///////////////////////////////////////////////////////////
 
 //---------------------------------------------------------
-#ifndef HEADER_INCLUDED__SAGA_API__geo_tools_H
-#define HEADER_INCLUDED__SAGA_API__geo_tools_H
+/** \file geo_tools.h
+* Tools for geometric/geographic data types and related functions.
+* @see CSG_Point
+* @see CSG_Rect
+* @see CSG_Projections
+*/
 
 
 ///////////////////////////////////////////////////////////
@@ -164,11 +167,11 @@ TSG_Rect;
 ///////////////////////////////////////////////////////////
 
 //---------------------------------------------------------
-SAGA_API_DLL_EXPORT bool		SG_Is_Equal			(double a, double b, double epsilon = 0.0);
-SAGA_API_DLL_EXPORT bool		SG_Is_Equal			(const TSG_Point &A, const TSG_Point &B, double epsilon = 0.0);
+SAGA_API_DLL_EXPORT bool		SG_Is_Equal			(double a, double b, double epsilon = 0.);
+SAGA_API_DLL_EXPORT bool		SG_Is_Equal			(const TSG_Point &A, const TSG_Point &B, double epsilon = 0.);
 
-SAGA_API_DLL_EXPORT bool		SG_Is_Between		(double x, double a, double b, double epsilon = 0.0);
-SAGA_API_DLL_EXPORT bool		SG_Is_Between		(const TSG_Point &Point, const TSG_Point &Corner_A, const TSG_Point &Corner_B, double epsilon = 0.0);
+SAGA_API_DLL_EXPORT bool		SG_Is_Between		(double x, double a, double b, double epsilon = 0.);
+SAGA_API_DLL_EXPORT bool		SG_Is_Between		(const TSG_Point &Point, const TSG_Point &Corner_A, const TSG_Point &Corner_B, double epsilon = 0.);
 
 
 ///////////////////////////////////////////////////////////
@@ -181,6 +184,10 @@ SAGA_API_DLL_EXPORT bool		SG_Is_Between		(const TSG_Point &Point, const TSG_Poin
 class SAGA_API_DLL_EXPORT CSG_Point
 {
 public:
+
+	double						x, y;
+
+
 	CSG_Point(void);
 	CSG_Point(const CSG_Point &Point);
 	CSG_Point(const TSG_Point &Point);
@@ -190,35 +197,46 @@ public:
 
 	virtual TSG_Point_Type		Get_Type		(void)	const	{	return( SG_POINT_TYPE_XY );	}
 
-	operator TSG_Point							(void)	const	{	TSG_Point p; p.x = m_x; p.y = m_y; return( p );	}
+	operator TSG_Point							(void)	const	{	TSG_Point p; p.x = x; p.y = y; return( p );	}
 
-	double						Get_X			(void)	const	{	return( m_x );	}
-	void						Set_X			(double x)		{	m_x	= x;		}
-	double						Get_Y			(void)	const	{	return( m_y );	}
-	void						Set_Y			(double y)		{	m_y	= y;		}
+	double						Get_X			(void)	const	{	return( x );	}
+	void						Set_X			(double Value)	{	x	= Value;	}
+	double						Get_Y			(void)	const	{	return( y );	}
+	void						Set_Y			(double Value)	{	y	= Value;	}
 
 	virtual bool				operator ==		(const CSG_Point &Point)	const	{	return(  is_Equal(Point) );	}
 	virtual bool				operator !=		(const CSG_Point &Point)	const	{	return( !is_Equal(Point) );	}
 
-	virtual CSG_Point			operator +		(const CSG_Point &Point)	const	{	return( CSG_Point(m_x + Point.m_x, m_y + Point.m_y)	);	}
-	virtual CSG_Point			operator -		(const CSG_Point &Point)	const	{	return( CSG_Point(m_x - Point.m_x, m_y - Point.m_y)	);	}
+	virtual CSG_Point			operator +		(const CSG_Point &Point)	const	{	return( CSG_Point(x + Point.x, y + Point.y)	);	}
+	virtual CSG_Point			operator -		(const CSG_Point &Point)	const	{	return( CSG_Point(x - Point.x, y - Point.y)	);	}
 
 	virtual CSG_Point &			operator  =		(const CSG_Point &Point)			{	Assign  (Point);	return( *this );	}
 	virtual CSG_Point &			operator +=		(const CSG_Point &Point)			{	Add     (Point);	return( *this );	}
 	virtual CSG_Point &			operator -=		(const CSG_Point &Point)			{	Subtract(Point);	return( *this );	}
+	virtual CSG_Point &			operator *=		(const CSG_Point &Point)			{	Multiply(Point);	return( *this );	}
+
+	CSG_Point					operator *		(double Value)				const	{	return( CSG_Point(x * Value, y * Value)	);	}
+	CSG_Point					operator /		(double Value)				const	{	return( CSG_Point(x / Value, y / Value)	);	}
+	virtual CSG_Point &			operator *=		(double Value)						{	Multiply(Value);	return( *this );	}
+	virtual CSG_Point &			operator /=		(double Value)						{	Divide  (Value);	return( *this );	}
 
 	virtual void				Assign			(double x, double y);
 	virtual void				Assign			(const CSG_Point &Point);
+
 	virtual void				Add				(const CSG_Point &Point);
 	virtual void				Subtract		(const CSG_Point &Point);
+	virtual void				Multiply		(const CSG_Point &Point);
 
-	virtual bool				is_Equal		(double x, double y    , double epsilon = 0.0)	const	{	return( SG_Is_Equal(m_x, x, epsilon) && SG_Is_Equal(m_y, y, epsilon) );	}
-	virtual bool				is_Equal		(const CSG_Point &Point, double epsilon = 0.0)	const	{	return(	is_Equal(Point.m_x, Point.m_y, epsilon) );	}
+	virtual void				Multiply		(double Value);
+	virtual void				Divide			(double Value);
 
+	virtual double				Get_Length		(void)	const;
 
-protected:
-
-	double						m_x, m_y;
+	virtual bool				is_Equal		(double _x, double _y  , double epsilon = 0.)	const	{	return( is_Equal(CSG_Point(x, y), epsilon) );	}
+	virtual bool				is_Equal		(const CSG_Point &Point, double epsilon = 0.)	const
+	{	return(	SG_Is_Equal(x, Point.x, epsilon)
+		     && SG_Is_Equal(y, Point.y, epsilon) );
+	}
 
 };
 
@@ -226,6 +244,10 @@ protected:
 class SAGA_API_DLL_EXPORT CSG_Point_Z : public CSG_Point
 {
 public:
+
+	double						z;
+
+
 	CSG_Point_Z(void);
 	CSG_Point_Z(const CSG_Point_Z &Point);
 	CSG_Point_Z(const TSG_Point_Z &Point);
@@ -235,33 +257,45 @@ public:
 
 	virtual TSG_Point_Type		Get_Type		(void)	const	{	return( SG_POINT_TYPE_XYZ );	}
 
-	operator TSG_Point_Z						(void)	const	{	TSG_Point_Z p; p.x = m_x; p.y = m_y; p.z = m_z; return( p );	}
+	operator TSG_Point_Z						(void)	const	{	TSG_Point_Z p; p.x = x; p.y = y; p.z = z; return( p );	}
 
-	double						Get_Z			(void)	const	{	return( m_z );	}
-	void						Set_Z			(double z)		{	m_z	= z;		}
+	double						Get_Z			(void)	const	{	return( z );	}
+	void						Set_Z			(double Value)	{	z	= Value;	}
 
 	virtual bool				operator ==		(const CSG_Point_Z &Point)	const	{	return(  is_Equal(Point) );	}
 	virtual bool				operator !=		(const CSG_Point_Z &Point)	const	{	return( !is_Equal(Point) );	}
 
-	virtual CSG_Point_Z			operator +		(const CSG_Point_Z &Point)	const	{	return( CSG_Point_Z(m_x + Point.m_x, m_y + Point.m_y, m_z + Point.m_z)	);	}
-	virtual CSG_Point_Z			operator -		(const CSG_Point_Z &Point)	const	{	return( CSG_Point_Z(m_x - Point.m_x, m_y - Point.m_y, m_z - Point.m_z)	);	}
+	virtual CSG_Point_Z			operator +		(const CSG_Point_Z &Point)	const	{	return( CSG_Point_Z(x + Point.x, y + Point.y, z + Point.z)	);	}
+	virtual CSG_Point_Z			operator -		(const CSG_Point_Z &Point)	const	{	return( CSG_Point_Z(x - Point.x, y - Point.y, z - Point.z)	);	}
 
 	virtual CSG_Point_Z &		operator  =		(const CSG_Point_Z &Point)			{	Assign  (Point);	return( *this );	}
 	virtual CSG_Point_Z &		operator +=		(const CSG_Point_Z &Point)			{	Add     (Point);	return( *this );	}
 	virtual CSG_Point_Z &		operator -=		(const CSG_Point_Z &Point)			{	Subtract(Point);	return( *this );	}
+	virtual CSG_Point_Z &		operator *=		(const CSG_Point_Z &Point)			{	Multiply(Point);	return( *this );	}
+
+	CSG_Point_Z					operator *		(double Value)				const	{	return( CSG_Point_Z(x * Value, y * Value, z * Value)	);	}
+	CSG_Point_Z					operator /		(double Value)				const	{	return( CSG_Point_Z(x / Value, y / Value, z / Value)	);	}
+	virtual CSG_Point_Z &		operator *=		(double Value)						{	Multiply(Value);	return( *this );	}
+	virtual CSG_Point_Z &		operator /=		(double Value)						{	Divide  (Value);	return( *this );	}
 
 	virtual void				Assign			(double x, double y, double z);
 	virtual void				Assign			(const CSG_Point_Z &Point);
+
 	virtual void				Add				(const CSG_Point_Z &Point);
 	virtual void				Subtract		(const CSG_Point_Z &Point);
+	virtual void				Multiply		(const CSG_Point_Z &Point);
 
-	virtual bool				is_Equal		(double x, double y, double z, double epsilon = 0.0)	const	{	return(	SG_Is_Equal(m_x, x, epsilon) && SG_Is_Equal(m_y, y, epsilon) && SG_Is_Equal(m_z, z, epsilon) );	}
-	virtual bool				is_Equal		(const CSG_Point_Z &Point    , double epsilon = 0.0)	const	{	return(	is_Equal(Point.m_x, Point.m_y, Point.m_z, epsilon) );	}
+	virtual void				Multiply		(double Value);
+	virtual void				Divide			(double Value);
 
+	virtual double				Get_Length		(void)	const;
 
-protected:
-
-	double						m_z;
+	virtual bool				is_Equal		(double _x, double _y, double _z, double epsilon = 0.)	const	{	return(	is_Equal(CSG_Point_Z(x, y, z), epsilon) );	}
+	virtual bool				is_Equal		(const CSG_Point_Z &Point       , double epsilon = 0.)	const
+	{	return(	SG_Is_Equal(x, Point.x, epsilon)
+		     && SG_Is_Equal(y, Point.y, epsilon)
+		     && SG_Is_Equal(z, Point.z, epsilon) );
+	}
 
 };
 
@@ -269,6 +303,10 @@ protected:
 class SAGA_API_DLL_EXPORT CSG_Point_ZM : public CSG_Point_Z
 {
 public:
+
+	double						m;
+
+
 	CSG_Point_ZM(void);
 	CSG_Point_ZM(const CSG_Point_ZM &Point);
 	CSG_Point_ZM(const TSG_Point_ZM &Point);
@@ -278,33 +316,46 @@ public:
 
 	virtual TSG_Point_Type		Get_Type		(void)	const	{	return( SG_POINT_TYPE_XYZM );	}
 
-	operator TSG_Point_ZM						(void)	const	{	TSG_Point_ZM p; p.x = m_x; p.y = m_y; p.z = m_z; p.m = m_m; return( p );	}
+	operator TSG_Point_ZM						(void)	const	{	TSG_Point_ZM p; p.x = x; p.y = y; p.z = z; p.m = m; return( p );	}
 
-	double						Get_M			(void)	const	{	return( m_m );	}
-	void						Set_M			(double m)		{	m_m	= m;		}
+	double						Get_M			(void)	const	{	return( m );	}
+	void						Set_M			(double Value)	{	m	= Value;	}
 
 	virtual bool				operator ==		(const CSG_Point_ZM &Point)	const	{	return(  is_Equal(Point) );	}
 	virtual bool				operator !=		(const CSG_Point_ZM &Point)	const	{	return( !is_Equal(Point) );	}
 
-	virtual CSG_Point_ZM		operator +		(const CSG_Point_ZM &Point)	const	{	return( CSG_Point_ZM(m_x + Point.m_x, m_y + Point.m_y, m_z + Point.m_z, m_m + Point.m_m) );	}
-	virtual CSG_Point_ZM		operator -		(const CSG_Point_ZM &Point)	const	{	return( CSG_Point_ZM(m_x - Point.m_x, m_y - Point.m_y, m_z - Point.m_z, m_m - Point.m_m) );	}
+	virtual CSG_Point_ZM		operator +		(const CSG_Point_ZM &Point)	const	{	return( CSG_Point_ZM(x + Point.x, y + Point.y, z + Point.z, m + Point.m) );	}
+	virtual CSG_Point_ZM		operator -		(const CSG_Point_ZM &Point)	const	{	return( CSG_Point_ZM(x - Point.x, y - Point.y, z - Point.z, m - Point.m) );	}
+
+	CSG_Point_ZM				operator *		(double Value)				const	{	return( CSG_Point_ZM(x * Value, y * Value, z * Value, m * Value)	);	}
+	CSG_Point_ZM				operator /		(double Value)				const	{	return( CSG_Point_ZM(x / Value, y / Value, z / Value, m * Value)	);	}
+	virtual CSG_Point_ZM &		operator *=		(double Value)						{	Multiply(Value);	return( *this );	}
+	virtual CSG_Point_ZM &		operator /=		(double Value)						{	Divide  (Value);	return( *this );	}
 
 	virtual CSG_Point_ZM &		operator  =		(const CSG_Point_ZM &Point)			{	Assign  (Point);	return( *this );	}
 	virtual CSG_Point_ZM &		operator +=		(const CSG_Point_ZM &Point)			{	Add     (Point);	return( *this );	}
 	virtual CSG_Point_ZM &		operator -=		(const CSG_Point_ZM &Point)			{	Subtract(Point);	return( *this );	}
+	virtual CSG_Point_ZM &		operator *=		(const CSG_Point_ZM &Point)			{	Multiply(Point);	return( *this );	}
 
 	virtual void				Assign			(double x, double y, double z, double m);
 	virtual void				Assign			(const CSG_Point_ZM &Point);
+
 	virtual void				Add				(const CSG_Point_ZM &Point);
 	virtual void				Subtract		(const CSG_Point_ZM &Point);
+	virtual void				Multiply		(const CSG_Point_ZM &Point);
 
-	virtual bool				is_Equal		(double x, double y, double z, double m, double epsilon = 0.0)	const	{	return(	SG_Is_Equal(m_x, x, epsilon) && SG_Is_Equal(m_y, y, epsilon) && SG_Is_Equal(m_z, z, epsilon) && SG_Is_Equal(m_m, m, epsilon) );	}
-	virtual bool				is_Equal		(const CSG_Point_ZM &Point             , double epsilon = 0.0)	const	{	return(	is_Equal(Point.m_x, Point.m_y, Point.m_z, Point.m_m, epsilon) );	}
+	virtual void				Multiply		(double Value);
+	virtual void				Divide			(double Value);
 
+	virtual double				Get_Length		(void)	const;
 
-protected:
-
-	double						m_m;
+	virtual bool				is_Equal		(double x, double y, double z, double m, double epsilon = 0.)	const	{	return(	is_Equal(CSG_Point_ZM(x, y, z, m), epsilon) );	}
+	virtual bool				is_Equal		(const CSG_Point_ZM &Point             , double epsilon = 0.)	const
+	{	return(	SG_Is_Equal(x, Point.x, epsilon)
+		     && SG_Is_Equal(y, Point.y, epsilon)
+		     && SG_Is_Equal(z, Point.z, epsilon)
+		     && SG_Is_Equal(m, Point.m, epsilon) );
+	}
 
 };
 
@@ -452,8 +503,8 @@ public:
 	void						Set_TopRight	(double x, double y);
 	void						Set_TopRight	(const CSG_Point &Point);
 
-	bool						is_Equal		(double xMin, double yMin, double xMax, double yMax, double epsilon = 0.0) const;
-	bool						is_Equal		(const CSG_Rect &Rect                              , double epsilon = 0.0) const;
+	bool						is_Equal		(double xMin, double yMin, double xMax, double yMax, double epsilon = 0.) const;
+	bool						is_Equal		(const CSG_Rect &Rect                              , double epsilon = 0.) const;
 
 	double						Get_XMin		(void) const	{	return( m_rect.xMin );	}
 	double						Get_XMax		(void) const	{	return( m_rect.xMax );	}
@@ -470,8 +521,8 @@ public:
 	CSG_Point					Get_BottomRight	(void) const	{	return( CSG_Point(m_rect.xMax, m_rect.yMin) );	}
 
 	CSG_Point					Get_Center		(void) const	{	return( CSG_Point(Get_XCenter(), Get_YCenter()) );	}
-	double						Get_XCenter		(void) const	{	return( (m_rect.xMin + m_rect.xMax) / 2.0 );	}
-	double						Get_YCenter		(void) const	{	return( (m_rect.yMin + m_rect.yMax) / 2.0 );	}
+	double						Get_XCenter		(void) const	{	return( (m_rect.xMin + m_rect.xMax) / 2. );	}
+	double						Get_YCenter		(void) const	{	return( (m_rect.yMin + m_rect.yMax) / 2. );	}
 
 	void						Move			(double dx, double dy);
 	void						Move			(const CSG_Point &Point);
@@ -555,48 +606,48 @@ public:
 	CSG_Distance_Weighting(void);
 	virtual ~CSG_Distance_Weighting(void);
 
-	bool					Create_Parameters	(class CSG_Parameters *pParameters, bool bDialog = true);
-	static bool				Enable_Parameters	(class CSG_Parameters *pParameters);
-	bool					Set_Parameters		(class CSG_Parameters *pParameters);
-	class CSG_Parameters *	Get_Parameters		(void)	const		{	return( m_pParameters );	}
+	static bool				Enable_Parameters	(class CSG_Parameters &Parameters);
+	bool					Create_Parameters	(class CSG_Parameters &Parameters, const CSG_String &Parent = "", bool bIDW_Offset = false);
+	static bool				Add_Parameters		(class CSG_Parameters &Parameters, const CSG_String &Parent = "", bool bIDW_Offset = false);
+	bool					Set_Parameters		(class CSG_Parameters &Parameters);
 
-	TSG_Distance_Weighting	Get_Weighting		(void)	const		{	return( m_Weighting );		}
+	TSG_Distance_Weighting	Get_Weighting		(void)	const	{	return( m_Weighting   );	}
 	bool					Set_Weighting		(TSG_Distance_Weighting Weighting);
 
-	double					Get_IDW_Power		(void)	const		{	return( m_IDW_Power );		}
+	double					Get_IDW_Power		(void)	const	{	return( m_IDW_Power   );	}
 	bool					Set_IDW_Power		(double Value);
 
-	bool					Get_IDW_Offset		(void)	const		{	return( m_IDW_bOffset );	}
+	bool					Get_IDW_Offset		(void)	const	{	return( m_IDW_bOffset );	}
 	bool					Set_IDW_Offset		(bool bOn = true);
 
-	double					Get_BandWidth		(void)	const		{	return( m_Bandwidth );		}
+	double					Get_BandWidth		(void)	const	{	return( m_Bandwidth   );	}
 	bool					Set_BandWidth		(double Value);
 
 	//-----------------------------------------------------
 	double					Get_Weight			(double Distance)	const
 	{
-		if( Distance < 0.0 )
+		if( Distance < 0. )
 		{
-			return( 0.0 );
+			return( 0. );
 		}
 
 		switch( m_Weighting )
 		{
-		case SG_DISTWGHT_None: default:
-			return( 1.0 );
+		case SG_DISTWGHT_IDW  :
+			return( m_IDW_bOffset
+				? pow(1. + Distance, -m_IDW_Power) : Distance > 0.
+				? pow(     Distance, -m_IDW_Power) : 0.
+			);
 
-		case SG_DISTWGHT_IDW:
-			if( m_IDW_bOffset )
-				return( pow(1.0 + Distance, -m_IDW_Power) );
-			else
-				return( Distance > 0.0 ? pow(Distance, -m_IDW_Power) : 0.0 );
-
-		case SG_DISTWGHT_EXP:
+		case SG_DISTWGHT_EXP  :
 			return( exp(-Distance / m_Bandwidth) );
 
 		case SG_DISTWGHT_GAUSS:
 			Distance	/= m_Bandwidth;
 			return( exp(-0.5 * Distance*Distance) );
+
+		default: // case SG_DISTWGHT_None:
+			return( 1. );
 		}
 	}
 
@@ -608,8 +659,6 @@ private:
 	double					m_IDW_Power, m_Bandwidth;
 
 	TSG_Distance_Weighting	m_Weighting;
-
-	class CSG_Parameters	*m_pParameters;
 
 };
 
@@ -743,6 +792,11 @@ public:
 	CSG_String						Get_Type_Identifier		(void)	const	{	return( SG_Get_Projection_Type_Identifier(m_Type) );	}
 	CSG_String						Get_Type_Name			(void)	const	{	return( SG_Get_Projection_Type_Name      (m_Type) );	}
 
+	bool							is_Projection			(void)	const	{	return( m_Type == SG_PROJ_TYPE_CS_Projected  );	}
+	bool							is_Geographic			(void)	const	{	return( m_Type == SG_PROJ_TYPE_CS_Geographic );	}
+	bool							is_Geocentric			(void)	const	{	return( m_Type == SG_PROJ_TYPE_CS_Geocentric );	}
+
+
 	TSG_Projection_Unit				Get_Unit				(void)	const	{	return( m_Unit  );	}
 	CSG_String						Get_Unit_Identifier		(void)	const	{	return( SG_Get_Projection_Unit_Identifier(m_Unit) );	}
 	CSG_String						Get_Unit_Name			(void)	const	{	return( m_Unit_Name     );	}
@@ -776,9 +830,14 @@ private:
 //---------------------------------------------------------
 class SAGA_API_DLL_EXPORT CSG_Projections
 {
+	friend class CSG_Projection;
+
 public:
 	CSG_Projections(void);
 	virtual ~CSG_Projections(void);
+
+									CSG_Projections			(bool bLoad_DB);
+	bool							Create					(bool bLoad_DB = true);
 
 									CSG_Projections			(const CSG_String &File_DB);
 	bool							Create					(const CSG_String &File_DB);
@@ -813,6 +872,9 @@ public:
 	bool							EPSG_to_Proj4			(CSG_String &Proj4, int EPSG_Code)				const;
 	bool							EPSG_to_WKT				(CSG_String &WKT  , int EPSG_Code)				const;
 
+	static const CSG_Projection &	Get_GCS_WGS84			(void);
+	static CSG_Projection			Get_UTM_WGS84			(int Zone, bool bSouth = false);
+
 
 private:
 
@@ -827,11 +889,12 @@ private:
 
 	bool							_WKT_to_Proj4_Set_Datum		(CSG_String &Proj4, const CSG_MetaData &WKT)	const;
 
-	bool							_Proj4_Read_Parameter		(CSG_String &Value, const CSG_String &Proj4, const CSG_String &Key)	const;
-	bool							_Proj4_Get_Ellipsoid		(CSG_String &Value, const CSG_String &Proj4)	const;
-	bool							_Proj4_Get_Datum			(CSG_String &Value, const CSG_String &Proj4)	const;
-	bool							_Proj4_Get_Prime_Meridian	(CSG_String &Value, const CSG_String &Proj4)	const;
-	bool							_Proj4_Get_Unit				(CSG_String &Value, const CSG_String &Proj4)	const;
+	static bool						_Proj4_Find_Parameter		(                   const CSG_String &Proj4, const CSG_String &Key);
+	static bool						_Proj4_Read_Parameter		(CSG_String &Value, const CSG_String &Proj4, const CSG_String &Key);
+	static bool						_Proj4_Get_Ellipsoid		(CSG_String &Value, const CSG_String &Proj4);
+	static bool						_Proj4_Get_Datum			(CSG_String &Value, const CSG_String &Proj4);
+	static bool						_Proj4_Get_Prime_Meridian	(CSG_String &Value, const CSG_String &Proj4);
+	static bool						_Proj4_Get_Unit				(CSG_String &Value, const CSG_String &Proj4);
 
 	bool							_Set_Dictionary				(CSG_Table      &Dictionary, int Direction);
 	bool							_Set_Dictionary				(CSG_Translator &Dictionary, int Direction);
@@ -846,6 +909,9 @@ SAGA_API_DLL_EXPORT bool		SG_Get_Projected				(class CSG_Shapes *pSource, class 
 
 SAGA_API_DLL_EXPORT bool		SG_Get_Projected				(const CSG_Projection &Source, const CSG_Projection &Target, TSG_Point &Point    );
 SAGA_API_DLL_EXPORT bool		SG_Get_Projected				(const CSG_Projection &Source, const CSG_Projection &Target, TSG_Rect  &Rectangle);
+
+//---------------------------------------------------------
+SAGA_API_DLL_EXPORT bool		SG_Grid_Get_Geographic_Coordinates		(CSG_Grid *pGrid, CSG_Grid *pLon, CSG_Grid *pLat);
 
 
 ///////////////////////////////////////////////////////////
@@ -863,19 +929,23 @@ SAGA_API_DLL_EXPORT double		SG_Get_Distance					(const TSG_Point &A, const TSG_P
 SAGA_API_DLL_EXPORT double		SG_Get_Distance					(double ax, double ay, double bx, double by);
 SAGA_API_DLL_EXPORT double		SG_Get_Distance					(const TSG_Point &A, const TSG_Point &B);
 
-SAGA_API_DLL_EXPORT double		SG_Get_Distance_Polar			(double aLon, double aLat, double bLon, double bLat, double a = 6378137.0, double e = 298.257223563, bool bDegree = true);
-SAGA_API_DLL_EXPORT double		SG_Get_Distance_Polar			(const TSG_Point &A      , const TSG_Point &B      , double a = 6378137.0, double e = 298.257223563, bool bDegree = true);
+SAGA_API_DLL_EXPORT double		SG_Get_Distance					(double ax, double ay, double az, double bx, double by, double bz);
+SAGA_API_DLL_EXPORT double		SG_Get_Distance					(const TSG_Point_Z &A, const TSG_Point_Z &B);
+
+SAGA_API_DLL_EXPORT double		SG_Get_Distance_Polar			(double aLon, double aLat, double bLon, double bLat, double a = 6378137., double e = 298.257223563, bool bDegree = true);
+SAGA_API_DLL_EXPORT double		SG_Get_Distance_Polar			(const TSG_Point &A      , const TSG_Point &B      , double a = 6378137., double e = 298.257223563, bool bDegree = true);
 
 SAGA_API_DLL_EXPORT double		SG_Get_Angle_Of_Direction		(double dx, double dy);
 SAGA_API_DLL_EXPORT double		SG_Get_Angle_Of_Direction		(double ax, double ay, double bx, double by);
 SAGA_API_DLL_EXPORT double		SG_Get_Angle_Of_Direction		(const TSG_Point &A);
 SAGA_API_DLL_EXPORT double		SG_Get_Angle_Of_Direction		(const TSG_Point &A, const TSG_Point &B);
 SAGA_API_DLL_EXPORT double		SG_Get_Angle_Difference			(double a, double b);
+SAGA_API_DLL_EXPORT bool		SG_is_Angle_Between				(double Angle, double Angle_Min, double Angle_Max, bool bCheckRange = true);
 
 SAGA_API_DLL_EXPORT bool		SG_Get_Crossing					(TSG_Point &Crossing, const TSG_Point &a1, const TSG_Point &a2, const TSG_Point &b1, const TSG_Point &b2, bool bExactMatch = true);
 SAGA_API_DLL_EXPORT bool		SG_Get_Crossing_InRegion		(TSG_Point &Crossing, const TSG_Point &a , const TSG_Point & b, const TSG_Rect &Region);
 
-SAGA_API_DLL_EXPORT bool		SG_Is_Point_On_Line				(const TSG_Point &Point, const TSG_Point &Ln_A, const TSG_Point &Ln_B, bool bExactMatch = false, double Epsilon = 0.0);
+SAGA_API_DLL_EXPORT bool		SG_Is_Point_On_Line				(const TSG_Point &Point, const TSG_Point &Ln_A, const TSG_Point &Ln_B, bool bExactMatch = false, double Epsilon = 0.);
 SAGA_API_DLL_EXPORT double		SG_Get_Nearest_Point_On_Line	(const TSG_Point &Point, const TSG_Point &Ln_A, const TSG_Point &Ln_B, TSG_Point &Ln_Point, bool bExactMatch = true);
 
 SAGA_API_DLL_EXPORT bool		SG_Get_Triangle_CircumCircle	(TSG_Point Triangle[3], TSG_Point &Point, double &Radius);

@@ -133,7 +133,7 @@ void CActive_Attributes::On_Button(wxCommandEvent &event)
 
 void CActive_Attributes::On_Button_UI(wxUpdateUIEvent &event)
 {
-	event.Enable(m_pControl->Get_Table()->is_Modified());
+	event.Enable(m_pControl->Get_Table().is_Modified());
 }
 
 
@@ -188,12 +188,14 @@ void CActive_Attributes::Set_Attributes(void)
 {
 	Freeze();
 
+	m_pControl->DisableCellEditControl();
+
 	m_pSelections->Clear();
 
 	if( m_pItem && m_pItem->Edit_Get_Attributes()->is_Valid() )
 	{
-		m_pControl->Get_Table()->Assign(m_pItem->Edit_Get_Attributes());
-		m_pControl->Get_Table()->Set_Modified(false);
+		m_pControl->Get_Table().Assign(m_pItem->Edit_Get_Attributes());
+		m_pControl->Get_Table().Set_Modified(false);
 
 		if( _Get_Table() && _Get_Table()->Get_Selection_Count() > 1 )
 		{
@@ -204,13 +206,19 @@ void CActive_Attributes::Set_Attributes(void)
 
 			m_pSelections->Select(m_pItem->Edit_Get_Index());
 		}
+
+		m_pControl->Set_Row_Labeling(
+			m_pItem->Get_Type() == WKSP_ITEM_Shapes
+		||	m_pItem->Get_Type() == WKSP_ITEM_PointCloud
+		||	m_pItem->Get_Type() == WKSP_ITEM_Grid
+		);
 	}
 	else
 	{
-		m_pControl->Get_Table()->Destroy();
+		m_pControl->Get_Table().Destroy();
+		m_pControl->Set_Row_Labeling(false);
 	}
 
-	m_pControl->Set_Row_Labeling(_Get_Table() != NULL);
 	m_pControl->Update_Table();
 
 	m_pSelections->Show(m_pSelections->GetCount() > 1);
@@ -228,9 +236,9 @@ void CActive_Attributes::Set_Attributes(void)
 //---------------------------------------------------------
 void CActive_Attributes::Save_Changes(bool bConfirm)
 {
-	if( m_pItem && m_pControl->Get_Table()->is_Modified() && (!bConfirm || DLG_Message_Confirm(_TL("Save changes?"), _TL("Attributes"))) )
+	if( m_pItem && m_pControl->Get_Table().is_Modified() && (!bConfirm || DLG_Message_Confirm(_TL("Save changes?"), _TL("Attributes"))) )
 	{
-		m_pItem->Edit_Get_Attributes()->Assign_Values(m_pControl->Get_Table());
+		m_pItem->Edit_Get_Attributes()->Assign_Values(&m_pControl->Get_Table());
 		m_pItem->Edit_Set_Attributes();
 
 		Set_Attributes();

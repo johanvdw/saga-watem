@@ -1,16 +1,19 @@
-; To build installer (for example, saga-7.4.0_setup.exe).
-; - Unzip the SAGA binary files in their own folder (for example, saga-7.4.0.zip).
+; To build installer (for example, saga-8.2.0_setup.exe).
+; - Unzip the SAGA binary files in their own folder (for example, saga-8.2.0.zip).
 ; - Place saga.iss and saga_readme.rtf in the SAGA folder (contains saga_gui.exe, etc.).
 ; - Open saga.iss in Inno Setup.
 ; - Choose Build | Compile.
-; Contribute by Philipp J. Hess
+; Contributed by Philipp J. Hess
 
 [Setup]
 AppName=SAGA - System for Automated Geoscientific Analyses
-AppVerName=SAGA 7.4.0
+AppVerName=SAGA 8.2.0
 
-DefaultDirName={pf}\SAGA-GIS
-DefaultGroupName=SAGA GIS
+ArchitecturesAllowed=x64
+ArchitecturesInstallIn64BitMode=x64
+
+DefaultDirName={commonpf}\SAGA
+DefaultGroupName=SAGA
 UninstallDisplayIcon={app}\saga_gui.exe
 
 InfoBeforeFile=saga_setup_readme.rtf
@@ -19,12 +22,12 @@ Compression=lzma
 SolidCompression=yes
 
 OutputDir=.
-OutputBaseFilename=saga-7.4.0_x64_setup
+OutputBaseFilename=saga-8.2.0_x64_setup
 
-VersionInfoVersion=7.4.0.0
+VersionInfoVersion=8.2.0.0
 VersionInfoCompany=SAGA User Group Association
 VersionInfoCopyright=(c) 2005-2018 by O. Conrad
-VersionInfoDescription=SAGA GIS single-file installer
+VersionInfoDescription=SAGA single-file installer
 
 PrivilegesRequired=admin
 
@@ -35,16 +38,17 @@ Source: "saga_cmd.exe"; DestDir: "{app}"
 Source: "*.*"; Excludes: "*.iss,*.ini,*.cfg,*.bak,*.exe,*.bat,*.rtf"; DestDir: "{app}"
 Source: "tools\*.*"; DestDir: "{app}\tools"
 Source: "tools\toolchains\*.*"; DestDir: "{app}\tools\toolchains"
-Source: "dll\*.*"; DestDir: "{app}\dll"
+Source: "dll\*.*"; DestDir: "{app}\dll"; Flags: recursesubdirs
+Source: "ArcSAGA Toolboxes\*.*"; DestDir: "{app}\ArcSAGA Toolboxes"
 
 [Icons]
 ; Start up in tools folder so SAGA will load all tools automatically.
-Name: "{commonprograms}\SAGA GIS"; Filename: "{app}\saga_gui.exe"; WorkingDir: "{app}"
-Name: "{commondesktop}\SAGA GIS"; Filename: "{app}\saga_gui.exe"; WorkingDir: "{app}"
+Name: "{commonprograms}\SAGA"; Filename: "{app}\saga_gui.exe"; WorkingDir: "{app}"
+Name: "{commondesktop}\SAGA"; Filename: "{app}\saga_gui.exe"; WorkingDir: "{app}"
 
 [Registry]
 Root: HKLM; Subkey: "SOFTWARE\Microsoft\Windows\CurrentVersion\App Paths\saga_gui.exe"; ValueType: string; ValueName: ""; ValueData: "{app}\saga_gui.exe"; Flags: uninsdeletekey
 Root: HKLM; Subkey: "SOFTWARE\Microsoft\Windows\CurrentVersion\App Paths\saga_gui.exe"; ValueType: string; ValueName: "Path"; ValueData: "{app}"
 
-Root: HKLM; Subkey: "SOFTWARE\SAGA User Group Association\SAGA GIS\7.4.0"; ValueType: string; ValueName: "InstallDir"; ValueData: "{app}"; Flags: uninsdeletekey
-Root: HKLM; Subkey: "SOFTWARE\SAGA User Group Association\SAGA GIS\7.4.0"; ValueType: string; ValueName: "Version"; ValueData: "7.4.0.0"
+Root: HKLM; Subkey: "SOFTWARE\SAGA User Group Association\SAGA\8.2.0"; ValueType: string; ValueName: "InstallDir"; ValueData: "{app}"; Flags: uninsdeletekey
+Root: HKLM; Subkey: "SOFTWARE\SAGA User Group Association\SAGA\8.2.0"; ValueType: string; ValueName: "Version"; ValueData: "8.2.0.0"

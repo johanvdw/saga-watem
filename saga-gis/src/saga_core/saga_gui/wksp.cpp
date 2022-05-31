@@ -1,6 +1,3 @@
-/**********************************************************
- * Version $Id$
- *********************************************************/
 
 ///////////////////////////////////////////////////////////
 //                                                       //
@@ -51,15 +48,6 @@
 ///////////////////////////////////////////////////////////
 
 //---------------------------------------------------------
-
-
-///////////////////////////////////////////////////////////
-//														 //
-//														 //
-//														 //
-///////////////////////////////////////////////////////////
-
-//---------------------------------------------------------
 #include <wx/image.h>
 #include <wx/imaglist.h>
 
@@ -78,6 +66,7 @@
 
 #include "wksp_tool_control.h"
 #include "wksp_tool_manager.h"
+#include "wksp_tool.h"
 
 #include "wksp_data_control.h"
 #include "wksp_data_manager.h"
@@ -225,8 +214,6 @@ CWKSP::~CWKSP(void)
 
 ///////////////////////////////////////////////////////////
 //														 //
-//														 //
-//														 //
 ///////////////////////////////////////////////////////////
 
 //---------------------------------------------------------
@@ -266,8 +253,6 @@ void CWKSP::On_Page_Changed(wxNotebookEvent &event)
 
 
 ///////////////////////////////////////////////////////////
-//														 //
-//														 //
 //														 //
 ///////////////////////////////////////////////////////////
 
@@ -322,7 +307,7 @@ void CWKSP::On_Command(wxCommandEvent &event)
 
 	case ID_CMD_DATA_PROJECT_OPEN:
 	case ID_CMD_DATA_PROJECT_OPEN_ADD:
-	case ID_CMD_DATA_PROJECT_CLOSE:
+	case ID_CMD_DATA_PROJECT_NEW:
 	case ID_CMD_DATA_PROJECT_SAVE:
 	case ID_CMD_DATA_PROJECT_SAVE_AS:
 	case ID_CMD_DATA_PROJECT_COPY:
@@ -342,6 +327,7 @@ void CWKSP::On_Command(wxCommandEvent &event)
 	}
 }
 
+//---------------------------------------------------------
 void CWKSP::On_Command_UI(wxUpdateUIEvent &event)
 {
 	switch( event.GetId() )
@@ -353,6 +339,13 @@ void CWKSP::On_Command_UI(wxUpdateUIEvent &event)
 			m_pData ->On_Command_UI(event);
 			m_pMaps ->On_Command_UI(event);
 		}
+		break;
+
+	case ID_CMD_DATA_PROJECT_NEW:
+		event.Enable(g_pTool == NULL && (
+			m_pData->Get_Manager()->Get_Count() > 0 ||
+			m_pMaps->Get_Manager()->Get_Count() > 0
+		));
 		break;
 
 	case ID_CMD_WKSP_ITEM_CLOSE:
@@ -397,22 +390,20 @@ void CWKSP::On_Command_UI_Tool(wxUpdateUIEvent &event)
 
 ///////////////////////////////////////////////////////////
 //														 //
-//														 //
-//														 //
 ///////////////////////////////////////////////////////////
 
 //---------------------------------------------------------
 bool CWKSP::Open(void)
 {
-	wxArrayString	File_Paths;
+	wxArrayString	Files;
 
-	if( DLG_Open(File_Paths, ID_DLG_FILE_OPEN) )
+	if( DLG_Open(Files, ID_DLG_FILE_OPEN) )
 	{
 		MSG_General_Add_Line();
 
-		for(size_t i=0; i<File_Paths.GetCount(); i++)
+		for(size_t i=0; i<Files.GetCount(); i++)
 		{
-			Open(File_Paths[i]);
+			Open(Files[i]);
 		}
 
 		return( true );
@@ -422,10 +413,10 @@ bool CWKSP::Open(void)
 }
 
 //---------------------------------------------------------
-bool CWKSP::Open(const wxString &File_Name)
+bool CWKSP::Open(const wxString &File)
 {
-	return(	m_pTools->Get_Manager()->Open(File_Name)
-		||  m_pData ->Get_Manager()->Open(File_Name)
+	return(	m_pData ->Get_Manager()->Open(File)
+		||  m_pTools->Get_Manager()->Open(File)
 	);
 }
 

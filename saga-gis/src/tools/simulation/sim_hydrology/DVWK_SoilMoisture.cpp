@@ -1,6 +1,3 @@
-/**********************************************************
- * Version $Id: DVWK_SoilMoisture.cpp 1921 2014-01-09 10:24:11Z oconrad $
- *********************************************************/
 
 ///////////////////////////////////////////////////////////
 //                                                       //
@@ -51,15 +48,6 @@
 ///////////////////////////////////////////////////////////
 
 //---------------------------------------------------------
-
-
-///////////////////////////////////////////////////////////
-//														 //
-//														 //
-//														 //
-///////////////////////////////////////////////////////////
-
-//---------------------------------------------------------
 #include "DVWK_SoilMoisture.h"
 
 
@@ -72,209 +60,190 @@
 //---------------------------------------------------------
 CDVWK_SoilMoisture::CDVWK_SoilMoisture(void)
 {
-	CSG_Parameter	*pNode;
+	Set_Name		(_TL("Top Soil Water Content"));
 
-	//-----------------------------------------------------
-	Set_Name	(_TL("Soil Moisture Content"));
-
-	Set_Author		(SG_T("(c) 2002 by O.Conrad"));
+	Set_Author		("O.Conrad (c) 2002");
 
 	Set_Description	(_TW(
-		"The WEELS (Wind Erosion on European Light Soils) soil moisture "
-		"model dynamically calculates the soil moisture based on the rules "
-		"proposed by the DVWK (1996) with input data about:\n"
-		"- soil properties (grids: field capacity and permanent wilting point)\n"
-		"- land use (grid: crop types)\n"
-		"- climate (table: daily values of precipitation, temperature, air humidity)\n\n"
+		"The WEELS (Wind Erosion on European Light Soils) soil moisture model "
+		"estimates the top soil water content on a daily basis using the "
+		"Haude approach for evapotranspiration (cf. DVWK 1996). Input data is<ul>"
+		"<li>daily weather<ul>"
+		"  <li>precipitation</li>"
+		"  <li>temperature</li>"
+		"  <li>air humidity</li>"
+		"  </ul></li>"
+		"<li>soil properties<ul>"
+		"  <li>field capacity</li>"
+		"  <li>permanent wilting point</li>"
+		"  </ul></li>"
+		"<li>crop type</li>"
+		"</ul>"
+	));
 
-		"References:\n"
+	Add_Reference("DVWK (Deutscher Verband fuer Wasserwirtschaft und Kulturbau)", "1996",
+		"Determination of evaporation and transpiration from land and water surfaces",
+		"DVWK Leaflet Series for Water Management no.238, Bonn, 135p.",
+		SG_T("https://webshop.dwa.de/de/merkblatt-dvwk-m-238-1996.html"), SG_T("DVWK-M 238")
+	);
 
-		"- DVWK - Deutscher Verband fuer Wasserwirtschaft und Kulturbau e.V. (1996): "
-		"'Ermittlung der Verdunstung von Land- und Wasserflaechen', "
-		"DVWK Merkblaetter 238/1996, Bonn, 135p.\n"
-
-		"- Boehner, J., Schaefer, W., Conrad, O., Gross, J., Ringeler, A. (2001): "
-		"'The WEELS Model: methods, results and limits of wind erosion modelling', "
-		"In: Catena, Special Issue\n")
+	Add_Reference("Boehner, J., Schaefer, W., Conrad, O., Gross, J., Ringeler, A.", "2001",
+		"The WEELS Model: methods, results and limits of wind erosion modelling",
+		"In: Catena, Special Issue.",
+		SG_T("https://doi.org/10.1016/S0341-8162(03)00019-5"), SG_T("doi:10.1016/S0341-8162(03)00019-5")
 	);
 
 	//-----------------------------------------------------
-	pNode	= Parameters.Add_Grid(
-		NULL	, "STA_FC"		, _TL("Field Capacity [mm]"),
+	Parameters.Add_Grid_or_Const("",
+		"STA_FC"		, _TL("Field Capacity"),
+		_TL("[mm]"),
+		20., 0., true, 100., true
+	);
+
+	Parameters.Add_Grid_or_Const("",
+		"STA_PWP"		, _TL("Permanent Wilting Point"),
+		_TL("[mm]"),
+		2., 0., true, 100., true
+	);
+
+	Parameters.Add_Grid("",
+		"LANDUSE"		, _TL("Land Use"),
 		_TL(""),
 		PARAMETER_INPUT_OPTIONAL
 	);
 
-	Parameters.Add_Value(
-		pNode	, "STA_FC_DEF"	, _TL("Default"),
+	Parameters.Add_Int("LANDUSE",
+		"LANDUSE_DEF"	, _TL("Default"),
 		_TL(""),
-		PARAMETER_TYPE_Double	, 20.0	, 0.0, true
-	);
-
-	pNode	= Parameters.Add_Grid(
-		NULL	, "STA_PWP"		, _TL("Permanent Wilting Point [mm]"),
-		_TL(""),
-		PARAMETER_INPUT_OPTIONAL
-	);
-
-	Parameters.Add_Value(
-		pNode	, "STA_PWP_DEF"	, _TL("Default"),
-		_TL(""),
-		PARAMETER_TYPE_Double	, 2.0	, 0.0, true
-	);
-
-	pNode	= Parameters.Add_Grid(
-		NULL	, "LANDUSE"		, _TL("Land Use"),
-		_TL(""),
-		PARAMETER_INPUT_OPTIONAL
-	);
-
-	Parameters.Add_Value(
-		pNode	, "LANDUSE_DEF"	, _TL("Default"),
-		_TL(""),
-		PARAMETER_TYPE_Int		, -1.0
+		-1
 	);
 
 	//-----------------------------------------------------
-	pNode	= Parameters.Add_Grid(
-		NULL	, "DYN_W"		, _TL("Soil Moisture"),
+	Parameters.Add_Grid("",
+		"DYN_W"		, _TL("Soil Moisture"),
 		_TL(""),
 		PARAMETER_OUTPUT
 	);
 
 	//-----------------------------------------------------
-	pNode	= Parameters.Add_FixedTable(
-		NULL	, "DYN_CLIMATE"	, _TL("Climate Data"),
+	m_pClimate   = Parameters.Add_FixedTable("",
+		"DYN_CLIMATE"	, _TL("Climate Data"),
 		_TL("")
-	);
+	)->asTable();
 
-	pClimate	= pNode->asTable();
-	pClimate->Set_Name(_TL("Climate Data"));
-	pClimate->Add_Field(_TL("Precipitation (mm)")	, SG_DATATYPE_Double);
-	pClimate->Add_Field(_TL("Temperature (2pm) (DegreeC)"), SG_DATATYPE_Double);
-	pClimate->Add_Field(_TL("Air Humidity (2pm) (%%)"), SG_DATATYPE_Double);
+	m_pClimate->Set_Name (_TL("Climate Data"           ));
+	m_pClimate->Add_Field(_TL("Precipitation [mm]"     ), SG_DATATYPE_Double);
+	m_pClimate->Add_Field(_TL("Temperature [2pm Deg.C]"), SG_DATATYPE_Double);
+	m_pClimate->Add_Field(_TL("Air Humidity [2pm [%]"  ), SG_DATATYPE_Double);
 
 	//-----------------------------------------------------
-	pNode	= Parameters.Add_FixedTable(
-		NULL	, "STA_KC"		, _TL("Crop Coefficients"),
+	m_pCropCoeff = Parameters.Add_FixedTable("",
+		"STA_KC"		, _TL("Crop Coefficients"),
 		_TL("")
-	);
+	)->asTable();
 
-	pCropCoeff	= pNode->asTable();
-	pCropCoeff->Set_Name(_TL("Crop Coefficients"));
-	pCropCoeff->Add_Field(_TL("Land Use ID")	, SG_DATATYPE_Int);
-	pCropCoeff->Add_Field(_TL("Name")		, SG_DATATYPE_String);
-	pCropCoeff->Add_Field(_TL("January")		, SG_DATATYPE_Double);
-	pCropCoeff->Add_Field(_TL("February")	, SG_DATATYPE_Double);
-	pCropCoeff->Add_Field(_TL("March")		, SG_DATATYPE_Double);
-	pCropCoeff->Add_Field(_TL("April")		, SG_DATATYPE_Double);
-	pCropCoeff->Add_Field(_TL("May")			, SG_DATATYPE_Double);
-	pCropCoeff->Add_Field(_TL("June")		, SG_DATATYPE_Double);
-	pCropCoeff->Add_Field(_TL("July")		, SG_DATATYPE_Double);
-	pCropCoeff->Add_Field(_TL("August")		, SG_DATATYPE_Double);
-	pCropCoeff->Add_Field(_TL("September")	, SG_DATATYPE_Double);
-	pCropCoeff->Add_Field(_TL("October")		, SG_DATATYPE_Double);
-	pCropCoeff->Add_Field(_TL("November")	, SG_DATATYPE_Double);
-	pCropCoeff->Add_Field(_TL("December")	, SG_DATATYPE_Double);
+	m_pCropCoeff->Set_Name(_TL("Crop Coefficients"));
+	m_pCropCoeff->Add_Field(_TL("Land Use ID"), SG_DATATYPE_Int   );
+	m_pCropCoeff->Add_Field(_TL("Name"       ), SG_DATATYPE_String);
+	m_pCropCoeff->Add_Field(_TL("January"    ), SG_DATATYPE_Double);
+	m_pCropCoeff->Add_Field(_TL("February"   ), SG_DATATYPE_Double);
+	m_pCropCoeff->Add_Field(_TL("March"      ), SG_DATATYPE_Double);
+	m_pCropCoeff->Add_Field(_TL("April"      ), SG_DATATYPE_Double);
+	m_pCropCoeff->Add_Field(_TL("May"        ), SG_DATATYPE_Double);
+	m_pCropCoeff->Add_Field(_TL("June"       ), SG_DATATYPE_Double);
+	m_pCropCoeff->Add_Field(_TL("July"       ), SG_DATATYPE_Double);
+	m_pCropCoeff->Add_Field(_TL("August"     ), SG_DATATYPE_Double);
+	m_pCropCoeff->Add_Field(_TL("September"  ), SG_DATATYPE_Double);
+	m_pCropCoeff->Add_Field(_TL("October"    ), SG_DATATYPE_Double);
+	m_pCropCoeff->Add_Field(_TL("November"   ), SG_DATATYPE_Double);
+	m_pCropCoeff->Add_Field(_TL("December"   ), SG_DATATYPE_Double);
 
-	CSG_Table_Record	*pRec;
+	#define ADD_RECORD(ID, NAME, m01, m02, m03, m04, m05, m06, m07, m08, m09, m10, m11, m12) { CSG_Table_Record *pRec = m_pCropCoeff->Add_Record();\
+		pRec->Set_Value( 0, ID);  pRec->Set_Value( 1, NAME);\
+		pRec->Set_Value( 2, m01); pRec->Set_Value( 3, m02); pRec->Set_Value( 4, m03); pRec->Set_Value( 5, m04);\
+		pRec->Set_Value( 6, m05); pRec->Set_Value( 7, m06); pRec->Set_Value( 8, m07); pRec->Set_Value( 9, m08);\
+		pRec->Set_Value(10, m09); pRec->Set_Value(11, m10); pRec->Set_Value(12, m11); pRec->Set_Value(13, m12);\
+	}
 
-#define ADD_RECORD(ID, NAME, m01, m02, m03, m04, m05, m06, m07, m08, m09, m10, m11, m12)	pRec = pCropCoeff->Add_Record();\
-	pRec->Set_Value( 0, ID);  pRec->Set_Value( 1, NAME);\
-	pRec->Set_Value( 2, m01); pRec->Set_Value( 3, m02); pRec->Set_Value( 4, m03); pRec->Set_Value( 5, m04);\
-	pRec->Set_Value( 6, m05); pRec->Set_Value( 7, m06); pRec->Set_Value( 8, m07); pRec->Set_Value( 9, m08);\
-	pRec->Set_Value(10, m09); pRec->Set_Value(11, m10); pRec->Set_Value(12, m11); pRec->Set_Value(13, m12);
+	//         ID       NAME            Jan   Feb   Mar   Apr   Mai   Jun   Jul   Aug   Sep   Okt   Nov   Dec
+	ADD_RECORD(1., _TL("Maehweide"   ), 1   , 1   , 1   , 1   , 1.05, 1.10, 1.10, 1.05, 1.05, 1   , 1   , 1   );
+	ADD_RECORD(2., _TL("Winterweizen"), 0.65, 0.65, 0.80, 0.85, 1.15, 1.45, 1.40, 1   , 0.80, 0.70, 0.65, 0.65);
+	ADD_RECORD(3., _TL("Wintergerste"), 1   , 1   , 0.85, 0.95, 1.30, 1.35, 1.25, 1   , 1   , 1   , 1   , 1   );
+	ADD_RECORD(4., _TL("Sommergerste"), 1   , 1   , 0.80, 0.90, 1.20, 1.35, 1.20, 1   , 1   , 1   , 1   , 1   );
+	ADD_RECORD(5., _TL("Winterroggen"), 0.65, 0.65, 0.85, 0.90, 1.20, 1.30, 1.25, 0.95, 0.80, 0.70, 0.65, 0.65);
+	ADD_RECORD(6., _TL("Hafer"       ), 1   , 1   , 0.65, 0.70, 1.10, 1.45, 1.35, 0.95, 1   , 1   , 1   , 1   );
+	ADD_RECORD(7., _TL("Zuckerrueben"), 1   , 1   , 1   , 0.50, 0.75, 1.05, 1.40, 1.30, 1.10, 0.85, 1   , 1   );
+	ADD_RECORD(8., _TL("Kartoffeln"  ), 1   , 1   , 1   , 0.50, 0.90, 1.05, 1.45, 1.20, 0.90, 1   , 1   , 1   );
+	ADD_RECORD(9., _TL("Winterraps"  ), 0.65, 0.65, 0.85, 1   , 1.35, 1.35, 1.10, 0.85, 1   , 1   , 0.65, 0.65);
+	ADD_RECORD(0., _TL("Unknown"     ), 1   , 1   , 1   , 1   , 1   , 1   , 1   , 1   , 1   , 1   , 1   , 1   );
 
-	//         ID   NAME              Jan   Feb   Mar   Apr   Mai   Jun   Jul   Aug   Sep   Okt   Nov   Dec
-	ADD_RECORD(1.0, _TL("Maehweide")		, 1   , 1   , 1   , 1   , 1.05, 1.10, 1.10, 1.05, 1.05, 1   , 1   , 1   );
-	ADD_RECORD(2.0, _TL("Winterweizen")	, 0.65, 0.65, 0.80, 0.85, 1.15, 1.45, 1.40, 1   , 0.80, 0.70, 0.65, 0.65);
-	ADD_RECORD(3.0, _TL("Wintergerste")	, 1   , 1   , 0.85, 0.95, 1.30, 1.35, 1.25, 1   , 1   , 1   , 1   , 1   );
-	ADD_RECORD(4.0, _TL("Sommergerste")	, 1   , 1   , 0.80, 0.90, 1.20, 1.35, 1.20, 1   , 1   , 1   , 1   , 1   );
-	ADD_RECORD(5.0, _TL("Winterroggen")	, 0.65, 0.65, 0.85, 0.90, 1.20, 1.30, 1.25, 0.95, 0.80, 0.70, 0.65, 0.65);
-	ADD_RECORD(6.0, _TL("Hafer"	)		, 1   , 1   , 0.65, 0.70, 1.10, 1.45, 1.35, 0.95, 1   , 1   , 1   , 1   );
-	ADD_RECORD(7.0, _TL("Zuckerrueben")	, 1   , 1   , 1   , 0.50, 0.75, 1.05, 1.40, 1.30, 1.10, 0.85, 1   , 1   );
-	ADD_RECORD(8.0, _TL("Kartoffeln")	, 1   , 1   , 1   , 0.50, 0.90, 1.05, 1.45, 1.20, 0.90, 1   , 1   , 1   );
-	ADD_RECORD(9.0, _TL("Winterraps")	, 0.65, 0.65, 0.85, 1   , 1.35, 1.35, 1.10, 0.85, 1   , 1   , 0.65, 0.65);
-	ADD_RECORD(0.0, _TL("Unknown")		, 1   , 1   , 1   , 1   , 1   , 1   , 1   , 1   , 1   , 1   , 1   , 1   );
-#undef ADD_RECORD
+	#undef ADD_RECORD
 }
-
-//---------------------------------------------------------
-CDVWK_SoilMoisture::~CDVWK_SoilMoisture(void)
-{}
 
 
 ///////////////////////////////////////////////////////////
-//														 //
-//														 //
 //														 //
 ///////////////////////////////////////////////////////////
 
 //---------------------------------------------------------
 bool CDVWK_SoilMoisture::On_Execute(void)
 {
-	int			Day, x, y, i, LandUseID;
-	CSG_Grid	*pGrid;
+	if( m_pClimate->Get_Record_Count() < 1 )
+	{
+		return( false );
+	}
 
 	//-----------------------------------------------------
-	if( pClimate->Get_Record_Count() > 0 )
+	m_pFK	= Parameters("STA_FC" )->asGrid  ();
+	m_FK	= Parameters("STA_FC" )->asDouble();
+
+	m_pPWP	= Parameters("STA_PWP")->asGrid  ();
+	m_PWP	= Parameters("STA_PWP")->asDouble();
+
+	m_pWi	= Parameters("DYN_W"  )->asGrid  ();
+	DataObject_Set_Colors(m_pWi, 11, SG_COLORS_YELLOW_BLUE);
+
+	//-----------------------------------------------------
+	m_LandUse.Create(m_pWi, m_pCropCoeff->Get_Record_Count() < 127 ? SG_DATATYPE_Char : SG_DATATYPE_Int);
+	m_LandUse.Assign(Parameters("LANDUSE_DEF")->asDouble());
+
+	CSG_Grid	*pLandUse	= Parameters("LANDUSE")->asGrid();
+
+	if( pLandUse != NULL )
 	{
-		pFK_mm		= Parameters("STA_FC")		->asGrid();
-		FK_mm_Def	= Parameters("STA_FC_DEF")	->asDouble();
-
-		pPWP_mm		= Parameters("STA_PWP")		->asGrid();
-		PWP_mm_Def	= Parameters("STA_PWP_DEF")	->asDouble();
-
-		pWi_mm		= Parameters("DYN_W")		->asGrid();
-		DataObject_Set_Colors(pWi_mm, 100, SG_COLORS_YELLOW_BLUE);
-
-		//-------------------------------------------------
-		pLandUse	= SG_Create_Grid(pWi_mm, pCropCoeff->Get_Record_Count() < 127 ? SG_DATATYPE_Char : SG_DATATYPE_Int);
-		pLandUse->Assign(Parameters("LANDUSE_DEF")->asInt());
-
-		if( (pGrid = Parameters("LANDUSE")->asGrid()) != NULL )
+		#pragma omp parallel for
+		for(int y=0; y<Get_NY(); y++) for(int x=0; x<Get_NX(); x++)
 		{
-			for(y=0; y<Get_NY(); y++)
-			{
-				for(x=0; x<Get_NX(); x++)
-				{
-					LandUseID	= pGrid->asInt(x, y);
+			int	LandUseID	= pLandUse->asInt(x, y);
 
-					for(i=0; i<pCropCoeff->Get_Record_Count(); i++)
-					{
-						if( LandUseID == pCropCoeff->Get_Record(i)->asInt(0) )
-						{
-							pLandUse->Set_Value(x, y, i);
-							break;
-						}
-					}
+			for(int i=0; i<m_pCropCoeff->Get_Record_Count(); i++)
+			{
+				if( LandUseID == m_pCropCoeff->Get_Record(i)->asInt(0) )
+				{
+					m_LandUse.Set_Value(x, y, i);
+
+					break;
 				}
 			}
 		}
-
-		//-------------------------------------------------
-		DataObject_Update(pWi_mm, 0, pFK_mm ? pFK_mm->Get_Max() : FK_mm_Def, true);
-
-		for(Day=0; Day<365 && Set_Progress(Day, 365); Day++)
-		{
-			Step_Day(Day);
-
-			DataObject_Update(pWi_mm, true);
-		}
-
-		//-------------------------------------------------
-		delete(pLandUse);
-
-		return( true );
 	}
 
-	return( false );
+	//-----------------------------------------------------
+	DataObject_Update(m_pWi, 0, m_pFK ? m_pFK->Get_Max() : m_FK, true);
+
+	for(int Day=0; Day<365 && Set_Progress(Day, 365); Day++)
+	{
+		Step_Day(Day);
+
+		DataObject_Update(m_pWi, true);
+	}
+
+	//-----------------------------------------------------
+	return( true );
 }
 
 
 ///////////////////////////////////////////////////////////
-//														 //
-//														 //
 //														 //
 ///////////////////////////////////////////////////////////
 
@@ -315,9 +284,9 @@ int CDVWK_SoilMoisture::Get_Month(int Day)
 //
 double CDVWK_SoilMoisture::Get_kc(int Bestand, int Day)
 {
-	if( Bestand >= 0 && Bestand < pCropCoeff->Get_Record_Count() )
+	if( Bestand >= 0 && Bestand < m_pCropCoeff->Get_Record_Count() )
 	{
-		return( pCropCoeff->Get_Record(Bestand)->asDouble(1 + Get_Month(Day)) );
+		return( m_pCropCoeff->Get_Record(Bestand)->asDouble(1 + Get_Month(Day)) );
 	}
 
 	return( 1.0 );
@@ -325,8 +294,6 @@ double CDVWK_SoilMoisture::Get_kc(int Bestand, int Day)
 
 
 ///////////////////////////////////////////////////////////
-//														 //
-//														 //
 //														 //
 ///////////////////////////////////////////////////////////
 
@@ -342,7 +309,7 @@ double CDVWK_SoilMoisture::Get_ETP_Haude(int Day)
 	//-----------------------------------------------------
 	CSG_Table_Record	*pRecord;
 
-	if( (pRecord = pClimate->Get_Record(Day)) == NULL )
+	if( (pRecord = m_pClimate->Get_Record(Day)) == NULL )
 	{
 		return( 0 );
 	}
@@ -414,7 +381,7 @@ double CDVWK_SoilMoisture::Get_Pi(int Day)
 	//-----------------------------------------------------
 	CSG_Table_Record	*pRecord;
 
-	if( (pRecord = pClimate->Get_Record(Day)) == NULL )
+	if( (pRecord = m_pClimate->Get_Record(Day)) == NULL )
 	{
 		return( 0 );
 	}
@@ -542,31 +509,33 @@ double CDVWK_SoilMoisture::Get_Wi(double Wi, double Pi, double ETP, double kc, d
 
 ///////////////////////////////////////////////////////////
 //														 //
-//														 //
-//														 //
 ///////////////////////////////////////////////////////////
 
 //---------------------------------------------------------
 void CDVWK_SoilMoisture::Step_Day(int Day)
 {
-	int		x, y;
-	double	Wi, Pi, ETP, kc, FK, PWP;
+	double	ETP	= Get_ETP_Haude(Day);
+	double	Pi	= Get_Pi       (Day);
 
-	ETP		= Get_ETP_Haude(Day);
-	Pi		= Get_Pi(Day);
-
-	for(y=0; y<Get_NY(); y++)
+	#pragma omp parallel for
+	for(int y=0; y<Get_NY(); y++) for(int x=0; x<Get_NX(); x++)
 	{
-		for(x=0; x<Get_NX(); x++)
-		{
-			kc		= Get_kc(pLandUse->asInt(x, y), Day);
+		double	kc	= Get_kc(m_LandUse.asInt(x, y), Day);
 
-			FK		= pFK_mm	? pFK_mm	->asDouble(x, y) : FK_mm_Def;
-			PWP		= pPWP_mm	? pPWP_mm	->asDouble(x, y) : PWP_mm_Def;
+		double	FK	= m_pFK  ? m_pFK ->asDouble(x, y) : m_FK ;
+		double	PWP	= m_pPWP ? m_pPWP->asDouble(x, y) : m_PWP;
 
-			Wi		= pWi_mm->asDouble(x, y);
-			Wi		= Get_Wi(Wi, Pi, ETP, kc, FK, PWP);
-			pWi_mm->Set_Value(x, y, Wi);
-		}
+		m_pWi->Set_Value(x, y,
+			Get_Wi(m_pWi->asDouble(x, y), Pi, ETP, kc, FK, PWP)
+		);
 	}
 }
+
+
+///////////////////////////////////////////////////////////
+//														 //
+//														 //
+//														 //
+///////////////////////////////////////////////////////////
+
+//---------------------------------------------------------

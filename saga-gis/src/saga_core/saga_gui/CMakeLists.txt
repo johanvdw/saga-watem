@@ -8,6 +8,7 @@ set(SAGA_GUI_SOURCES
 	active_attributes_control.cpp
 	active_description.cpp
 	active_history.cpp
+	active_info.cpp
 	active_legend.cpp
 	active_parameters.cpp
 	callback.cpp
@@ -15,7 +16,6 @@ set(SAGA_GUI_SOURCES
 	data_source_files.cpp
 	data_source_odbc.cpp
 	data_source_pgsql.cpp
-	dc_helper.cpp
 	dlg_about.cpp
 	dlg_about_logo.cpp
 	dlg_base.cpp
@@ -45,7 +45,6 @@ set(SAGA_GUI_SOURCES
 	view_layout.cpp
 	view_layout_control.cpp
 	view_layout_info.cpp
-	view_layout_printout.cpp
 	view_map.cpp
 	view_map_3d.cpp
 	view_map_3d_panel.cpp
@@ -54,6 +53,7 @@ set(SAGA_GUI_SOURCES
 	view_scatterplot.cpp
 	view_table.cpp
 	view_table_control.cpp
+	view_table_data.cpp
 	view_table_diagram.cpp
 	wksp.cpp
 	wksp_base_control.cpp
@@ -104,6 +104,7 @@ set(SAGA_GUI_SOURCES
 	active_attributes_control.h
 	active_description.h
 	active_history.h
+	active_info.h
 	active_legend.h
 	active_parameters.h
 	callback.h
@@ -111,7 +112,6 @@ set(SAGA_GUI_SOURCES
 	data_source_files.h
 	data_source_odbc.h
 	data_source_pgsql.h
-	dc_helper.h
 	dlg_about.h
 	dlg_about_logo.h
 	dlg_base.h
@@ -141,7 +141,6 @@ set(SAGA_GUI_SOURCES
 	view_layout.h
 	view_layout_control.h
 	view_layout_info.h
-	view_layout_printout.h
 	view_map.h
 	view_map_3d.h
 	view_map_3d_panel.h
@@ -150,6 +149,7 @@ set(SAGA_GUI_SOURCES
 	view_scatterplot.h
 	view_table.h
 	view_table_control.h
+	view_table_data.h
 	view_table_diagram.h
 	wksp.h
 	wksp_base_control.h
@@ -196,19 +196,30 @@ set(SAGA_GUI_SOURCES
 	wksp_tool_menu.h
 )
 
-add_executable(saga_gui
-	${SAGA_GUI_SOURCES}
-)
+add_executable(saga_gui ${SAGA_GUI_SOURCES} res/saga_gui.rc)
+
 # link needed saga libraries
 target_link_libraries(saga_gui saga_api saga_gdi)
 
 # find and link wxWidgets libraries
-find_package(wxWidgets COMPONENTS adv aui base core html net propgrid xml REQUIRED)
+find_package(wxWidgets COMPONENTS adv aui base core html net propgrid xml REQUIRED QUIET)
 target_link_libraries(saga_gui ${wxWidgets_LIBRARIES})
 
 # add compile definition needed
-target_compile_definitions(saga_gui PRIVATE -D${MLIBPATH})
-target_compile_definitions(saga_gui PRIVATE -D${MSHAREPATH})
+if(MSVC)
+	option(WITH_GUI_TABBED_MDI "GUI with Tabbed MDI" OFF)
+	if(WITH_GUI_TABBED_MDI)
+		target_compile_definitions(saga_gui PRIVATE MDI_TABBED)
+	endif()
+
+	target_compile_definitions(saga_gui PUBLIC -D_SAGA_MSW -DUNICODE)
+	target_link_options(saga_gui PRIVATE /SUBSYSTEM:WINDOWS)
+
+else() # unix like systems
+	set_target_properties(saga_gui PROPERTIES COMPILE_FLAGS -fPIC)
+	target_compile_definitions(saga_gui PUBLIC -D_SAGA_LINUX)
+	target_compile_definitions(saga_gui PRIVATE -D${MTOOLSPATH} -D${MSHAREPATH})
+endif()
 
 # add man page
 add_subdirectory(man)
@@ -217,3 +228,23 @@ add_subdirectory(res)
 
 # where to install the binary
 install(TARGETS saga_gui DESTINATION bin)
+
+if(MSVC)
+	string(REPLACE "/" "\\" SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/")
+	add_custom_command(TARGET saga_gui POST_BUILD
+		COMMAND COPY "${SOURCE_DIR}res\\saga.rus.txt" "$(OutDir)saga.rus.txt"
+		COMMAND COPY "${SOURCE_DIR}res\\saga.ger.txt" "$(OutDir)saga.ger.txt"
+		COMMAND COPY "${SOURCE_DIR}res\\saga.lng.txt" "$(OutDir)saga.lng.txt"
+		COMMAND COPY "${SOURCE_DIR}res\\saga.bra.txt" "$(OutDir)saga.bra.txt"
+		COMMAND COPY "${SOURCE_DIR}res\\saga.ger.txt" "$(OutDir)saga.ger.txt"
+		COMMAND COPY "${SOURCE_DIR}res\\saga.rus.txt" "$(OutDir)saga.rus.txt"
+		COMMAND COPY "${SOURCE_DIR}res\\saga_tip.txt" "$(OutDir)saga_gui.tip"
+		COMMAND COPY "${SOURCE_DIR}res\\saga_srs.txt" "$(OutDir)saga_prj.srs"
+		COMMAND COPY "${SOURCE_DIR}res\\saga_dic.txt" "$(OutDir)saga_prj.dic"
+		COMMAND IF NOT EXIST "$(OutDir)tools" MKDIR "$(OutDir)tools"
+		COMMAND IF EXIST "$(OutDir)tools\\toolchains" RMDIR /S/Q "$(OutDir)tools\\toolchains"
+		COMMAND MKDIR    "$(OutDir)tools\\toolchains"
+		COMMAND XCOPY /C/Q/Y/H "${SOURCE_DIR}..\\..\\accessories\\toolchains\\*.xml" "$(OutDir)\\tools\\toolchains"
+	#	COMMAND COPY "${SOURCE_DIR}..\\..\\accessories\\toolchains\\*.xml" "$(OutDir)\\tools\\toolchains"
+	)
+endif()

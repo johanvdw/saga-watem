@@ -40,9 +40,6 @@
     <ClCompile Include="callback.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="dc_helper.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="dlg_about.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -116,12 +113,6 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="view_layout_control.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="view_layout_info.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="view_layout_printout.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="view_map.cpp">
@@ -310,6 +301,12 @@
     <ClCompile Include="active_info.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="view_layout_info.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="view_table_data.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="ACTIVE.h">
@@ -331,9 +328,6 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Callback.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="DC_Helper.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="dlg_about.h">
@@ -409,12 +403,6 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="VIEW_Layout_Control.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="VIEW_Layout_Info.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="VIEW_Layout_Printout.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="VIEW_Map.h">
@@ -601,6 +589,12 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="active_info.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="view_layout_info.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="view_table_data.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
@@ -972,6 +966,12 @@
       <Filter>Resource Files\XPM</Filter>
     </None>
     <None Include="res\xpm\tb_clipboard.xpm">
+      <Filter>Resource Files\XPM</Filter>
+    </None>
+    <None Include="res\xpm\tb_map_pan_active.xpm">
+      <Filter>Resource Files\XPM</Filter>
+    </None>
+    <None Include="res\xpm\tb_table_selection_only.xpm">
       <Filter>Resource Files\XPM</Filter>
     </None>
   </ItemGroup>

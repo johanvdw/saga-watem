@@ -1,18 +1,16 @@
 #
 # $Id$
 #
-INCS = -I.. -I.
 if DEBUG
-DBGFLAGS = -g -DDEBUG
+DBGFLAGS    = -g -DDEBUG
 endif
-MLIBPATH = "MODULE_LIBRARY_PATH=\"$(libdir)/saga\""
-MSHAREPATH = "SHARE_PATH=\"$(prefix)/share/saga\""
 
-BASEFLAGS = -fPIC -D_SAGA_LINUX -D_TYPEDEF_BYTE -D_TYPEDEF_WORD -D_SAGA_DONOTUSE_HARU -D$(MLIBPATH) -D$(MSHAREPATH) $(DBGFLAGS) $(INCS)
+MTOOLSPATH  = "TOOLS_PATH=\"$(libdir)/saga\""
+MSHAREPATH  = "SHARE_PATH=\"$(prefix)/share/saga\""
+BASEFLAGS   = -D_SAGA_LINUX -D_TYPEDEF_BYTE -D_TYPEDEF_WORD -D$(MTOOLSPATH) -D$(MSHAREPATH) -D_SAGA_DONOTUSE_HARU -I. -I..
 
-AM_CXXFLAGS = $(BASEFLAGS) `wx-config --unicode=yes --cxxflags` $(GOMPFLAGS)
-AM_LDFLAGS = -fPIC `wx-config --unicode=yes --libs adv,aui,base,core,html,net,propgrid,xml`
-
+AM_CXXFLAGS = -fPIC `wx-config --unicode=yes --cxxflags` $(BASEFLAGS) $(GOMPFLAGS) $(DBGFLAGS)
+AM_LDFLAGS  = -fPIC `wx-config --unicode=yes --libs adv,aui,base,core,html,net,propgrid,xml`
 
 bin_PROGRAMS = saga_gui
 
@@ -30,7 +28,6 @@ data_source.cpp\
 data_source_files.cpp\
 data_source_odbc.cpp\
 data_source_pgsql.cpp\
-dc_helper.cpp\
 dlg_about.cpp\
 dlg_about_logo.cpp\
 dlg_base.cpp\
@@ -60,7 +57,6 @@ view_histogram.cpp\
 view_layout.cpp\
 view_layout_control.cpp\
 view_layout_info.cpp\
-view_layout_printout.cpp\
 view_map.cpp\
 view_map_3d.cpp\
 view_map_3d_panel.cpp\
@@ -69,6 +65,7 @@ view_ruler.cpp\
 view_scatterplot.cpp\
 view_table.cpp\
 view_table_control.cpp\
+view_table_data.cpp\
 view_table_diagram.cpp\
 wksp.cpp\
 wksp_base_control.cpp\
@@ -127,7 +124,6 @@ data_source.h\
 data_source_files.h\
 data_source_odbc.h\
 data_source_pgsql.h\
-dc_helper.h\
 dlg_about.h\
 dlg_about_logo.h\
 dlg_base.h\
@@ -157,7 +153,6 @@ view_histogram.h\
 view_layout.h\
 view_layout_control.h\
 view_layout_info.h\
-view_layout_printout.h\
 view_map.h\
 view_map_3d.h\
 view_map_3d_panel.h\
@@ -166,6 +161,7 @@ view_ruler.h\
 view_scatterplot.h\
 view_table.h\
 view_table_control.h\
+view_table_data.h\
 view_table_diagram.h\
 wksp.h\
 wksp_base_control.h\

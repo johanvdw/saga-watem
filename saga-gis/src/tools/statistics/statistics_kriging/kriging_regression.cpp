@@ -1,6 +1,3 @@
-/**********************************************************
- * Version $Id: kriging_regression.cpp 1921 2014-01-09 10:24:11Z oconrad $
- *********************************************************/
 
 ///////////////////////////////////////////////////////////
 //                                                       //
@@ -9,14 +6,13 @@
 //      System for Automated Geoscientific Analyses      //
 //                                                       //
 //                     Tool Library                      //
-//                 Geostatistics_Kriging                 //
+//                  statistics_kriging                   //
 //                                                       //
 //-------------------------------------------------------//
 //                                                       //
 //                 kriging_regression.cpp                //
 //                                                       //
-//                 Copyright (C) 2015 by                 //
-//                      Olaf Conrad                      //
+//                 Olaf Conrad (C) 2015                  //
 //                                                       //
 //-------------------------------------------------------//
 //                                                       //
@@ -46,15 +42,6 @@
 //                University of Hamburg                  //
 //                Germany                                //
 //                                                       //
-///////////////////////////////////////////////////////////
-
-//---------------------------------------------------------
-
-
-///////////////////////////////////////////////////////////
-//														 //
-//														 //
-//														 //
 ///////////////////////////////////////////////////////////
 
 //---------------------------------------------------------
@@ -118,10 +105,20 @@ CKriging_Regression::CKriging_Regression(void)
 	);
 
 	Parameters.Add_Grid("",
-		"VARIANCE"	, _TL("Quality Measure"),
+		"VARIANCE"	, _TL("Prediction Error"),
 		_TL(""),
 		PARAMETER_OUTPUT_OPTIONAL
 	);
+
+	Parameters.Add_Choice("VARIANCE",
+		"TQUALITY"	, _TL("Error Measure"),
+		_TL(""),
+		CSG_String::Format("%s|%s",
+			_TL("standard deviation"),
+			_TL("variance")
+		), 0
+	);
+
 
 	///////////////////////////////////////////////////////
 	//-----------------------------------------------------
@@ -141,7 +138,7 @@ CKriging_Regression::CKriging_Regression(void)
 	Parameters.Add_Choice("NODE_REG",
 		"METHOD"		, _TL("Method"),
 		_TL(""),
-		CSG_String::Format("%s|%s|%s|%s|",
+		CSG_String::Format("%s|%s|%s|%s",
 			_TL("include all"),
 			_TL("forward"),
 			_TL("backward"),
@@ -152,13 +149,13 @@ CKriging_Regression::CKriging_Regression(void)
 	Parameters.Add_Double("NODE_REG",
 		"P_VALUE"		, _TL("Significance Level"),
 		_TL("Significance level (aka p-value) as threshold for automated predictor selection, given as percentage"),
-		5.0, 0.0, true, 100.0, true
+		5., 0., true, 100., true
 	);
 
 	Parameters.Add_Choice("NODE_REG",
 		"RESAMPLING"	, _TL("Resampling"),
 		_TL(""),
-		CSG_String::Format("%s|%s|%s|%s|",
+		CSG_String::Format("%s|%s|%s|%s",
 			_TL("Nearest Neighbour"),
 			_TL("Bilinear Interpolation"),
 			_TL("Bicubic Spline Interpolation"),
@@ -166,12 +163,13 @@ CKriging_Regression::CKriging_Regression(void)
 		), 3
 	);
 
+
 	///////////////////////////////////////////////////////
 	//-----------------------------------------------------
 	Parameters.Add_Double("",
 		"VAR_MAXDIST"	, _TL("Maximum Distance"),
 		_TL("maximum distance for variogram estimation, ignored if set to zero"),
-		0.0, 0.0, true
+		0., 0., true
 	)->Set_UseInGUI(false);
 
 	Parameters.Add_Int("",
@@ -192,6 +190,7 @@ CKriging_Regression::CKriging_Regression(void)
 		"a + b * x"
 	)->Set_UseInGUI(false);
 
+
 	///////////////////////////////////////////////////////
 	//-----------------------------------------------------
 	Parameters.Add_Node("",
@@ -202,19 +201,10 @@ CKriging_Regression::CKriging_Regression(void)
 	Parameters.Add_Choice("NODE_KRG",
 		"KRIGING"	, _TL("Kriging Type"),
 		_TL(""),
-		CSG_String::Format("%s|%s|",
+		CSG_String::Format("%s|%s",
 			_TL("Simple Kriging"),
 			_TL("Ordinary Kriging")
 		)
-	);
-
-	Parameters.Add_Choice("NODE_KRG",
-		"TQUALITY"	, _TL("Type of Quality Measure"),
-		_TL(""),
-		CSG_String::Format("%s|%s|",
-			_TL("standard deviation"),
-			_TL("variance")
-		), 0
 	);
 
 	Parameters.Add_Bool("NODE_KRG",
@@ -232,12 +222,13 @@ CKriging_Regression::CKriging_Regression(void)
 	Parameters.Add_Double("BLOCK",
 		"DBLOCK"	, _TL("Block Size"),
 		_TL(""),
-		100.0, 0.0, true
+		100., 0., true
 	);
+
 
 	///////////////////////////////////////////////////////
 	//-----------------------------------------------------
-	m_Search.Create(&Parameters, Parameters.Add_Node("", "NODE_SEARCH", _TL("Search Options"), _TL("")), 16);
+	m_Search_Options.Create(&Parameters, "NODE_SEARCH", 16);
 }
 
 
@@ -250,7 +241,7 @@ int CKriging_Regression::On_Parameter_Changed(CSG_Parameters *pParameters, CSG_P
 {
 	if( pParameter->Cmp_Identifier("POINTS") )
 	{
-		m_Search.On_Parameter_Changed(pParameters, pParameter);
+		m_Search_Options.On_Parameter_Changed(pParameters, pParameter);
 	}
 
 	//-----------------------------------------------------
@@ -260,7 +251,17 @@ int CKriging_Regression::On_Parameter_Changed(CSG_Parameters *pParameters, CSG_P
 //---------------------------------------------------------
 int CKriging_Regression::On_Parameters_Enable(CSG_Parameters *pParameters, CSG_Parameter *pParameter)
 {
-	m_Search.On_Parameters_Enable(pParameters, pParameter);
+	if(	pParameter->Cmp_Identifier("VARIANCE") )
+	{
+		pParameters->Set_Enabled("TQUALITY", pParameter->asPointer() != NULL);
+	}
+
+	if(	pParameter->Cmp_Identifier("METHOD") )
+	{
+		pParameters->Set_Enabled("P_VALUE" , pParameter->asInt() > 0);
+	}
+
+	m_Search_Options.On_Parameters_Enable(pParameters, pParameter);
 
 	//-----------------------------------------------------
 	return( CSG_Tool_Grid::On_Parameters_Enable(pParameters, pParameter) );
@@ -323,12 +324,11 @@ bool CKriging_Regression::On_Execute(void)
 	||  !pK->Set_Parameter("SEARCH_POINTS_ALL", Parameters("SEARCH_POINTS_ALL"))
 	||  !pK->Set_Parameter("SEARCH_POINTS_MIN", Parameters("SEARCH_POINTS_MIN"))
 	||  !pK->Set_Parameter("SEARCH_POINTS_MAX", Parameters("SEARCH_POINTS_MAX"))
-	||  !pK->Set_Parameter("SEARCH_DIRECTION" , Parameters("SEARCH_DIRECTION" ))
 	||  !pK->Set_Parameter("TARGET_DEFINITION", 1)	// grid or grid system
 	||  !pK->Set_Parameter("PREDICTION"       , pResiduals)
 	||  !pK->Set_Parameter("VARIANCE"         , pVariance )
 
-	|| (!SG_UI_Get_Window_Main() && (	// saga_cmd
+	|| (!has_GUI() && (	// saga_cmd
 	    !pK->Set_Parameter("VAR_MAXDIST"      , Parameters("VAR_MAXDIST"      ))
 	||  !pK->Set_Parameter("VAR_NCLASSES"     , Parameters("VAR_NCLASSES"     ))
 	||  !pK->Set_Parameter("VAR_NSKIP"        , Parameters("VAR_NSKIP"        ))

@@ -6,7 +6,7 @@
 //      System for Automated Geoscientific Analyses      //
 //                                                       //
 //                     Tool Library                      //
-//                   Projection_Proj4                    //
+//                       pj_proj4                        //
 //                                                       //
 //-------------------------------------------------------//
 //                                                       //

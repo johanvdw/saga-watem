@@ -1,6 +1,3 @@
-/**********************************************************
- * Version $Id$
- *********************************************************/
 
 ///////////////////////////////////////////////////////////
 //                                                       //
@@ -45,15 +42,6 @@
 //                Germany                                //
 //                                                       //
 //    e-mail:     oconrad@saga-gis.org                   //
-//                                                       //
-///////////////////////////////////////////////////////////
-
-//---------------------------------------------------------
-
-
-///////////////////////////////////////////////////////////
-//                                                       //
-//                                                       //
 //                                                       //
 ///////////////////////////////////////////////////////////
 
@@ -136,7 +124,6 @@ bool	Config_Create	(wxConfigBase *pConfig)
 	Config_Write(pConfig,   "CMD", "INTERACTIVE"         , false   );	// i: allow user interaction
 	Config_Write(pConfig,   "CMD", "XML_MESSAGE"         , false   );	// x: message output as xml
 
-	Config_Write(pConfig, "TOOLS", "LNG_OLDSTYLE"        , false   );	// load old style naming, has no effect if l-flag is set.
 	Config_Write(pConfig, "TOOLS", "LNG_FILE_DIC"        , SG_T(""));	// translation dictionary
 	Config_Write(pConfig, "TOOLS", "PROJECTIONS"         , false   );	// load projections dictionary
 	Config_Write(pConfig, "TOOLS", "OMP_THREADS_MAX"     , SG_OMP_Get_Max_Num_Procs());
@@ -158,7 +145,7 @@ bool	Config_Load		(wxConfigBase *pConfig)
 #if   defined(_SAGA_LINUX)
 	CSG_String	Path_Shared	= SHARE_PATH;
 #elif defined(_SAGA_MSW)
-	CSG_String	Path_Shared	= SG_File_Get_Path(SG_UI_Get_Application_Path());
+	CSG_String	Path_Shared	= SG_UI_Get_Application_Path(true);
 #endif
 
 	bool bValue; int iValue; double dValue; wxString sValue;
@@ -170,11 +157,6 @@ bool	Config_Load		(wxConfigBase *pConfig)
 	Config_Read(pConfig, "CMD", "XML_MESSAGE", bValue = false); CMD_Set_XML          (bValue ==  true);	// x: message output as xml
 
 	//-----------------------------------------------------
-	if( Config_Read(pConfig, "TOOLS", "LNG_OLDSTYLE", bValue) && bValue == true )	// load old style naming, has no effect if l-flag is set.
-	{
-		SG_Set_OldStyle_Naming();
-	}
-
 	if( Config_Read(pConfig, "TOOLS", "LNG_FILE_DIC", sValue) && wxFileExists(sValue) )	// load translation dictionary
 	{
 		SG_Printf("\n%s:", _TL("loading translation dictionary"));
@@ -183,15 +165,6 @@ bool	Config_Load		(wxConfigBase *pConfig)
 			SG_Get_Translator().Create(&sValue, false)
 			? _TL("success") : _TL("failed")
 		);
-	}
-
-	if( Config_Read(pConfig, "TOOLS", "PROJECTIONS", bValue) && bValue == true )	// load projections dictionary
-	{
-		SG_Printf(CSG_String::Format("\n%s:", _TL("loading spatial reference system database")));
-		SG_Printf(CSG_String::Format("\n%s.\n",
-			SG_Get_Projections().Create(SG_File_Make_Path(Path_Shared, SG_T("saga_prj"), SG_T("srs")))
-			? _TL("success") : _TL("failed")
-		));
 	}
 
 	if( Config_Read(pConfig, "TOOLS", "OMP_THREADS_MAX"     , iValue) )	{	SG_OMP_Set_Max_Num_Threads(iValue);	}
@@ -231,7 +204,7 @@ bool	Config_Load		(wxConfigBase *pConfig)
 wxConfigBase *	Config_Default(bool bCreate)
 {
 #if defined(_SAGA_MSW)
-	wxFileName	fLocal(SG_UI_Get_Application_Path().c_str());	fLocal.SetExt("ini");
+	wxFileName	fLocal(SG_UI_Get_Application_Path(false).c_str()); fLocal.SetExt("ini");
 
 	if( !fLocal.FileExists() && !bCreate )
 	{

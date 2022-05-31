@@ -1,13 +1,27 @@
-option(WITH_TOOL_IO_GDAL "Check to install tool io_gdal" OFF)
+option(WITH_TOOLS_GDAL "Check to create build targets for GDAL tools" ON)
 
-if (WITH_TOOL_IO_GDAL OR WITH_ALL_TOOLS)
-	project(io_gdal)
-
-	# load common tool template
-	include(../../CMakePluginTemplate.cmake)
-	# link GDAL library
-	# Ubuntu 16.04 package libgdal-dev
-	find_package(GDAL REQUIRED)
-	target_include_directories(${PROJECT_NAME} PUBLIC ${GDAL_INCLUDE_DIRS})
-	target_link_libraries(${PROJECT_NAME} ${GDAL_LIBRARIES})
+if(WITH_TOOLS_GDAL)
+	if(MSVC AND DEPS_FROM_ENVARS)
+		if("${CMAKE_GENERATOR_PLATFORM}" STREQUAL "Win32")
+			set(LIB4SAGA $ENV{GDAL_32})
+		else()
+			set(LIB4SAGA $ENV{GDAL})
+		endif()
+		find_path   (GDAL_INCLUDE_DIR NAMES gdal.h      PATHS "${LIB4SAGA}/include")
+		find_library(GDAL_LIBRARY     NAMES gdal gdal_i PATHS "${LIB4SAGA}/lib")
+		mark_as_advanced(GDAL_INCLUDE_DIR GDAL_LIBRARY)
+		include(FindPackageHandleStandardArgs)
+		FIND_PACKAGE_HANDLE_STANDARD_ARGS(GDAL REQUIRED_VARS GDAL_LIBRARY GDAL_INCLUDE_DIR)
+	endif()
+	if(NOT GDAL_FOUND)
+		find_package(GDAL QUIET)	# Ubuntu package libgdal-dev
+	endif()
+	if(GDAL_FOUND)
+		project(io_gdal)
+		include(../../CMakePluginTemplate.cmake)	# load common tool template
+		target_include_directories(${PROJECT_NAME} PUBLIC ${GDAL_INCLUDE_DIR})
+		target_link_libraries(${PROJECT_NAME} ${GDAL_LIBRARY})
+	#	message("[${PROJECT_NAME}] GDAL include: ${GDAL_INCLUDE_DIR}")
+	#	message("[${PROJECT_NAME}] GDAL library: ${GDAL_LIBRARY}")
+	endif()
 endif()

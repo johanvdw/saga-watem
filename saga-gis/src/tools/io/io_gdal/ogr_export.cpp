@@ -127,6 +127,48 @@ COGR_Export::COGR_Export(void)
 		_TL(""),
 		Formats
 	);
+
+    Parameters.Add_String("",
+        "OPTIONS"	, _TL("Creation Options"),
+        _TL("The dataset creation options. A space separated list of key-value pairs (K=V)."), _TL("")		
+    );
+
+    Parameters.Add_String("",
+        "LAYER_OPTIONS"	, _TL("Layer Creation Options"),
+        _TL("The layer creation options. A space separated list of key-value pairs (K=V)."), _TL("")		
+    );
+}
+
+
+///////////////////////////////////////////////////////////
+//														 //
+///////////////////////////////////////////////////////////
+
+//---------------------------------------------------------
+int COGR_Export::On_Parameter_Changed(CSG_Parameters *pParameters, CSG_Parameter *pParameter)
+{
+	if( has_GUI() && pParameter->Cmp_Identifier("SHAPES") && pParameter->asShapes() )
+	{
+		CSG_String	Path(SG_File_Get_Path((*pParameters)["FILE"].asString()));
+
+		CSG_String	Extension(SG_Get_OGR_Drivers().Get_Extension((*pParameters)("FORMAT")->asChoice()->Get_Data()));
+
+		pParameters->Set_Parameter("FILE", SG_File_Make_Path(Path, pParameter->asShapes()->Get_Name(), Extension));
+	}
+
+	if( has_GUI() && pParameter->Cmp_Identifier("FORMAT") )
+	{
+		CSG_String	File((*pParameters)["FILE"].asString());
+
+		if( !File.is_Empty() )
+		{
+			SG_File_Set_Extension(File, SG_Get_OGR_Drivers().Get_Extension((*pParameters)("FORMAT")->asChoice()->Get_Data()));
+
+			pParameters->Set_Parameter("FILE", File);
+		}
+	}
+
+	return( CSG_Tool::On_Parameter_Changed(pParameters, pParameter) );
 }
 
 
@@ -141,23 +183,23 @@ bool COGR_Export::On_Execute(void)
 
 	CSG_String Driver;
 
-#ifdef USE_GDAL_V2
+#ifndef GDAL_V2_0_OR_NEWER
+	Driver	= Parameters("FORMAT")->asString();
+#else
 	if( !Parameters("FORMAT")->asChoice()->Get_Data(Driver) )
 	{
 		return( false );
 	}
-#else
-	Driver = Parameters("FORMAT")->asString();
 #endif
 
-	if( !DataSource.Create(Parameters("FILE")->asString(), Driver) )
+	if( !DataSource.Create(Parameters("FILE")->asString(), Driver, Parameters("OPTIONS")->asString()) )
 	{
 		Error_Set(_TL("data set creation failed"));
 
 		return( false );
 	}
 
-	if( !DataSource.Write(Parameters("SHAPES")->asShapes()) )
+	if( !DataSource.Write(Parameters("SHAPES")->asShapes(), Parameters("LAYER_OPTIONS")->asString()) )
 	{
 		Error_Set(_TL("failed to write data"));
 

@@ -28,28 +28,19 @@ target_include_directories(${PROJECT_NAME} PUBLIC "${CMAKE_CURRENT_BINARY_DIR}")
 target_include_directories(${PROJECT_NAME} PRIVATE "${saga_core_include_dir}")
 
 # set common compile flags
-if(NOT MSVC) #expect g++ on linux
+if(MSVC)
+#	target_compile_definitions(${PROJECT_NAME} PUBLIC -D_SAGA_MSW -DUNICODE)
+else() # if(NOT MSVC) # expect g++ on Linux
+#	target_compile_definitions(${PROJECT_NAME} PUBLIC -D_SAGA_LINUX)
 	set_target_properties(${PROJECT_NAME} PROPERTIES COMPILE_FLAGS -fPIC)
-	target_compile_definitions(${PROJECT_NAME} PUBLIC -D_SAGA_LINUX)
 endif()
-target_compile_definitions(${PROJECT_NAME} PUBLIC -D_SAGA_UNICODE)
+
 target_compile_definitions(${PROJECT_NAME} PUBLIC -D_TYPEDEF_BYTE -D_TYPEDEF_WORD)
 
 # link saga_api
 target_link_libraries(${PROJECT_NAME} saga_api)
 
 install(TARGETS ${PROJECT_NAME} DESTINATION lib/saga)
-
-# link_tester
-if (WITH_LINK_TESTER)
-	if (NOT EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/MLB_Interface.h")
-		message(WARNING "Can't build link_tester "
-			"MLB_Interface missing: ${CMAKE_CURRENT_SOURCE_DIR}/MLB_Interface.h")
-	else()
-		add_executable(link_tester_${PROJECT_NAME} ${CMAKE_CURRENT_LIST_DIR}/link_tester.cpp)
-		target_link_libraries(link_tester_${PROJECT_NAME} ${PROJECT_NAME})
-	endif()
-endif()
 
 # reset variables
 set(SAGA_TOOL_CUSTOM_SOURCE_LIST)

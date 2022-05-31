@@ -1,6 +1,3 @@
-/**********************************************************
- * Version $Id$
- *********************************************************/
 
 ///////////////////////////////////////////////////////////
 //                                                       //
@@ -44,19 +41,8 @@
 //    contact:    Olaf Conrad                            //
 //                Institute of Geography                 //
 //                University of Goettingen               //
-//                Goldschmidtstr. 5                      //
-//                37077 Goettingen                       //
 //                Germany                                //
 //                                                       //
-///////////////////////////////////////////////////////////
-
-//---------------------------------------------------------
-
-
-///////////////////////////////////////////////////////////
-//														 //
-//                                                       //
-//														 //
 ///////////////////////////////////////////////////////////
 
 //---------------------------------------------------------
@@ -72,7 +58,7 @@
 
 //---------------------------------------------------------
 #include <saga_api/saga_api.h>
-
+#include <set>
 
 ///////////////////////////////////////////////////////////
 //														 //
@@ -89,10 +75,10 @@ public:
 
 protected:
 
-	virtual bool				On_Execute				(void);
-
 	virtual int					On_Parameter_Changed	(CSG_Parameters *pParameters, CSG_Parameter *pParameter);
 	virtual int					On_Parameters_Enable	(CSG_Parameters *pParameters, CSG_Parameter *pParameter);
+
+	virtual bool				On_Execute				(void);
 
 
 private:
@@ -103,10 +89,12 @@ private:
 
 	CSG_Grid					*m_pGrid, *m_pCount;
 
+	std::set<sLong>				m_Cells_On_Shape;
+
 
 	TSG_Data_Type				Get_Data_Type			(int Field);
 
-	void						Set_Value				(int x, int y, double Value);
+	void						Set_Value				(int x, int y, double Value, bool bCheckDuplicates = true);
 
 	void						Set_Points				(CSG_Shape *pShape, double Value);
 
@@ -135,10 +123,10 @@ public:
 
 protected:
 
-	virtual bool				On_Execute				(void);
-
 	virtual int					On_Parameter_Changed	(CSG_Parameters *pParameters, CSG_Parameter *pParameter);
 	virtual int					On_Parameters_Enable	(CSG_Parameters *pParameters, CSG_Parameter *pParameter);
+
+	virtual bool				On_Execute				(void);
 
 
 private:

@@ -1,6 +1,3 @@
-/**********************************************************
- * Version $Id$
- *********************************************************/
 
 ///////////////////////////////////////////////////////////
 //                                                       //
@@ -51,23 +48,17 @@
 ///////////////////////////////////////////////////////////
 
 //---------------------------------------------------------
-
-
-///////////////////////////////////////////////////////////
-//														 //
-//														 //
-//														 //
-///////////////////////////////////////////////////////////
-
-//---------------------------------------------------------
 #include <wx/window.h>
 #include <wx/dcmemory.h>
 #include <wx/image.h>
 
+#include <saga_gdi/sgdi_helper.h>
+#include <saga_gdi/sgdi_layout_items.h>
+
+#include "res_commands.h"
 #include "res_images.h"
 
 #include "helper.h"
-#include "dc_helper.h"
 
 #include "wksp_map.h"
 
@@ -83,240 +74,257 @@
 ///////////////////////////////////////////////////////////
 
 //---------------------------------------------------------
-#define SCROLL_RATE		5
-
-#define SCROLL_BAR_DX	wxSystemSettings::GetMetric(wxSYS_VSCROLL_X)
-#define SCROLL_BAR_DY	wxSystemSettings::GetMetric(wxSYS_HSCROLL_Y)
-
-
-///////////////////////////////////////////////////////////
-//														 //
-//														 //
-//														 //
-///////////////////////////////////////////////////////////
-
-//---------------------------------------------------------
 BEGIN_EVENT_TABLE(CVIEW_Layout_Control, wxScrolledWindow)
-	EVT_MOTION			(CVIEW_Layout_Control::On_Mouse_Motion)
-	EVT_LEFT_DOWN		(CVIEW_Layout_Control::On_Mouse_LDown)
-	EVT_LEFT_UP			(CVIEW_Layout_Control::On_Mouse_LUp)
-	EVT_LEFT_DCLICK		(CVIEW_Layout_Control::On_Mouse_LDClick)
-	EVT_RIGHT_DOWN		(CVIEW_Layout_Control::On_Mouse_RDown)
-	EVT_RIGHT_UP		(CVIEW_Layout_Control::On_Mouse_RUp)
-	EVT_RIGHT_DCLICK	(CVIEW_Layout_Control::On_Mouse_RDClick)
+
+	EVT_ERASE_BACKGROUND(CVIEW_Layout_Control::On_EraseBackground)
+
+	EVT_LEFT_DOWN   (CVIEW_Layout_Control::On_Mouse_Event)
+	EVT_LEFT_UP     (CVIEW_Layout_Control::On_Mouse_Event)
+	EVT_LEFT_DCLICK (CVIEW_Layout_Control::On_Mouse_Event)
+	EVT_RIGHT_DOWN  (CVIEW_Layout_Control::On_Mouse_Event)
+	EVT_RIGHT_UP    (CVIEW_Layout_Control::On_Mouse_Event)
+	EVT_RIGHT_DCLICK(CVIEW_Layout_Control::On_Mouse_Event)
+	EVT_MOTION      (CVIEW_Layout_Control::On_Mouse_Event)
+	EVT_MOUSEWHEEL  (CVIEW_Layout_Control::On_Mouse_Wheel)
+
 END_EVENT_TABLE()
 
 
 ///////////////////////////////////////////////////////////
 //														 //
-//														 //
-//														 //
 ///////////////////////////////////////////////////////////
 
 //---------------------------------------------------------
-CVIEW_Layout_Control::CVIEW_Layout_Control(CVIEW_Layout *pParent)
+CVIEW_Layout_Control::CVIEW_Layout_Control(CVIEW_Layout *pParent, CVIEW_Layout_Info *pLayout)
 	: wxScrolledWindow(pParent)
 {
-	SYS_Set_Color_BG(this, wxSYS_COLOUR_APPWORKSPACE);
+	m_Zoom		= 1.;
+	m_pLayout	= pLayout;
 
-	m_pLayout		= pParent;
-	m_Zoom			= 1.0;
+	m_pLayout->m_Items.Set_Parent(this);
 
-	SetCursor(IMG_Get_Cursor(ID_IMG_CRS_MAGNIFIER));
-
-	Set_Dimensions();
+	Set_Scrollbars();
 }
 
 //---------------------------------------------------------
 CVIEW_Layout_Control::~CVIEW_Layout_Control(void)
 {
+	Do_Destroy();
+}
+
+//---------------------------------------------------------
+bool CVIEW_Layout_Control::Do_Destroy(void)
+{
+	if( m_pLayout )
+	{
+		m_pLayout->Set_Zoom(1.);
+
+		m_pLayout->m_Items.Set_Parent(NULL);
+
+		m_pLayout	= NULL;
+
+		return( true );
+	}
+
+	return( false );
 }
 
 
 ///////////////////////////////////////////////////////////
 //														 //
-//														 //
-//														 //
 ///////////////////////////////////////////////////////////
 
 //---------------------------------------------------------
-void CVIEW_Layout_Control::OnDraw(wxDC &dc)
-{
-	dc.SetUserScale(m_Zoom, m_Zoom);
-	dc.DrawBitmap(wxBitmap(m_Image), 0, 0, true);
+#define ZOOM_STEP		1.25
 
-	_Set_Rulers();
+#define SCROLL_RATE		5
+
+#define SCROLL_BAR_DX	wxSystemSettings::GetMetric(wxSYS_VSCROLL_X)
+#define SCROLL_BAR_DY	wxSystemSettings::GetMetric(wxSYS_HSCROLL_Y)
+
+//---------------------------------------------------------
+bool CVIEW_Layout_Control::Zoom_In(void)
+{
+	return( Set_Zoom_Centered(ZOOM_STEP / 1.) );
+}
+
+bool CVIEW_Layout_Control::Zoom_Out(void)
+{
+	return( Set_Zoom_Centered(1. / ZOOM_STEP) );
+}
+
+bool CVIEW_Layout_Control::Zoom_Original(void)
+{
+	return( Set_Zoom_Centered(2. / m_Zoom) );
+}
+
+bool CVIEW_Layout_Control::Zoom_Full(void)
+{
+	wxSize	Client(GetClientSize()), Paper(m_pLayout->Get_PaperSize());
+
+	double	dx	= (Client.x - SCROLL_BAR_DX) / (double)Paper.x;
+	double	dy	= (Client.y - SCROLL_BAR_DY) / (double)Paper.y;
+
+	return( Set_Zoom(dx < dy ? dx : dy) );
 }
 
 //---------------------------------------------------------
-bool CVIEW_Layout_Control::Refresh_Layout(void)
+bool CVIEW_Layout_Control::Set_Zoom_Centered(double Zooming)
 {
-	return( _Draw_Layout(false) );
+	wxPoint	Center(GetClientSize().GetWidth() / 2, GetClientSize().GetHeight() / 2);
+
+	CalcUnscrolledPosition(Center);
+
+	return( Set_Zoom_Centered(Zooming, Center) );
 }
 
-
-///////////////////////////////////////////////////////////
-//														 //
-//														 //
-//														 //
-///////////////////////////////////////////////////////////
-
 //---------------------------------------------------------
-bool CVIEW_Layout_Control::Set_Dimensions(void)
+bool CVIEW_Layout_Control::Set_Zoom_Centered(double Zooming, wxPoint Center)
 {
-	int		w, h, r	= m_pLayout->Get_Info()->Get_Map()->Get_Print_Resolution();
-	wxSize	Size(m_pLayout->Get_Info()->Get_PaperSize());
+	int	x, y;	GetViewStart(&x, &y);
 
-	w	= r * Size.GetWidth();
-	h	= r * Size.GetHeight();
+	x	= (int)((Zooming * (x * SCROLL_RATE + Center.x) - GetClientSize().x / 2) / SCROLL_RATE);
+	y	= (int)((Zooming * (y * SCROLL_RATE + Center.y) - GetClientSize().y / 2) / SCROLL_RATE);
 
-	m_Image.Create(w, h);
+	Freeze();
 
-	w	= (int)(w * m_Zoom) + SCROLL_BAR_DX;
-	h	= (int)(h * m_Zoom) + SCROLL_BAR_DY;
+	if( Set_Zoom(m_Zoom * Zooming) )
+	{
+		Scroll(x, y);
+	}
 
-	SetScrollbars(SCROLL_RATE, SCROLL_RATE, w / SCROLL_RATE, h / SCROLL_RATE);
-
-	_Draw_Layout(true);
+	Thaw();
 
 	return( true );
 }
 
 //---------------------------------------------------------
-bool CVIEW_Layout_Control::_Set_Zoom(double Zoom)
+bool CVIEW_Layout_Control::Set_Zoom(double Zoom)
 {
-	if( Zoom > 0.0 && Zoom != m_Zoom )
+	if( Zoom > 0.4 && Zoom != m_Zoom )
 	{
-		m_Zoom	= Zoom;
+		m_pLayout->Set_Zoom(m_Zoom = Zoom);
 
-		return( Set_Dimensions() );
+		return( Set_Scrollbars() );
 	}
 
 	return( false );
 }
 
 //---------------------------------------------------------
-void CVIEW_Layout_Control::_Set_Zoom_Centered(double Zoom, wxPoint Center)
+bool CVIEW_Layout_Control::Set_Scrollbars(void)
 {
-	int		x, y;
+	wxRect	Size(m_pLayout->Get_PaperSize());
 
-	GetViewStart(&x, &y);
+	int	w	= (int)(0.5 + (m_Zoom * Size.GetWidth () + SCROLL_BAR_DX) / SCROLL_RATE);
+	int	h	= (int)(0.5 + (m_Zoom * Size.GetHeight() + SCROLL_BAR_DY) / SCROLL_RATE);
 
-	x	= (int)((Zoom * (x * SCROLL_RATE + Center.x) - GetClientSize().x / 2) / SCROLL_RATE);
-	y	= (int)((Zoom * (y * SCROLL_RATE + Center.y) - GetClientSize().y / 2) / SCROLL_RATE);
+	SetScrollbars(SCROLL_RATE, SCROLL_RATE, w, h);
 
-	_Set_Zoom(m_Zoom * Zoom);
+	Set_Rulers();
 
-	Scroll(x, y);
-}
-
-//---------------------------------------------------------
-bool CVIEW_Layout_Control::Fit_To_Size(int x, int y)
-{
-	double	dx, dy, r	= m_pLayout->Get_Info()->Get_Map()->Get_Print_Resolution();
-	wxSize	sPage(m_pLayout->Get_Info()->Get_PaperSize());
-
-	dx		= (x - SCROLL_BAR_DX) / (r * sPage.x);
-	dy		= (y - SCROLL_BAR_DY) / (r * sPage.y);
-
-	return( _Set_Zoom(dx < dy ? dx : dy) );
-}
-
-
-///////////////////////////////////////////////////////////
-//														 //
-//														 //
-//														 //
-///////////////////////////////////////////////////////////
-
-//---------------------------------------------------------
-bool CVIEW_Layout_Control::_Draw_Layout(bool bEraseBkgrd)
-{
-	wxBitmap	dc_BMP(m_Image.GetWidth(), m_Image.GetHeight());
-	wxMemoryDC	dc;
-
-	dc.SelectObject(dc_BMP);
-	dc.SetBackground(*wxWHITE_BRUSH);
-	dc.Clear();
-
-	m_pLayout->Get_Info()->Draw(dc);
-
-	dc.SelectObject(wxNullBitmap);
-
-	m_Image	= dc_BMP.ConvertToImage();
-
-	Refresh(bEraseBkgrd);
+	Refresh();
 
 	return( true );
 }
 
 //---------------------------------------------------------
-void CVIEW_Layout_Control::_Set_Rulers(void)
+void CVIEW_Layout_Control::Set_Rulers(void)
 {
+	double	d	= 1. / m_Zoom;
+	double	dx	= d * GetSize().x;
+	double	dy	= d * GetSize().y;
+
 	int		ix, iy;
-	double	d, dx, dy, ax, ay;
-	wxSize	sPaper(m_pLayout->Get_Info()->Get_PaperSize());
-
-	d	= (double)sPaper.x / (m_Image.GetWidth()  * m_Zoom);
-
-	dx	= d * GetSize().x;
-	dy	= d * GetSize().y;
 
 	GetViewStart(&ix, &iy);
 
-	ax	= d * ix * SCROLL_RATE;
-	ay	= d * iy * SCROLL_RATE;
+	double	ax	= d * ix * SCROLL_RATE;
+	double	ay	= d * iy * SCROLL_RATE;
 
-	m_pLayout->Ruler_Refresh(ax, ax + dx, ay, ay + dy);
+	((CVIEW_Layout *)GetParent())->Ruler_Refresh(ax, ax + dx, ay, ay + dy);
 }
 
 
 ///////////////////////////////////////////////////////////
 //														 //
-//														 //
+///////////////////////////////////////////////////////////
+
+//---------------------------------------------------------
+void CVIEW_Layout_Control::OnDraw(wxDC &dc)
+{
+	Set_Rulers();
+
+	m_pLayout->Draw(dc);
+
+	//wxBitmap	Bmp(GetVirtualSize());
+	//wxMemoryDC	dcBmp(Bmp);
+
+	//dcBmp.SetBackground(wxBrush(SYS_Get_Color(wxSYS_COLOUR_APPWORKSPACE))); dcBmp.Clear();
+	//m_pLayout->Draw(dcBmp);
+	//dcBmp.SelectObject(wxNullBitmap);
+
+	//dc.DrawBitmap(Bmp, 0, 0);
+}
+
+//---------------------------------------------------------
+void CVIEW_Layout_Control::On_EraseBackground(wxEraseEvent &event)
+{
+	if( event.GetDC() )
+	{
+		wxDC	&dc	= *event.GetDC();
+
+		dc.SetBrush(SYS_Get_Color(wxSYS_COLOUR_APPWORKSPACE));
+		dc.SetPen  (*wxTRANSPARENT_PEN);
+		dc.DrawRectangle(dc.GetSize());
+
+		DoPrepareDC(dc);
+
+		m_pLayout->Draw_Paper(dc);
+	}
+}
+
+
+///////////////////////////////////////////////////////////
 //														 //
 ///////////////////////////////////////////////////////////
 
 //---------------------------------------------------------
-void CVIEW_Layout_Control::On_Mouse_LDown(wxMouseEvent &event)
+void CVIEW_Layout_Control::On_Mouse_Event(wxMouseEvent &event)
 {
-	m_Mouse_Down	= m_Mouse_Move	= event.GetPosition();
+	if( event.Moving() || event.Dragging() )
+	{
+		wxPoint	Position(event.GetPosition());
+
+		((CVIEW_Layout *)GetParent())->Ruler_Set_Position(Position.x, Position.y);
+	}
+
+	m_pLayout->m_Items.On_Mouse_Event(event);
+
+	if( event.RightUp() )
+	{
+		wxMenu	*pMenu	= m_pLayout->Menu_Get_Active();
+
+		if( pMenu )
+		{
+			PopupMenu(pMenu, event.GetPosition());
+
+			delete(pMenu);
+		}
+	}
 }
 
 //---------------------------------------------------------
-void CVIEW_Layout_Control::On_Mouse_LUp(wxMouseEvent &event)
+void CVIEW_Layout_Control::On_Mouse_Wheel(wxMouseEvent &event)
 {
-	_Set_Zoom_Centered(1.5, event.GetPosition());
-}
-
-//---------------------------------------------------------
-void CVIEW_Layout_Control::On_Mouse_LDClick(wxMouseEvent &event)
-{
-}
-
-//---------------------------------------------------------
-void CVIEW_Layout_Control::On_Mouse_RDown(wxMouseEvent &event)
-{
-	m_Mouse_Down	= m_Mouse_Move	= event.GetPosition();
-}
-
-//---------------------------------------------------------
-void CVIEW_Layout_Control::On_Mouse_RUp(wxMouseEvent &event)
-{
-	_Set_Zoom_Centered(1.0 / 1.5, event.GetPosition());
-}
-
-//---------------------------------------------------------
-void CVIEW_Layout_Control::On_Mouse_RDClick(wxMouseEvent &event)
-{
-}
-
-//---------------------------------------------------------
-void CVIEW_Layout_Control::On_Mouse_Motion(wxMouseEvent &event)
-{
-	m_Mouse_Move	= event.GetPosition();
-
-	m_pLayout->Ruler_Set_Position(m_Mouse_Move.x, m_Mouse_Move.y);
+	if( event.ControlDown() )
+	{
+		Set_Zoom_Centered(event.GetWheelRotation() > 0 ? ZOOM_STEP : 1. / ZOOM_STEP, event.GetPosition());
+	}
+	else
+	{
+		event.Skip();
+	}
 }
 
 

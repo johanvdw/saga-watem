@@ -61,6 +61,29 @@
 ///////////////////////////////////////////////////////////
 
 //---------------------------------------------------------
+/** \file mat_tools.h
+* A set of basic mathematical, numerical, statistical tools.
+* @see CSG_Vector
+* @see CSG_Matrix
+* @see CSG_Formula
+* @see CSG_Random
+* @see CSG_Index
+* @see CSG_Histogram
+* @see CSG_Simple_Statistics
+* @see CSG_Unique_Value_Statistics
+* @see CSG_Regression
+* @see CSG_Trend
+* @see CSG_Spline
+*/
+
+
+///////////////////////////////////////////////////////////
+//														 //
+//														 //
+//														 //
+///////////////////////////////////////////////////////////
+
+//---------------------------------------------------------
 #include "geo_tools.h"
 
 
@@ -75,17 +98,17 @@
 #define M_PI						3.141592653589793
 #endif
 
-#define M_PI_045					(M_PI / 4.0)
-#define M_PI_090					(M_PI / 2.0)
-#define M_PI_135					(M_PI * 3.0 / 4.0)
+#define M_PI_045					(M_PI / 4.)
+#define M_PI_090					(M_PI / 2.)
+#define M_PI_135					(M_PI * 3. / 4.)
 #define M_PI_180					(M_PI)
-#define M_PI_225					(M_PI * 5.0 / 4.0)
-#define M_PI_270					(M_PI * 3.0 / 2.0)
-#define M_PI_315					(M_PI * 7.0 / 4.0)
-#define M_PI_360					(M_PI * 2.0)
+#define M_PI_225					(M_PI * 5. / 4.)
+#define M_PI_270					(M_PI * 3. / 2.)
+#define M_PI_315					(M_PI * 7. / 4.)
+#define M_PI_360					(M_PI * 2.)
 
-#define M_RAD_TO_DEG				(180.0 / M_PI)
-#define M_DEG_TO_RAD				(M_PI / 180.0)
+#define M_RAD_TO_DEG				(180. / M_PI)
+#define M_DEG_TO_RAD				(M_PI / 180.)
 
 //---------------------------------------------------------
 #define M_EULER						2.718281828459045
@@ -109,15 +132,15 @@
 #define M_SET_SIGN(x, sign)			((sign) < 0 ? (x < 0 ? x : -x) : (x > 0 ? x : -x))
 
 //---------------------------------------------------------
-#define SG_ROUND_TO_BYTE(x)		((BYTE )(x < 0.0 ? x - 0.5 : x + 0.5))
-#define SG_ROUND_TO_CHAR(x)		((char )(x < 0.0 ? x - 0.5 : x + 0.5))
-#define SG_ROUND_TO_WORD(x)		((WORD )(x < 0.0 ? x - 0.5 : x + 0.5))
-#define SG_ROUND_TO_SHORT(x)	((short)(x < 0.0 ? x - 0.5 : x + 0.5))
-#define SG_ROUND_TO_DWORD(x)	((DWORD)(x < 0.0 ? x - 0.5 : x + 0.5))
-#define SG_ROUND_TO_INT(x)		((int  )(x < 0.0 ? x - 0.5 : x + 0.5))
-#define SG_ROUND_TO_LONG(x)		((long )(x < 0.0 ? x - 0.5 : x + 0.5))
-#define SG_ROUND_TO_ULONG(x)	((uLong)(x < 0.0 ? x - 0.5 : x + 0.5))
-#define SG_ROUND_TO_SLONG(x)	((sLong)(x < 0.0 ? x - 0.5 : x + 0.5))
+#define SG_ROUND_TO_BYTE(x)			((BYTE )(x < 0. ? x - 0.5 : x + 0.5))
+#define SG_ROUND_TO_CHAR(x)			((char )(x < 0. ? x - 0.5 : x + 0.5))
+#define SG_ROUND_TO_WORD(x)			((WORD )(x < 0. ? x - 0.5 : x + 0.5))
+#define SG_ROUND_TO_SHORT(x)		((short)(x < 0. ? x - 0.5 : x + 0.5))
+#define SG_ROUND_TO_DWORD(x)		((DWORD)(x < 0. ? x - 0.5 : x + 0.5))
+#define SG_ROUND_TO_INT(x)			((int  )(x < 0. ? x - 0.5 : x + 0.5))
+#define SG_ROUND_TO_LONG(x)			((long )(x < 0. ? x - 0.5 : x + 0.5))
+#define SG_ROUND_TO_ULONG(x)		((uLong)(x < 0. ? x - 0.5 : x + 0.5))
+#define SG_ROUND_TO_SLONG(x)		((sLong)(x < 0. ? x - 0.5 : x + 0.5))
 
 
 ///////////////////////////////////////////////////////////
@@ -155,14 +178,31 @@ SAGA_API_DLL_EXPORT	void		SG_Decimal_To_Degree	(double Value, double &Deg, doubl
 ///////////////////////////////////////////////////////////
 
 //---------------------------------------------------------
-typedef int (* TSG_PFNC_Compare) (const int iElement_1, const int iElement_2);
+typedef int (* TSG_PFNC_Compare) (const int a, const int b);
 
 //---------------------------------------------------------
 class SAGA_API_DLL_EXPORT CSG_Index
 {
 public:
+	class CSG_Index_Compare
+	{
+	public:
+		CSG_Index_Compare(void) {}
+		virtual ~CSG_Index_Compare(void) {}
+
+		virtual int				Compare				(const int a, const int b)	= 0;
+	};
+
+
+public:
 	CSG_Index(void);
 	virtual ~CSG_Index(void);
+
+								CSG_Index			(int nValues, CSG_Index_Compare &Compare);
+	bool						Create				(int nValues, CSG_Index_Compare &Compare);
+
+								CSG_Index			(int nValues, CSG_Index_Compare *pCompare);
+	bool						Create				(int nValues, CSG_Index_Compare *pCompare);
 
 								CSG_Index			(int nValues, int    *Values, bool bAscending = true);
 	bool						Create				(int nValues, int    *Values, bool bAscending = true);
@@ -170,32 +210,126 @@ public:
 								CSG_Index			(int nValues, double *Values, bool bAscending = true);
 	bool						Create				(int nValues, double *Values, bool bAscending = true);
 
-								CSG_Index			(int nValues, TSG_PFNC_Compare fCompare, bool bAscending = true);
-	bool						Create				(int nValues, TSG_PFNC_Compare fCompare, bool bAscending = true);
+								CSG_Index			(int nValues, TSG_PFNC_Compare fCompare);
+	bool						Create				(int nValues, TSG_PFNC_Compare fCompare);
 
 	bool						Destroy				(void);
 
-	bool						is_Okay				(void)						const	{	return( m_nValues > 0 );	}
-	int							Get_Count			(void)						const	{	return( m_nValues );		}
-	int							Get_Index			(int i, bool bInv = false)	const	{	return( i >= 0 && i < m_nValues ? m_Index[bInv ? m_nValues-1-i : i] : -1 );	}
-	int							operator []			(int i)						const	{	return( i >= 0 && i < m_nValues ? m_Index[i] : -1 );	}
+	void						Show_Progress		(bool bProgress = true);
+
+	bool						Add_Entry			(int Position = -1);
+	bool						Del_Entry			(int Position = -1);
+
+	bool						is_Okay				(void)	const	{	return( m_nValues > 0 );	}
+	int							Get_Count			(void)	const	{	return( m_nValues     );	}
+
+	int							Get_Index			(int Position, bool Ascending = true)	const
+	{
+		return( Position < 0 || Position >= m_nValues ? -1 : m_Index[Ascending ? Position : m_nValues - 1 - Position] );
+	}
+
+	int							operator []			(int Position)	const
+	{
+		return( Position < 0 || Position >= m_nValues ? -1 : m_Index[Position] );
+	}
 
 
 private:
 
-	void						*m_Values;
+	bool						m_bProgress;
 
-	int							m_nValues, *m_Index, m_iCompare;
-
-	TSG_PFNC_Compare			m_fCompare;
+	int							m_nValues, *m_Index;
 
 
 	void						_On_Construction	(void);
 
 	bool						_Set_Array			(int nValues);
-	bool						_Set_Index			(bool bAscending);
+	bool						_Set_Index			(CSG_Index_Compare *pCompare);
 
-	int							_Compare			(const int iElement_1, const int iElement_2);
+};
+
+
+///////////////////////////////////////////////////////////
+//														 //
+//														 //
+//														 //
+///////////////////////////////////////////////////////////
+
+//---------------------------------------------------------
+class SAGA_API_DLL_EXPORT CSG_PriorityQueue
+{
+public:
+
+	//-----------------------------------------------------
+	class CSG_PriorityQueueItem
+	{
+	public:
+		CSG_PriorityQueueItem(void)	{}
+
+		virtual int			Compare		(CSG_PriorityQueueItem *pItem)	= 0;
+
+	};
+
+	//-----------------------------------------------------
+	CSG_PriorityQueue(size_t maxSize = 256);
+
+	virtual ~CSG_PriorityQueue(void);
+
+	void						Create			(size_t maxSize = 256);
+	void						Destroy			(void);
+
+	//-----------------------------------------------------
+	bool						is_Empty		(void)		const	{	return( m_nItems == 0 );	}
+	size_t						Get_Size		(void)		const	{	return( m_nItems      );	}
+	CSG_PriorityQueueItem *		Get_Item		(size_t i)	const	{	return( m_Items[i]    );	}
+
+	void						Add				(CSG_PriorityQueueItem *pItem);
+
+	CSG_PriorityQueueItem *		Peek			(void)		const	{	return( Minimum() );	}
+	CSG_PriorityQueueItem *		Poll			(void);
+
+	//-----------------------------------------------------
+	CSG_PriorityQueueItem *		Minimum			(void)		const
+	{
+		if( m_nItems )
+		{
+			if( m_pLeaf[0] )
+			{
+				return( m_pLeaf[0]->Minimum() );
+			}
+
+			return( m_Items[0] );
+		}
+
+		return( NULL );
+	}
+
+	CSG_PriorityQueueItem *		Maximum			(void)		const
+	{
+		if( m_nItems )
+		{
+			if( m_pLeaf[1] )
+			{
+				return( m_pLeaf[1]->Maximum() );
+			}
+
+			return( m_Items[m_nItems - 1] );
+		}
+
+		return( NULL );
+	}
+
+
+private:
+
+	size_t						m_nItems, m_maxSize;
+
+	CSG_PriorityQueue			*m_pLeaf[2];
+
+	CSG_PriorityQueueItem		**m_Items;
+
+
+	size_t						_Insert_Position	(CSG_PriorityQueueItem *pItem);
 
 };
 
@@ -216,24 +350,32 @@ public:
 								CSG_Vector			(const CSG_Vector &Vector);
 	bool						Create				(const CSG_Vector &Vector);
 
-								CSG_Vector			(int n, double *Data = NULL);
-	bool						Create				(int n, double *Data = NULL);
+								CSG_Vector			(int    n, double *Data = NULL);
+	bool						Create				(int    n, double *Data = NULL);
+
+								CSG_Vector			(size_t n, double *Data = NULL);
+	bool						Create				(size_t n, double *Data = NULL);
 
 	bool						Destroy				(void);
 
-	bool						Set_Rows			(int nRows);
-	bool						Add_Rows			(int nRows);
-	bool						Del_Rows			(int nRows);
-	bool						Add_Row				(double Value = 0.0);
-	bool						Del_Row				(int iRow = -1);
+	bool						Set_Rows			(int    nRows);
+	bool						Set_Rows			(size_t nRows);
+	bool						Add_Rows			(int    nRows);
+	bool						Add_Rows			(size_t nRows);
+	bool						Del_Rows			(int    nRows);
+	bool						Del_Rows			(size_t nRows);
+	bool						Add_Row				(double Value = 0.);
+	bool						Del_Row				(int    Row = -1);
+	bool						Del_Row				(size_t Row);
 
-	int							Get_N				(void)	const	{	return( (int)Get_Size() );					}
-	size_t						Get_Size			(void)	const	{	return( m_Array.Get_Size() );				}
-	double *					Get_Data			(void)	const	{	return( (double *)m_Array.Get_Array() );	}
-	double						Get_Data			(int x)	const	{	return( Get_Data()[x] );	}
-	double						operator ()			(int x)	const	{	return( Get_Data()[x] );	}
-	double &					operator []			(int x)			{	return( Get_Data()[x] );	}
-	operator const double *							(void)	const	{	return( Get_Data() );		}
+	int							Get_N				(void)		const	{	return(    (int)Get_Size() );	}
+	size_t						Get_Size			(void)		const	{	return( m_Array.Get_Size() );	}
+	double *					Get_Data			(void)		const	{	return( (double *)m_Array.Get_Array() );	}
+	double						Get_Data			(int    x)	const	{	return( Get_Data()[x] );	}
+	double						operator ()			(int    x)	const	{	return( Get_Data()[x] );	}
+	double &					operator []			(int    x)			{	return( Get_Data()[x] );	}
+	double &					operator []			(size_t x)			{	return( Get_Data()[x] );	}
+	operator const double *							(void)		const	{	return( Get_Data() );		}
 
 	CSG_String					to_String			(int Width = -1, int Precision = -1, bool bScientific = false, const SG_Char *Separator = NULL)	const;
 	bool						from_String			(const CSG_String &String);
@@ -320,8 +462,11 @@ public:
 								CSG_Matrix			(const CSG_Matrix &Matrix);
 	bool						Create				(const CSG_Matrix &Matrix);
 
-								CSG_Matrix			(int nx, int ny, double *Data = NULL);
-	bool						Create				(int nx, int ny, double *Data = NULL);
+								CSG_Matrix			(int nCols, int nRows, double *Data = NULL);
+	bool						Create				(int nCols, int nRows, double *Data = NULL);
+
+								CSG_Matrix			(int nCols, int nRows, double **Data);
+	bool						Create				(int nCols, int nRows, double **Data);
 
 	bool						Destroy				(void);
 
@@ -332,32 +477,37 @@ public:
 	bool						Add_Rows			(int nRows);
 	bool						Del_Cols			(int nCols);
 	bool						Del_Rows			(int nRows);
-	bool						Add_Col				(          double *Data = NULL);
-	bool						Add_Col				(          const CSG_Vector &Data);
-	bool						Add_Row				(          double *Data = NULL);
-	bool						Add_Row				(          const CSG_Vector &Data);
-	bool						Ins_Col				(int iCol, double *Data = NULL);
-	bool						Ins_Col				(int iCol, const CSG_Vector &Data);
-	bool						Ins_Row				(int iRow, double *Data = NULL);
-	bool						Ins_Row				(int iRow, const CSG_Vector &Data);
-	bool						Set_Col				(int iCol, double *Data);
-	bool						Set_Col				(int iCol, const CSG_Vector &Data);
-	bool						Set_Row				(int iRow, double *Data);
-	bool						Set_Row				(int iRow, const CSG_Vector &Data);
-	bool						Del_Col				(int iCol);
-	bool						Del_Row				(int iRow);
-	CSG_Vector					Get_Col				(int iCol)		const;
-	CSG_Vector					Get_Row				(int iRow)		const;
+	bool						Add_Col				(         double *Data = NULL);
+	bool						Add_Col				(         const CSG_Vector &Data);
+	bool						Add_Row				(         double *Data = NULL);
+	bool						Add_Row				(         const CSG_Vector &Data);
+	bool						Ins_Col				(int Col, double *Data = NULL);
+	bool						Ins_Col				(int Col, const CSG_Vector &Data);
+	bool						Ins_Row				(int Row, double *Data = NULL);
+	bool						Ins_Row				(int Row, const CSG_Vector &Data);
+	bool						Set_Col				(int Col, double *Data);
+	bool						Set_Col				(int Col, const CSG_Vector &Data);
+	bool						Set_Col				(         const CSG_Vector &Data);
+	bool						Set_Row				(int Row, double *Data);
+	bool						Set_Row				(int Row, const CSG_Vector &Data);
+	bool						Set_Row				(         const CSG_Vector &Data);
+	bool						Del_Col				(int Col);
+	bool						Del_Row				(int Row);
+	CSG_Vector					Get_Col				(int Col)	const;
+	CSG_Vector					Get_Row				(int Row)	const;
 
-	int							Get_NX				(void)			const	{	return( m_nx );			}
-	int							Get_NCols			(void)			const	{	return( m_nx );			}
-	int							Get_NY				(void)			const	{	return( m_ny );			}
-	int							Get_NRows			(void)			const	{	return( m_ny );			}
+	int							Get_NX				(void)		const	{	return( m_nx );			}
+	int							Get_NY				(void)		const	{	return( m_ny );			}
+	int							Get_NCols			(void)		const	{	return( m_nx );			}
+	int							Get_NRows			(void)		const	{	return( m_ny );			}
 
-	operator const double **						(void)			const	{	return( (const double **)m_z );	}
-	double **					Get_Data			(void)			const	{	return( m_z );			}
-	double						operator ()			(int y, int x)	const	{	return( m_z[y][x] );	}
-	double *					operator []			(int y)			const	{	return( m_z[y] );		}
+	operator const double **						(void)		const	{	return( (const double **)m_z );	}
+	double **					Get_Data			(void)		const	{	return( m_z );			}
+
+	double						operator ()			(int    Row, int    Col)	const	{	return( m_z[Row][Col] );	}
+	double						operator ()			(size_t Row, size_t Col)	const	{	return( m_z[Row][Col] );	}
+	double *					operator []			(int    Row)				const	{	return( m_z[Row]      );	}
+	double *					operator []			(size_t Row)				const	{	return( m_z[Row]      );	}
 
 	CSG_String					to_String			(int Width = -1, int Precision = -1, bool bScientific = false, const SG_Char *Separator = NULL)	const;
 	bool						from_String			(const CSG_String &String);
@@ -454,14 +604,14 @@ public:
 			return( m_Points[iPoint].d );				// Distance...
 		}
 
-		return( -1.0 );
+		return( -1. );
 	}
 
 	double						Get_Point			(int iPoint, int xOffset, int yOffset, int &x, int &y)
 	{
 		double	d;
 
-		if( (d = Get_Point(iPoint, x, y)) >= 0.0 )
+		if( (d = Get_Point(iPoint, x, y)) >= 0. )
 		{
 			x	+= xOffset;
 			y	+= yOffset;
@@ -480,14 +630,14 @@ public:
 			return( m_Points_R[iRadius][iPoint].d );	// Distance...
 		}
 
-		return( -1.0 );
+		return( -1. );
 	}
 
 	double						Get_Point			(int iRadius, int iPoint, int xOffset, int yOffset, int &x, int &y)
 	{
 		double	d;
 
-		if( (d = Get_Point(iRadius, iPoint, x, y)) >= 0.0 )
+		if( (d = Get_Point(iRadius, iPoint, x, y)) >= 0. )
 		{
 			x	+= xOffset;
 			y	+= yOffset;
@@ -581,8 +731,9 @@ public:
 	double						Get_Skewness		(void)		{	if( m_bEvaluated < 2 )	_Evaluate(2); return( m_Skewness );	}
 	double						Get_SkewnessPearson	(void);
 
-	double						Get_Median			(void)		{	return( Get_Quantile(50.0) );	}
-	double						Get_Quantile		(double Quantile);
+	double						Get_Quantile		(double   Quantile);
+	double						Get_Percentile		(double Percentile);
+	double						Get_Median			(void);
 	double						Get_Gini			(void);
 
 	sLong						Get_IndexOfMinimum	(void);
@@ -593,7 +744,7 @@ public:
 
 	void						Add					(const CSG_Simple_Statistics &Statistics);
 
-	void						Add_Value			(double Value, double Weight = 1.0);
+	void						Add_Value			(double Value, double Weight = 1.);
 
 	double *					Get_Values			(void)		const	{	return( (double *)m_Values.Get_Array() );	}
 	double						Get_Value			(sLong i)	const	{	return( i >= 0 && i < (sLong)m_Values.Get_Size() ? Get_Values()[i] : m_Mean );	}
@@ -666,14 +817,15 @@ public:
 	virtual void			Create				(bool bWeights = false);
 
 	void					operator +=			(double Value)	{	Add_Value(Value);	}
-	void					Add_Value			(double Value, double Weight = 1.0);
-	double					Get_Value			(int i)	const	{	return( m_Value[i] );	}
-	bool					Get_Class			(int i, double &Value, int &Count)	const
+	void					Add_Value			(double Value, double Weight = 1.);
+	double					Get_Value			(int Index)	const	{	return( m_Value[Index] );	}
+	int						Get_Class_Index		(double Value)	const;
+	bool					Get_Class			(int Index, double &Value, int &Count)	const
 	{
-		if( i < 0 || i >= Get_Count() )	return( false );
+		if( Index < 0 || Index >= Get_Count() )	return( false );
 
-		Count	= m_Count[i];
-		Value	= m_Value[i];
+		Count	= m_Count[Index];
+		Value	= m_Value[Index];
 
 		return( true );
 	}
@@ -700,14 +852,15 @@ public:
 	virtual void			Create				(bool bWeights = false);
 
 	void					operator +=			(const CSG_String &Value)	{	Add_Value(Value);	}
-	void					Add_Value			(const CSG_String &Value, double Weight = 1.0);
-	const SG_Char *			Get_Value			(int i)	const	{	return( m_Value[i] );	}
-	bool					Get_Class			(int i, CSG_String &Value, int &Count)	const
+	void					Add_Value			(const CSG_String &Value, double Weight = 1.);
+	const SG_Char *			Get_Value			(int Index)	const	{	return( m_Value[Index] );	}
+	int						Get_Class_Index		(const CSG_String &Value)	const;
+	bool					Get_Class			(int Index, CSG_String &Value, int &Count)	const
 	{
-		if( i < 0 || i >= Get_Count() )	return( false );
+		if( Index < 0 || Index >= Get_Count() )	return( false );
 
-		Count	= m_Count[i];
-		Value	= m_Value[i];
+		Count	= m_Count[Index];
+		Value	= m_Value[Index];
 
 		return( true );
 	}
@@ -827,6 +980,9 @@ public:
 
 	bool			Destroy				(void);
 
+	CSG_Histogram						(const CSG_Histogram &Histogram);
+	bool			Create				(const CSG_Histogram &Histogram);
+
 	CSG_Histogram						(size_t nClasses, double Minimum, double Maximum);
 	bool			Create				(size_t nClasses, double Minimum, double Maximum);
 
@@ -869,6 +1025,8 @@ public:
 	double			Get_Center			(size_t i)	const	{	return( Get_Value((double)(i + 0.5)) );	}
 
 	//-----------------------------------------------------
+	CSG_Histogram &	operator =			(const CSG_Histogram &Histogram);
+
 	void			operator +=			(double Value)		{	Add_Value(Value);	}
 
 	size_t			operator []			(int    i)	const	{	return( Get_Elements(i) );	}
@@ -1140,16 +1298,14 @@ private:
 ///////////////////////////////////////////////////////////
 
 //---------------------------------------------------------
+#ifdef WITH_MRMR
+
+//---------------------------------------------------------
 enum ESG_mRMR_Method
 {
 	SG_mRMR_Method_MID	= 0,	// Mutual Information Difference (MID)
 	SG_mRMR_Method_MIQ			// Mutual Information Quotient (MIQ)
 };
-
-
-///////////////////////////////////////////////////////////
-//                                                       //
-///////////////////////////////////////////////////////////
 
 //---------------------------------------------------------
 class SAGA_API_DLL_EXPORT CSG_mRMR
@@ -1170,8 +1326,8 @@ public: ////// public members and functions: //////////////
 
 	bool						Set_Data			(CSG_Table  &Data, int ClassField, class CSG_Parameters *pParameters);
 	bool						Set_Data			(CSG_Matrix &Data, int ClassField, class CSG_Parameters *pParameters);
-	bool						Set_Data			(CSG_Table  &Data, int ClassField = 0, double Threshold = -1.0);
-	bool						Set_Data			(CSG_Matrix &Data, int ClassField = 0, double Threshold = -1.0);
+	bool						Set_Data			(CSG_Table  &Data, int ClassField = 0, double Threshold = -1.);
+	bool						Set_Data			(CSG_Matrix &Data, int ClassField = 0, double Threshold = -1.);
 
 	bool						Get_Selection		(class CSG_Parameters *pParameters);
 	bool						Get_Selection		(int nFeatures, int Method);
@@ -1218,6 +1374,9 @@ private: ///// private members and functions: /////////////
 
 };
 
+//---------------------------------------------------------
+#endif // WITH_MRMR
+
 
 ///////////////////////////////////////////////////////////
 //														 //
@@ -1240,10 +1399,10 @@ public:
 	void						Add					(double x, double y);
 
 	int							Get_Count			(void)	const	{	return( m_x.Get_N() );	}
-	double						Get_xMin			(void)	const	{	return( m_x.Get_N() > 0 ? m_x(0              ) : 0.0 );	}
-	double						Get_xMax			(void)	const	{	return( m_x.Get_N() > 0 ? m_x(m_x.Get_N() - 1) : 0.0 );	}
-	double						Get_x				(int i)	const	{	return( i >= 0 && i < m_x.Get_N() ? m_x(i) : 0.0 );	}
-	double						Get_y				(int i)	const	{	return( i >= 0 && i < m_y.Get_N() ? m_y(i) : 0.0 );	}
+	double						Get_xMin			(void)	const	{	return( m_x.Get_N() > 0 ? m_x(0              ) : 0. );	}
+	double						Get_xMax			(void)	const	{	return( m_x.Get_N() > 0 ? m_x(m_x.Get_N() - 1) : 0. );	}
+	double						Get_x				(int i)	const	{	return( i >= 0 && i < m_x.Get_N() ? m_x(i) : 0. );	}
+	double						Get_y				(int i)	const	{	return( i >= 0 && i < m_y.Get_N() ? m_y(i) : 0. );	}
 
 	bool						Get_Value			(double x, double &y);
 	double						Get_Value			(double x);
@@ -1293,7 +1452,7 @@ public:
 
 	bool					Set_Point			(int Index, const TSG_Point &p, double z)	{	return( Set_Point(Index, p.x, p.y, z) );	}
 
-	bool					Create				(double Regularization = 0.0, bool bSilent = true);
+	bool					Create				(double Regularization = 0., bool bSilent = true);
 
 	bool					is_Okay				(void)	{	return( m_V.Get_N() > 0 );		}
 
@@ -1425,8 +1584,8 @@ public:
 
 	int							Get_Count			(void)			const	{	return( m_nValues );	}
 
-	double						Get_xValue			(int iValue)	const	{	return( iValue >= 0 && iValue < m_nValues ? m_x[iValue] : 0.0 );	}
-	double						Get_yValue			(int iValue)	const	{	return( iValue >= 0 && iValue < m_nValues ? m_y[iValue] : 0.0 );	}
+	double						Get_xValue			(int iValue)	const	{	return( iValue >= 0 && iValue < m_nValues ? m_x[iValue] : 0. );	}
+	double						Get_yValue			(int iValue)	const	{	return( iValue >= 0 && iValue < m_nValues ? m_y[iValue] : 0. );	}
 	bool						Get_Values			(int iValue, double &x, double &y)	const
 	{
 		if( iValue >= 0 && iValue < m_nValues )
@@ -1672,10 +1831,10 @@ private:
 ///////////////////////////////////////////////////////////
 
 //---------------------------------------------------------
-typedef double (*TSG_PFNC_Formula_0)(void);
-typedef double (*TSG_PFNC_Formula_1)(double);
-typedef double (*TSG_PFNC_Formula_2)(double, double);
-typedef double (*TSG_PFNC_Formula_3)(double, double, double);
+typedef double (*TSG_Formula_Function_0)(void);
+typedef double (*TSG_Formula_Function_1)(double);
+typedef double (*TSG_Formula_Function_2)(double, double);
+typedef double (*TSG_Formula_Function_3)(double, double, double);
 
 //---------------------------------------------------------
 class SAGA_API_DLL_EXPORT CSG_Formula
@@ -1690,42 +1849,46 @@ public:
 
 	bool						Get_Error			(CSG_String &Message);
 
-	int							Add_Function		(const SG_Char *Name, TSG_PFNC_Formula_1 f, int N_of_Pars, int Varying);
+	bool						Add_Function		(const char *Name, TSG_Formula_Function_1 Function, int nParameters, bool bVarying = false);
 
 	bool						Set_Formula			(const CSG_String &Formula);
 	CSG_String					Get_Formula			(void)	const	{	return( m_sFormula );	}
 
-	void						Set_Variable		(SG_Char Variable, double Value);
+	void						Set_Variable		(char Variable, double Value);
 
-	double						Get_Value			(void)							const;
-	double						Get_Value			(double x)						const;
-	double						Get_Value			(const CSG_Vector &Values)		const;
+	double						Get_Value			(void                       )	const;
+	double						Get_Value			(double x                   )	const;
+	double						Get_Value			(const CSG_Vector &Values   )	const;
 	double						Get_Value			(double *Values, int nValues)	const;
-	double						Get_Value			(SG_Char *Arguments, ...)		const;
+	double						Get_Value			(const char *Arguments, ... )	const;
 
-	const SG_Char *				Get_Used_Variables	(void);
+	const char *				Get_Used_Variables	(void);
 
 
 	//-----------------------------------------------------
-	typedef struct SSG_Formula_Item
+	typedef struct SSG_Function
 	{
-		const SG_Char		*name;
-		TSG_PFNC_Formula_1	f;
-		int					n_pars;		
-		int					varying;	// Does the result of the function vary even when the parameters stay the same? varying = 1 for e.g. random - number generators.
+		const char				*Name;
+
+		TSG_Formula_Function_1	Function;
+
+		int						nParameters;
+		
+		bool					bVarying;
 	}
-	TSG_Formula_Item;
+	TSG_Function;
 
 
 private:
 
 	//-----------------------------------------------------
-	typedef struct SMAT_Formula
+	typedef struct SSG_Formula
 	{
-		SG_Char					*code;
+		char					*code;
+
 		double					*ctable;
 	}
-	TMAT_Formula;
+	TSG_Formula;
 
 
 	//-----------------------------------------------------
@@ -1733,38 +1896,37 @@ private:
 
 	int							m_Error_Position, m_Length;
 
-	TMAT_Formula				m_Formula;
+	TSG_Formula					m_Formula;
 
-	TSG_Formula_Item			*m_Functions;
+	TSG_Function				*m_Functions;
 
 
 	CSG_String					m_sFormula, m_sError;
 
-	const SG_Char				*i_error;
+	const char					*m_error;
 
-	int							i_pctable;			// number of items in a table of constants - used only by the translating functions
+	int							m_pctable;
 
-	double						m_Parameters[32],
-								*i_ctable;			// current table of constants - used only by the translating functions
+	double						m_Parameters[32], *m_ctable;
 
 
-	void						_Set_Error			(const SG_Char *Error = NULL);
+	void						_Set_Error			(const CSG_String &Error = "");
 
-	double						_Get_Value			(const double *Parameters, TMAT_Formula Function)	const;
+	double						_Get_Value			(const double *Parameters, TSG_Formula Function)	const;
 
-	int							_is_Operand			(SG_Char c);
-	int							_is_Operand_Code	(SG_Char c);
-	int							_is_Number			(SG_Char c);
+	int							_is_Operand			(char c);
+	int							_is_Operand_Code	(char c);
+	int							_is_Number			(char c);
 
-	int							_Get_Function		(int i, SG_Char *name, int *n_pars, int *varying);
-	int							_Get_Function		(SG_Char *name);
+	int							_Get_Function		(int i, char *Name, int *nParameters, int *bVarying);
+	int							_Get_Function		(const char *Name);
 
-	TMAT_Formula				_Translate			(const SG_Char *source, const SG_Char *args, int *length, int *error);
+	TSG_Formula					_Translate			(const char *source, const char *args, int *length, int *error);
 
-	int							max_size(const SG_Char *source);
-	SG_Char *					my_strtok(SG_Char *s);
-	SG_Char *					i_trans(SG_Char *function, SG_Char *begin, SG_Char *end);
-	SG_Char *					comp_time(SG_Char *function, SG_Char *fend, int npars);
+	char *						_i_trans			(char *function, char *begin, char *end);
+	char *						_comp_time			(char *function, char *fend, int npars);
+	int							_max_size			(const char *source);
+	char *						_my_strtok			(char *s);
 
 };
 
@@ -1826,10 +1988,10 @@ public:
 
 	CSG_String					Get_Error			(void);
 
-	double						Get_ChiSquare		(void)	const	{	return( m_bOkay ? m_ChiSqr   : 0.0 );	}
-	double						Get_R2				(void)	const	{	return( m_bOkay ? m_ChiSqr_o : 0.0 );	}
+	double						Get_ChiSquare		(void)	const	{	return( m_bOkay ? m_ChiSqr   : 0. );	}
+	double						Get_R2				(void)	const	{	return( m_bOkay ? m_ChiSqr_o : 0. );	}
 
-	double						Get_Value			(double x)	const	{	return( m_bOkay ? m_Formula.Get_Value(x) : 0.0 );	}
+	double						Get_Value			(double x)	const	{	return( m_bOkay ? m_Formula.Get_Value(x) : 0. );	}
 
 
 private:

@@ -1,6 +1,3 @@
-/**********************************************************
- * Version $Id$
- *********************************************************/
 
 ///////////////////////////////////////////////////////////
 //                                                       //
@@ -48,15 +45,6 @@
 //                                                       //
 //    e-mail:     oconrad@saga-gis.org                   //
 //                                                       //
-///////////////////////////////////////////////////////////
-
-//---------------------------------------------------------
-
-
-///////////////////////////////////////////////////////////
-//														 //
-//														 //
-//														 //
 ///////////////////////////////////////////////////////////
 
 //---------------------------------------------------------
@@ -322,10 +310,12 @@ wxString DLG_Get_FILE_Filter(int ID_DLG)
 				"%s (*.sg-grd-z)|*.sg-grd-z|"
 				"%s (*.sg-grd)|*.sg-grd|"
 				"%s (*.sgrd)|*.sgrd|"
+				"%s (*.tif)|*.tif;*.tiff|"
 				"%s|*.*",
 				_TL("SAGA Compressed Grid Files"),
 				_TL("SAGA Grid Files"),
 				_TL("SAGA Grid Files (old extension)"),
+				_TL("GeoTIFF"),
 				_TL("All Files")
 			));
 
@@ -334,10 +324,12 @@ wxString DLG_Get_FILE_Filter(int ID_DLG)
 				"%s (*.sg-grd)|*.sg-grd|"
 				"%s (*.sg-grd-z)|*.sg-grd-z|"
 				"%s (*.sgrd)|*.sgrd|"
+				"%s (*.tif)|*.tif;*.tiff|"
 				"%s|*.*",
 				_TL("SAGA Grid Files"),
 				_TL("SAGA Compressed Grid Files"),
 				_TL("SAGA Grid Files (old extension)"),
+				_TL("GeoTIFF"),
 				_TL("All Files")
 			));
 
@@ -346,7 +338,23 @@ wxString DLG_Get_FILE_Filter(int ID_DLG)
 				"%s (*.sgrd)|*.sgrd|"
 				"%s (*.sg-grd-z)|*.sg-grd-z|"
 				"%s (*.sg-grd)|*.sg-grd|"
+				"%s (*.tif)|*.tif;*.tiff|"
 				"%s|*.*",
+				_TL("SAGA Grid Files (old extension)"),
+				_TL("SAGA Compressed Grid Files"),
+				_TL("SAGA Grid Files"),
+				_TL("GeoTIFF"),
+				_TL("All Files")
+			));
+
+		case GRID_FILE_FORMAT_GeoTIFF:	// GeoTIFF
+			return( wxString::Format(
+				"%s (*.tif)|*.tif;*.tiff|"
+				"%s (*.sgrd)|*.sgrd|"
+				"%s (*.sg-grd-z)|*.sg-grd-z|"
+				"%s (*.sg-grd)|*.sg-grd|"
+				"%s|*.*",
+				_TL("GeoTIFF"),
 				_TL("SAGA Grid Files (old extension)"),
 				_TL("SAGA Compressed Grid Files"),
 				_TL("SAGA Grid Files"),
@@ -371,9 +379,11 @@ wxString DLG_Get_FILE_Filter(int ID_DLG)
 		return( wxString::Format(
 			"%s (*.sg-gds-z)|*.sg-gds-z|"
 			"%s (*.sg-gds)|*.sg-gds|"
+			"%s (*.tif)|*.tif|"
 			"%s|*.*",
 			_TL("SAGA Compressed Grid Collections"),
 			_TL("SAGA Uncompressed Grid Collections"),
+			_TL("Multi-Band GeoTIFF"),
 			_TL("All Files")
 		));
 
@@ -621,15 +631,15 @@ bool		DLG_Text(const wxString &Caption, wxString &Text)
 //---------------------------------------------------------
 bool		DLG_Login(wxString &Username, wxString &Password, const wxString &Caption)
 {
-	CSG_Parameters	Login(NULL, _TL("Login"), _TL(""));
+	CSG_Parameters	Login(_TL("Login"));
 
 	if( Caption.Length() > 0 )
 	{
 		Login.Set_Name(&Caption);
 	}
 
-	Login.Add_String(NULL, "USERNAME", _TL("Username"), _TL(""), &Username, false, false);
-	Login.Add_String(NULL, "PASSWORD", _TL("Password"), _TL(""), &Password, false, true );
+	Login.Add_String("", "USERNAME", _TL("Username"), _TL(""), &Username, false, false);
+	Login.Add_String("", "PASSWORD", _TL("Password"), _TL(""), &Password, false, true );
 
 	if( DLG_Parameters(&Login) )
 	{
@@ -790,6 +800,40 @@ bool		DLG_Color(long &_Colour)
 		_Colour	= Get_Color_asInt(Colour);
 
 		return( true );
+	}
+
+	return( false );
+}
+
+//---------------------------------------------------------
+bool		DLG_Color_From_Text(long &Colour)
+{
+	wxString Text(wxString::Format("#%02X%02X%02X", SG_GET_R(Colour), SG_GET_G(Colour), SG_GET_B(Colour)));
+
+	if( DLG_Get_Text(Text, _TL("Enter Color Code"), wxString::Format("%s,\n%s\n(%s)",
+		_TL("Enter comma separated red, green, blue values"),
+		_TL("or use a leading '#' for their hexadecimal representation."),
+		_TL("use right mouse button to open a color dialog"))) )
+	{
+		long oldColour = Colour;
+
+		if( Text[0] == '#' )
+		{
+			wxColour c; c.Set(Text);
+
+			Colour = Get_Color_asInt(c);
+		}
+		else
+		{
+			CSG_Strings	c = SG_String_Tokenize(&Text, ",;");
+
+			if( c.Get_Count() >= 3 )
+			{
+				Colour = SG_GET_RGB(c[0].asInt(), c[1].asInt(), c[2].asInt());
+			}
+		}
+
+		return( Colour != oldColour );
 	}
 
 	return( false );

@@ -164,7 +164,7 @@ CGet_Connection::CGet_Connection(void)
 //---------------------------------------------------------
 int CGet_Connection::On_Parameter_Changed(CSG_Parameters *pParameters, CSG_Parameter *pParameter)
 {
-	if( SG_UI_Get_Window_Main() )
+	if( has_GUI() )
 	{
 		if( pParameter->Cmp_Identifier("PG_HOST")
 		||  pParameter->Cmp_Identifier("PG_PORT")
@@ -183,7 +183,7 @@ int CGet_Connection::On_Parameter_Changed(CSG_Parameters *pParameters, CSG_Param
 
 			if( Connection.is_Connected() && Connection.Execute("SELECT datname FROM pg_database", &DBs) )
 			{
-				CSG_String	List;
+				CSG_String	List;	DBs.Set_Index(0, TABLE_INDEX_Ascending);
 
 				for(int i=0; i<DBs.Get_Count(); i++)
 				{
@@ -631,6 +631,8 @@ bool CExecute_SQL::On_Execute(void)
 	}
 
 	//-----------------------------------------------------
+	Get_Connection()->GUI_Update();
+
 	return( nErrors == 0 );
 }
 
@@ -712,6 +714,13 @@ bool CDatabase_Create::On_Execute(void)
 			if( pConnection->Execute("CREATE EXTENSION postgis") )
 			{
 				Message_Fmt("\n%s [%s:%d]: %s", Name, Host, Port, _TL("PostGIS extension added"));
+
+				CSG_String	Major(pConnection->Get_PostGIS().BeforeFirst('.'));
+
+				if( Major.asInt() >= 3 && pConnection->Execute("CREATE EXTENSION postgis_raster") )
+				{
+					Message_Fmt("\n%s [%s:%d]: %s", Name, Host, Port, _TL("PostGIS raster extension added"));
+				}
 			}
 
 			pConnection->GUI_Update();

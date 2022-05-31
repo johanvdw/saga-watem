@@ -1,6 +1,3 @@
-/**********************************************************
- * Version $Id$
- *********************************************************/
 
 ///////////////////////////////////////////////////////////
 //                                                       //
@@ -48,15 +45,6 @@
 //                                                       //
 //    e-mail:     oconrad@saga-gis.org                   //
 //                                                       //
-///////////////////////////////////////////////////////////
-
-//---------------------------------------------------------
-
-
-///////////////////////////////////////////////////////////
-//														 //
-//														 //
-//														 //
 ///////////////////////////////////////////////////////////
 
 //---------------------------------------------------------
@@ -220,9 +208,29 @@ wxString		Get_TableInfo_asHTML(const CSG_Table *pTable)
 ///////////////////////////////////////////////////////////
 
 //---------------------------------------------------------
+wxRect				Get_Rect_Scaled					(const wxRect &Rect, double Scale)
+{
+	wxRect	r;
+
+	r.x      = (int)(0.5 + Scale * Rect.x     );
+	r.y      = (int)(0.5 + Scale * Rect.y     );
+	r.width  = (int)(0.5 + Scale * Rect.width );
+	r.height = (int)(0.5 + Scale * Rect.height);
+
+	return( r );
+}
+
+
+///////////////////////////////////////////////////////////
+//														 //
+//														 //
+//														 //
+///////////////////////////////////////////////////////////
+
+//---------------------------------------------------------
 bool	Set_Font(CSG_Parameter *pFont, wxFont &Font, wxColour &Colour)
 {
-	if( !pFont )
+	if( !pFont || pFont->Get_Type() != PARAMETER_TYPE_Font )
 	{
 		return( false );
 	}
@@ -241,7 +249,7 @@ bool	Set_Font(CSG_Parameter *pFont, wxFont &Font, wxColour &Colour)
 //---------------------------------------------------------
 bool	Set_Font(const wxFont &Font, wxColour Colour, CSG_Parameter *pFont)
 {
-	if( !pFont )
+	if( !pFont || pFont->Get_Type() != PARAMETER_TYPE_Font )
 	{
 		return( false );
 	}
@@ -1103,43 +1111,81 @@ bool QGIS_Styles_Import(const CSG_String &File, CSG_Table &Classes, CSG_String &
 
 	//-----------------------------------------------------
 	if( QML("pipe")
-	&&  QML["pipe"]("rasterrenderer")
-	&&  QML["pipe"]["rasterrenderer"]("rastershader")
-	&&  QML["pipe"]["rasterrenderer"]["rastershader"]("colorrampshader")
-	&&  QML["pipe"]["rasterrenderer"]["rastershader"]["colorrampshader"].Get_Children_Count() > 0 )
+	&&  QML["pipe"]("rasterrenderer") )
 	{
-		//-------------------------------------------------
-		const CSG_MetaData	&ColorRamp	= QML["pipe"]["rasterrenderer"]["rastershader"]["colorrampshader"];
+		const CSG_MetaData	&Renderer	= QML["pipe"]["rasterrenderer"];
 
-		bool	bExact	= ColorRamp.Cmp_Property("colorRampType", "EXACT");	// "DISCRETE"
-
-		Classes.Destroy();
-
-		Classes.Add_Field(_TL("COLOR"      ), SG_DATATYPE_Color );
-		Classes.Add_Field(_TL("NAME"       ), SG_DATATYPE_String);
-		Classes.Add_Field(_TL("DESCRIPTION"), SG_DATATYPE_String);
-		Classes.Add_Field(_TL("MINIMUM"    ), SG_DATATYPE_Double);
-		Classes.Add_Field(_TL("MAXIMUM"    ), SG_DATATYPE_Double);
-
-		CSG_String	Value("-99999");
-
-		//-------------------------------------------------
-		for(int i=0; i<ColorRamp.Get_Children_Count(); i++)
+		if( Renderer("rastershader")
+		&&  Renderer["rastershader"]("colorrampshader")
+		&&  Renderer["rastershader"]["colorrampshader"].Get_Children_Count() > 0 )
 		{
-			CSG_String	minVal(Value); Value = ColorRamp[i].Get_Property("value");
+			const CSG_MetaData	&ColorRamp	= Renderer["rastershader"]["colorrampshader"];
 
-			wxColour	Color; Color.Set(ColorRamp[i].Get_Property("color"));
+			bool	bExact	= ColorRamp.Cmp_Property("colorRampType", "EXACT");	// "DISCRETE"
 
-			CSG_Table_Record	&Class	= *Classes.Add_Record();
+			Classes.Destroy();
 
-			Class.Set_Value(0, Get_Color_asInt(Color));	// Color
-			Class.Set_Value(1, ColorRamp[i].Get_Property("label"));	// Name
-			Class.Set_Value(3, bExact ? Value : minVal);	// Minimum
-			Class.Set_Value(4, Value);	// Maximum
+			Classes.Add_Field(_TL("COLOR"      ), SG_DATATYPE_Color );
+			Classes.Add_Field(_TL("NAME"       ), SG_DATATYPE_String);
+			Classes.Add_Field(_TL("DESCRIPTION"), SG_DATATYPE_String);
+			Classes.Add_Field(_TL("MINIMUM"    ), SG_DATATYPE_Double);
+			Classes.Add_Field(_TL("MAXIMUM"    ), SG_DATATYPE_Double);
+
+			CSG_String	Value("-99999");
+
+			//---------------------------------------------
+			for(int i=0; i<ColorRamp.Get_Children_Count(); i++)
+			{
+				CSG_String	minVal(Value); Value = ColorRamp[i].Get_Property("value");
+
+				wxColour	Color; Color.Set(ColorRamp[i].Get_Property("color"));
+
+				CSG_Table_Record	&Class	= *Classes.Add_Record();
+
+				Class.Set_Value(0, Get_Color_asInt(Color));	// Color
+				Class.Set_Value(1, ColorRamp[i].Get_Property("label"));	// Name
+				Class.Set_Value(3, bExact ? Value : minVal);	// Minimum
+				Class.Set_Value(4, Value);	// Maximum
+			}
+
+			return( Classes.Get_Count() > 0 );
 		}
 
 		//-------------------------------------------------
-		return( Classes.Get_Count() > 0 );
+		if( Renderer("colorPalette")
+		&&  Renderer["colorPalette"].Get_Children_Count() > 0 )
+		{
+			const CSG_MetaData	&colorPalette	= Renderer["colorPalette"];
+
+			bool	bExact	= true;	// "DISCRETE"
+
+			Classes.Destroy();
+
+			Classes.Add_Field(_TL("COLOR"      ), SG_DATATYPE_Color );
+			Classes.Add_Field(_TL("NAME"       ), SG_DATATYPE_String);
+			Classes.Add_Field(_TL("DESCRIPTION"), SG_DATATYPE_String);
+			Classes.Add_Field(_TL("MINIMUM"    ), SG_DATATYPE_Double);
+			Classes.Add_Field(_TL("MAXIMUM"    ), SG_DATATYPE_Double);
+
+			CSG_String	Value("-99999");
+
+			//---------------------------------------------
+			for(int i=0; i<colorPalette.Get_Children_Count(); i++)
+			{
+				CSG_String	minVal(Value); Value = colorPalette[i].Get_Property("value");
+
+				wxColour	Color; Color.Set(colorPalette[i].Get_Property("color"));
+
+				CSG_Table_Record	&Class	= *Classes.Add_Record();
+
+				Class.Set_Value(0, Get_Color_asInt(Color));	// Color
+				Class.Set_Value(1, colorPalette[i].Get_Property("label"));	// Name
+				Class.Set_Value(3, bExact ? Value : minVal);	// Minimum
+				Class.Set_Value(4, Value);	// Maximum
+			}
+
+			return( Classes.Get_Count() > 0 );
+		}
 	}
 
 	//-----------------------------------------------------
@@ -1209,7 +1255,43 @@ bool QGIS_Styles_Import(const CSG_String &File, CSG_Table &Classes, CSG_String &
 //---------------------------------------------------------
 bool QGIS_Styles_Export(const CSG_String &File, const CSG_Table &Classes, const CSG_String &Attribute)
 {
-	return( false );
+	if( Classes.Get_Count() < 1 )
+	{
+		return( false );
+	}
+
+	CSG_MetaData	QML; QML.Set_Name("qgis");
+
+	//-----------------------------------------------------
+	if( Attribute.is_Empty() )	// raster
+	{
+		CSG_MetaData	&RasterProp	= *QML.Add_Child("rasterproperties");
+
+		RasterProp.Add_Child("mDrawingStyle"         , "SingleBandPseudoColor");
+		RasterProp.Add_Child("mColorShadingAlgorithm", "ColorRampShader"      );
+		RasterProp.Add_Child("mGrayBandName"         , "Band 1"               );
+
+		CSG_MetaData	&ColorRamp	= *RasterProp.Add_Child("customColorRamp");
+
+		ColorRamp.Add_Child("colorRampType", "DISCRETE");
+
+		for(int i=0; i<Classes.Get_Count(); i++)
+		{
+			CSG_Table_Record &Class = Classes[i];
+
+			CSG_MetaData &Entry	= *ColorRamp.Add_Child("colorRampEntry");
+
+		//	Entry.Add_Property("color", SG_Color_To_Text(Class.asInt(0)));
+			Entry.Add_Property("red"  , SG_GET_R(Class.asInt(0)));
+			Entry.Add_Property("blue" , SG_GET_B(Class.asInt(0)));
+			Entry.Add_Property("green", SG_GET_G(Class.asInt(0)));
+			Entry.Add_Property("value", Class.asDouble(4));
+			Entry.Add_Property("label", Class.asString(1));
+		}
+	}
+
+	//-----------------------------------------------------
+	return( QML.Save(File) );	// return( QML.Save(File, SG_T("qml")) );
 }
 
 

@@ -374,6 +374,8 @@ bool CPointCloud_Get_Subset_SPCVF_Base::Get_Subset(bool bCopyAttr)
 		//-----------------------------------------------------
 		for(int i=0; i<sFilePaths.Get_Count() && SG_UI_Process_Set_Progress(i, sFilePaths.Get_Count()); i++)
 		{
+            SG_UI_ProgressAndMsg_Lock(true);
+
 			CSG_PointCloud	*pPC = SG_Create_PointCloud(sFilePaths.Get_String(i));
 
 			if( pPC_out == NULL && i == 0 )
@@ -459,6 +461,8 @@ bool CPointCloud_Get_Subset_SPCVF_Base::Get_Subset(bool bCopyAttr)
 			}
 
 			delete( pPC );
+
+            SG_UI_ProgressAndMsg_Lock(false);
 		}
 
 		//---------------------------------------------------------
@@ -832,7 +836,7 @@ bool CPointCloud_Get_Subset_SPCVF::On_Execute(void)
 	bool bResult = m_Get_Subset_SPCVF.Get_Subset(bCopyAttr);
 
 	//---------------------------------------------------------
-	if( SG_UI_Get_Window_Main() )
+	if( has_GUI() )
 	{
 		for(int i=0; i<pPointCloudList->Get_Item_Count(); i++)
 		{

@@ -1,6 +1,3 @@
-/**********************************************************
- * Version $Id: data_source_pgsql.h 911 2011-02-14 16:38:15Z reklov_w $
- *********************************************************/
 
 ///////////////////////////////////////////////////////////
 //                                                       //
@@ -46,15 +43,6 @@
 //                                                       //
 //    e-mail:     oconrad@saga-gis.org                   //
 //                                                       //
-///////////////////////////////////////////////////////////
-
-//---------------------------------------------------------
-
-
-///////////////////////////////////////////////////////////
-//														 //
-//														 //
-//														 //
 ///////////////////////////////////////////////////////////
 
 //---------------------------------------------------------
@@ -108,10 +96,13 @@ public:
 	void						Autoconnect			(void);
 
 	void						Update_Sources		(void);
-	void						Update_Source		(const wxString &Server);
+	void						Update_Source		(const wxString &Server, const wxString &Username = "", const wxString &Password = "");
 
 
 private:
+
+	long						m_Wait4Response;
+
 
 	void						On_Item_Activated	(wxTreeEvent &event);
 	void						On_Item_RClick		(wxTreeEvent &event);
@@ -124,6 +115,7 @@ private:
 	void						On_Source_Close		(wxCommandEvent &event);
 	void						On_Sources_Close	(wxCommandEvent &event);
 	void						On_Source_Delete	(wxCommandEvent &event);
+	void						On_Source_SQL		(wxCommandEvent &event);
 	void						On_Table_Open		(wxCommandEvent &event);
 	void						On_Table_From_Query	(wxCommandEvent &event);
 	void						On_Table_Rename		(wxCommandEvent &event);
@@ -136,6 +128,7 @@ private:
 	void						Source_Open			(const wxTreeItemId &Item);
 	void						Source_Close		(const wxTreeItemId &Item, bool bDelete);
 	void						Sources_Close		(void);
+	void						Source_SQL			(const wxTreeItemId &Item);
 	void						Table_Open			(const wxTreeItemId &Item);
 	void						Table_From_Query	(const wxTreeItemId &Item);
 	void						Table_Rename		(const wxTreeItemId &Item);
@@ -150,8 +143,8 @@ private:
 	void						Append_Table		(const wxTreeItemId &Parent, const SG_Char *Name, int Type, int Image);
 
 
-//---------------------------------------------------------
-DECLARE_EVENT_TABLE()
+	//-----------------------------------------------------
+	DECLARE_EVENT_TABLE()
 };
 
 

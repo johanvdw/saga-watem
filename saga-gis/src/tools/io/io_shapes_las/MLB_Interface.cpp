@@ -1,6 +1,3 @@
-/**********************************************************
- * Version $Id: TLB_Interface.cpp 1921 2014-01-09 10:24:11Z oconrad $
- *********************************************************/
 
 ///////////////////////////////////////////////////////////
 //                                                       //
@@ -49,18 +46,9 @@
 ///////////////////////////////////////////////////////////
 
 //---------------------------------------------------------
-
-
-///////////////////////////////////////////////////////////
-//														 //
-//           The Tool Link Library Interface             //
-//														 //
-///////////////////////////////////////////////////////////
-
-//---------------------------------------------------------
 // 1. Include the appropriate SAGA-API header...
 
-#include "MLB_Interface.h"
+#include <saga_api/saga_api.h>
 
 
 //---------------------------------------------------------
@@ -71,19 +59,22 @@ CSG_String Get_Info(int i)
 	switch( i )
 	{
 	case TLB_INFO_Name:	default:
-		return( _TL("LAS") );
+		return( _TL("[deprecated] LAS") );
 
 	case TLB_INFO_Category:
 		return( _TL("Import/Export") );
 
 	case TLB_INFO_Author:
-		return( SG_T("O. Conrad, V. Wichmann (c) 2009-10") );
+		return( "O. Conrad, V. Wichmann (c) 2009-10" );
 
 	case TLB_INFO_Description:
-		return( _TL("Tools for the import and export of ASPRS LAS files.") );
+		return( _TW(
+			"Tools for the import and export of ASPRS LAS files.\n"
+			"Deprecated: Please switch to PDAL - Import/Export tools instead."
+		) );
 
 	case TLB_INFO_Version:
-		return( SG_T("1.0") );
+		return( "1.0" );
 
 	case TLB_INFO_Menu_Path:
 		return( _TL("File|Shapes") );
@@ -109,10 +100,11 @@ CSG_Tool *		Create_Tool(int i)
 	case  0:	return( new CLAS_Export );
 	case  1:	return( new CLAS_Import );
 	case  2:	return( new CLAS_Info );
-	default:	return( NULL );
-	}
 
-	return( NULL );
+	//-----------------------------------------------------
+	case  3:	return( NULL );
+	default:	return( TLB_INTERFACE_SKIP_TOOL );
+	}
 }
 
 

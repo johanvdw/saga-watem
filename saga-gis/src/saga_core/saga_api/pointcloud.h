@@ -1,6 +1,3 @@
-/**********************************************************
- * Version $Id$
- *********************************************************/
 
 ///////////////////////////////////////////////////////////
 //                                                       //
@@ -51,6 +48,8 @@
 ///////////////////////////////////////////////////////////
 
 //---------------------------------------------------------
+#ifndef HEADER_INCLUDED__SAGA_API__pointcloud_H
+#define HEADER_INCLUDED__SAGA_API__pointcloud_H
 
 
 ///////////////////////////////////////////////////////////
@@ -60,8 +59,13 @@
 ///////////////////////////////////////////////////////////
 
 //---------------------------------------------------------
-#ifndef HEADER_INCLUDED__SAGA_API__pointcloud_H
-#define HEADER_INCLUDED__SAGA_API__pointcloud_H
+/** \file pointcloud.h
+* The point cloud data container, a specialized CSG_Shapes class.
+* @see CSG_PointCloud
+* @see CSG_Shapes
+* @see CSG_Table
+* @see CSG_Data_Object
+*/
 
 
 ///////////////////////////////////////////////////////////
@@ -136,6 +140,9 @@ public:
 	//-----------------------------------------------------
 	virtual bool					Add_Field			(const CSG_String &Name, TSG_Data_Type Type, int iField = -1);
 	virtual bool					Del_Field			(int iField);
+	virtual bool					Mov_Field			(int iField, int Position);
+
+	virtual bool					Set_Field_Type		(int iField, TSG_Data_Type Type);
 
 	//-----------------------------------------------------
 	int								Get_Attribute_Count	(void)			const	{	return( m_nFields - 3 );	}

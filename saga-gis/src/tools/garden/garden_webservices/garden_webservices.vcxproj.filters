@@ -23,9 +23,6 @@
     <ClCompile Include="wms_import.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="geocoding.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="sg_curl.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -86,9 +83,6 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="wms_import.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="geocoding.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="sg_curl.h">

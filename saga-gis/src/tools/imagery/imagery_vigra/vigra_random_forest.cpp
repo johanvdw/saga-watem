@@ -46,15 +46,6 @@
 ///////////////////////////////////////////////////////////
 
 //---------------------------------------------------------
-
-
-///////////////////////////////////////////////////////////
-//														 //
-//														 //
-//														 //
-///////////////////////////////////////////////////////////
-
-//---------------------------------------------------------
 #include "vigra_random_forest.h"
 
 //---------------------------------------------------------
@@ -65,7 +56,12 @@
 
 //---------------------------------------------------------
 #if defined(WITH_HDF5)
-#include <vigra/random_forest_hdf5_impex.hxx>
+	#include <hdf5.h>
+	#if (H5_VERS_MAJOR == 1 && H5_VERS_MINOR < 11) // not (yet) supported by VIGRA!
+		#include <vigra/random_forest_hdf5_impex.hxx>
+	#else
+		#undef WITH_HDF5
+	#endif
 #endif
 
 
@@ -131,52 +127,50 @@ bool CRandom_Forest::Parameters_Create(CSG_Parameters &Parameters)
 	//-----------------------------------------------------
 #if defined(WITH_HDF5)
 	Parameters.Add_FilePath("",
-		"RF_IMPORT"			, _TL("Import from File"),
+		"RF_IMPORT"			, _TL("Load Model"),
 		_TL(""),
 		NULL, NULL, false
 	);
-#endif
 
-	//-----------------------------------------------------
-	Parameters.Add_Node("",
-		"RF_OPTIONS"			, _TL("Random Forest Options"),
-		_TL("")
-	);
-
-#if defined(WITH_HDF5)
-	Parameters.Add_FilePath(
-		"RF_OPTIONS", "RF_EXPORT"			, _TL("Export to File"),
+	Parameters.Add_FilePath("RF_OPTIONS",
+		"RF_EXPORT"			, _TL("Save Model"),
 		_TL(""),
 		NULL, NULL, true
 	);
 #endif
 
-	Parameters.Add_Int(
-		"RF_OPTIONS", "RF_TREE_COUNT"		, _TL("Tree Count"),
+	//-----------------------------------------------------
+	Parameters.Add_Node("",
+		"RF_OPTIONS"		, _TL("Random Forest Options"),
+		_TL("")
+	);
+
+	Parameters.Add_Int("RF_OPTIONS",
+		"RF_TREE_COUNT"		, _TL("Tree Count"),
 		_TL("How many trees to create?"),
 		32, 1, true
 	);
 
-	Parameters.Add_Double(
-		"RF_OPTIONS", "RF_TREE_SAMPLES"		, _TL("Samples per Tree"),
+	Parameters.Add_Double("RF_OPTIONS",
+		"RF_TREE_SAMPLES"	, _TL("Samples per Tree"),
 		_TL("Specifies the fraction of the total number of samples used per tree for learning."),
-		1.0, 0.0, true, 1.0, true
+		1., 0., true, 1., true
 	);
 
-	Parameters.Add_Bool(
-		"RF_OPTIONS", "RF_REPLACE"			, _TL("Sample with Replacement"),
+	Parameters.Add_Bool("RF_OPTIONS",
+		"RF_REPLACE"		, _TL("Sample with Replacement"),
 		_TL("Sample from training population with or without replacement?"),
 		true
 	);
 
-	Parameters.Add_Int(
-		"RF_OPTIONS", "RF_SPLIT_MIN_SIZE"	, _TL("Minimum Node Split Size"),
+	Parameters.Add_Int("RF_OPTIONS",
+		"RF_SPLIT_MIN_SIZE"	, _TL("Minimum Node Split Size"),
 		_TL("Number of examples required for a node to be split. Choose 1 for complete growing."),
 		1, 1, true
 	);
 
-	Parameters.Add_Choice(
-		"RF_OPTIONS", "RF_NODE_FEATURES"	, _TL("Features per Node"),
+	Parameters.Add_Choice("RF_OPTIONS",
+		"RF_NODE_FEATURES"	, _TL("Features per Node"),
 		_TL(""),
 		CSG_String::Format("%s|%s|%s",
 			_TL("logarithmic"),
@@ -185,8 +179,8 @@ bool CRandom_Forest::Parameters_Create(CSG_Parameters &Parameters)
 		), 1
 	);
 
-	Parameters.Add_Choice(
-		"RF_OPTIONS", "RF_STRATIFICATION"	, _TL("Stratification"),
+	Parameters.Add_Choice("RF_OPTIONS",
+		"RF_STRATIFICATION"	, _TL("Stratification"),
 		_TL("Specifies stratification strategy. Either none, equal amount of class samples, or proportional to fraction of class samples."),
 		CSG_String::Format("%s|%s|%s",
 			_TL("none"),
@@ -392,11 +386,13 @@ CViGrA_Random_Forest::CViGrA_Random_Forest(void)
 		false
 	);
 
+#ifdef WITH_MRMR
 	CSG_mRMR::Parameters_Add(&Parameters, Parameters.Add_Bool("TRAINING",
 		"DO_MRMR"		, _TL("Minimum Redundancy Feature Selection"),
 		_TL("Use only features selected by the minimum Redundancy Maximum Relevance (mRMR) algorithm"),
 		false
 	));
+#endif // WITH_MRMR
 
 	//-----------------------------------------------------
 	CRandom_Forest::Parameters_Create(Parameters);
@@ -419,6 +415,7 @@ int CViGrA_Random_Forest::On_Parameters_Enable(CSG_Parameters *pParameters, CSG_
 		pParameters->Set_Enabled("IMPORTANCES", bTraining);
 	}
 
+#ifdef WITH_MRMR
 	if( pParameter->Cmp_Identifier("DO_MRMR") )
 	{
 		(*pParameters)("DO_MRMR")->Set_Children_Enabled(pParameter->asBool());
@@ -428,6 +425,7 @@ int CViGrA_Random_Forest::On_Parameters_Enable(CSG_Parameters *pParameters, CSG_
 	{
 		CSG_mRMR::Parameters_Enable(pParameters, pParameter);
 	}
+#endif // WITH_MRMR
 
 	return( CSG_Tool_Grid::On_Parameters_Enable(pParameters, pParameter) );
 }
@@ -638,7 +636,14 @@ bool CViGrA_Random_Forest::Get_Training(CSG_Matrix &Data, CSG_Table &Classes)
 	{
 		CSG_Shape	*pArea	= pTraining->Get_Shape(iTraining);
 
-		if( !pClass || (bLabelAsId && ID != pArea->asInt(Field)) || Label.Cmp(pArea->asString(Field)) )
+		if( !pArea->is_Valid() )
+		{
+			continue;
+		}
+
+		if( !pClass
+		|| ( bLabelAsId && ID !=     pArea->asInt   (Field) )
+		|| (!bLabelAsId && Label.Cmp(pArea->asString(Field))) )
 		{
 			Label	= pArea->asString(Field);
 
@@ -649,14 +654,15 @@ bool CViGrA_Random_Forest::Get_Training(CSG_Matrix &Data, CSG_Table &Classes)
 				ID	= bLabelAsId ? pArea->asInt(Field) : ID + 1;
 			}
 
-			pClass->Set_Value(CLASS_ID   , ID);
+			pClass->Set_Value(CLASS_ID   , ID   );
 			pClass->Set_Value(CLASS_NAME , Label);
-			pClass->Set_Value(CLASS_COUNT, 0);
+			pClass->Set_Value(CLASS_COUNT, 0    );
 		}
 
 		pClass->Add_Value(CLASS_COUNT, Get_Training(Data, ID, (CSG_Shape_Polygon *)pArea));
 	}
 
+#ifdef WITH_MRMR
 	if( Data.Get_NCols() > 1 && Data.Get_NRows() > 1 && Parameters("DO_MRMR")->asBool() )
 	{
 		CSG_mRMR	Selector;
@@ -695,6 +701,7 @@ bool CViGrA_Random_Forest::Get_Training(CSG_Matrix &Data, CSG_Table &Classes)
 			delete[](bSelected);
 		}
 	}
+#endif // WITH_MRMR
 
 	return( Data.Get_NCols() > 1 && Data.Get_NRows() > 1 );
 }
@@ -900,11 +907,13 @@ CViGrA_RF_Presence::CViGrA_RF_Presence(void)
 	);
 
 	//-----------------------------------------------------
+#ifdef WITH_MRMR
 	CSG_mRMR::Parameters_Add(&Parameters, Parameters.Add_Bool("",
 		"DO_MRMR"		, _TL("Minimum Redundancy Feature Selection"),
 		_TL("Use only features selected by the minimum Redundancy Maximum Relevance (mRMR) algorithm"),
 		false
 	));
+#endif // WITH_MRMR
 
 	//-----------------------------------------------------
 	CRandom_Forest::Parameters_Create(Parameters);
@@ -926,6 +935,7 @@ int CViGrA_RF_Presence::On_Parameters_Enable(CSG_Parameters *pParameters, CSG_Pa
 		pParameters->Set_Enabled("PRESENCE"  , bTraining);
 	}
 
+#ifdef WITH_MRMR
 	if( pParameter->Cmp_Identifier("DO_MRMR") )
 	{
 		(*pParameters)("DO_MRMR")->Set_Children_Enabled(pParameter->asBool());
@@ -935,8 +945,9 @@ int CViGrA_RF_Presence::On_Parameters_Enable(CSG_Parameters *pParameters, CSG_Pa
 	{
 		CSG_mRMR::Parameters_Enable(pParameters, pParameter);
 	}
+#endif // WITH_MRMR
 
-	return( 1 );
+	return( CSG_Tool_Grid::On_Parameters_Enable(pParameters, pParameter) );
 }
 
 
@@ -1095,6 +1106,7 @@ bool CViGrA_RF_Presence::Get_Training(CSG_Matrix &Data)
 	}
 
 	//-----------------------------------------------------
+#ifdef WITH_MRMR
 	if( Data.Get_NCols() > 1 && Data.Get_NRows() > 1 && Parameters("DO_MRMR")->asBool() )
 	{
 		CSG_mRMR	Selector;
@@ -1133,6 +1145,7 @@ bool CViGrA_RF_Presence::Get_Training(CSG_Matrix &Data)
 			delete[](bSelected);
 		}
 	}
+#endif // WITH_MRMR
 
 	return( Data.Get_NCols() > 1 && Data.Get_NRows() > 1 );
 }

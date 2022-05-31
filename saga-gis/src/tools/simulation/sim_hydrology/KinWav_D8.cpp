@@ -6,7 +6,7 @@
 //      System for Automated Geoscientific Analyses      //
 //                                                       //
 //                     Tool Library                      //
-//                    Kinematic_Wave                     //
+//                     sim_hydrology                     //
 //                                                       //
 //-------------------------------------------------------//
 //                                                       //
@@ -48,15 +48,6 @@
 ///////////////////////////////////////////////////////////
 
 //---------------------------------------------------------
-
-
-///////////////////////////////////////////////////////////
-//														 //
-//														 //
-//														 //
-///////////////////////////////////////////////////////////
-
-//---------------------------------------------------------
 #include "KinWav_D8.h"
 
 
@@ -70,7 +61,7 @@
 CKinWav_D8::CKinWav_D8(void)
 {
 	//-----------------------------------------------------
-	Set_Name		(_TL("Kinematic Wave Overland Flow"));
+	Set_Name		(_TL("Overland Flow (Kinematic Wave)"));
 
 	Set_Author		("O. Conrad (c) 2003");
 
@@ -243,7 +234,7 @@ int CKinWav_D8::On_Parameters_Enable(CSG_Parameters *pParameters, CSG_Parameter 
 
 	if( pParameter->Cmp_Identifier("GAUGES_FLOW") )
 	{
-		pParameters->Set_Enabled("GAUGES"     , pParameter->asTable() != NULL);
+		pParameters->Set_Enabled("GAUGES"     , pParameter->asPointer() != NULL);
 	}
 
 	return( CSG_Tool_Grid::On_Parameters_Enable(pParameters, pParameter) );
@@ -857,6 +848,8 @@ bool CKinWav_D8::Gauges_Initialise(void)
 				}
 			}
 		}
+
+		DataObject_Update(m_pGauges);
 	}
 
 	//-----------------------------------------------------

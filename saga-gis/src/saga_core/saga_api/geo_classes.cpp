@@ -1,6 +1,3 @@
-/**********************************************************
- * Version $Id$
- *********************************************************/
 
 ///////////////////////////////////////////////////////////
 //                                                       //
@@ -53,15 +50,6 @@
 ///////////////////////////////////////////////////////////
 
 //---------------------------------------------------------
-
-
-///////////////////////////////////////////////////////////
-//														 //
-//														 //
-//														 //
-///////////////////////////////////////////////////////////
-
-//---------------------------------------------------------
 #include "parameters.h"
 
 #include "geo_tools.h"
@@ -86,7 +74,7 @@
 //---------------------------------------------------------
 CSG_Point::CSG_Point(void)
 {
-	Assign(0.0, 0.0);
+	Assign(0., 0.);
 }
 
 CSG_Point::CSG_Point(const CSG_Point &Point)
@@ -99,35 +87,59 @@ CSG_Point::CSG_Point(const TSG_Point &Point)
 	Assign(Point.x, Point.y);
 }
 
-CSG_Point::CSG_Point(double x, double y)
+CSG_Point::CSG_Point(double _x, double _y)
 {
-	Assign(x, y);
+	Assign(_x, _y);
+}
+
+//---------------------------------------------------------
+void CSG_Point::Assign(double _x, double _y)
+{
+	x	= _x;
+	y	= _y;
+}
+
+void CSG_Point::Assign(const CSG_Point &Point)
+{
+	x	= Point.x;
+	y	= Point.y;
 }
 
 //---------------------------------------------------------
 void CSG_Point::Add(const CSG_Point &Point)
 {
-	m_x	+= Point.m_x;
-	m_y	+= Point.m_y;
+	x	+= Point.x;
+	y	+= Point.y;
 }
 
 void CSG_Point::Subtract(const CSG_Point &Point)
 {
-	m_x	-= Point.Get_X();
-	m_y	-= Point.Get_Y();
+	x	-= Point.x;
+	y	-= Point.y;
+}
+
+void CSG_Point::Multiply(const CSG_Point &Point)
+{
+	x	*= Point.x;
+	y	*= Point.y;
+}
+
+void CSG_Point::Multiply(double Value)
+{
+	x	*= Value;
+	y	*= Value;
+}
+
+void CSG_Point::Divide(double Value)
+{
+	x	/= Value;
+	y	/= Value;
 }
 
 //---------------------------------------------------------
-void CSG_Point::Assign(double x, double y)
+double CSG_Point::Get_Length(void)	const
 {
-	m_x	= x;
-	m_y	= y;
-}
-
-void CSG_Point::Assign(const CSG_Point &Point)
-{
-	m_x	= Point.m_x;
-	m_y	= Point.m_y;
+	return( sqrt(x*x + y*y) );
 }
 
 
@@ -138,7 +150,7 @@ void CSG_Point::Assign(const CSG_Point &Point)
 //---------------------------------------------------------
 CSG_Point_Z::CSG_Point_Z(void)
 {
-	Assign(0.0, 0.0, 0.0);
+	Assign(0., 0., 0.);
 }
 
 CSG_Point_Z::CSG_Point_Z(const CSG_Point_Z &Point)
@@ -151,39 +163,66 @@ CSG_Point_Z::CSG_Point_Z(const TSG_Point_Z &Point)
 	Assign(Point.x, Point.y, Point.z);
 }
 
-CSG_Point_Z::CSG_Point_Z(double x, double y, double z)
+CSG_Point_Z::CSG_Point_Z(double _x, double _y, double _z)
 {
-	Assign(x, y, z);
+	Assign(_x, _y, _z);
+}
+
+//---------------------------------------------------------
+void CSG_Point_Z::Assign(double _x, double _y, double _z)
+{
+	x	= _x;
+	y	= _y;
+	z	= _z;
+}
+
+void CSG_Point_Z::Assign(const CSG_Point_Z &Point)
+{
+	x	= Point.x;
+	y	= Point.y;
+	z	= Point.z;
 }
 
 //---------------------------------------------------------
 void CSG_Point_Z::Add(const CSG_Point_Z &Point)
 {
-	m_x	+= Point.m_x;
-	m_y	+= Point.m_y;
-	m_z	+= Point.m_z;
+	x	+= Point.x;
+	y	+= Point.y;
+	z	+= Point.z;
 }
 
 void CSG_Point_Z::Subtract(const CSG_Point_Z &Point)
 {
-	m_x	-= Point.m_x;
-	m_y	-= Point.m_y;
-	m_z	-= Point.m_z;
+	x	-= Point.x;
+	y	-= Point.y;
+	z	-= Point.z;
+}
+
+void CSG_Point_Z::Multiply(const CSG_Point_Z &Point)
+{
+	x	*= Point.x;
+	y	*= Point.y;
+	z	*= Point.z;
+}
+
+void CSG_Point_Z::Multiply(double Value)
+{
+	x	*= Value;
+	y	*= Value;
+	z	*= Value;
+}
+
+void CSG_Point_Z::Divide(double Value)
+{
+	x	/= Value;
+	y	/= Value;
+	z	/= Value;
 }
 
 //---------------------------------------------------------
-void CSG_Point_Z::Assign(double x, double y, double z)
+double CSG_Point_Z::Get_Length(void)	const
 {
-	m_x	= x;
-	m_y	= y;
-	m_z	= z;
-}
-
-void CSG_Point_Z::Assign(const CSG_Point_Z &Point)
-{
-	m_x	= Point.m_x;
-	m_y	= Point.m_y;
-	m_z	= Point.m_z;
+	return( sqrt(x*x + y*y + z*z) );
 }
 
 
@@ -194,7 +233,7 @@ void CSG_Point_Z::Assign(const CSG_Point_Z &Point)
 //---------------------------------------------------------
 CSG_Point_ZM::CSG_Point_ZM(void)
 {
-	Assign(0.0, 0.0, 0.0, 0.0);
+	Assign(0., 0., 0., 0.);
 }
 
 CSG_Point_ZM::CSG_Point_ZM(const CSG_Point_ZM &Point)
@@ -207,43 +246,73 @@ CSG_Point_ZM::CSG_Point_ZM(const TSG_Point_ZM &Point)
 	Assign(Point.x, Point.y, Point.z, Point.m);
 }
 
-CSG_Point_ZM::CSG_Point_ZM(double x, double y, double z, double m)
+CSG_Point_ZM::CSG_Point_ZM(double _x, double _y, double _z, double _m)
 {
-	Assign(x, y, z, m);
+	Assign(_x, _y, _z, _m);
+}
+
+//---------------------------------------------------------
+void CSG_Point_ZM::Assign(double _x, double _y, double _z, double _m)
+{
+	x	= _x;
+	y	= _y;
+	z	= _z;
+	m	= _m;
+}
+
+void CSG_Point_ZM::Assign(const CSG_Point_ZM &Point)
+{
+	x	= Point.x;
+	y	= Point.y;
+	z	= Point.z;
+	m	= Point.m;
 }
 
 //---------------------------------------------------------
 void CSG_Point_ZM::Add(const CSG_Point_ZM &Point)
 {
-	m_x	+= Point.m_x;
-	m_y	+= Point.m_y;
-	m_z	+= Point.m_z;
-	m_m	+= Point.m_m;
+	x	+= Point.x;
+	y	+= Point.y;
+	z	+= Point.z;
+	m	+= Point.m;
 }
 
 void CSG_Point_ZM::Subtract(const CSG_Point_ZM &Point)
 {
-	m_x	-= Point.m_x;
-	m_y	-= Point.m_y;
-	m_z	-= Point.m_z;
-	m_m	-= Point.m_m;
+	x	-= Point.x;
+	y	-= Point.y;
+	z	-= Point.z;
+	m	-= Point.m;
+}
+
+void CSG_Point_ZM::Multiply(const CSG_Point_ZM &Point)
+{
+	x	*= Point.x;
+	y	*= Point.y;
+	z	*= Point.z;
+	m	*= Point.m;
+}
+
+void CSG_Point_ZM::Multiply(double Value)
+{
+	x	*= Value;
+	y	*= Value;
+	z	*= Value;
+	m	*= Value;
+}
+
+void CSG_Point_ZM::Divide(double Value)
+{
+	x	/= Value;
+	y	/= Value;
+	z	/= Value;
+	m	/= Value;
 }
 
 //---------------------------------------------------------
-void CSG_Point_ZM::Assign(double x, double y, double z, double m)
+double CSG_Point_ZM::Get_Length(void)	const
 {
-	m_x	= x;
-	m_y	= y;
-	m_z	= z;
-	m_m	= m;
-}
-
-void CSG_Point_ZM::Assign(const CSG_Point_ZM &Point)
-{
-	m_x	= Point.m_x;
-	m_y	= Point.m_y;
-	m_z	= Point.m_z;
-	m_m	= Point.m_m;
+	return( sqrt(x*x + y*y + z*z + m*m) );
 }
 
 
@@ -677,7 +746,7 @@ bool CSG_Points_Z::Del(int Index)
 //---------------------------------------------------------
 CSG_Rect::CSG_Rect(void)
 {
-	Assign(0.0, 0.0, 0.0, 0.0);
+	Assign(0., 0., 0., 0.);
 }
 
 CSG_Rect::CSG_Rect(const CSG_Rect &Rect)
@@ -820,8 +889,8 @@ void CSG_Rect::Inflate(double dx, double dy, bool bPercent)
 {
 	if( bPercent )
 	{
-		dx	= (Get_XRange() * 0.01 * dx) / 2.0;
-		dy	= (Get_YRange() * 0.01 * dy) / 2.0;
+		dx	= (Get_XRange() * 0.01 * dx) / 2.;
+		dy	= (Get_YRange() * 0.01 * dy) / 2.;
 	}
 
 	Assign(
@@ -1066,102 +1135,113 @@ bool CSG_Rects::Add(const CSG_Rect &Rect)
 CSG_Distance_Weighting::CSG_Distance_Weighting(void)
 {
 	m_Weighting		= SG_DISTWGHT_None;
-	m_IDW_Power		= 1.0;
+
+	m_IDW_Power		= 2.;
 	m_IDW_bOffset	= true;
-	m_Bandwidth		= 1.0;
 
-	m_pParameters	= new CSG_Parameters(NULL, _TL("Distance Weighting"), _TL(""), SG_T("DISTANCE_WEIGHTING"));
-
-	Create_Parameters(m_pParameters);
+	m_Bandwidth		= 1.;
 }
 
 //---------------------------------------------------------
 CSG_Distance_Weighting::~CSG_Distance_Weighting(void)
+{}
+
+//---------------------------------------------------------
+bool CSG_Distance_Weighting::Create_Parameters(CSG_Parameters &Parameters, const CSG_String &Parent, bool bIDW_Offset)
 {
-	delete(m_pParameters);
+	if( Add_Parameters(Parameters, Parent, bIDW_Offset) )
+	{
+		if( Parameters("DW_WEIGHTING" ) ) { Parameters("DW_WEIGHTING" )->Set_Value((int)m_Weighting  ); }
+		if( Parameters("DW_IDW_POWER" ) ) { Parameters("DW_IDW_POWER" )->Set_Value(     m_IDW_Power  ); }
+		if( Parameters("DW_IDW_OFFSET") ) { Parameters("DW_IDW_OFFSET")->Set_Value(     m_IDW_bOffset); }
+		if( Parameters("DW_BANDWIDTH" ) ) { Parameters("DW_BANDWIDTH" )->Set_Value(     m_Bandwidth  ); }
+
+		return( true );
+	}
+
+	return( false );
 }
 
 //---------------------------------------------------------
-bool CSG_Distance_Weighting::Set_Parameters(CSG_Parameters *pParameters)
+bool CSG_Distance_Weighting::Add_Parameters(CSG_Parameters &Parameters, const CSG_String &Parent, bool bIDW_Offset)
 {
-	m_pParameters->Assign_Values(pParameters);
-
-	switch( m_pParameters->Get_Parameter("DW_WEIGHTING")->asInt() )
-	{
-	default:
-	case 0:	Set_Weighting(SG_DISTWGHT_None );	break;
-	case 1:	Set_Weighting(SG_DISTWGHT_IDW  );	break;
-	case 2:	Set_Weighting(SG_DISTWGHT_EXP  );	break;
-	case 3:	Set_Weighting(SG_DISTWGHT_GAUSS);	break;
-	}
-
-	Set_IDW_Offset	(m_pParameters->Get_Parameter("DW_IDW_OFFSET")->asBool  ());
-	Set_IDW_Power	(m_pParameters->Get_Parameter("DW_IDW_POWER" )->asDouble());
-	Set_BandWidth	(m_pParameters->Get_Parameter("DW_BANDWIDTH" )->asDouble());
-
-	return( true );
-}
-
-//---------------------------------------------------------
-bool CSG_Distance_Weighting::Create_Parameters(class CSG_Parameters *pParameters, bool bDialog)
-{
-	if( !pParameters )
-	{
-		return( false );
-	}
-
-	if( bDialog )
-	{
-		pParameters->Set_Name(_TL("Distance Weighting"));
-		pParameters->Set_Identifier("DISTANCE_WEIGHTING");
-	}
-	else
-	{
-		pParameters->Add_Node("", "DISTANCE_WEIGHTING", _TL("Distance Weighting"), _TL(""));
-	}
-
-	pParameters->Add_Choice("DISTANCE_WEIGHTING",
+	Parameters.Add_Choice(Parent,
 		"DW_WEIGHTING"	, _TL("Weighting Function"),
 		_TL(""),
-		CSG_String::Format("%s|%s|%s|%s|",
+		CSG_String::Format("%s|%s|%s|%s",
 			_TL("no distance weighting"),
 			_TL("inverse distance to a power"),
 			_TL("exponential"),
-			_TL("gaussian weighting")
-		), m_Weighting
+			_TL("gaussian")
+		), 0
 	);
 
-	pParameters->Add_Double("DISTANCE_WEIGHTING",
-		"DW_IDW_POWER"	, _TL("Inverse Distance Weighting Power"),
+	Parameters.Add_Double("DW_WEIGHTING",
+		"DW_IDW_POWER"	, _TL("Power"),
 		_TL(""),
-		m_IDW_Power, 0.0, true
+		2., 0., true
 	);
 
-	pParameters->Add_Bool("DISTANCE_WEIGHTING",
-		"DW_IDW_OFFSET"	, _TL("Inverse Distance Offset"),
-		_TL("Calculates weights for distance plus one, avoiding division by zero for zero distances"),
-		m_IDW_bOffset
-	);
+	if( bIDW_Offset )
+	{
+		Parameters.Add_Bool  ("DW_WEIGHTING",
+			"DW_IDW_OFFSET"	, _TL("Offset"),
+			_TL("Calculates weights for distance plus one, avoiding division by zero for zero distances"),
+			true
+		);
+	}
 
-	pParameters->Add_Double("DISTANCE_WEIGHTING",
-		"DW_BANDWIDTH"	, _TL("Gaussian and Exponential Weighting Bandwidth"),
-		_TL(""),
-		m_Bandwidth, 0.0, true
+	Parameters.Add_Double("DW_WEIGHTING",
+		"DW_BANDWIDTH"	, _TL("Bandwidth"),
+		_TL("Bandwidth for exponential and Gaussian weighting"),
+		1., 0., true
 	);
 
 	return( true );
 }
 
 //---------------------------------------------------------
-bool CSG_Distance_Weighting::Enable_Parameters(CSG_Parameters *pParameters)
+bool CSG_Distance_Weighting::Enable_Parameters(CSG_Parameters &Parameters)
 {
-	if( pParameters && (*pParameters)("DW_WEIGHTING") )
+	if( Parameters("DW_WEIGHTING") )
 	{
-		int	Method	= (*pParameters)("DW_WEIGHTING")->asInt();
+		int	Method	= Parameters("DW_WEIGHTING")->asInt();
 
-		pParameters->Set_Enabled("DW_IDW_OFFSET", Method == 1);
-		pParameters->Set_Enabled("DW_IDW_POWER" , Method == 1);
-		pParameters->Set_Enabled("DW_BANDWIDTH" , Method >= 2);
+		Parameters.Set_Enabled("DW_IDW_OFFSET", Method == 1);
+		Parameters.Set_Enabled("DW_IDW_POWER" , Method == 1);
+		Parameters.Set_Enabled("DW_BANDWIDTH" , Method >= 2);
+	}
+
+	return( true );
+}
+
+//---------------------------------------------------------
+bool CSG_Distance_Weighting::Set_Parameters(CSG_Parameters &Parameters)
+{
+	if( Parameters("DW_WEIGHTING") )
+	{
+		switch( Parameters("DW_WEIGHTING")->asInt() )
+		{
+		case 0: Set_Weighting(SG_DISTWGHT_None ); break;
+		case 1: Set_Weighting(SG_DISTWGHT_IDW  ); break;
+		case 2: Set_Weighting(SG_DISTWGHT_EXP  ); break;
+		case 3: Set_Weighting(SG_DISTWGHT_GAUSS); break;
+		}
+	}
+
+	if( Parameters("DW_IDW_OFFSET") )
+	{
+		Set_IDW_Offset(Parameters("DW_IDW_OFFSET")->asBool  ());
+	}
+
+	if( Parameters("DW_IDW_POWER" ) )
+	{
+		Set_IDW_Power (Parameters("DW_IDW_POWER" )->asDouble());
+	}
+
+	if( Parameters("DW_BANDWIDTH" ) )
+	{
+		Set_BandWidth (Parameters("DW_BANDWIDTH" )->asDouble());
 	}
 
 	return( true );
@@ -1169,15 +1249,13 @@ bool CSG_Distance_Weighting::Enable_Parameters(CSG_Parameters *pParameters)
 
 
 ///////////////////////////////////////////////////////////
-//														 //
-//														 //
 //														 //
 ///////////////////////////////////////////////////////////
 
 //---------------------------------------------------------
 bool CSG_Distance_Weighting::Set_Weighting(TSG_Distance_Weighting Weighting)
 {
-	m_pParameters->Get_Parameter("DW_WEIGHTING")->Set_Value((int)(m_Weighting	= Weighting));
+	m_Weighting	= Weighting;
 
 	return( true );
 }
@@ -1185,12 +1263,12 @@ bool CSG_Distance_Weighting::Set_Weighting(TSG_Distance_Weighting Weighting)
 //---------------------------------------------------------
 bool CSG_Distance_Weighting::Set_IDW_Power(double Value)
 {
-	if( Value <= 0.0 )
+	if( Value <= 0. )
 	{
 		return( false );
 	}
 
-	m_pParameters->Get_Parameter("DW_IDW_POWER")->Set_Value((int)(m_IDW_Power = Value));
+	m_IDW_Power	= Value;
 
 	return( true );
 }
@@ -1198,7 +1276,7 @@ bool CSG_Distance_Weighting::Set_IDW_Power(double Value)
 //---------------------------------------------------------
 bool CSG_Distance_Weighting::Set_IDW_Offset(bool bOn)
 {
-	m_pParameters->Get_Parameter("DW_IDW_OFFSET")->Set_Value((int)(m_IDW_bOffset = bOn));
+	m_IDW_bOffset	= bOn;
 
 	return( true );
 }
@@ -1206,12 +1284,12 @@ bool CSG_Distance_Weighting::Set_IDW_Offset(bool bOn)
 //---------------------------------------------------------
 bool CSG_Distance_Weighting::Set_BandWidth(double Value)
 {
-	if( Value <= 0.0 )
+	if( Value <= 0. )
 	{
 		return( false );
 	}
 
-	m_pParameters->Get_Parameter("DW_BANDWIDTH")->Set_Value(m_Bandwidth = Value);
+	m_Bandwidth	= Value;
 
 	return( true );
 }

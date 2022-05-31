@@ -1,6 +1,3 @@
-/**********************************************************
- * Version $Id$
- *********************************************************/
 
 ///////////////////////////////////////////////////////////
 //                                                       //
@@ -42,21 +39,10 @@
 //    contact:    Olaf Conrad                            //
 //                Institute of Geography                 //
 //                University of Goettingen               //
-//                Goldschmidtstr. 5                      //
-//                37077 Goettingen                       //
 //                Germany                                //
 //                                                       //
 //    e-mail:     oconrad@saga-gis.org                   //
 //                                                       //
-///////////////////////////////////////////////////////////
-
-//---------------------------------------------------------
-
-
-///////////////////////////////////////////////////////////
-//														 //
-//														 //
-//														 //
 ///////////////////////////////////////////////////////////
 
 //---------------------------------------------------------
@@ -84,14 +70,13 @@
 class CVIEW_Layout : public CVIEW_Base
 {
 public:
-	CVIEW_Layout(class CVIEW_Layout_Info *pInfo);
+	CVIEW_Layout(class CVIEW_Layout_Info *pLayout);
 
 	static class wxToolBarBase *	_Create_ToolBar		(void);
 	static class wxMenu *			_Create_Menu		(void);
 
+	virtual void					Do_Destroy			(void);
 	virtual void					Do_Update			(void);
-
-	class CVIEW_Layout_Info *		Get_Info			(void)	{	return( m_pInfo );	}
 
 	void							Ruler_Set_Position	(int x, int y);
 	void							Ruler_Refresh		(double xMin, double xMax, double yMin, double yMax);
@@ -101,24 +86,35 @@ private:
 
 	class CVIEW_Ruler				*m_pRuler_X, *m_pRuler_Y;
 
-	class CVIEW_Layout_Info			*m_pInfo;
+	class CVIEW_Layout_Info			*m_pLayout;
 
 	class CVIEW_Layout_Control		*m_pControl;
 
 
-	void							On_Size				(wxSizeEvent  &event);
+	void							On_Key_Event		(wxKeyEvent      &event);
+	void							On_Size				(wxSizeEvent     &event);
 
-	void							On_Page_Setup		(wxCommandEvent &event);
-	void							On_Print_Setup		(wxCommandEvent &event);
-	void							On_Print			(wxCommandEvent &event);
-	void							On_Print_Preview	(wxCommandEvent &event);
-	void							On_Fit_Scale		(wxCommandEvent &event);
+	void							On_Load				(wxCommandEvent  &event);
+	void							On_Save				(wxCommandEvent  &event);
+
+	void							On_Properties		(wxCommandEvent  &event);
+
+	void							On_Page_Setup		(wxCommandEvent  &event);
+	void							On_Print_Setup		(wxCommandEvent  &event);
+	void							On_Print_Preview	(wxCommandEvent  &event);
+	void							On_Print			(wxCommandEvent  &event);
+	void							On_Export			(wxCommandEvent  &event);
+
+	void							On_Zoom				(wxCommandEvent  &event);
+
+	void							On_Command			(wxCommandEvent  &event);
+	void							On_Command_UI		(wxUpdateUIEvent &event);
 
 
 	//-----------------------------------------------------
 	DECLARE_CLASS(CVIEW_Layout)
-	DECLARE_EVENT_TABLE()
 
+	DECLARE_EVENT_TABLE()
 };
 
 

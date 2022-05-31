@@ -241,9 +241,11 @@ bool CGDAL_Import_NetCDF::On_Execute(void)
 	}
 
 	//-----------------------------------------------------
+	const char *Drivers[] = { "netCDF", NULL };
+
 	CSG_GDAL_DataSet		DataSet;
 
-	if( !DataSet.Open_Read(Parameters("FILE")->asString()) )
+	if( !DataSet.Open_Read(Parameters("FILE")->asString(), Drivers) )
 	{
 		Error_Fmt("%s [%s]", _TL("could not open file"), Parameters("FILE")->asString());
 
@@ -317,7 +319,7 @@ bool CGDAL_Import_NetCDF::Load(CSG_GDAL_DataSet &DataSet, const CSG_String &Name
 	CSG_Parameters	P, *pVars = NULL, *pTime = NULL, *pLevel = NULL;
 
 	//-----------------------------------------------------
-	if( SG_UI_Get_Window_Main() && Parameters("SILENT")->asBool() == false )
+	if( has_GUI() && Parameters("SILENT")->asBool() == false )
 	{
 		P.Create(this, CSG_String::Format("%s [%s]", _TL("Import NetCDF"), Name.c_str()), _TL(""));
 		P.Set_Callback_On_Parameter_Changed(Get_Parameter_Changed());

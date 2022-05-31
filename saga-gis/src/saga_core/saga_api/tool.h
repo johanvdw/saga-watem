@@ -61,6 +61,23 @@
 ///////////////////////////////////////////////////////////
 
 //---------------------------------------------------------
+/** \file tool.h
+* The definition of the base classes for any SAGA tool.
+* @see CSG_Tool
+* @see CSG_Tool_Grid
+* @see CSG_Tool_Interactive
+* @see CSG_Tool_Library
+* @see CSG_Tool_Library_Manager
+*/
+
+
+///////////////////////////////////////////////////////////
+//														 //
+//														 //
+//														 //
+///////////////////////////////////////////////////////////
+
+//---------------------------------------------------------
 #include "parameters.h"
 
 
@@ -97,6 +114,16 @@ typedef enum ESG_Tool_Error
 	TOOL_ERROR_Calculation
 }
 TSG_Tool_Error;
+
+//---------------------------------------------------------
+typedef enum ESG_Tool_Script_Type
+{
+	TOOL_SCRIPT_CMD_SHELL	= 0,
+	TOOL_SCRIPT_CMD_BATCH,
+	TOOL_SCRIPT_PYTHON,
+	TOOL_SCRIPT_CHAIN
+}
+TSG_Tool_Script_Type;
 
 
 ///////////////////////////////////////////////////////////
@@ -149,22 +176,44 @@ public:
 	CSG_Parameters *			Get_Parameters				(int i)	{	return( i >= 0 && i < m_npParameters ? m_pParameters[i] : NULL );	}
 	CSG_Parameters *			Get_Parameters				(const CSG_String &Identifier);
 
-	CSG_Parameter *				Get_Parameter				(const CSG_String &Identifier)	const	{	return( Parameters(Identifier) );	}
-	bool						Set_Parameter				(const CSG_String &Identifier, CSG_Parameter   *pValue);
-	bool						Set_Parameter				(const CSG_String &Identifier, int               Value, int Type = PARAMETER_TYPE_Undefined);
-	bool						Set_Parameter				(const CSG_String &Identifier, double            Value, int Type = PARAMETER_TYPE_Undefined);
-	bool						Set_Parameter				(const CSG_String &Identifier, void             *Value, int Type = PARAMETER_TYPE_Undefined);
-	bool						Set_Parameter				(const CSG_String &Identifier, const CSG_String &Value, int Type = PARAMETER_TYPE_Undefined);
-	bool						Set_Parameter				(const CSG_String &Identifier, const char       *Value, int Type = PARAMETER_TYPE_Undefined);
-	bool						Set_Parameter				(const CSG_String &Identifier, const wchar_t    *Value, int Type = PARAMETER_TYPE_Undefined);
+	CSG_Parameter *				Get_Parameter				(const CSG_String &ID)	const	{	return( Parameters(ID) );	}
+	CSG_Parameter *				Get_Parameter				(const char       *ID)	const	{	return( Parameters(ID) );	}
+	CSG_Parameter *				Get_Parameter				(const wchar_t    *ID)	const	{	return( Parameters(ID) );	}
+	bool						Set_Parameter				(const CSG_String &ID, CSG_Parameter   *pValue);
+	bool						Set_Parameter				(const char       *ID, CSG_Parameter   *pValue);
+	bool						Set_Parameter				(const wchar_t    *ID, CSG_Parameter   *pValue);
+	bool						Set_Parameter				(const CSG_String &ID, int               Value, int Type = PARAMETER_TYPE_Undefined);
+	bool						Set_Parameter				(const char       *ID, int               Value, int Type = PARAMETER_TYPE_Undefined);
+	bool						Set_Parameter				(const wchar_t    *ID, int               Value, int Type = PARAMETER_TYPE_Undefined);
+	bool						Set_Parameter				(const CSG_String &ID, double            Value, int Type = PARAMETER_TYPE_Undefined);
+	bool						Set_Parameter				(const char       *ID, double            Value, int Type = PARAMETER_TYPE_Undefined);
+	bool						Set_Parameter				(const wchar_t    *ID, double            Value, int Type = PARAMETER_TYPE_Undefined);
+	bool						Set_Parameter				(const CSG_String &ID, void             *Value, int Type = PARAMETER_TYPE_Undefined);
+	bool						Set_Parameter				(const char       *ID, void             *Value, int Type = PARAMETER_TYPE_Undefined);
+	bool						Set_Parameter				(const wchar_t    *ID, void             *Value, int Type = PARAMETER_TYPE_Undefined);
+	bool						Set_Parameter				(const CSG_String &ID, const CSG_String &Value, int Type = PARAMETER_TYPE_Undefined);
+	bool						Set_Parameter				(const char       *ID, const CSG_String &Value, int Type = PARAMETER_TYPE_Undefined);
+	bool						Set_Parameter				(const wchar_t    *ID, const CSG_String &Value, int Type = PARAMETER_TYPE_Undefined);
+	bool						Set_Parameter				(const CSG_String &ID, const char       *Value, int Type = PARAMETER_TYPE_Undefined);
+	bool						Set_Parameter				(const char       *ID, const char       *Value, int Type = PARAMETER_TYPE_Undefined);
+	bool						Set_Parameter				(const wchar_t    *ID, const char       *Value, int Type = PARAMETER_TYPE_Undefined);
+	bool						Set_Parameter				(const CSG_String &ID, const wchar_t    *Value, int Type = PARAMETER_TYPE_Undefined);
+	bool						Set_Parameter				(const char       *ID, const wchar_t    *Value, int Type = PARAMETER_TYPE_Undefined);
+	bool						Set_Parameter				(const wchar_t    *ID, const wchar_t    *Value, int Type = PARAMETER_TYPE_Undefined);
 
-	bool						Set_Grid_System				(const CSG_Grid_System &System);
+	bool						Reset						(bool bManager = true);
+	bool						Reset_Manager				(void);
 	bool						Reset_Grid_System			(void);
 
 	bool						Update_Parameter_States		(void);
 
 	void						Set_Callback				(bool bActive = true);
+
 	bool						Set_Manager					(class CSG_Data_Manager *pManager);
+	class CSG_Data_Manager *	Get_Manager					(void)	const;
+
+	bool						Set_Grid_System				(const CSG_Grid_System &System);
+	CSG_Grid_System *			Get_Grid_System				(void)	const;
 
 	bool						Settings_Push				(class CSG_Data_Manager *pManager = NULL);
 	bool						Settings_Pop				(void);
@@ -172,6 +221,7 @@ public:
 	virtual bool				do_Sync_Projections			(void)	const	{	return( true  );	}
 
 	virtual bool				needs_GUI					(void)	const	{	return( false );	}
+	bool						has_GUI						(void)	const;
 
 	virtual bool				is_Grid						(void)	const	{	return( false );	}
 	virtual bool				is_Interactive				(void)	const	{	return( false );	}
@@ -183,7 +233,11 @@ public:
 	virtual bool				On_Before_Execution			(void)	{	return( true );	}
 	virtual bool				On_After_Execution			(void)	{	return( true );	}
 
-	bool						Execute						(void);
+	bool						Execute						(bool bAddHistory = false);
+
+	const SG_Char *				Get_Execution_Info			(void)	const	{	return( m_Execution_Info );	}
+
+	CSG_String					Get_Script					(TSG_Tool_Script_Type Type, bool bHeader, bool bAllParameters = false);
 
 
 protected:
@@ -215,13 +269,7 @@ protected:
 	bool						Dlg_Parameters				(const CSG_String &Identifier);
 	bool						Dlg_Parameters				(CSG_Parameters *pParameters, const CSG_String &Caption);
 
-
 	//-----------------------------------------------------
-	static bool					Process_Get_Okay			(bool bBlink = false);
-	static void					Process_Set_Text			(const CSG_String &Text);
-	static void					Process_Set_Text			(const char    *Format, ...);
-	static void					Process_Set_Text			(const wchar_t *Format, ...);
-
 	virtual bool				Set_Progress				(double Percent)				const;
 	virtual bool				Set_Progress				(double Position, double Range)	const;
 
@@ -229,48 +277,57 @@ protected:
 
 	void						Message_Dlg					(const CSG_String &Text, const SG_Char *Caption = NULL);
 	bool						Message_Dlg_Confirm			(const CSG_String &Text, const SG_Char *Caption = NULL);
-	static void					Message_Add					(const CSG_String &Text, bool bNewLine = true);
-	static void					Message_Fmt					(const char    *Format, ...);
-	static void					Message_Fmt					(const wchar_t *Format, ...);
+
+	void						Message_Add					(const CSG_String &Text, bool bNewLine = true);
+	void						Message_Fmt					(const char    *Format, ...);
+	void						Message_Fmt					(const wchar_t *Format, ...);
 
 	bool						Error_Set					(TSG_Tool_Error Error_ID = TOOL_ERROR_Unknown);
-	bool						Error_Set					(const CSG_String &Error_Text);
+	bool						Error_Set					(const CSG_String &Text);
 	bool						Error_Fmt					(const char    *Format, ...);
 	bool						Error_Fmt					(const wchar_t *Format, ...);
 
-
 	//-----------------------------------------------------
 	bool						DataObject_Add				(CSG_Data_Object *pDataObject, bool bUpdate = false);
-	bool						DataObject_Update			(CSG_Data_Object *pDataObject                                , int Show = SG_UI_DATAOBJECT_UPDATE_ONLY);
-	bool						DataObject_Update			(CSG_Data_Object *pDataObject, double Minimum, double Maximum, int Show = SG_UI_DATAOBJECT_UPDATE_ONLY);
 
 	void						DataObject_Update_All		(void);
-
-	bool						DataObject_Get_Colors		(CSG_Data_Object *pDataObject, CSG_Colors &Colors);
-	bool						DataObject_Set_Colors		(CSG_Data_Object *pDataObject, const CSG_Colors &Colors);
-	bool						DataObject_Set_Colors		(CSG_Data_Object *pDataObject, int nColors, int Palette = SG_COLORS_DEFAULT, bool bRevert = false);
-
-	bool						DataObject_Get_Parameters	(CSG_Data_Object *pDataObject, CSG_Parameters &Parameters);
-	bool						DataObject_Set_Parameters	(CSG_Data_Object *pDataObject, CSG_Parameters &Parameters);
-	bool						DataObject_Set_Parameters	(CSG_Data_Object *pDataObject, CSG_Data_Object *pCopy);
-
-	CSG_Parameter *				DataObject_Get_Parameter	(CSG_Data_Object *pDataObject, const CSG_String &ID);
-	bool						DataObject_Set_Parameter	(CSG_Data_Object *pDataObject, CSG_Parameter *pParameter);
-	bool						DataObject_Set_Parameter	(CSG_Data_Object *pDataObject, CSG_Data_Object *pCopy, const CSG_String &ID);
-	bool						DataObject_Set_Parameter	(CSG_Data_Object *pDataObject, const CSG_String &ID, int            Value);
-	bool						DataObject_Set_Parameter	(CSG_Data_Object *pDataObject, const CSG_String &ID, double         Value);
-	bool						DataObject_Set_Parameter	(CSG_Data_Object *pDataObject, const CSG_String &ID, void          *Value);
-	bool						DataObject_Set_Parameter	(CSG_Data_Object *pDataObject, const CSG_String &ID, const SG_Char *Value);
-	bool						DataObject_Set_Parameter	(CSG_Data_Object *pDataObject, const CSG_String &ID, double loVal, double hiVal);	// Range Parameter
 
 	bool						DataObject_Set_History		(CSG_Parameter *pParameter, CSG_MetaData *pHistory = NULL);
 
 	bool						Get_Projection				(CSG_Projection &Projection)	const;
 
 
+public:	// static functions...
+
+	static bool					Process_Get_Okay			(bool bBlink = false);
+	static void					Process_Set_Text			(const CSG_String &Text);
+	static void					Process_Set_Text			(const char    *Format, ...);
+	static void					Process_Set_Text			(const wchar_t *Format, ...);
+
+	static bool					DataObject_Update			(CSG_Data_Object *pDataObject                                , int Show = SG_UI_DATAOBJECT_UPDATE_ONLY);
+	static bool					DataObject_Update			(CSG_Data_Object *pDataObject, double Minimum, double Maximum, int Show = SG_UI_DATAOBJECT_UPDATE_ONLY);
+
+	static bool					DataObject_Get_Colors		(CSG_Data_Object *pDataObject, CSG_Colors &Colors);
+	static bool					DataObject_Set_Colors		(CSG_Data_Object *pDataObject, const CSG_Colors &Colors);
+	static bool					DataObject_Set_Colors		(CSG_Data_Object *pDataObject, int nColors, int Palette = SG_COLORS_DEFAULT, bool bRevert = false);
+
+	static bool					DataObject_Get_Parameters	(CSG_Data_Object *pDataObject, CSG_Parameters &Parameters);
+	static bool					DataObject_Set_Parameters	(CSG_Data_Object *pDataObject, CSG_Parameters &Parameters);
+	static bool					DataObject_Set_Parameters	(CSG_Data_Object *pDataObject, CSG_Data_Object *pCopy);
+
+	static CSG_Parameter *		DataObject_Get_Parameter	(CSG_Data_Object *pDataObject, const CSG_String &ID);
+	static bool					DataObject_Set_Parameter	(CSG_Data_Object *pDataObject, CSG_Parameter *pParameter);
+	static bool					DataObject_Set_Parameter	(CSG_Data_Object *pDataObject, CSG_Data_Object *pCopy, const CSG_String &ID);
+	static bool					DataObject_Set_Parameter	(CSG_Data_Object *pDataObject, const CSG_String &ID, int            Value);
+	static bool					DataObject_Set_Parameter	(CSG_Data_Object *pDataObject, const CSG_String &ID, double         Value);
+	static bool					DataObject_Set_Parameter	(CSG_Data_Object *pDataObject, const CSG_String &ID, void          *Value);
+	static bool					DataObject_Set_Parameter	(CSG_Data_Object *pDataObject, const CSG_String &ID, const SG_Char *Value);
+	static bool					DataObject_Set_Parameter	(CSG_Data_Object *pDataObject, const CSG_String &ID, double loVal, double hiVal);	// Range Parameter
+
+
 private:
 
-	bool						m_bExecutes, m_bError_Ignore, m_bShow_Progress;
+	bool						m_bExecutes, m_bError_Ignore, m_bShow_Progress, m_bWithGUI;
 
 	int							m_npParameters;
 
@@ -278,10 +335,16 @@ private:
 
 	CSG_Parameters				**m_pParameters;
 
-	CSG_String					m_ID, m_Library, m_Library_Menu, m_File_Name, m_Author, m_Version;
+	CSG_String					m_ID, m_Library, m_Library_Menu, m_File_Name, m_Author, m_Version, m_Execution_Info;
 
 
 	bool						_Synchronize_DataObjects	(void);
+
+	CSG_String					_Get_Script_CMD				(bool bHeader, bool bAllParameters, TSG_Tool_Script_Type Type);
+	void						_Get_Script_CMD				(CSG_String &Script, CSG_Parameters *pParameters, bool bAllParameters);
+
+	CSG_String					_Get_Script_Python			(bool bHeader, bool bAllParameters);
+	void						_Get_Script_Python			(CSG_String &Script, CSG_Parameters *pParameters, bool bAllParameters, const CSG_String &Prefix = "");
 
 	CSG_MetaData				_Get_Output_History			(void);
 	void						_Set_Output_History			(void);
@@ -567,7 +630,7 @@ public:
 	int							Get_Count				(void);
 	CSG_Tool *					Get_Tool				(int i);
 
-	CSG_Tool *					Create_Tool				(int i);
+	CSG_Tool *					Create_Tool				(int i, bool bWithGUI = false);
 	bool						Delete_Tool				(CSG_Tool *pTool);
 	bool						Delete_Tools			(void);
 

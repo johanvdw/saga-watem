@@ -1,13 +1,25 @@
-option(WITH_TOOL_IO_SHAPES_LAS "Check to install tool io_shapes_las" OFF)
+option(WITH_TOOLS_LAS "Check to create build targets for liblas tools" OFF)
 
-if (WITH_TOOL_IO_SHAPES_LAS OR WITH_ALL_TOOLS)
-	project(io_shapes_las)
-
-	# load common tool template
-	include(../../CMakePluginTemplate.cmake)
-	# link las library
-	# Ubuntu 16.04 package liblas-dev
-	find_package(LAS REQUIRED)
-	target_include_directories(${PROJECT_NAME} PRIVATE "${LAS_INCLUDE_DIRS}")
-	target_link_libraries(${PROJECT_NAME} ${LAS_LIBRARIES})
+if(WITH_TOOLS_LAS)
+	if(MSVC AND DEPS_FROM_ENVARS)
+		if("${CMAKE_GENERATOR_PLATFORM}" STREQUAL "Win32")
+			set(LIB4SAGA $ENV{LIBLAS_32})
+		else()
+			set(LIB4SAGA $ENV{LIBLAS})
+		endif()
+		find_path   (LAS_INCLUDE NAMES liblas/liblas.hpp PATHS "${LIB4SAGA}/include")
+		find_library(LAS_LIBRARY NAMES las liblas        PATHS "${LIB4SAGA}/lib")
+		mark_as_advanced(LAS_INCLUDE LAS_LIBRARY)
+		include(FindPackageHandleStandardArgs)
+		FIND_PACKAGE_HANDLE_STANDARD_ARGS(LAS REQUIRED_VARS LAS_LIBRARY LAS_INCLUDE)
+	endif()
+	if(NOT LAS_FOUND)
+		find_package(LAS)	# Ubuntu package liblas-dev
+	endif()
+	if(LAS_FOUND)
+		project(io_shapes_las)
+		include(../../CMakePluginTemplate.cmake)	# load common tool template
+		target_include_directories(${PROJECT_NAME} PRIVATE "${LAS_INCLUDE}")
+		target_link_libraries(${PROJECT_NAME} ${LAS_LIBRARY})
+	endif()
 endif()

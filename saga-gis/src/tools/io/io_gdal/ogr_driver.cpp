@@ -142,7 +142,7 @@ const CSG_OGR_Drivers &	SG_Get_OGR_Drivers	(void)
 ///////////////////////////////////////////////////////////
 
 //---------------------------------------------------------
-#ifdef USE_GDAL_V2
+#ifdef GDAL_V2_0_OR_NEWER
 CSG_OGR_Drivers::CSG_OGR_Drivers(void)
 {
 	GDALAllRegister();
@@ -177,7 +177,7 @@ int CSG_OGR_Drivers::Get_Count(void) const
 	return( GDALGetDriverCount() );
 }
 
-#ifdef USE_GDAL_V2
+#ifdef GDAL_V2_0_OR_NEWER
 //---------------------------------------------------------
 GDALDriverH CSG_OGR_Drivers::Get_Driver(int Index) const
 {
@@ -205,6 +205,11 @@ CSG_String CSG_OGR_Drivers::Get_Description(int Index) const
 CSG_String CSG_OGR_Drivers::Get_Extension(int Index) const
 {
 	return( GDALGetMetadataItem(Get_Driver(Index), GDAL_DMD_EXTENSION, "") );
+}
+
+CSG_String CSG_OGR_Drivers::Get_Extension(const CSG_String &Name) const
+{
+	return( GDALGetMetadataItem(Get_Driver(Name), GDAL_DMD_EXTENSION, "") );
 }
 
 //---------------------------------------------------------
@@ -284,6 +289,11 @@ CSG_String CSG_OGR_Drivers::Get_Extension(int Index) const
 	return( "" );
 }
 
+CSG_String CSG_OGR_Drivers::Get_Extension(const CSG_String &Name) const
+{
+	return( "" );
+}
+
 //---------------------------------------------------------
 bool CSG_OGR_Drivers::is_Vector(int Index) const
 {
@@ -302,7 +312,7 @@ bool CSG_OGR_Drivers::Can_Write(int Index) const
 	return( Get_Driver(Index) );
 }
 
-#endif // #ifndef USE_GDAL_V2
+#endif // #ifndef GDAL_V2_0_OR_NEWER
 
 
 ///////////////////////////////////////////////////////////
@@ -457,7 +467,7 @@ CSG_OGR_DataSet::~CSG_OGR_DataSet(void)
 	Destroy();
 }
 
-#ifdef USE_GDAL_V2
+#ifdef GDAL_V2_0_OR_NEWER
 //---------------------------------------------------------
 bool CSG_OGR_DataSet::Create(const CSG_String &File)
 {
@@ -468,7 +478,7 @@ bool CSG_OGR_DataSet::Create(const CSG_String &File)
 	return( m_pDataSet != NULL );
 }
 
-bool CSG_OGR_DataSet::Create(const CSG_String &File, const CSG_String &DriverName)
+bool CSG_OGR_DataSet::Create(const CSG_String &File, const CSG_String &DriverName, const CSG_String &Options)
 {
 	GDALDriverH	pDriver;
 
@@ -476,7 +486,23 @@ bool CSG_OGR_DataSet::Create(const CSG_String &File, const CSG_String &DriverNam
 
 	if( (pDriver = gSG_OGR_Drivers.Get_Driver(DriverName)) != NULL )
 	{
-		m_pDataSet	= GDALCreate(pDriver, File, 0, 0, 0, GDT_Unknown, NULL);
+        //SG_UI_Msg_Add(CSG_String::Format("%s %s: %s", _TL("Creation option(s) supported by the driver"), CSG_String(GDALGetDriverShortName(pDriver)).c_str(), CSG_String(GDALGetDriverCreationOptionList(pDriver)).c_str()), true);
+
+        //--------------------------------------------------------
+        char	**pOptions	= Options.is_Empty() ? NULL : CSLTokenizeString2(Options, " ", CSLT_STRIPLEADSPACES);
+
+        if( !GDALValidateCreationOptions(pDriver, pOptions) )
+        {
+            SG_UI_Msg_Add_Error(CSG_String::Format("%s: %s", _TL("Creation option(s) not supported by the driver"), Options.c_str()));
+
+            CSLDestroy(pOptions);
+
+            return( false );
+        }
+
+		m_pDataSet	= GDALCreate(pDriver, File, 0, 0, 0, GDT_Unknown, pOptions);
+
+        CSLDestroy(pOptions);
 	}
 
 	return( m_pDataSet != NULL );
@@ -549,7 +575,7 @@ bool CSG_OGR_DataSet::Create(const CSG_String &File)
 	return( m_pDataSet != NULL );
 }
 
-bool CSG_OGR_DataSet::Create(const CSG_String &File, const CSG_String &DriverName)
+bool CSG_OGR_DataSet::Create(const CSG_String &File, const CSG_String &DriverName, const CSG_String &Options)
 {
 	Destroy();
 
@@ -557,7 +583,12 @@ bool CSG_OGR_DataSet::Create(const CSG_String &File, const CSG_String &DriverNam
 
 	if( pDriver != NULL )
 	{
-		m_pDataSet	= OGR_Dr_CreateDataSource(pDriver, File, NULL);
+        //--------------------------------------------------------
+        char	**pOptions	= Options.is_Empty() ? NULL : CSLTokenizeString2(Options, " ", CSLT_STRIPLEADSPACES);
+
+		m_pDataSet	= OGR_Dr_CreateDataSource(pDriver, File, pOptions);
+
+        CSLDestroy(pOptions);
 	}
 
 	return( m_pDataSet != NULL );
@@ -593,7 +624,7 @@ CSG_String CSG_OGR_DataSet::Get_Description(int i)	const	{	return( "" );	}
 //---------------------------------------------------------
 int CSG_OGR_DataSet::Get_Count(void)	const
 {
-#ifdef USE_GDAL_V2
+#ifdef GDAL_V2_0_OR_NEWER
 	return( m_pDataSet ? GDALDatasetGetLayerCount(m_pDataSet) : 0 );
 #else
 	return( m_pDataSet ? OGR_DS_GetLayerCount(m_pDataSet) : 0 );
@@ -605,7 +636,7 @@ OGRLayerH CSG_OGR_DataSet::Get_Layer(int iLayer)	const
 {
 	if( m_pDataSet && iLayer >= 0 && iLayer < Get_Count() )
 	{
-#ifdef USE_GDAL_V2
+#ifdef GDAL_V2_0_OR_NEWER
 		return( GDALDatasetGetLayer(m_pDataSet, iLayer) );
 #else
 		return( OGR_DS_GetLayer(m_pDataSet, iLayer) );
@@ -721,7 +752,7 @@ CSG_Shapes * CSG_OGR_DataSet::Read(int iLayer, int iGeomTypeChoice)
 	}
 
 	//-----------------------------------------------------
-#ifdef GDAL_OLDER_THAN_V1_8
+#ifdef GDAL_V1_8_OR_OLDER
 	CSG_Shapes	*pShapes	= SG_Create_Shapes(Get_Type(iLayer), CSG_String(OGR_FD_GetName(OGR_L_GetLayerDefn(pLayer))), NULL, Get_Coordinate_Type(iLayer));
 #else
 	CSG_Shapes	*pShapes	= SG_Create_Shapes(Get_Type(iLayer), CSG_String(OGR_L_GetName(pLayer)), NULL, Get_Coordinate_Type(iLayer));
@@ -765,7 +796,7 @@ CSG_Shapes * CSG_OGR_DataSet::Read(int iLayer, int iGeomTypeChoice)
 			}
 
 			//---------------------------------------------
-			if( _Read_Geometry(pShape, pGeometry) == false )
+			if( _Read_Geometry(pShape, pGeometry) == false || !pShape->is_Valid() )
 			{
 				pShapes->Del_Shape(pShape);
 			}
@@ -774,7 +805,15 @@ CSG_Shapes * CSG_OGR_DataSet::Read(int iLayer, int iGeomTypeChoice)
 		OGR_F_Destroy(pFeature);
 	}
 
-	return( pShapes );
+	//-----------------------------------------------------
+	if( pShapes->is_Valid() && pShapes->Get_Count() > 0 )
+	{
+		return( pShapes );
+	}
+
+	delete(pShapes);
+
+	return( NULL );
 }
 
 //---------------------------------------------------------
@@ -878,7 +917,7 @@ bool CSG_OGR_DataSet::_Read_Polygon(CSG_Shape *pShape, OGRGeometryH pPolygon)
 ///////////////////////////////////////////////////////////
 
 //---------------------------------------------------------
-bool CSG_OGR_DataSet::Write(CSG_Shapes *pShapes)
+bool CSG_OGR_DataSet::Write(CSG_Shapes *pShapes, const CSG_String &CreationOptions)
 {
 	if( !m_pDataSet || !pShapes || !pShapes->is_Valid() )
 	{
@@ -890,19 +929,29 @@ bool CSG_OGR_DataSet::Write(CSG_Shapes *pShapes)
 
 	if( pShapes->Get_Projection().is_Okay() )
 	{
-		pSRS	= OSRNewSpatialReference(pShapes->Get_Projection().Get_WKT());
-	//	pSRS	= new OGRSpatialReference(pShapes->Get_Projection().Get_WKT());
-	//	pSRS	= new OGRSpatialReference();
-	//	pSRS	->importFromProj4(pShapes->Get_Projection().Get_Proj4());
+		if( pShapes->Get_Projection().Get_EPSG() > 0
+		&&  OSRImportFromEPSG (pSRS = OSRNewSpatialReference(NULL), pShapes->Get_Projection().Get_EPSG ()) != OGRERR_NONE )
+		{
+			OSRDestroySpatialReference(pSRS); pSRS = NULL;
+		}
+
+		if( !pSRS
+		&&  OSRImportFromProj4(pSRS = OSRNewSpatialReference(NULL), pShapes->Get_Projection().Get_Proj4()) != OGRERR_NONE )
+		{
+			OSRDestroySpatialReference(pSRS); pSRS = NULL;
+		}
 	}
 
-#ifdef USE_GDAL_V2
+    //--------------------------------------------------------
+    char	**pOptions	= CreationOptions.is_Empty() ? NULL : CSLTokenizeString2(CreationOptions, " ", CSLT_STRIPLEADSPACES);
+
+#ifdef GDAL_V2_0_OR_NEWER
 	OGRLayerH	pLayer	= GDALDatasetCreateLayer(m_pDataSet, CSG_String(pShapes->Get_Name()), pSRS,
-		(OGRwkbGeometryType)gSG_OGR_Drivers.Get_Shape_Type(pShapes->Get_Type(), pShapes->Get_Vertex_Type() != SG_VERTEX_TYPE_XY), NULL
+		(OGRwkbGeometryType)gSG_OGR_Drivers.Get_Shape_Type(pShapes->Get_Type(), pShapes->Get_Vertex_Type() != SG_VERTEX_TYPE_XY), pOptions
 	);
 #else
 	OGRLayerH	pLayer	= OGR_DS_CreateLayer(m_pDataSet, CSG_String(pShapes->Get_Name()), pSRS,
-		(OGRwkbGeometryType)gSG_OGR_Drivers.Get_Shape_Type(pShapes->Get_Type(), pShapes->Get_Vertex_Type() != SG_VERTEX_TYPE_XY), NULL
+		(OGRwkbGeometryType)gSG_OGR_Drivers.Get_Shape_Type(pShapes->Get_Type(), pShapes->Get_Vertex_Type() != SG_VERTEX_TYPE_XY), pOptions
 	);
 #endif
 
@@ -912,7 +961,7 @@ bool CSG_OGR_DataSet::Write(CSG_Shapes *pShapes)
 	}
 
 	//-------------------------------------------------
-#ifdef USE_GDAL_V2
+#ifdef GDAL_V2_0_OR_NEWER
 	if( SG_STR_CMP(GDALGetDescription(GDALGetDatasetDriver(m_pDataSet)), "DXF") )
 	{
 		// the dxf driver does not support arbitrary field creation and returns OGRERR_FAILURE;
@@ -1045,7 +1094,7 @@ bool CSG_OGR_DataSet::_Write_Geometry(CSG_Shape *pShape, OGRFeatureH pFeature, b
 				}
 			}
 
-			return( OGR_F_SetGeometryDirectly(pFeature, Lines) == OGRERR_NONE );
+			return( OGR_F_SetGeometryDirectly(pFeature, OGR_G_ForceToMultiLineString(Lines)) == OGRERR_NONE );
 		}
 
 	//-----------------------------------------------------
@@ -1063,7 +1112,7 @@ bool CSG_OGR_DataSet::_Write_Geometry(CSG_Shape *pShape, OGRFeatureH pFeature, b
 				}
 			}
 
-			return( OGR_F_SetGeometryDirectly(pFeature, Polygon) == OGRERR_NONE );
+			return( OGR_F_SetGeometryDirectly(pFeature, OGR_G_ForceToMultiPolygon(Polygon)) == OGRERR_NONE );
 		}
 
 	//-----------------------------------------------------

@@ -1,6 +1,3 @@
-/**********************************************************
- * Version $Id: Flow_Distance.cpp 1921 2014-01-09 10:24:11Z oconrad $
- *********************************************************/
 
 ///////////////////////////////////////////////////////////
 //                                                       //
@@ -51,15 +48,6 @@
 ///////////////////////////////////////////////////////////
 
 //---------------------------------------------------------
-
-
-///////////////////////////////////////////////////////////
-//														 //
-//														 //
-//														 //
-///////////////////////////////////////////////////////////
-
-//---------------------------------------------------------
 #include "Flow_Distance.h"
 
 
@@ -72,7 +60,6 @@
 //---------------------------------------------------------
 CFlow_Distance::CFlow_Distance(void)
 {
-	//-----------------------------------------------------
 	Set_Name		(_TL("Flow Path Length"));
 
 	Set_Author		("O.Conrad (c) 2005");
@@ -90,19 +77,20 @@ CFlow_Distance::CFlow_Distance(void)
 
 	Add_Reference("Freeman, G.T.", "1991",
 		"Calculating catchment area with divergent flow based on a regular grid",
-		"Computers and Geosciences, 17:413-22."
+		"Computers and Geosciences, 17:413-22.",
+		SG_T("https://doi.org/10.1016/0098-3004(91)90048-I"), SG_T("doi:10.1016/0098-3004(91)90048-I")
 	);
 
 	Add_Reference("O'Callaghan, J.F. & Mark, D.M.", "1984",
 		"The extraction of drainage networks from digital elevation data",
-		"Computer Vision, Graphics and Image Processing, 28:323-344."
+		"Computer Vision, Graphics and Image Processing, 28:323-344.",
+		SG_T("https://doi.org/10.1016/S0734-189X(84)80011-0"), SG_T("doi:10.1016/S0734-189X(84)80011-0")
 	);
 
 	Add_Reference("Quinn, P.F., Beven, K.J., Chevallier, P. & Planchon, O.", "1991",
 		"The prediction of hillslope flow paths for distributed hydrological modelling using digital terrain models",
 		"Hydrological Processes, 5:59-79.",
-		SG_T("https://www.researchgate.net/profile/Olivier_Planchon/publication/32978462_The_Prediction_of_Hillslope_Flow_Paths_for_Distributed_Hydrological_Modeling_Using_Digital_Terrain_Model/links/0912f5130c356c86e6000000.pdf"),
-		SG_T("ResearchGate")
+		SG_T("https://doi.org/10.1002/hyp.3360050106"), SG_T("doi:10.1002/hyp.3360050106")
 	);
 
 	//-----------------------------------------------------
@@ -133,7 +121,7 @@ CFlow_Distance::CFlow_Distance(void)
 	Parameters.Add_Choice("",
 		"METHOD"	, _TL("Flow Routing Algorithm"),
 		_TL(""),
-		CSG_String::Format("%s|%s|",
+		CSG_String::Format("%s|%s",
 			_TL("Deterministic 8 (D8)"),
 			_TL("Multiple Flow Direction (FD8)")
 		), 1
@@ -168,8 +156,8 @@ bool CFlow_Distance::On_Execute(void)
 	Method		= Parameters("METHOD"     )	->asInt();
 
 	m_pWeight	= SG_Create_Grid(m_pLength, SG_DATATYPE_Float);
-	m_pWeight	->Assign(0.0);
-	m_pLength	->Assign(0.0);
+	m_pWeight	->Assign(0.);
+	m_pLength	->Assign(0.);
 
 	if( !m_pDTM->Set_Index() )
 	{
@@ -201,15 +189,15 @@ bool CFlow_Distance::On_Execute(void)
 
 		switch( Method )
 		{
-		case 0:	Set_Length_D8	(x, y);	break;
-		case 1:	Set_Length_MFD	(x, y);	break;
+		case  0: Set_Length_D8 (x, y); break;
+		default: Set_Length_MFD(x, y); break;
 		}
 	}
 
 	//-------------------------------------------------
 	delete(m_pWeight);
 
-	DataObject_Set_Colors(m_pLength, 100, SG_COLORS_WHITE_BLUE);
+	DataObject_Set_Colors(m_pLength, 11, SG_COLORS_WHITE_BLUE);
 
 	return( true );
 }

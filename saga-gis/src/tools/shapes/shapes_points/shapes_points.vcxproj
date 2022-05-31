@@ -1,5 +1,5 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
-<Project DefaultTargets="Build" ToolsVersion="14.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+<Project DefaultTargets="Build" ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="Debug|Win32">
       <Configuration>Debug</Configuration>
@@ -20,19 +20,20 @@
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{D1B647EC-297E-4E96-9835-298EEAE83F85}</ProjectGuid>
+    <WindowsTargetPlatformVersion>8.1</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
     <ConfigurationType>DynamicLibrary</ConfigurationType>
     <UseOfMfc>false</UseOfMfc>
     <CharacterSet>Unicode</CharacterSet>
-    <PlatformToolset>v140</PlatformToolset>
+    <PlatformToolset>v141</PlatformToolset>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
     <ConfigurationType>DynamicLibrary</ConfigurationType>
     <UseOfMfc>false</UseOfMfc>
     <CharacterSet>Unicode</CharacterSet>
-    <PlatformToolset>v140</PlatformToolset>
+    <PlatformToolset>v141</PlatformToolset>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
     <ConfigurationType>DynamicLibrary</ConfigurationType>
@@ -44,7 +45,7 @@
     <ConfigurationType>DynamicLibrary</ConfigurationType>
     <UseOfMfc>false</UseOfMfc>
     <CharacterSet>Unicode</CharacterSet>
-    <PlatformToolset>v140</PlatformToolset>
+    <PlatformToolset>v141</PlatformToolset>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
   <ImportGroup Label="ExtensionSettings">
@@ -324,8 +325,10 @@
     <ClCompile Include="Points_From_Lines.cpp" />
     <ClCompile Include="Points_From_Table.cpp" />
     <ClCompile Include="points_thinning.cpp" />
+    <ClCompile Include="point_to_line_distance.cpp" />
     <ClCompile Include="random_points.cpp" />
     <ClCompile Include="remove_duplicates.cpp" />
+    <ClCompile Include="select_3d_points.cpp" />
     <ClCompile Include="select_points.cpp" />
     <ClCompile Include="separate_by_direction.cpp" />
     <ClCompile Include="snap_points_to_features.cpp" />
@@ -364,8 +367,10 @@
     <ClInclude Include="Points_From_Lines.h" />
     <ClInclude Include="Points_From_Table.h" />
     <ClInclude Include="points_thinning.h" />
+    <ClInclude Include="point_to_line_distance.h" />
     <ClInclude Include="random_points.h" />
     <ClInclude Include="remove_duplicates.h" />
+    <ClInclude Include="select_3d_points.h" />
     <ClInclude Include="select_points.h" />
     <ClInclude Include="separate_by_direction.h" />
     <ClInclude Include="snap_points_to_features.h" />

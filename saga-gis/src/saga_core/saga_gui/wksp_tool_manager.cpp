@@ -1,6 +1,3 @@
-/**********************************************************
- * Version $Id$
- *********************************************************/
 
 ///////////////////////////////////////////////////////////
 //                                                       //
@@ -41,21 +38,11 @@
 //                                                       //
 //    contact:    Olaf Conrad                            //
 //                Institute of Geography                 //
-//                University of Goettingen               //
-//                Goldschmidtstr. 5                      //
-//                37077 Goettingen                       //
+//                University of Hamburg                  //
 //                Germany                                //
 //                                                       //
 //    e-mail:     oconrad@saga-gis.org                   //
 //                                                       //
-///////////////////////////////////////////////////////////
-
-//---------------------------------------------------------
-
-///////////////////////////////////////////////////////////
-//														 //
-//														 //
-//														 //
 ///////////////////////////////////////////////////////////
 
 //---------------------------------------------------------
@@ -147,7 +134,7 @@ CWKSP_Tool_Manager::CWKSP_Tool_Manager(void)
 	m_Parameters.Add_Choice("NODE_TOOLS",
 		"HELP_SOURCE"	, _TL("Tool Description Source"),
 		_TL(""),
-		CSG_String::Format("%s|%s|",
+		CSG_String::Format("%s|%s",
 			_TL("built-in"),
 			_TL("online")
 		), 0
@@ -156,12 +143,6 @@ CWKSP_Tool_Manager::CWKSP_Tool_Manager(void)
 	//-----------------------------------------------------
 	m_Parameters.Add_Node("", "NODE_FILES", _TL("Files"), _TL(""));
 
-	m_Parameters.Add_Bool("NODE_FILES",
-		"LNG_OLDSTYLE"	, _TL("Old Style Namings"),
-		_TL("Use old style namings (e.g. 'modules' instead of 'tools'). Ignored if translation file is used. You need to restart SAGA to apply the changes."),
-		false
-	);
-
 	m_Parameters.Add_FilePath("NODE_FILES",
 		"LNG_FILE_DIC"	, _TL("Language Translations"),
 		_TL("Dictionary for translations from built-in (English) to local language (editable text table, utf-8 encoded). You need to restart SAGA to apply the changes."),
@@ -169,24 +150,6 @@ CWKSP_Tool_Manager::CWKSP_Tool_Manager(void)
 			_TL("Recognized Files"),
 			_TL("Dictionary Files"),
 			_TL("Text Table"),
-			_TL("All Files")
-		)
-	);
-
-	m_Parameters.Add_FilePath("NODE_FILES",
-		"CRS_FILE_SRS"	, _TL("CRS Database"),
-		_TL("Database with Coordinate Reference System (CRS) definitions. You need to restart SAGA to apply the changes."),
-		CSG_String::Format("%s (*.srs)|*.srs|%s|*.*",
-			_TL("Spatial Reference System Files"),
-			_TL("All Files")
-		)
-	);
-
-	m_Parameters.Add_FilePath("NODE_FILES",
-		"CRS_FILE_DIC"	, _TL("CRS Dictionary"),
-		_TL("Dictionary for Proj.4/OGC WKT translations. You need to restart SAGA to apply the changes."),
-		CSG_String::Format("%s (*.dic)|*.dic|%s|*.*",
-			_TL("Dictionary Files"),
 			_TL("All Files")
 		)
 	);
@@ -207,6 +170,12 @@ CWKSP_Tool_Manager::CWKSP_Tool_Manager(void)
 		"LOOK_TB_SIZE"	, _TL("Tool Bar Button Size"),
 		_TL("Tool bar button sizes. You need to restart SAGA to apply the changes."),
 		16, 16, true
+	);
+
+	m_Parameters.Add_Int("NODE_LOOK",
+		"FLOAT_PRECISION", _TL("Floating Point Precision"),
+		_TL("Sets the (max) precision used when floating point values are rendered as text in settings controls. The value set to -1 means infinite precision."),
+		10, -1, true
 	);
 }
 
@@ -238,54 +207,100 @@ bool CWKSP_Tool_Manager::Initialise(void)
 
 	g_pSAGA->Process_Set_Frequency(m_Parameters("PROCESS_UPDATE")->asInt());
 
-#ifdef _OPENMP
-	SG_OMP_Set_Max_Num_Threads(m_Parameters("OMP_THREADS_MAX")->asInt());
-#endif
+	#ifdef _OPENMP
+		SG_OMP_Set_Max_Num_Threads(m_Parameters("OMP_THREADS_MAX")->asInt());
+	#endif
 
 	//-----------------------------------------------------
-	wxString	Library;
+	#ifdef _SAGA_MSW
+		wxString	Default_Path(g_pSAGA->Get_App_Path());
+	#else
+		wxString	Default_Path(TOOLS_PATH);
+	#endif
 
-	for(int i=0; CONFIG_Read(CFG_LIBS, wxString::Format(CFG_LIBF, i), Library); i++)
+	//-----------------------------------------------------
+	wxString Version; bool bCompatible = CONFIG_Read("/VERSION", "SAGA" , Version) && !Version.Cmp(SAGA_VERSION);
+
+	#ifdef __GNUC__
+	if( bCompatible ) // gcc builds: don't load stored libraries when there is no abi compatibility assured!
 	{
-		if( !wxFileExists(Library) )
+		long	Number;
+
+		if( !CONFIG_Read("/VERSION", "GNUC" , Number) || Number != __GNUC__ )
 		{
-			wxFileName	fn(Library);	fn.MakeAbsolute(g_pSAGA->Get_App_Path());
-
-			Library	= fn.GetFullPath();
+			bCompatible	= false;
 		}
+		#ifdef __GNUC_MINOR__
+			else if( !CONFIG_Read("/VERSION", "GNUC_MINOR" , Number) || Number != __GNUC_MINOR__ )
+			{
+				bCompatible	= false;
+			}
+			#ifdef __GNUC_PATCHLEVEL__
+				else if( !CONFIG_Read("/VERSION", "GNUC_PATCHLEVEL" , Number) || Number != __GNUC_PATCHLEVEL__ )
+				{
+					bCompatible	= false;
+				}
+			#endif
+		#endif
+	}
+	#endif
 
-		SG_UI_Progress_Lock(true);
-		SG_Get_Tool_Library_Manager().Add_Library(&Library);
-		SG_UI_Progress_Lock(false);
+	//-----------------------------------------------------
+	if( bCompatible )
+	{
+		wxString	Library;
+
+		for(int i=0; CONFIG_Read(CFG_LIBS, wxString::Format(CFG_LIBF, i), Library); i++)
+		{
+			if( !wxFileExists(Library) )
+			{
+				wxFileName	fn(Library);
+
+				fn.MakeAbsolute(Default_Path);
+
+				Library	= fn.GetFullPath();
+			}
+
+			SG_UI_Progress_Lock(true);
+			SG_Get_Tool_Library_Manager().Add_Library(&Library);
+			SG_UI_Progress_Lock(false);
+		}
 	}
 
+	//-----------------------------------------------------
 	if( SG_Get_Tool_Library_Manager().Get_Count() == 0 )
 	{
-#if defined(_SAGA_LINUX)
-	if( (SG_Get_Tool_Library_Manager().Add_Directory(CSG_String(MODULE_LIBRARY_PATH), false)
-	   + SG_Get_Tool_Library_Manager().Add_Directory(SG_File_Make_Path(CSG_String(SHARE_PATH), SG_T("toolchains")), false)) == 0 )
-#endif
-		SG_Get_Tool_Library_Manager().Add_Directory(&g_pSAGA->Get_App_Path(), true);
+		return( _Reload() );
 	}
 
-	_Update(false);
-
-	return( true );
+	return( _Update(false) );
 }
-
-//---------------------------------------------------------
-#ifdef _SAGA_MSW
-	#define GET_LIBPATH(path)	Get_FilePath_Relative(g_pSAGA->Get_App_Path().c_str(), path.c_str())
-#else
-	#define GET_LIBPATH(path)	path.c_str()
-#endif
 
 //---------------------------------------------------------
 bool CWKSP_Tool_Manager::Finalise(void)
 {
+	CONFIG_Write("/VERSION", "SAGA", SAGA_VERSION);
+
+	#ifdef __GNUC__
+		CONFIG_Write("/VERSION", "GNUC", (long)__GNUC__);
+		#ifdef __GNUC_MINOR__
+			CONFIG_Write("/VERSION", "GNUC_MINOR", (long)__GNUC_MINOR__);
+			#ifdef __GNUC_PATCHLEVEL__
+				CONFIG_Write("/VERSION", "GNUC_PATCHLEVEL", (long)__GNUC_PATCHLEVEL__);
+			#endif
+		#endif
+	#endif
+
 	CONFIG_Write("/TOOLS", "DLG_INFO", CDLG_Parameters::m_bInfo);
 
 	CONFIG_Write("/TOOLS", &m_Parameters);
+
+	//-----------------------------------------------------
+	#ifdef _SAGA_MSW
+		wxString	Default_Path(g_pSAGA->Get_App_Path());
+	#else
+		wxString	Default_Path(TOOLS_PATH);
+	#endif
 
 	CONFIG_Delete(CFG_LIBS);
 
@@ -301,12 +316,16 @@ bool CWKSP_Tool_Manager::Finalise(void)
 			{
 				for(int j=0; j<pLibrary->Get_Count(); j++)
 				{
-					CONFIG_Write(CFG_LIBS, wxString::Format(CFG_LIBF, n++), GET_LIBPATH(pLibrary->Get_File_Name(j)));
+					CONFIG_Write(CFG_LIBS, wxString::Format(CFG_LIBF, n++),
+						Get_FilePath_Relative(Default_Path.c_str(), pLibrary->Get_File_Name(j).c_str())
+					);
 				}
 			}
 			else
 			{
-				CONFIG_Write(CFG_LIBS, wxString::Format(CFG_LIBF, n++), GET_LIBPATH(pLibrary->Get_File_Name()));
+				CONFIG_Write(CFG_LIBS, wxString::Format(CFG_LIBF, n++),
+					Get_FilePath_Relative(Default_Path.c_str(), pLibrary->Get_File_Name().c_str())
+				);
 			}
 		}
 	}
@@ -327,10 +346,7 @@ int CWKSP_Tool_Manager::On_Parameter_Changed(CSG_Parameters *pParameters, CSG_Pa
 	{
 		if( g_pSAGA_Frame && g_pData )
 		{
-			if( pParameter->Cmp_Identifier("LNG_OLDSTYLE")
-			||  pParameter->Cmp_Identifier("LNG_FILE_DIC")
-			||  pParameter->Cmp_Identifier("CRS_FILE_SRS")
-			||  pParameter->Cmp_Identifier("CRS_FILE_DIC")
+			if( pParameter->Cmp_Identifier("LNG_FILE_DIC")
 			||  pParameter->Cmp_Identifier("LOOK_TB_SIZE") )
 			{
 				if( DLG_Message_Confirm(_TL("Restart now ?"), _TL("Restart SAGA to apply the changes")) && g_pData->Close(true) )
@@ -394,9 +410,7 @@ wxString CWKSP_Tool_Manager::Get_Description(void)
 //---------------------------------------------------------
 wxMenu * CWKSP_Tool_Manager::Get_Menu(void)
 {
-	wxMenu	*pMenu;
-
-	pMenu	= new wxMenu(_TL("Tool Libraries"));
+	wxMenu	*pMenu	= new wxMenu(Get_Name());
 
 	CMD_Menu_Add_Item(pMenu, false, ID_CMD_TOOL_OPEN);
 	CMD_Menu_Add_Item(pMenu, false, ID_CMD_TOOL_RELOAD);
@@ -431,13 +445,7 @@ bool CWKSP_Tool_Manager::On_Command(int Cmd_ID)
 		break;
 
 	case ID_CMD_TOOL_RELOAD:
-		#if defined(_SAGA_LINUX)
-			SG_Get_Tool_Library_Manager().Add_Directory(CSG_String(MODULE_LIBRARY_PATH), false);
-			SG_Get_Tool_Library_Manager().Add_Directory(SG_File_Make_Path(CSG_String(SHARE_PATH), SG_T("toolchains")), false);
-		#else
-			SG_Get_Tool_Library_Manager().Add_Directory(CSG_String(&g_pSAGA->Get_App_Path()) + "/tools", false);
-		#endif
-			_Update(false);
+		_Reload();
 		break;
 
 	case ID_CMD_TOOL_SEARCH:
@@ -479,8 +487,8 @@ bool CWKSP_Tool_Manager::On_Command_UI(wxUpdateUIEvent &event)
 		return( CWKSP_Base_Manager::On_Command_UI(event) );
 
 	case ID_CMD_WKSP_ITEM_CLOSE:
-	case ID_CMD_TOOL_SEARCH:
-	case ID_CMD_TOOL_SAVE_DOCS:
+	case ID_CMD_TOOL_SEARCH    :
+	case ID_CMD_TOOL_SAVE_DOCS :
 		event.Enable(Get_Count() > 0 && g_pTool == NULL);
 		break;
 	}
@@ -558,6 +566,35 @@ CWKSP_Tool_Library * CWKSP_Tool_Manager::Get_Library(CSG_Tool_Library *pLibrary)
 	}
 
 	return( NULL );
+}
+
+//---------------------------------------------------------
+bool CWKSP_Tool_Manager::_Reload(void)
+{
+	#ifdef _SAGA_MSW
+		SG_Get_Tool_Library_Manager().Add_Directory(SG_File_Make_Path(&g_pSAGA->Get_App_Path(), "tools"));
+	#else // #ifdef _SAGA_LINUX
+		SG_Get_Tool_Library_Manager().Add_Directory(TOOLS_PATH);
+		SG_Get_Tool_Library_Manager().Add_Directory(SG_File_Make_Path(SHARE_PATH, "toolchains"));	// look for tool chains
+	#endif
+
+	wxString Path;
+
+	if( wxGetEnv("SAGA_TLB", &Path) )
+	{
+		#ifdef _SAGA_MSW
+			CSG_Strings	Paths = SG_String_Tokenize(&Path, ";" ); // colon (':') would split drive from paths!
+		#else // #ifdef _SAGA_LINUX
+			CSG_Strings	Paths = SG_String_Tokenize(&Path, ";:"); // colon (':') is more native to non-windows os than semi-colon (';'), we support both...
+		#endif
+
+		for(int i=0; i<Paths.Get_Count(); i++)
+		{
+			SG_Get_Tool_Library_Manager().Add_Directory(Paths[i]);
+		}
+	}
+
+	return( _Update(false) );
 }
 
 //---------------------------------------------------------
@@ -770,6 +807,25 @@ wxString CWKSP_Tool_Group::Get_Description(void)
 	s	+= "</table>";
 
 	return( s );
+}
+
+
+///////////////////////////////////////////////////////////
+//														 //
+///////////////////////////////////////////////////////////
+
+//---------------------------------------------------------
+wxMenu * CWKSP_Tool_Group::Get_Menu(void)
+{
+	wxMenu	*pMenu	= new wxMenu(Get_Name());
+
+	CMD_Menu_Add_Item(pMenu, false, ID_CMD_TOOL_OPEN);
+	CMD_Menu_Add_Item(pMenu, false, ID_CMD_TOOL_RELOAD);
+	CMD_Menu_Add_Item(pMenu, false, ID_CMD_WKSP_ITEM_CLOSE);
+	pMenu->AppendSeparator();
+	CMD_Menu_Add_Item(pMenu, false, ID_CMD_WKSP_ITEM_SEARCH);
+
+	return( pMenu );
 }
 
 

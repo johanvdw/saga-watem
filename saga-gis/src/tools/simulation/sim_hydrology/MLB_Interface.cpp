@@ -1,6 +1,3 @@
-/**********************************************************
- * Version $Id: TLB_Interface.cpp 1921 2014-01-09 10:24:11Z oconrad $
- *********************************************************/
 
 ///////////////////////////////////////////////////////////
 //                                                       //
@@ -51,18 +48,9 @@
 ///////////////////////////////////////////////////////////
 
 //---------------------------------------------------------
-
-
-///////////////////////////////////////////////////////////
-//														 //
-//           The Tool Link Library Interface             //
-//														 //
-///////////////////////////////////////////////////////////
-
-//---------------------------------------------------------
 // 1. Include the appropriate SAGA-API header...
 
-#include "MLB_Interface.h"
+#include <saga_api/saga_api.h>
 
 
 //---------------------------------------------------------
@@ -79,13 +67,13 @@ CSG_String Get_Info(int i)
 		return( _TL("Simulation") );
 
 	case TLB_INFO_Author:
-		return( SG_T("O. Conrad (c) 2001") );
+		return( "O.Conrad (c) 2019" );
 
 	case TLB_INFO_Description:
-		return( _TL("Modelling hydrological processes.") );
+		return( _TL("Simulation of hydrological processes.") );
 
 	case TLB_INFO_Version:
-		return( SG_T("1.0") );
+		return( "1.0" );
 
 	case TLB_INFO_Menu_Path:
 		return( _TL("Simulation|Hydrology") );
@@ -102,6 +90,10 @@ CSG_String Get_Info(int i)
 #include "WaterRetentionCapacity.h"
 #include "diffuse_pollution_risk.h"
 #include "diffusion_gradient_concentration.h"
+#include "timed_flow_accumulation.h"
+#include "overland_flow.h"
+#include "soilwater_glugla.h"
+#include "soilwater_glugla_coefficient.h"
 
 
 //---------------------------------------------------------
@@ -119,8 +111,13 @@ CSG_Tool *		Create_Tool(int i)
 	case  5:	return( new CSim_Diffusion_Gradient );
 	case  6:	return( new CSim_Diffusion_Concentration );
 	case  7:	return( new CSim_Diffusion_Gradient_And_Concentration );
+	case  8:	return( new CTimed_Flow_Accumulation );
+	case  9:	return( new COverland_Flow );
+	case 10:	return( new CSoilWater_Glugla_Table );
+	case 11:	return( new CSoilWater_Glugla_Grid );
+	case 12:	return( new CSoilWater_Glugla_Coefficient );
 
-	case  9:	return( NULL );
+	case 13:	return( NULL );
 	default:	return( TLB_INTERFACE_SKIP_TOOL );
 	}
 }

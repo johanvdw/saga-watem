@@ -39,8 +39,6 @@
 //    contact:    Olaf Conrad                            //
 //                Institute of Geography                 //
 //                University of Goettingen               //
-//                Goldschmidtstr. 5                      //
-//                37077 Goettingen                       //
 //                Germany                                //
 //                                                       //
 //    e-mail:     oconrad@saga-gis.org                   //
@@ -73,6 +71,8 @@
 #include "wksp_layer.h"
 #include "wksp_layer_classify.h"
 #include "wksp_layer_legend.h"
+
+#include "wksp_shapes.h"
 
 #include "view_histogram.h"
 
@@ -142,14 +142,14 @@ CWKSP_Layer::CWKSP_Layer(CSG_Data_Object *pObject)
 //---------------------------------------------------------
 CWKSP_Layer::~CWKSP_Layer(void)
 {
-	g_pSAGA_Frame->Freeze();
+	if( g_pSAGA_Frame ) { g_pSAGA_Frame->Freeze(); }
 
-	if( g_pMaps     )	{	g_pMaps->Del(this);	}
+	if( g_pMaps       ) { g_pMaps->Del(this);      }
 
-	if( m_pClassify )	{	delete(m_pClassify);	}
-	if( m_pLegend   )	{	delete(m_pLegend  );	}
+	if( m_pClassify   ) { delete(m_pClassify);     }
+	if( m_pLegend     ) { delete(m_pLegend  );     }
 
-	g_pSAGA_Frame->Thaw();
+	if( g_pSAGA_Frame ) { g_pSAGA_Frame->Thaw();   }
 }
 
 
@@ -175,11 +175,6 @@ bool CWKSP_Layer::On_Command(int Cmd_ID)
 
 	case ID_CMD_DATA_PROJECTION:
 		_Set_Projection();
-		break;
-
-	case ID_CMD_DATA_FORCE_UPDATE:
-		m_pObject->Update(true);
-		DataObject_Changed();
 		break;
 	}
 
@@ -236,7 +231,7 @@ void CWKSP_Layer::On_Create_Parameters(void)
 	m_Parameters.Add_Double("NODE_DISPLAY",
 		"DISPLAY_TRANSPARENCY", _TL("Transparency [%]"),
 		_TL(""),
-		0.0, 0.0, true, 100.0, true
+		0., 0., true, 100., true
 	);
 
 	m_Parameters.Add_Bool("NODE_DISPLAY",
@@ -248,7 +243,7 @@ void CWKSP_Layer::On_Create_Parameters(void)
 	m_Parameters.Add_Range("SHOW_ALWAYS",
 		"SHOW_RANGE"	, _TL("Scale Range"),
 		_TL("only show within scale range; values are given as extent measured in map units"),
-		100.0, 1000.0, 0.0, true
+		100., 1000., 0., true
 	);
 
 	//-----------------------------------------------------
@@ -261,7 +256,7 @@ void CWKSP_Layer::On_Create_Parameters(void)
 			_TL("Specify floating point decimal precision in table and similar views."),
 			CSG_String::Format("%s|%s|%s",
 				_TL("system default"),
-				_TL("maximum number of significant decimals"),
+				_TL("compact"),
 				_TL("fix number of decimals")
 			), g_pData->Get_Parameter("TABLE_FLT_STYLE")->asInt()
 		);
@@ -280,18 +275,18 @@ void CWKSP_Layer::On_Create_Parameters(void)
 	||  m_pObject->Get_ObjectType() == SG_DATAOBJECT_TYPE_TIN )
 	{
 		m_Parameters.Add_Choice("NODE_COLORS", "COLORS_TYPE", _TL("Type"), _TL(""), CSG_String::Format("%s|%s|%s|%s",
-			_TL("Single Symbol"   ),	// CLASSIFY_UNIQUE
+			_TL("Single Symbol"   ),	// CLASSIFY_SINGLE
 			_TL("Classified"      ),	// CLASSIFY_LUT
-			_TL("Discrete Colors" ),	// CLASSIFY_METRIC
+			_TL("Discrete Colors" ),	// CLASSIFY_DISCRETE
 			_TL("Graduated Colors") 	// CLASSIFY_GRADUATED
 		), 0);
 	}
 	else if( m_pObject->Get_ObjectType() == SG_DATAOBJECT_TYPE_PointCloud )
 	{
 		m_Parameters.Add_Choice("NODE_COLORS", "COLORS_TYPE", _TL("Type"), _TL(""), CSG_String::Format("%s|%s|%s|%s|%s",
-			_TL("Single Symbol"   ),	// CLASSIFY_UNIQUE
+			_TL("Single Symbol"   ),	// CLASSIFY_SINGLE
 			_TL("Classified"      ),	// CLASSIFY_LUT
-			_TL("Discrete Colors" ),	// CLASSIFY_METRIC
+			_TL("Discrete Colors" ),	// CLASSIFY_DISCRETE
 			_TL("Graduated Colors"),	// CLASSIFY_GRADUATED
 			_TL("RGB Coded Values")		// CLASSIFY_OVERLAY !!!
 		), 0);
@@ -299,9 +294,9 @@ void CWKSP_Layer::On_Create_Parameters(void)
 	else if( m_pObject->Get_ObjectType() == SG_DATAOBJECT_TYPE_Grids )
 	{
 		m_Parameters.Add_Choice("NODE_COLORS", "COLORS_TYPE", _TL("Type"), _TL(""), CSG_String::Format("%s|%s|%s|%s|%s",
-			_TL("Single Symbol"   ),	// CLASSIFY_UNIQUE
+			_TL("Single Symbol"   ),	// CLASSIFY_SINGLE
 			_TL("Classified"      ),	// CLASSIFY_LUT
-			_TL("Discrete Colors" ),	// CLASSIFY_METRIC
+			_TL("Discrete Colors" ),	// CLASSIFY_DISCRETE
 			_TL("Graduated Colors"),	// CLASSIFY_GRADUATED
 			_TL("RGB Composite"   )		// CLASSIFY_OVERLAY
 		), 4);
@@ -315,9 +310,9 @@ void CWKSP_Layer::On_Create_Parameters(void)
 	else if( m_pObject->Get_ObjectType() == SG_DATAOBJECT_TYPE_Grid )
 	{
 		m_Parameters.Add_Choice("NODE_COLORS", "COLORS_TYPE", _TL("Type"), _TL(""), CSG_String::Format("%s|%s|%s|%s|%s|%s|%s",
-			_TL("Single Symbol"   ),	// CLASSIFY_UNIQUE
+			_TL("Single Symbol"   ),	// CLASSIFY_SINGLE
 			_TL("Classified"      ),	// CLASSIFY_LUT
-			_TL("Discrete Colors" ),	// CLASSIFY_METRIC
+			_TL("Discrete Colors" ),	// CLASSIFY_DISCRETE
 			_TL("Graduated Colors"),	// CLASSIFY_GRADUATED
 			_TL("RGB Composite"   ),	// CLASSIFY_OVERLAY
 			_TL("RGB Coded Values"),	// CLASSIFY_RGB
@@ -331,12 +326,12 @@ void CWKSP_Layer::On_Create_Parameters(void)
 	static	BYTE	s_Def_Layer_Colour	= 0;
 
 	m_Parameters.Add_Node("NODE_COLORS",
-		"NODE_UNISYMBOL"	, _TL("Single Symbol"),
+		"NODE_SINGLE"	, _TL("Single Symbol"),
 		_TL("")
 	);
 
-	m_Parameters.Add_Color("NODE_UNISYMBOL",
-		"UNISYMBOL_COLOR"	, _TL("Color"),
+	m_Parameters.Add_Color("NODE_SINGLE",
+		"SINGLE_COLOR"	, _TL("Color"),
 		_TL(""),
 		s_Def_Layer_Colours[s_Def_Layer_Colour++ % DEF_LAYER_COLOUR_COUNT]
 	);
@@ -361,13 +356,15 @@ void CWKSP_Layer::On_Create_Parameters(void)
 		_TL("")
 	)->asTable();
 
+	pLUT->Get_MetaData().Add_Child("SAGA_GUI_LUT_TYPE", m_pObject->Get_ObjectType());
+
 	pLUT->Add_Field(_TL("Color"      ), SG_DATATYPE_Color );
 	pLUT->Add_Field(_TL("Name"       ), SG_DATATYPE_String);
 	pLUT->Add_Field(_TL("Description"), SG_DATATYPE_String);
 	pLUT->Add_Field(_TL("Minimum"    ), SG_DATATYPE_Double);
 	pLUT->Add_Field(_TL("Maximum"    ), SG_DATATYPE_Double);
 
-	m_pClassify->Initialise(this, m_Parameters("LUT")->asTable(), g_pData->Get_Parameter("COLORS_DEFAULT")->asColors());
+	m_pClassify->Initialise(this, pLUT, g_pData->Get_Parameter("COLORS_DEFAULT")->asColors());
 
 	//-----------------------------------------------------
 	// Classification: Colors...
@@ -392,6 +389,10 @@ void CWKSP_Layer::ColorsParms_Add(void)
 	{
 		m_Parameters.Add_Choice("NODE_METRIC", "METRIC_ATTRIB", _TL("Attribute"), _TL(""), _TL("<default>"));
 		m_Parameters.Add_Choice("NODE_METRIC", "METRIC_NORMAL", _TL("Normalize"), _TL(""), _TL("<default>"));
+
+		m_Parameters.Add_Choice("METRIC_NORMAL", "METRIC_NORFMT", _TL("Labeling"), _TL(""),
+			CSG_String::Format("%s|%s", _TL("fraction"), _TL("percentage")), 1
+		);
 	}
 	else if( m_pObject->Get_ObjectType() == SG_DATAOBJECT_TYPE_PointCloud
 		||   m_pObject->Get_ObjectType() == SG_DATAOBJECT_TYPE_TIN )
@@ -430,21 +431,21 @@ void CWKSP_Layer::ColorsParms_Add(void)
 			CSG_String::Format("%s|%s|%s|%s",
 				_TL("Linear"),
 				_TL("Standard Deviation"),
-				_TL("Percentile"),
+				_TL("Percent Clip"),
 				_TL("Manual")
 			), g_pData->Get_Parameter("GRID_STRETCH_DEFAULT")->asInt()
 		);
 
-		m_Parameters.Add_Double("STRETCH_DEFAULT",
+		m_Parameters.Add_Range("STRETCH_DEFAULT",
 			"STRETCH_LINEAR"	, _TL("Linear Percent Stretch"),
 			_TL("Linear percent stretch allows you to trim extreme values from both ends of the histogram using the percentage specified here."),
-			5.0, 0.0, true, 50.0, true
+			5., 95., 0., true, 100., true
 		);
 
 		m_Parameters.Add_Double("STRETCH_DEFAULT",
 			"STRETCH_STDDEV"	, _TL("Standard Deviation"),
 			_TL(""),
-			2.0, 0.0, true
+			2., 0., true
 		);
 
 		m_Parameters.Add_Bool("STRETCH_STDDEV",
@@ -453,10 +454,42 @@ void CWKSP_Layer::ColorsParms_Add(void)
 			true
 		);
 
-		m_Parameters.Add_Double("STRETCH_DEFAULT",
-			"STRETCH_PCTL"		, _TL("Percentile"),
+		m_Parameters.Add_Range("STRETCH_DEFAULT",
+			"STRETCH_PCTL"		, _TL("Percent Clip"),
 			_TL(""),
-			2.0, 0.0, true, 50.0, true
+			2., 98., 0., true, 100., true
+		);
+	}
+
+	//-----------------------------------------------------
+	if( m_pObject->Get_ObjectType() == SG_DATAOBJECT_TYPE_PointCloud )
+	{
+		m_Parameters.Add_Choice("NODE_METRIC",
+			"STRETCH_DEFAULT"	, _TL("Adjustment"),
+			_TL("Specify how to adjust histogram stretch."),
+			CSG_String::Format("%s|%s|%s",
+				_TL("Linear"),
+				_TL("Standard Deviation"),
+				_TL("Manual")
+			), 1
+		);
+
+		m_Parameters.Add_Range("STRETCH_DEFAULT",
+			"STRETCH_LINEAR"	, _TL("Linear Percent Stretch"),
+			_TL("Linear percent stretch allows you to trim extreme values from both ends of the histogram using the percentage specified here."),
+			5., 95., 0., true, 100., true
+		);
+
+		m_Parameters.Add_Double("STRETCH_DEFAULT",
+			"STRETCH_STDDEV"	, _TL("Standard Deviation"),
+			_TL(""),
+			2., 0., true
+		);
+
+		m_Parameters.Add_Bool("STRETCH_STDDEV",
+			"STRETCH_INRANGE"	, _TL("Keep in Range"),
+			_TL("Prevents that minimum or maximum stretch value fall outside the data value range."),
+			true
 		);
 	}
 
@@ -474,7 +507,7 @@ void CWKSP_Layer::ColorsParms_Add(void)
 	m_Parameters.Add_Double("METRIC_SCALE_MODE",
 		"METRIC_SCALE_LOG"	, _TL("Geometrical Interval Factor"),
 		_TL(""),
-		10.0
+		10.
 	);
 }
 
@@ -541,11 +574,29 @@ bool CWKSP_Layer::ColorsParms_Adjust(CSG_Parameters &Parameters, CSG_Data_Object
 			return( false );
 		}
 
-		// currently no support for histogram stretch options with shapes...
-		Parameters.Set_Parameter("METRIC_ZRANGE" + Suffix + ".MIN", ((CSG_Shapes *)pObject)->Get_Minimum(Field));
-		Parameters.Set_Parameter("METRIC_ZRANGE" + Suffix + ".MAX", ((CSG_Shapes *)pObject)->Get_Maximum(Field));
+		if( pObject->Get_ObjectType() == SG_DATAOBJECT_TYPE_TIN )
+		{	// currently no support for histogram stretch options with shapes and tin...
+			Parameters.Set_Parameter("METRIC_ZRANGE" + Suffix + ".MIN", ((CSG_TIN *)pObject)->Get_Minimum(Field));
+			Parameters.Set_Parameter("METRIC_ZRANGE" + Suffix + ".MAX", ((CSG_TIN *)pObject)->Get_Maximum(Field));
 
-		return( true );
+			return( true );
+		}
+
+		if( pObject->Get_ObjectType() == SG_DATAOBJECT_TYPE_Shapes )
+		{	// currently no support for histogram stretch options with shapes and tin...
+			CWKSP_Shapes *pShapes = (CWKSP_Shapes *)this;
+
+			pShapes->Set_Metrics(
+				Parameters("METRIC_ATTRIB")->asInt(),
+				Parameters("METRIC_NORMAL")->asInt(),
+				Parameters("METRIC_NORFMT")->asInt()
+			);
+
+			Parameters.Set_Parameter("METRIC_ZRANGE" + Suffix + ".MIN", pShapes->Get_Value_Minimum());
+			Parameters.Set_Parameter("METRIC_ZRANGE" + Suffix + ".MAX", pShapes->Get_Value_Maximum());
+
+			return( true );
+		}
 	}
 
 	double	Minimum, Maximum;
@@ -557,13 +608,13 @@ bool CWKSP_Layer::ColorsParms_Adjust(CSG_Parameters &Parameters, CSG_Data_Object
 		switch( pObject->Get_ObjectType() )
 		{
 		case SG_DATAOBJECT_TYPE_Grid:
-			Minimum	= ((CSG_Grid   *)pObject)->Get_Min();
-			Maximum	= ((CSG_Grid   *)pObject)->Get_Max();
+			Minimum	= pObject->asGrid ()->Get_Min();
+			Maximum	= pObject->asGrid ()->Get_Max();
 			break;
 
 		case SG_DATAOBJECT_TYPE_Grids:
-			Minimum	= ((CSG_Grids  *)pObject)->Get_Min();
-			Maximum	= ((CSG_Grids  *)pObject)->Get_Max();
+			Minimum	= pObject->asGrids()->Get_Min();
+			Maximum	= pObject->asGrids()->Get_Max();
 			break;
 
 		case SG_DATAOBJECT_TYPE_Shapes:
@@ -577,12 +628,13 @@ bool CWKSP_Layer::ColorsParms_Adjust(CSG_Parameters &Parameters, CSG_Data_Object
 			return( false );
 		}
 
-		double	d	= Parameters("STRETCH_DEFAULT")->asInt() ? 0.0
-					: Parameters("STRETCH_LINEAR")->asDouble() * 0.01 * (Maximum - Minimum);
+		if( Parameters("STRETCH_DEFAULT")->asInt() == 0 )
+		{
+			double Range = (Maximum - Minimum) / 100.;
 
-		Minimum	+= d;
-		Maximum	-= d;
-
+			Maximum	= Minimum + Range * Parameters("STRETCH_LINEAR.MAX")->asDouble();
+			Minimum	= Minimum + Range * Parameters("STRETCH_LINEAR.MIN")->asDouble();
+		}
 		break;	}
 
 	//-----------------------------------------------------
@@ -592,17 +644,17 @@ bool CWKSP_Layer::ColorsParms_Adjust(CSG_Parameters &Parameters, CSG_Data_Object
 		switch( pObject->Get_ObjectType() )
 		{
 		case SG_DATAOBJECT_TYPE_Grid:
-			Minimum	= ((CSG_Grid   *)pObject)->Get_Min   ();
-			Maximum	= ((CSG_Grid   *)pObject)->Get_Max   ();
-			Mean	= ((CSG_Grid   *)pObject)->Get_Mean  ();
-			d	   *= ((CSG_Grid   *)pObject)->Get_StdDev();
+			Minimum	= pObject->asGrid ()->Get_Min   ();
+			Maximum	= pObject->asGrid ()->Get_Max   ();
+			Mean	= pObject->asGrid ()->Get_Mean  ();
+			d	   *= pObject->asGrid ()->Get_StdDev();
 			break;
 
 		case SG_DATAOBJECT_TYPE_Grids:
-			Minimum	= ((CSG_Grids  *)pObject)->Get_Min   ();
-			Maximum	= ((CSG_Grids  *)pObject)->Get_Max   ();
-			Mean	= ((CSG_Grids  *)pObject)->Get_Mean  ();
-			d	   *= ((CSG_Grids  *)pObject)->Get_StdDev();
+			Minimum	= pObject->asGrids()->Get_Min   ();
+			Maximum	= pObject->asGrids()->Get_Max   ();
+			Mean	= pObject->asGrids()->Get_Mean  ();
+			d	   *= pObject->asGrids()->Get_StdDev();
 			break;
 
 		case SG_DATAOBJECT_TYPE_Shapes:
@@ -610,7 +662,7 @@ bool CWKSP_Layer::ColorsParms_Adjust(CSG_Parameters &Parameters, CSG_Data_Object
 		case SG_DATAOBJECT_TYPE_TIN:
 			Minimum	= ((CSG_Shapes *)pObject)->Get_Minimum(Field);
 			Maximum	= ((CSG_Shapes *)pObject)->Get_Maximum(Field);
-			Maximum	= ((CSG_Shapes *)pObject)->Get_Mean   (Field);
+			Mean	= ((CSG_Shapes *)pObject)->Get_Mean   (Field);
 			d	   *= ((CSG_Shapes *)pObject)->Get_StdDev (Field);
 			break;
 
@@ -625,18 +677,16 @@ bool CWKSP_Layer::ColorsParms_Adjust(CSG_Parameters &Parameters, CSG_Data_Object
 
 	//-----------------------------------------------------
 	case  2: {
-		double	d	= Parameters("STRETCH_PCTL")->asDouble();
-
 		switch( pObject->Get_ObjectType() )
 		{
 		case SG_DATAOBJECT_TYPE_Grid:
-			Minimum	= ((CSG_Grid  *)pObject)->Get_Percentile(      d);
-			Maximum	= ((CSG_Grid  *)pObject)->Get_Percentile(100 - d);
+			Minimum	= ((CSG_Grid  *)pObject)->Get_Percentile(Parameters("STRETCH_PCTL.MIN")->asDouble());
+			Maximum	= ((CSG_Grid  *)pObject)->Get_Percentile(Parameters("STRETCH_PCTL.MAX")->asDouble());
 			break;
 
 		case SG_DATAOBJECT_TYPE_Grids:
-			Minimum	= ((CSG_Grids *)pObject)->Get_Percentile(      d);
-			Maximum	= ((CSG_Grids *)pObject)->Get_Percentile(100 - d);
+			Minimum	= ((CSG_Grids *)pObject)->Get_Percentile(Parameters("STRETCH_PCTL.MIN")->asDouble());
+			Maximum	= ((CSG_Grids *)pObject)->Get_Percentile(Parameters("STRETCH_PCTL.MAX")->asDouble());
 			break;
 
 		default:
@@ -707,20 +757,20 @@ int CWKSP_Layer::On_Parameter_Changed(CSG_Parameters *pParameters, CSG_Parameter
 
 		if( pParameter->Cmp_Identifier("TABLE_FLT_STYLE") )
 		{
-			pParameters->Set_Enabled("TABLE_FLT_DECIMALS", pParameter->asInt() > 0);
+			pParameters->Set_Enabled("TABLE_FLT_DECIMALS", pParameter->asInt() == 2);
 		}
 
 		if(	pParameter->Cmp_Identifier("COLORS_TYPE") )
 		{
 			int		Value	= pParameter->asInt();
 
-			pParameters->Set_Enabled("METRIC_COLORS" , Value == CLASSIFY_METRIC || Value == CLASSIFY_GRADUATED);
-			pParameters->Set_Enabled("NODE_UNISYMBOL", Value == CLASSIFY_UNIQUE);
+			pParameters->Set_Enabled("METRIC_COLORS" , Value == CLASSIFY_DISCRETE || Value == CLASSIFY_GRADUATED);
+			pParameters->Set_Enabled("NODE_SINGLE", Value == CLASSIFY_SINGLE);
 			pParameters->Set_Enabled("NODE_LUT"      , Value == CLASSIFY_LUT);
 		
 			if( m_pObject->Get_ObjectType() != SG_DATAOBJECT_TYPE_Grids )
 			{
-				pParameters->Set_Enabled("NODE_METRIC", Value != CLASSIFY_UNIQUE && Value != CLASSIFY_LUT && Value != CLASSIFY_RGB);
+				pParameters->Set_Enabled("NODE_METRIC", Value != CLASSIFY_SINGLE && Value != CLASSIFY_LUT && Value != CLASSIFY_RGB);
 			}
 		}
 	}
@@ -744,7 +794,7 @@ void CWKSP_Layer::On_Parameters_Changed(void)
 
 	m_pClassify->Set_Mode(m_Parameters("COLORS_TYPE")->asInt());
 
-	m_pClassify->Set_Unique_Color(m_Parameters("UNISYMBOL_COLOR")->asInt());
+	m_pClassify->Set_Unique_Color(m_Parameters("SINGLE_COLOR")->asInt());
 
 	m_pClassify->Set_Metric(
 		m_Parameters("METRIC_SCALE_MODE")->asInt   (),
@@ -784,7 +834,7 @@ bool CWKSP_Layer::_Set_Thumbnail(bool bRefresh)
 	{
 		wxMemoryDC		dc;
 		wxRect			r(0, 0, m_Thumbnail.GetWidth(), m_Thumbnail.GetHeight());
-		CWKSP_Map_DC	dc_Map(Get_Extent(), r, 1.0, SG_GET_RGB(255, 255, 255));
+		CWKSP_Map_DC	dc_Map(Get_Extent(), r, 1., SG_GET_RGB(255, 255, 255));
 
 		Draw(dc_Map, LAYER_DRAW_FLAG_NOEDITS|LAYER_DRAW_FLAG_NOLABELS|LAYER_DRAW_FLAG_THUMBNAIL);
 
@@ -839,7 +889,7 @@ CSG_Rect CWKSP_Layer::Get_Extent(void)
 		}
 	}
 
-	return( CSG_Rect(0.0, 0.0, 0.0, 0.0) );
+	return( CSG_Rect(0., 0., 0., 0.) );
 }
 
 
@@ -850,7 +900,7 @@ CSG_Rect CWKSP_Layer::Get_Extent(void)
 //---------------------------------------------------------
 void CWKSP_Layer::_Set_Projection(void)
 {
-	CSG_Tool	*pTool	= SG_Get_Tool_Library_Manager().Create_Tool("pj_proj4", 15);	// CCRS_Picker
+	CSG_Tool	*pTool	= SG_Get_Tool_Library_Manager().Create_Tool("pj_proj4", 15, true);	// CCRS_Picker
 
 	CSG_Projection	Projection(Get_Object()->Get_Projection());
 
@@ -952,7 +1002,7 @@ bool CWKSP_Layer::do_Legend(void)
 //---------------------------------------------------------
 bool CWKSP_Layer::do_Show(CSG_Rect const &Map_Extent, bool bIntersects)
 {
-	if( bIntersects && !Map_Extent.Intersects(Get_Extent()) )
+	if( bIntersects && !Map_Extent.Intersects(Get_Extent()) && !Map_Extent.Intersects(Edit_Get_Extent()) )
 	{
 		return( false );
 	}
@@ -1021,7 +1071,7 @@ bool CWKSP_Layer::Show(CWKSP_Map *pMap)
 	{
 		for(int i=0; i<g_pMaps->Get_Count(); i++)
 		{
-			if( g_pMaps->Get_Map(i)->Find_Layer(this) != NULL )
+			if( g_pMaps->Get_Map(i)->Get_Map_Layer(this) != NULL )
 			{
 				pMap	= g_pMaps->Get_Map(i);
 

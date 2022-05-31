@@ -80,8 +80,8 @@ public:
 	CSG_Tool_Chain(void);
 	virtual ~CSG_Tool_Chain(void);
 
-								CSG_Tool_Chain			(const CSG_Tool_Chain &Tool);
-	bool						Create					(const CSG_Tool_Chain &Tool);
+								CSG_Tool_Chain			(const CSG_Tool_Chain &Tool, bool bWithGUI);
+	bool						Create					(const CSG_Tool_Chain &Tool, bool bWithGUI);
 
 								CSG_Tool_Chain			(const CSG_String &File);
 	bool						Create					(const CSG_String &File);
@@ -99,6 +99,10 @@ public:
 	virtual CSG_String			Get_MenuPath			(void)			{	return( m_Menu );	}
 	const CSG_String &			Get_Library_Name		(void)	const	{	return( m_Library_Name );	}
 
+	static CSG_String			Get_Script				(CSG_Tool *pTool, bool bHeader, bool bAllParameters = true);
+
+	static bool					Save_History_to_Model	(const CSG_MetaData &History, const CSG_String &File);
+
 
 protected:
 
@@ -108,6 +112,8 @@ protected:
 
 
 private:
+
+	bool						m_bAddHistory;
 
 	CSG_String					m_Library_Name, m_Menu;
 
@@ -145,12 +151,12 @@ private:
 	bool						Tool_Initialize			(const CSG_MetaData &Tool, CSG_Tool *pTool);
 	bool						Tool_Finalize			(const CSG_MetaData &Tool, CSG_Tool *pTool);
 
+	//-----------------------------------------------------
+	static bool					_Get_Script_Tool		(CSG_MetaData &Tool      , CSG_Parameters *pParameters, bool bAllParameters, const CSG_String &Prefix, bool bVarNames);
+	static bool					_Get_Script_Parameters	(CSG_MetaData &Parameters, CSG_Parameters *pParameters, const CSG_String &Prefix);
 
-//---------------------------------------------------------
-public: 	static bool			Save_History_to_Model	(const CSG_MetaData &History, const CSG_String &File);
-
-private:	static bool			_Save_History_Add_Tool	(const CSG_MetaData &History, CSG_MetaData &Parms, CSG_MetaData &Tools, bool bAddOutput = false);
-private:	static bool			_Save_History_Add_Input	(const CSG_MetaData &History, CSG_MetaData &Parms, CSG_MetaData &Tool);
+	static bool					_Save_History_Add_Tool	(const CSG_MetaData &History, CSG_MetaData &Parms, CSG_MetaData &Tools, bool bAddOutput = false);
+	static bool					_Save_History_Add_Input	(const CSG_MetaData &History, CSG_MetaData &Parms, CSG_MetaData &Tool);
 
 };
 
@@ -178,7 +184,7 @@ public:
 
 	virtual CSG_Tool *				Get_Tool			(int Index, TSG_Tool_Type Type = TOOL_TYPE_Base)	const;
 
-	virtual CSG_Tool *				Create_Tool			(const CSG_String &Name);
+	virtual CSG_Tool *				Create_Tool			(const CSG_String &Name, bool bWithGUI = false);
 	virtual bool					Delete_Tool			(CSG_Tool *pTool);
 	virtual bool					Delete_Tools		(void);
 

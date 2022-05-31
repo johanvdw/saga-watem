@@ -1,6 +1,3 @@
-/**********************************************************
- * Version $Id$
- *********************************************************/
 
 ///////////////////////////////////////////////////////////
 //                                                       //
@@ -50,15 +47,6 @@
 //                                                       //
 //    e-mail:     oconrad@saga-gis.org                   //
 //                                                       //
-///////////////////////////////////////////////////////////
-
-//---------------------------------------------------------
-
-
-///////////////////////////////////////////////////////////
-//														 //
-//														 //
-//														 //
 ///////////////////////////////////////////////////////////
 
 //---------------------------------------------------------
@@ -198,7 +186,7 @@ CSG_Tool * CSG_Tool_Library_Interface::Get_Tool(int i)
 ///////////////////////////////////////////////////////////
 
 //---------------------------------------------------------
-CSG_Tool * CSG_Tool_Library_Interface::Create_Tool(int ID)
+CSG_Tool * CSG_Tool_Library_Interface::Create_Tool(int ID, bool bWithGUI)
 {
 	CSG_Tool	*pTool	= m_Fnc_Create_Tool ? m_Fnc_Create_Tool(ID) : NULL;
 
@@ -208,6 +196,7 @@ CSG_Tool * CSG_Tool_Library_Interface::Create_Tool(int ID)
 		pTool->m_Library      = m_Info[TLB_INFO_Library  ];
 		pTool->m_Library_Menu = m_Info[TLB_INFO_Menu_Path];
 		pTool->m_File_Name    = m_Info[TLB_INFO_File     ];
+		pTool->m_bWithGUI     = bWithGUI;
 
 		m_xTools.Add(pTool);
 

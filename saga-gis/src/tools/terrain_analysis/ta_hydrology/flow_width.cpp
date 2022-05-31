@@ -1,6 +1,3 @@
-/**********************************************************
- * Version $Id: flow_width.cpp 1921 2014-01-09 10:24:11Z oconrad $
- *********************************************************/
 
 ///////////////////////////////////////////////////////////
 //                                                       //
@@ -44,16 +41,8 @@
 //    contact:    Olaf Conrad                            //
 //                Institute of Geography                 //
 //                University of Hamburg                  //
-//                Bundesstr. 55                          //
-//                20146 Hamburg                          //
 //                Germany                                //
 //                                                       //
-///////////////////////////////////////////////////////////
-
-///////////////////////////////////////////////////////////
-//														 //
-//														 //
-//														 //
 ///////////////////////////////////////////////////////////
 
 //---------------------------------------------------------
@@ -83,45 +72,53 @@ CFlow_Width::CFlow_Width(void)
 		"Gruber, S., Peckham, S.", "2008",
 		"Land-Surface Parameters and Objects in Hydrology",
 		"In: Hengl, T. and Reuter, H.I. [Eds.]: Geomorphometry: Concepts, Software, Applications. Developments in Soil Science, Elsevier, 33:293-308.",
-		SG_T("https://www.elsevier.com/books/geomorphometry/hengl/978-0-12-374345-9")
+		SG_T("https://doi.org/10.1016/S0166-2481(08)00007-X"), SG_T("doi:10.1016/S0166-2481(08)00007-X")
 	);
 
-	Add_Reference(
-		"Quinn, P.F., Beven, K.J., Chevallier, P., Planchon, O.", "1991",
+	Add_Reference("Quinn, P.F., Beven, K.J., Chevallier, P. & Planchon, O.", "1991",
 		"The prediction of hillslope flow paths for distributed hydrological modelling using digital terrain models",
-		"Hydrological Processes, 5:59-79",
-		SG_T("http://onlinelibrary.wiley.com/doi/10.1002/hyp.3360050106/full")
+		"Hydrological Processes, 5:59-79.",
+		SG_T("https://doi.org/10.1002/hyp.3360050106"), SG_T("doi:10.1002/hyp.3360050106")
 	);
 
 	//-----------------------------------------------------
 	Parameters.Add_Grid("",
-		"DEM"	, _TL("Elevation"),
+		"DEM"		, _TL("Elevation"),
 		_TL(""),
 		PARAMETER_INPUT
 	);
 
 	Parameters.Add_Grid("",
-		"WIDTH"	, _TL("Flow Width"),
+		"WIDTH"		, _TL("Flow Width"),
 		_TL(""),
 		PARAMETER_OUTPUT
 	);
 
 	Parameters.Add_Grid("",
-		"TCA"	, _TL("Total Catchment Area (TCA)"),
+		"TCA"		, _TL("Total Catchment Area (TCA)"),
 		_TL(""),
 		PARAMETER_INPUT_OPTIONAL
 	);
 
 	Parameters.Add_Grid("",
-		"SCA"	, _TL("Specific Catchment Area (SCA)"),
+		"SCA"		, _TL("Specific Catchment Area (SCA)"),
 		_TL(""),
 		PARAMETER_OUTPUT
 	);
 
 	Parameters.Add_Choice("",
-		"METHOD", _TL("Method"),
+		"COORD_UNIT", _TL("Coordinate Unit"),
 		_TL(""),
-		CSG_String::Format("%s|%s|%s|",
+		CSG_String::Format("%s|%s",
+			_TL("meter"),
+			_TL("feet")
+		), 0
+	);
+
+	Parameters.Add_Choice("",
+		"METHOD"	, _TL("Method"),
+		_TL(""),
+		CSG_String::Format("%s|%s|%s",
 			_TL("Deterministic 8"),
 			_TL("Multiple Flow Direction (Quinn et al. 1991)"),
 			_TL("Aspect")
@@ -185,7 +182,7 @@ bool CFlow_Width::On_Execute(void)
 			default: Width = Get_Aspect(x, y); break;	// Aspect
 			}
 
-			if( Width > 0.0 )
+			if( Width > 0. )
 			{
 				pWidth->Set_Value(x, y, Width);
 
@@ -225,14 +222,14 @@ bool CFlow_Width::On_Execute(void)
 //---------------------------------------------------------
 inline double CFlow_Width::Get_D8(int x, int y)
 {
-	int		Direction;
+	int Direction = m_pDEM->Get_Gradient_NeighborDir(x, y);
 
-	if( (Direction = m_pDEM->Get_Gradient_NeighborDir(x, y)) >= 0 )
+	if( Direction >= 0 )
 	{
 		return( Get_Length(Direction) );
 	}
 
-	return( -1.0 );
+	return( -1. );
 }
 
 //---------------------------------------------------------
@@ -240,7 +237,7 @@ inline double CFlow_Width::Get_MFD(int x, int y)
 {
 	if( m_pDEM->is_InGrid(x, y) )
 	{
-		double	Width	= 0.0;
+		double	Width	= 0.;
 		double	z		= m_pDEM->asDouble(x, y);
 
 		for(int i=0; i<8; i++)
@@ -257,7 +254,7 @@ inline double CFlow_Width::Get_MFD(int x, int y)
 		return( Width );
 	}
 
-	return( -1.0 );
+	return( -1. );
 }
 
 //---------------------------------------------------------
@@ -270,7 +267,7 @@ inline double CFlow_Width::Get_Aspect(int x, int y)
 		return( (fabs(sin(Aspect)) + fabs(cos(Aspect))) * Get_Cellsize() );
 	}
 
-	return( -1.0 );
+	return( -1. );
 }
 
 

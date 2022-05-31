@@ -100,6 +100,24 @@ COGR_Export_KML::COGR_Export_KML(void)
 ///////////////////////////////////////////////////////////
 
 //---------------------------------------------------------
+int COGR_Export_KML::On_Parameter_Changed(CSG_Parameters *pParameters, CSG_Parameter *pParameter)
+{
+	if( has_GUI() && pParameter->Cmp_Identifier("SHAPES") && pParameter->asShapes() )
+	{
+		CSG_String	Path(SG_File_Get_Path((*pParameters)["FILE"].asString()));
+
+		pParameters->Set_Parameter("FILE", SG_File_Make_Path(Path, pParameter->asShapes()->Get_Name(), "kml"));
+	}
+
+	return( CSG_Tool::On_Parameter_Changed(pParameters, pParameter) );
+}
+
+
+///////////////////////////////////////////////////////////
+//														 //
+///////////////////////////////////////////////////////////
+
+//---------------------------------------------------------
 bool COGR_Export_KML::On_Execute(void)
 {
 	CSG_Shapes	Shapes, *pShapes	= Parameters("SHAPES")->asShapes();
@@ -136,14 +154,14 @@ bool COGR_Export_KML::On_Execute(void)
 	//-----------------------------------------------------
 	CSG_OGR_DataSet	DataSource;
 
-	if( !DataSource.Create(Parameters("FILE")->asString(), "KML") )
+	if( !DataSource.Create(Parameters("FILE")->asString(), "KML", "") )
 	{
 		Error_Set(_TL("KML file creation failed"));
 
 		return( false );
 	}
 
-	if( !DataSource.Write(pShapes) )
+	if( !DataSource.Write(pShapes, "") )
 	{
 		Error_Set(_TL("failed to store data"));
 

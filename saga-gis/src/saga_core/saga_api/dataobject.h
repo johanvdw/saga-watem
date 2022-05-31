@@ -50,17 +50,15 @@
 ///////////////////////////////////////////////////////////
 
 //---------------------------------------------------------
-
-
-///////////////////////////////////////////////////////////
-//														 //
-//														 //
-//														 //
-///////////////////////////////////////////////////////////
-
-//---------------------------------------------------------
 #ifndef HEADER_INCLUDED__SAGA_API__dataobject_H
 #define HEADER_INCLUDED__SAGA_API__dataobject_H
+
+
+///////////////////////////////////////////////////////////
+//														 //
+//														 //
+//														 //
+///////////////////////////////////////////////////////////
 
 //---------------------------------------------------------
 /** \file dataobject.h
@@ -228,6 +226,8 @@ public:
 	CSG_MetaData &					Get_History		(void)					{	return( *m_pMD_History  );	}
 	const CSG_MetaData &			Get_History		(void)	const			{	return( *m_pMD_History  );	}
 
+	virtual const CSG_Rect &		Get_Extent		(void) = 0;
+
 	CSG_Projection &				Get_Projection	(void);
 	const CSG_Projection &			Get_Projection	(void)	const;
 
@@ -239,13 +239,12 @@ public:
 	class CSG_Grids *				asGrids			(void)	{	return( Get_ObjectType() == SG_DATAOBJECT_TYPE_Grids      ? (class CSG_Grids      *)this : NULL );	}
 
 	virtual bool					Set_NoData_Value		(double Value);
-	virtual bool					Set_NoData_Value_Range	(double loValue, double hiValue);
-	double							Get_NoData_Value		(void)	const	{	return( m_NoData_Value );	}
-	double							Get_NoData_hiValue		(void)	const	{	return( m_NoData_hiValue );	}
+	virtual bool					Set_NoData_Value_Range	(double Lower, double Upper);
+	double							Get_NoData_Value		(bool bUpper = false)	const	{	return( m_NoData_Value[bUpper ? 1 : 0] );	}
 
 	bool							is_NoData_Value			(double Value)	const
 	{
-		return( SG_is_NaN(Value) || (m_NoData_Value < m_NoData_hiValue ? m_NoData_Value <= Value && Value <= m_NoData_hiValue : Value == m_NoData_Value) );
+		return( SG_is_NaN(Value) || (m_NoData_Value[0] < m_NoData_Value[1] ? m_NoData_Value[0] <= Value && Value <= m_NoData_Value[1] : Value == m_NoData_Value[0]) );
 	}
 
 	bool							Save_History_to_Model	(const CSG_String &File)	const;
@@ -284,7 +283,7 @@ private:
 
 	sLong							m_Max_Samples;
 
-	double							m_NoData_Value, m_NoData_hiValue;
+	double							m_NoData_Value[2];
 
 	CSG_String						m_FileName, m_Name, m_Description;
 

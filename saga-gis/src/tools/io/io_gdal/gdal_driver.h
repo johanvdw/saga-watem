@@ -67,7 +67,7 @@
 ///////////////////////////////////////////////////////////
 
 //---------------------------------------------------------
-class io_gdal_EXPORT CSG_GDAL_Drivers
+class CSG_GDAL_Drivers
 {
 public:
 	CSG_GDAL_Drivers(void);
@@ -101,7 +101,7 @@ private:
 };
 
 //---------------------------------------------------------
-io_gdal_EXPORT const CSG_GDAL_Drivers &	SG_Get_GDAL_Drivers	(void);
+const CSG_GDAL_Drivers &	SG_Get_GDAL_Drivers	(void);
 
 
 ///////////////////////////////////////////////////////////
@@ -115,15 +115,16 @@ io_gdal_EXPORT const CSG_GDAL_Drivers &	SG_Get_GDAL_Drivers	(void);
 #define SG_GDAL_IO_READWRITE	(SG_GDAL_IO_READ|IO_WRITE)
 
 //---------------------------------------------------------
-class io_gdal_EXPORT CSG_GDAL_DataSet
+class CSG_GDAL_DataSet
 {
 public:
 	CSG_GDAL_DataSet(void);
 	CSG_GDAL_DataSet(const CSG_String &File_Name);
 	virtual ~CSG_GDAL_DataSet(void);
 
-	bool						Open_Read			(const CSG_String &File_Name);
+	bool						Open_Read			(const CSG_String &File_Name, const char *Drivers[] = NULL);
 	bool						Open_Read			(const CSG_String &File_Name, const CSG_Grid_System &System);
+	bool						Open_Read			(const CSG_String &File_Name, const TSG_Rect &Extent);
 	bool						Open_Write			(const CSG_String &File_Name, const CSG_String &Driver, const CSG_String &Options, TSG_Data_Type Type, int NBands, const CSG_Grid_System &System, const CSG_Projection &Projection);
 	bool						Close				(void);
 
@@ -164,6 +165,8 @@ public:
 	int							Get_Count			(void)	const;
 	CSG_String					Get_Name			(int i)	const;
 	CSG_String					Get_Description		(int i)	const;
+	bool						Set_Description		(int i, const CSG_String &Description);
+	CSG_String					Get_MetaData		(int i)	const;
 	bool						Get_MetaData		(int i, CSG_MetaData &MetaData)	const;
 	const char *				Get_MetaData_Item	(int i, const char *pszName)	const;
 	bool						Get_MetaData_Item	(int i, const char *pszName, CSG_String &MetaData)	const;
@@ -236,7 +239,7 @@ public:
 ///////////////////////////////////////////////////////////
 
 //---------------------------------------------------------
-io_gdal_EXPORT TSG_Data_Type			SG_Get_Grid_Type	(CSG_Parameter_Grid_List *pGrids);
+TSG_Data_Type			SG_Get_Grid_Type	(CSG_Parameter_Grid_List *pGrids);
 
 
 ///////////////////////////////////////////////////////////

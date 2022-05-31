@@ -1,6 +1,3 @@
-/**********************************************************
- * Version $Id$
- *********************************************************/
 
 ///////////////////////////////////////////////////////////
 //                                                       //
@@ -48,15 +45,6 @@
 //                                                       //
 //    e-mail:     oconrad@saga-gis.org                   //
 //                                                       //
-///////////////////////////////////////////////////////////
-
-//---------------------------------------------------------
-
-
-///////////////////////////////////////////////////////////
-//														 //
-//														 //
-//														 //
 ///////////////////////////////////////////////////////////
 
 //---------------------------------------------------------
@@ -117,21 +105,26 @@ wxMenu * CVIEW_Table::_Create_Menu(void)
 {
 	wxMenu	*pMenu	= new wxMenu;
 
-	CMD_Menu_Add_Item(pMenu, false, ID_CMD_TABLE_FIELD_ADD);
-	CMD_Menu_Add_Item(pMenu, false, ID_CMD_TABLE_FIELD_DEL);
-	CMD_Menu_Add_Item(pMenu, false, ID_CMD_TABLE_FIELD_RENAME);
-	CMD_Menu_Add_Item(pMenu, false, ID_CMD_TABLE_FIELD_TYPE);
+	CMD_Menu_Add_Item(pMenu, false, ID_CMD_TABLE_FIELD_ADD      );
+	CMD_Menu_Add_Item(pMenu, false, ID_CMD_TABLE_FIELD_MOVE     );
+	CMD_Menu_Add_Item(pMenu, false, ID_CMD_TABLE_FIELD_DEL      );
+	CMD_Menu_Add_Item(pMenu, false, ID_CMD_TABLE_FIELD_RENAME   );
+	CMD_Menu_Add_Item(pMenu, false, ID_CMD_TABLE_FIELD_TYPE     );
 	pMenu->AppendSeparator();
-	CMD_Menu_Add_Item(pMenu, false, ID_CMD_TABLE_RECORD_ADD);
-	CMD_Menu_Add_Item(pMenu, false, ID_CMD_TABLE_RECORD_INS);
-	CMD_Menu_Add_Item(pMenu, false, ID_CMD_TABLE_RECORD_DEL);
-	CMD_Menu_Add_Item(pMenu, false, ID_CMD_TABLE_RECORD_DEL_ALL);
+	CMD_Menu_Add_Item(pMenu, false, ID_CMD_TABLE_RECORD_ADD     );
+	CMD_Menu_Add_Item(pMenu, false, ID_CMD_TABLE_RECORD_INS     );
+	CMD_Menu_Add_Item(pMenu, false, ID_CMD_TABLE_RECORD_DEL     );
+	CMD_Menu_Add_Item(pMenu, false, ID_CMD_TABLE_RECORD_DEL_ALL );
 	pMenu->AppendSeparator();
-	CMD_Menu_Add_Item(pMenu, false, ID_CMD_TABLE_FIELD_SORT);
-	CMD_Menu_Add_Item(pMenu, false, ID_CMD_TABLE_FIELD_CALC);
+	CMD_Menu_Add_Item(pMenu, false, ID_CMD_TABLE_SELECTION_CLEAR);
+	CMD_Menu_Add_Item(pMenu,  true, ID_CMD_TABLE_SELECTION_ONLY );
 	pMenu->AppendSeparator();
-	CMD_Menu_Add_Item(pMenu, false, ID_CMD_TABLE_TO_CLIPBOARD);
-	CMD_Menu_Add_Item(pMenu, false, ID_CMD_TABLE_AUTOSIZE_COLS);
+	CMD_Menu_Add_Item(pMenu, false, ID_CMD_TABLE_AUTOSIZE_COLS  );
+	CMD_Menu_Add_Item(pMenu, false, ID_CMD_TABLE_FIELD_HIDE     );
+	CMD_Menu_Add_Item(pMenu, false, ID_CMD_TABLE_FIELD_SORT     );
+	CMD_Menu_Add_Item(pMenu, false, ID_CMD_TABLE_FIELD_CALC     );
+	pMenu->AppendSeparator();
+	CMD_Menu_Add_Item(pMenu, false, ID_CMD_TABLE_TO_CLIPBOARD   );
 
 	return( pMenu );
 }
@@ -141,13 +134,15 @@ wxToolBarBase * CVIEW_Table::_Create_ToolBar(void)
 {
 	wxToolBarBase	*pToolBar	= CMD_ToolBar_Create(ID_TB_VIEW_TABLE);
 
-	CMD_ToolBar_Add_Item(pToolBar, false, ID_CMD_TABLE_FIELD_ADD);
-	CMD_ToolBar_Add_Item(pToolBar, false, ID_CMD_TABLE_FIELD_DEL);
+	CMD_ToolBar_Add_Item(pToolBar, false, ID_CMD_TABLE_FIELD_ADD      );
+	CMD_ToolBar_Add_Item(pToolBar, false, ID_CMD_TABLE_FIELD_DEL      );
 	CMD_ToolBar_Add_Separator(pToolBar);
-	CMD_ToolBar_Add_Item(pToolBar, false, ID_CMD_TABLE_RECORD_ADD);
-	CMD_ToolBar_Add_Item(pToolBar, false, ID_CMD_TABLE_RECORD_INS);
-	CMD_ToolBar_Add_Item(pToolBar, false, ID_CMD_TABLE_RECORD_DEL);
-	CMD_ToolBar_Add_Item(pToolBar, false, ID_CMD_TABLE_RECORD_DEL_ALL);
+	CMD_ToolBar_Add_Item(pToolBar, false, ID_CMD_TABLE_RECORD_ADD     );
+	CMD_ToolBar_Add_Item(pToolBar, false, ID_CMD_TABLE_RECORD_INS     );
+	CMD_ToolBar_Add_Item(pToolBar, false, ID_CMD_TABLE_RECORD_DEL     );
+	CMD_ToolBar_Add_Item(pToolBar, false, ID_CMD_TABLE_RECORD_DEL_ALL );
+	CMD_ToolBar_Add_Separator(pToolBar);
+	CMD_ToolBar_Add_Item(pToolBar,  true, ID_CMD_TABLE_SELECTION_ONLY );
 
 	CMD_ToolBar_Add(pToolBar, _TL("Table"));
 
@@ -192,16 +187,20 @@ void CVIEW_Table::On_Command(wxCommandEvent &event)
 {
 	switch( event.GetId() )
 	{
-	case ID_CMD_TABLE_FIELD_ADD     :
-	case ID_CMD_TABLE_FIELD_DEL     :
-	case ID_CMD_TABLE_FIELD_RENAME  :
-	case ID_CMD_TABLE_FIELD_TYPE    :
-	case ID_CMD_TABLE_FIELD_SORT    :
-	case ID_CMD_TABLE_FIELD_CALC    :
-	case ID_CMD_TABLE_RECORD_ADD    :
-	case ID_CMD_TABLE_RECORD_INS    :
-	case ID_CMD_TABLE_RECORD_DEL    :
-	case ID_CMD_TABLE_RECORD_DEL_ALL:
+	case ID_CMD_TABLE_FIELD_ADD      :
+	case ID_CMD_TABLE_FIELD_MOVE     :
+	case ID_CMD_TABLE_FIELD_DEL      :
+	case ID_CMD_TABLE_FIELD_RENAME   :
+	case ID_CMD_TABLE_FIELD_TYPE     :
+	case ID_CMD_TABLE_FIELD_HIDE     :
+	case ID_CMD_TABLE_FIELD_SORT     :
+	case ID_CMD_TABLE_FIELD_CALC     :
+	case ID_CMD_TABLE_RECORD_ADD     :
+	case ID_CMD_TABLE_RECORD_INS     :
+	case ID_CMD_TABLE_RECORD_DEL     :
+	case ID_CMD_TABLE_RECORD_DEL_ALL :
+	case ID_CMD_TABLE_SELECTION_CLEAR:
+	case ID_CMD_TABLE_SELECTION_ONLY :
 
 	case ID_CMD_TABLE_TO_CLIPBOARD  :
 	case ID_CMD_TABLE_AUTOSIZE_COLS :
@@ -218,16 +217,20 @@ void CVIEW_Table::On_Command_UI(wxUpdateUIEvent &event)
 {
 	switch( event.GetId() )
 	{
-	case ID_CMD_TABLE_FIELD_ADD     :
-	case ID_CMD_TABLE_FIELD_DEL     :
-	case ID_CMD_TABLE_FIELD_RENAME  :
-	case ID_CMD_TABLE_FIELD_TYPE    :
-	case ID_CMD_TABLE_FIELD_SORT    :
-	case ID_CMD_TABLE_FIELD_CALC    :
-	case ID_CMD_TABLE_RECORD_ADD    :
-	case ID_CMD_TABLE_RECORD_INS    :
-	case ID_CMD_TABLE_RECORD_DEL    :
-	case ID_CMD_TABLE_RECORD_DEL_ALL:
+	case ID_CMD_TABLE_FIELD_ADD      :
+	case ID_CMD_TABLE_FIELD_MOVE     :
+	case ID_CMD_TABLE_FIELD_DEL      :
+	case ID_CMD_TABLE_FIELD_RENAME   :
+	case ID_CMD_TABLE_FIELD_TYPE     :
+	case ID_CMD_TABLE_FIELD_HIDE     :
+	case ID_CMD_TABLE_FIELD_SORT     :
+	case ID_CMD_TABLE_FIELD_CALC     :
+	case ID_CMD_TABLE_RECORD_ADD     :
+	case ID_CMD_TABLE_RECORD_INS     :
+	case ID_CMD_TABLE_RECORD_DEL     :
+	case ID_CMD_TABLE_RECORD_DEL_ALL :
+	case ID_CMD_TABLE_SELECTION_CLEAR:
+	case ID_CMD_TABLE_SELECTION_ONLY :
 		m_pControl->ProcessWindowEvent(event);
 		break;
 

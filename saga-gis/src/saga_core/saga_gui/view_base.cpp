@@ -1,6 +1,3 @@
-/**********************************************************
- * Version $Id$
- *********************************************************/
 
 ///////////////////////////////////////////////////////////
 //                                                       //
@@ -42,21 +39,10 @@
 //    contact:    Olaf Conrad                            //
 //                Institute of Geography                 //
 //                University of Goettingen               //
-//                Goldschmidtstr. 5                      //
-//                37077 Goettingen                       //
 //                Germany                                //
 //                                                       //
 //    e-mail:     oconrad@saga-gis.org                   //
 //                                                       //
-///////////////////////////////////////////////////////////
-
-//---------------------------------------------------------
-
-
-///////////////////////////////////////////////////////////
-//														 //
-//														 //
-//														 //
 ///////////////////////////////////////////////////////////
 
 //---------------------------------------------------------
@@ -168,10 +154,14 @@ void CVIEW_Base::Do_Show(void)
 	}
 
 #ifndef MDI_TABBED
+	if( !g_pSAGA_Frame->GetActiveChild() && !g_pSAGA_Frame->IsFrozen() )
+	{
+		Maximize();
+	}
+
 	Show();
 #endif
 
-//	Activate();
 	g_pSAGA_Frame->On_Child_Activates(m_View_ID);
 }
 
@@ -229,9 +219,9 @@ void CVIEW_Base::On_Size(wxSizeEvent &event)
 //---------------------------------------------------------
 void CVIEW_Base::On_Activate(wxActivateEvent &event)
 {
-	if( g_pSAGA_Frame )
+	if( g_pSAGA_Frame && event.GetActive() )
 	{
-		g_pSAGA_Frame->On_Child_Activates(event.GetActive() ? m_View_ID : -1);
+		g_pSAGA_Frame->On_Child_Activates(m_View_ID);
 	}
 }
 

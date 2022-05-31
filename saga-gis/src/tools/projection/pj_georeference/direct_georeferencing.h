@@ -1,6 +1,3 @@
-/**********************************************************
- * Version $Id: direct_georeferencing.h 911 2011-02-14 16:38:15Z reklov_w $
- *********************************************************/
 
 ///////////////////////////////////////////////////////////
 //                                                       //
@@ -49,6 +46,8 @@
 ///////////////////////////////////////////////////////////
 
 //---------------------------------------------------------
+#ifndef HEADER_INCLUDED__direct_georeferencing_H
+#define HEADER_INCLUDED__direct_georeferencing_H
 
 
 ///////////////////////////////////////////////////////////
@@ -58,11 +57,7 @@
 ///////////////////////////////////////////////////////////
 
 //---------------------------------------------------------
-#ifndef HEADER_INCLUDED__direct_georeferencing_H
-#define HEADER_INCLUDED__direct_georeferencing_H
-
-//---------------------------------------------------------
-#include "MLB_Interface.h"
+#include <saga_api/saga_api.h>
 
 
 ///////////////////////////////////////////////////////////
@@ -77,22 +72,26 @@ class CSG_Direct_Georeferencer
 public:
 	CSG_Direct_Georeferencer(void);
 
-	bool						Add_Parameters			(CSG_Parameters &Parameters);
+	bool						Add_Parameters			(CSG_Parameters &Parameters, bool bZRef);
 
 	bool						Set_Transformation		(CSG_Parameters &Parameters, int nCols, int nRows);
 	const CSG_Matrix &			Get_Transformation		(void)	const	{	return( m_R );	}
 
-	TSG_Point					World_to_Image			(double x_w, double y_w, double z_w = 0.0);
-	TSG_Point					Image_to_World			(double x_i, double y_i, double z_w = 0.0);
+	bool						Get_Extent				(TSG_Point Points[4]);
+
+	TSG_Point					World_to_Image			(double x, double y);
+	TSG_Point					Image_to_World			(double x, double y);
 
 
 private:
 
-	double						m_f, m_s;
+	double						m_f, m_s, m_ZRef;
 
 	CSG_Vector					m_T, m_O;
 
 	CSG_Matrix					m_R, m_Rinv;
+
+	CSG_Grid					*m_pZRef;
 
 };
 

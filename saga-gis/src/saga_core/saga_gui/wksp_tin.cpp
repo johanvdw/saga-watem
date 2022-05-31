@@ -1,6 +1,3 @@
-/**********************************************************
- * Version $Id$
- *********************************************************/
 
 ///////////////////////////////////////////////////////////
 //                                                       //
@@ -48,15 +45,6 @@
 //                                                       //
 //    e-mail:     oconrad@saga-gis.org                   //
 //                                                       //
-///////////////////////////////////////////////////////////
-
-//---------------------------------------------------------
-
-
-///////////////////////////////////////////////////////////
-//														 //
-//														 //
-//														 //
 ///////////////////////////////////////////////////////////
 
 //---------------------------------------------------------
@@ -119,7 +107,17 @@ wxString CWKSP_TIN::Get_Description(void)
 
 	DESC_ADD_STR(_TL("Name"            ), m_pObject->Get_Name());
 	DESC_ADD_STR(_TL("Description"     ), m_pObject->Get_Description());
-	DESC_ADD_STR(_TL("File"            ), SG_File_Exists(m_pObject->Get_File_Name()) ? m_pObject->Get_File_Name() : _TL("memory"));
+
+	if( SG_File_Exists(m_pObject->Get_File_Name(false)) )
+	{
+		DESC_ADD_STR(_TL("Data Source" ), SG_File_Get_Path(m_pObject->Get_File_Name(false)      ).c_str());
+		DESC_ADD_STR(_TL("File"        ), SG_File_Get_Name(m_pObject->Get_File_Name(false), true).c_str());
+	}
+	else
+	{
+		DESC_ADD_STR(_TL("Data Source" ), _TL("memory"));
+	}
+
 	DESC_ADD_STR(_TL("Modified"        ), m_pObject->is_Modified() ? _TL("yes") : _TL("no"));
 	DESC_ADD_STR(_TL("Projection"      ), m_pObject->Get_Projection().Get_Description().c_str());
 	DESC_ADD_FLT(_TL("West"            ), asTIN()->Get_Extent().Get_XMin());
@@ -158,7 +156,8 @@ wxMenu * CWKSP_TIN::Get_Menu(void)
 		CMD_Menu_Add_Item(pMenu, false, ID_CMD_DATA_METADATA);
 
 	pMenu->AppendSeparator();
-	CMD_Menu_Add_Item(pMenu, false, ID_CMD_WKSP_ITEM_SETTINGS_COPY);
+	CMD_Menu_Add_Item(pMenu, false, ID_CMD_DATA_SETTINGS_COPY);
+	CMD_Menu_Add_Item(pMenu, false, ID_CMD_DATA_FORCE_UPDATE);
 
 	pMenu->AppendSeparator();
 	wxMenu	*pTable	= new wxMenu(_TL("Table"));
@@ -247,7 +246,7 @@ void CWKSP_TIN::On_DataObject_Changed(void)
 
 	for(int i=0; i<asTIN()->Get_Field_Count(); i++)
 	{
-		Choices	+= asTIN()->Get_Field_Name(i) + '|';
+		Choices	+= CSG_String(asTIN()->Get_Field_Name(i)) + '|';
 	}
 
 	m_Parameters("METRIC_ATTRIB")->asChoice()->Set_Items(Choices);
@@ -266,7 +265,7 @@ void CWKSP_TIN::On_Parameters_Changed(void)
 		m_fValue	= -1;
 	}
 
-	long	DefColor	= m_Parameters("UNISYMBOL_COLOR")->asColor();
+	long	DefColor	= m_Parameters("SINGLE_COLOR")->asColor();
 	m_Color_Pen			= wxColour(SG_GET_R(DefColor), SG_GET_G(DefColor), SG_GET_B(DefColor));
 }
 
@@ -300,7 +299,7 @@ int CWKSP_TIN::On_Parameter_Changed(CSG_Parameters *pParameters, CSG_Parameter *
 //---------------------------------------------------------
 wxString CWKSP_TIN::Get_Name_Attribute(void)
 {
-	return(	m_fValue < 0 || m_pClassify->Get_Mode() == CLASSIFY_UNIQUE ? SG_T("") : asTIN()->Get_Field_Name(m_fValue) );
+	return(	m_fValue < 0 || m_pClassify->Get_Mode() == CLASSIFY_SINGLE ? SG_T("") : asTIN()->Get_Field_Name(m_fValue) );
 }
 
 //---------------------------------------------------------
@@ -315,11 +314,11 @@ wxString CWKSP_TIN::Get_Value(CSG_Point ptWorld, double Epsilon)
 ///////////////////////////////////////////////////////////
 
 //---------------------------------------------------------
-double CWKSP_TIN::Get_Value_Minimum(void)	{	return( m_fValue < 0 ? 0.0 : asTIN()->Get_Minimum(m_fValue) );	}
-double CWKSP_TIN::Get_Value_Maximum(void)	{	return( m_fValue < 0 ? 0.0 : asTIN()->Get_Maximum(m_fValue) );	}
-double CWKSP_TIN::Get_Value_Range  (void)	{	return( m_fValue < 0 ? 0.0 : asTIN()->Get_Range  (m_fValue) );	}
-double CWKSP_TIN::Get_Value_Mean   (void)	{	return( m_fValue < 0 ? 0.0 : asTIN()->Get_Mean   (m_fValue) );	}
-double CWKSP_TIN::Get_Value_StdDev (void)	{	return( m_fValue < 0 ? 0.0 : asTIN()->Get_StdDev (m_fValue) );	}
+double CWKSP_TIN::Get_Value_Minimum(void)	{	return( m_fValue < 0 ? 0. : asTIN()->Get_Minimum(m_fValue) );	}
+double CWKSP_TIN::Get_Value_Maximum(void)	{	return( m_fValue < 0 ? 0. : asTIN()->Get_Maximum(m_fValue) );	}
+double CWKSP_TIN::Get_Value_Range  (void)	{	return( m_fValue < 0 ? 0. : asTIN()->Get_Range  (m_fValue) );	}
+double CWKSP_TIN::Get_Value_Mean   (void)	{	return( m_fValue < 0 ? 0. : asTIN()->Get_Mean   (m_fValue) );	}
+double CWKSP_TIN::Get_Value_StdDev (void)	{	return( m_fValue < 0 ? 0. : asTIN()->Get_StdDev (m_fValue) );	}
 
 
 ///////////////////////////////////////////////////////////
@@ -348,9 +347,9 @@ bool CWKSP_TIN::Edit_On_Mouse_Up(CSG_Point Point, double ClientToWorld, int Key)
 {
 	CSG_Rect	rWorld(m_Edit_Mouse_Down, Point);
 
-	if( rWorld.Get_XRange() == 0.0 && rWorld.Get_YRange() == 0.0 )
+	if( rWorld.Get_XRange() == 0. && rWorld.Get_YRange() == 0. )
 	{
-		rWorld.Inflate(2.0 * ClientToWorld, false);
+		rWorld.Inflate(2. * ClientToWorld, false);
 	}
 
 	return( true );
@@ -423,7 +422,7 @@ void CWKSP_TIN::_Draw_Edges(CWKSP_Map_DC &dc_Map)
 //---------------------------------------------------------
 void CWKSP_TIN::_Draw_Triangles(CWKSP_Map_DC &dc_Map)
 {
-	if(	m_Parameters("DISPLAY_TRIANGES")->asBool() && dc_Map.IMG_Draw_Begin(m_Parameters("DISPLAY_TRANSPARENCY")->asDouble() / 100.0) )
+	if(	m_Parameters("DISPLAY_TRIANGES")->asBool() && dc_Map.IMG_Draw_Begin(m_Parameters("DISPLAY_TRANSPARENCY")->asDouble() / 100.) )
 	{
 		for(int iTriangle=0; iTriangle<asTIN()->Get_Triangle_Count(); iTriangle++)
 		{
@@ -515,7 +514,7 @@ void CWKSP_TIN::_Draw_Triangle(CWKSP_Map_DC &dc_Map, TPoint p[3])
 
 		for(i=0, j=1; i<2; i++, j++)
 		{
-			if( (dy	=  p[j].y - p[i].y) > 0.0 )
+			if( (dy	=  p[j].y - p[i].y) > 0. )
 			{
 				dx		= (p[j].x - p[i].x) / dy;
 				dz		= (p[j].z - p[i].z) / dy;
@@ -558,7 +557,7 @@ inline void CWKSP_TIN::_Draw_Triangle_Line(CWKSP_Map_DC &dc_Map, int xa, int xb,
 	int		Color;
 	double	dz;
 
-	if( (dz = xb - xa) > 0.0 )
+	if( (dz = xb - xa) > 0. )
 	{
 		dz	= (zb - za) / dz;
 

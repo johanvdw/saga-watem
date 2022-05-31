@@ -23,9 +23,6 @@
     <ClCompile Include="milankovic.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="etp_hargreave.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="daily_sun.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -57,6 +54,30 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="phenips.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="soil_water_balance.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="cloud_overlap.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="temperature_lapse_rates.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="evapotranspiration.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="air_pressure.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="land_surface_temperature.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="air_humidity.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="temperature_lapse_downscaling.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -118,9 +139,6 @@
     <ClInclude Include="milankovic.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="etp_hargreave.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="daily_sun.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -152,6 +170,30 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="phenips.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="soil_water_balance.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="cloud_overlap.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="temperature_lapse_rates.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="evapotranspiration.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="air_pressure.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="land_surface_temperature.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="air_humidity.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="temperature_lapse_downscaling.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

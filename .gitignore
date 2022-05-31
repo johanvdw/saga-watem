@@ -1,8 +1,4 @@
-﻿################################################################################
-# This .gitignore file was automatically created by Microsoft(R) Visual Studio.
-################################################################################
 
-/saga-gis/bin
-debian/*.log
-debian/tmp/*
-debian/libsaga-dev/*
+# macOS tmp file
+.DS_Store*
+

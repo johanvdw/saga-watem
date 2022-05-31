@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <toolchain saga-version="4.1.0">
-	<group>climate</group>
+	<group>climate_tools</group>
 	<identifier>t_downscale_bulk</identifier>
-	<menu absolute="true">Climate|Tools</menu>
+	<menu absolute="true">Climate and Weather|Temperature</menu>
 	<name>Lapse Rate Based Temperature Downscaling (Bulk Processing)</name>
 	<author>O.Conrad (c) 2017</author>
 	<description>
@@ -40,8 +40,9 @@
 
 	<tools>
 		<foreach input="LORES_T">
-			<tool library="climate" tool="t_downscale" name="Lapse Rate Based Temperature Downscaling">
-				<option id="LAPSE_RATE" varname="true">LAPSE_RATE</option>
+			<tool library="climate_tools" tool="30" name="Lapse Rate Based Temperature Downscaling (with options)">
+				<option id="LAPSE_METHOD">0</option>
+				<option id="CONST_LAPSE" varname="true">LAPSE_RATE</option>
 				<input  id="LORES_DEM">LORES_DEM</input>
 				<input  id="HIRES_DEM">HIRES_DEM</input>
 				<input  id="LORES_T"  >LORES_T</input>

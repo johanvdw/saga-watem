@@ -1,17 +1,34 @@
 message(STATUS "folder: tools")
 
-# Auto add all subdirectories
+# Tool dependencies (Ubuntu, sudo apt install...)
+#   libgdal-dev
+#   libproj-dev
+#   unixodbc-dev
+#   libpq-dev
+#   libhpdf-dev
+#   libopencv-dev
+#   libvigraimpex-dev libfftw3-dev
+#   liblas-dev
+#   libpdal-dev
+#
+# System alternatives to build-in code
+#   libcurl-dev
+#   libsvm-dev
+#   libqhull-dev
+#   libdxflib-dev
+
+if(MSVC)
+	set(CMAKE_RUNTIME_OUTPUT_DIRECTORY_DEBUG          ${CMAKE_BINARY_DIR}/saga_${CMAKE_GENERATOR_PLATFORM}_d/tools)
+#	set(CMAKE_RUNTIME_OUTPUT_DIRECTORY_RELWITHDEBINFO ${CMAKE_BINARY_DIR}/saga_${CMAKE_GENERATOR_PLATFORM}_rd/tools)
+#	set(CMAKE_RUNTIME_OUTPUT_DIRECTORY_MINSIZEREL     ${CMAKE_BINARY_DIR}/saga_${CMAKE_GENERATOR_PLATFORM}_minsize/tools)
+	set(CMAKE_RUNTIME_OUTPUT_DIRECTORY_RELEASE        ${CMAKE_BINARY_DIR}/saga_${CMAKE_GENERATOR_PLATFORM}/tools)
+endif()
+
+# Add all tool subdirectories with CMakeLists.txt files
 file(GLOB subdirectories *)
 
-# Ubuntu 16.04 all tool dependencies
-# sudo apt install unixodbc-dev  libpq-dev and postgresql-server-dev-9.5  libhpdf-dev  libopencv-dev  libvigraimpex-dev libfftw3-dev  libgdal-dev  liblas-dev  libproj-dev
-# optional
-# sudo apt install  libsvm-dev  libqhull-dev  libdxflib-dev
-
-# add all tool subdirectories with CMakeLists files
 foreach(dir ${subdirectories})
 	if(IS_DIRECTORY "${dir}" AND EXISTS "${dir}/CMakeLists.txt")
-		message(STATUS "auto-add tool subdirectory: ${dir}")
-		add_subdirectory ("${dir}")
+		add_subdirectory("${dir}")
 	endif()
 endforeach()

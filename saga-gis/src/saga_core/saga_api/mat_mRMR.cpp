@@ -1,6 +1,3 @@
-/**********************************************************
- * Version $Id$
- *********************************************************/
 
 ///////////////////////////////////////////////////////////
 //                                                       //
@@ -52,6 +49,9 @@
 ///////////////////////////////////////////////////////////
 
 //---------------------------------------------------------
+#ifdef WITH_MRMR
+
+//---------------------------------------------------------
 // A C++ program to implement the mRMR selection using mutual information
 // written by Hanchuan Peng.
 //
@@ -68,15 +68,6 @@
 // 2005-11-01: add control to the user-defined max variable number and sample number
 // 2006-01-26: add gnu_getline.c to convert the code to be compilable under Max OS.
 // 2007-01-25: change the address info
-//
-//---------------------------------------------------------
-
-
-///////////////////////////////////////////////////////////
-//														 //
-//														 //
-//														 //
-///////////////////////////////////////////////////////////
 
 //---------------------------------------------------------
 #include "mat_tools.h"
@@ -538,11 +529,11 @@ bool CSG_mRMR::Discretize(double Threshold)
 	\
 	pFeature->Set_Value(SG_mRMR_SELECTION_RANK , rank + 1);\
 	pFeature->Set_Value(SG_mRMR_SELECTION_INDEX, feaInd[rank]);\
-	pFeature->Set_Value(SG_mRMR_SELECTION_NAME , m_VarNames[feaInd[rank]]);\
+	pFeature->Set_Value(SG_mRMR_SELECTION_NAME , m_VarNames[(size_t)feaInd[rank]]);\
 	pFeature->Set_Value(SG_mRMR_SELECTION_SCORE, score);\
 	\
 	ADD_MESSAGE(CSG_String::Format(SG_T("%d \t %d \t %s \t %5.3f"),\
-		rank + 1, feaInd[rank], m_VarNames[feaInd[rank]].c_str(), score)\
+		rank + 1, feaInd[rank], m_VarNames[(size_t)feaInd[rank]].c_str(), score)\
 	);\
 }
 
@@ -1028,3 +1019,4 @@ template <class T> void CSG_mRMR::Copy_Vector(T *srcdata, long len, int *desdata
 ///////////////////////////////////////////////////////////
 
 //---------------------------------------------------------
+#endif // WITH_MRMR

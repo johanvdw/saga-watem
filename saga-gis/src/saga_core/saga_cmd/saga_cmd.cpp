@@ -1,6 +1,3 @@
-/**********************************************************
- * Version $Id$
- *********************************************************/
 
 ///////////////////////////////////////////////////////////
 //                                                       //
@@ -41,21 +38,10 @@
 //                                                       //
 //    contact:    Olaf Conrad                            //
 //                Institute of Geography                 //
-//                University of Goettingen               //
-//                Goldschmidtstr. 5                      //
-//                37077 Goettingen                       //
+//                University of Hamburg                  //
 //                Germany                                //
 //                                                       //
 //    e-mail:     oconrad@saga-gis.org                   //
-//                                                       //
-///////////////////////////////////////////////////////////
-
-//---------------------------------------------------------
-
-
-///////////////////////////////////////////////////////////
-//                                                       //
-//                                                       //
 //                                                       //
 ///////////////////////////////////////////////////////////
 
@@ -153,7 +139,7 @@ _except(1)
 ///////////////////////////////////////////////////////////
 
 //---------------------------------------------------------
-#ifdef _DEBUG
+#if defined(_DEBUG) && defined(__VISUALC__) && __VISUALC__ < 1910
 	CMD_Set_Interactive(true);
 	CMD_Get_Pause();
 #endif
@@ -347,6 +333,12 @@ bool		Execute(CSG_String Command)
 //---------------------------------------------------------
 bool		Execute_Script(const CSG_String &Script)
 {
+	#ifdef _SAGA_MSW
+		#define CONTINUE_LINE '^'
+	#else
+		#define CONTINUE_LINE '\\'
+	#endif
+
 	if( CMD_Get_Show_Messages() )
 	{
 		CMD_Print(CSG_String::Format("%s: %s", _TL("Running Script"), Script.c_str()));
@@ -365,6 +357,25 @@ bool		Execute_Script(const CSG_String &Script)
 
 	while( Stream.Read_Line(Command) )
 	{
+		Command.Trim(true);
+
+		if( Command.Length() > 0 && Command[Command.Length() - 1] == CONTINUE_LINE )
+		{
+			CSG_String	c;
+
+			while( Stream.Read_Line(c) )
+			{
+				Command += c;
+
+				if( c.Length() < 1 || c[c.Length() - 1] != CONTINUE_LINE )
+				{
+					break;
+				}
+			}
+
+			Command.Replace(CONTINUE_LINE, "");
+		}
+
 		Set_Environment(Command);
 
 		if( !Execute(Command) )
@@ -386,56 +397,15 @@ bool		Execute_Script(const CSG_String &Script)
 ///////////////////////////////////////////////////////////
 
 //---------------------------------------------------------
-bool		Load_Libraries(const CSG_String &Directory)
+bool		Load_Libraries(void)
 {
 	bool	bShow	= CMD_Get_Show_Messages();
 
 	CMD_Set_Show_Messages(false);
-	int	n	= SG_Get_Tool_Library_Manager().Add_Directory(Directory, false);
+
+	SG_Initialize_Environment(true, true, NULL, false);	// loads default tools, but skip wx-initialization (already done in main())
+
 	CMD_Set_Show_Messages(bShow);
-
-	return( n > 0 );
-}
-
-//---------------------------------------------------------
-bool		Load_Libraries(void)
-{
-	wxString	Path, CMD_Path	= SG_File_Get_Path(SG_UI_Get_Application_Path()).c_str();
-
-    #if defined(_SAGA_LINUX)
-		Load_Libraries(MODULE_LIBRARY_PATH);
-		Load_Libraries(SG_File_Make_Path(CSG_String(SHARE_PATH), SG_T("toolchains")));	// look for tool chains
-	#else
-		wxString	DLL_Path	= SG_File_Make_Path(&CMD_Path, "dll").c_str();
-
-		if( wxGetEnv("PATH", &Path) && !Path.IsEmpty() )
-		{
-			wxSetEnv("PATH", DLL_Path + wxT(";") + Path);
-		}
-		else
-		{
-			wxSetEnv("PATH", DLL_Path);
-		}
-
-		wxSetEnv("GDAL_DRIVER_PATH", DLL_Path);
-		wxSetEnv("GDAL_DATA"       , DLL_Path + "\\gdal-data");
-
-		Load_Libraries(SG_File_Make_Path(&CMD_Path, "tools"));
-    #endif
-
-	if( (wxGetEnv("SAGA_TLB", &Path) || wxGetEnv("SAGA_MLB", &Path)) && !Path.IsEmpty() )
-	{
-		#if defined(_SAGA_MSW)
-			CSG_String_Tokenizer	Paths(&Path, ";");	// colon (':') would split drive from paths!
-		#else
-			CSG_String_Tokenizer	Paths(&Path, ";:");	// colon (':') is more native to non-windows os than semi-colon (';'), we support both...
-		#endif
-
-		while( Paths.Has_More_Tokens() )
-		{
-			Load_Libraries(Paths.Get_Next_Token());
-		}
-	}
 
 	if( SG_Get_Tool_Library_Manager().Get_Count() <= 0 )
 	{
@@ -506,7 +476,7 @@ bool		Check_Flags		(const CSG_String &Argument)
 #if   defined(_SAGA_LINUX)
 	CSG_String	Path_Shared	= SHARE_PATH;
 #elif defined(_SAGA_MSW)
-	CSG_String	Path_Shared	= SG_File_Get_Path(SG_UI_Get_Application_Path());
+	CSG_String	Path_Shared	= SG_UI_Get_Application_Path(true);
 #endif
 
 	//-----------------------------------------------------
@@ -528,20 +498,6 @@ bool		Check_Flags		(const CSG_String &Argument)
 				SG_Get_Translator().Create(SG_File_Make_Path(Path_Shared, SG_T("saga"), SG_T("lng")), false)
 				? _TL("success") : _TL("failed")
 			));
-		}
-
-		if( s.Find('p') >= 0 )	// p: load projections dictionary
-		{
-			SG_Printf(CSG_String::Format("\n%s:", _TL("loading spatial reference system database")));
-			SG_Printf(CSG_String::Format("\n%s.\n",
-				SG_Get_Projections().Create(SG_File_Make_Path(Path_Shared, SG_T("saga_prj"), SG_T("srs")))
-				? _TL("success") : _TL("failed")
-			));
-		}
-
-		if( s.Find('o') >= 0 )	// o: load old style naming, has no effect if l-flag is set.
-		{
-			SG_Set_OldStyle_Naming();
 		}
 
 		return( true );
@@ -764,15 +720,13 @@ void		Print_Help		(void)
 #ifdef _OPENMP
 		"[-c], [--cores]  : number of physical processors to use for computation\n"
 #endif
-		"[-f], [--flags]  : various flags for general usage [qrsilpxo]\n"
+		"[-f], [--flags]  : various flags for general usage [qrsilxo]\n"
 		"  q              : no progress report\n"
 		"  r              : no messages report\n"
 		"  s              : silent mode (no progress and no messages report)\n"
 		"  i              : allow user interaction\n"
 		"  l              : load translation dictionary\n"
-		"  p              : load projections dictionary\n"
 		"  x              : use XML markups for synopses and messages\n"
-		"  o              : load old style naming\n"
 		"<LIBRARY>        : name of the library\n"
 		"<TOOL>           : either name or index of the tool\n"
 		"<OPTIONS>        : tool specific options\n"

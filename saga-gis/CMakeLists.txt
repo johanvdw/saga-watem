@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 2.8.12)
+cmake_minimum_required(VERSION 3.13.3)
 
 # Policy CMP0043 introduced in cmake version 3.0 IGNORES the use of COMPILE_DEFINITIONS
 # suffixed variables, e.g. COMPILE_DEFINITIONS_DEBUG
@@ -8,11 +8,11 @@ if (POLICY CMP0043)
 endif (POLICY CMP0043)
 
 # define project name and its description
-project(saga-gis)
+project(saga)
 message(STATUS "folder: ${PROJECT_NAME}")
 set(TOP_PROJECT ${PROJECT_NAME})
 string(TOLOWER ${TOP_PROJECT} TOP_PROJECT_LOWER)
-set(PROJECT_DESCRIPTION "saga-gis project")
+set(PROJECT_DESCRIPTION "SAGA - System for Automated Geoscientific Analyses")
 
 # Set a default build type for single-configuration cmake generators if
 # no build type is set.
@@ -21,21 +21,29 @@ if(NOT CMAKE_CONFIGURATION_TYPES AND NOT CMAKE_BUILD_TYPE)
 	set(CMAKE_BUILD_TYPE Release)
 endif()
 
-# options
-option (WITH_GDI "Build saga-gdi. Dependency of the GUI and some tools" ON)
-option (WITH_GUI "Build saga-gis with GUI" ON)
-option (WITH_TOOLS "Build saga-gis with tools" ON)
-option (WITH_ALL_STANDARD_TOOLS "Build all saga-gis tools, which have no external dependencies" OFF)
-option (WITH_ALL_TOOLS "Build all saga-gis tools" OFF)
-option (WITH_LINK_TESTER "Check to enable testing if tools are successfully linking" OFF)
-option (WITH_OPENMP "Compile with OpenMP optimizations" ON)
-
 if(MSVC)
-	option (PARALLEL_BUILD "Pass /MP to msbuild to compile in parallel" ON)
+	set(CMAKE_CONFIGURATION_TYPES "Debug;Release" CACHE STRING "" FORCE)
+
+	option(DEPS_FROM_ENVARS "Library locations from environment" ON)
+
+	option(PARALLEL_BUILD "Multi-processor compilation (/MP)" ON)
 	if(PARALLEL_BUILD)
 		add_definitions(/MP)
 	endif()
+
+	# default debug configuration to use: 'Program Database for Edit And Continue (/ZI)'
+	set(CMAKE_C_FLAGS_DEBUG             "/MDd /ZI /Ob0 /Od /RTC1"       CACHE STRING "" FORCE)
+	set(CMAKE_CXX_FLAGS_DEBUG           "/MDd /ZI /Ob0 /Od /RTC1"       CACHE STRING "" FORCE)
+	set(CMAKE_EXE_LINKER_FLAGS_DEBUG    "/debug /INCREMENTAL /LTCG:OFF" CACHE STRING "" FORCE)
+	set(CMAKE_MODULE_LINKER_FLAGS_DEBUG "/debug /INCREMENTAL /LTCG:OFF" CACHE STRING "" FORCE)
+	set(CMAKE_SHARED_LINKER_FLAGS_DEBUG "/debug /INCREMENTAL /LTCG:OFF" CACHE STRING "" FORCE)
 endif()
+
+# options
+option(WITH_GUI "Build SAGA with GUI" ON)
+option(WITH_TOOLS "Build SAGA with tools" ON)
+option(OpenMP_SUPPORT "Compile with OpenMP optimizations" ON)
+#option(WITH_LINK_TESTER "Check to enable testing if tools are successfully linking" OFF)
 
 # include version and debianize
 include(version.cmake)
@@ -59,11 +67,11 @@ include_directories("${PROJECT_BINARY_DIR}")
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake/modules")
 
 # find wxWidgets
-find_package(wxWidgets REQUIRED)
-include("${wxWidgets_USE_FILE}")
+#find_package(wxWidgets REQUIRED)
+#include("${wxWidgets_USE_FILE}")
 
 # compile with OpenMP optimizations
-if (WITH_OPENMP)
+if(OpenMP_SUPPORT)
 	find_package(OpenMP QUIET REQUIRED)
 	message(STATUS "compile with OpenMP optimizations")
 	set (CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${OpenMP_C_FLAGS}")

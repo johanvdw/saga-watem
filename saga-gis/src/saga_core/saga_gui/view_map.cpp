@@ -39,8 +39,6 @@
 //    contact:    Olaf Conrad                            //
 //                Institute of Geography                 //
 //                University of Goettingen               //
-//                Goldschmidtstr. 5                      //
-//                37077 Goettingen                       //
 //                Germany                                //
 //                                                       //
 //    e-mail:     oconrad@saga-gis.org                   //
@@ -98,7 +96,8 @@ BEGIN_EVENT_TABLE(CVIEW_Map, CVIEW_Base)
 	EVT_MENU			(ID_CMD_MAP_ZOOM_FULL					, CVIEW_Map::On_Map_Zoom_Full)
 	EVT_MENU			(ID_CMD_MAP_ZOOM_BACK					, CVIEW_Map::On_Map_Zoom_Back)
 	EVT_MENU			(ID_CMD_MAP_ZOOM_FORWARD				, CVIEW_Map::On_Map_Zoom_Forward)
-	EVT_MENU			(ID_CMD_MAP_ZOOM_ACTIVE					, CVIEW_Map::On_Map_Zoom_Layer)
+	EVT_MENU			(ID_CMD_MAP_ZOOM_ACTIVE					, CVIEW_Map::On_Map_Zoom_Active)
+	EVT_MENU			(ID_CMD_MAP_PAN_ACTIVE					, CVIEW_Map::On_Map_PanTo_Active)
 	EVT_MENU			(ID_CMD_MAP_ZOOM_SELECTION				, CVIEW_Map::On_Map_Zoom_Selection)
 	EVT_MENU			(ID_CMD_MAP_ZOOM_EXTENT					, CVIEW_Map::On_Map_Zoom_Extent)
 	EVT_MENU			(ID_CMD_MAP_SYNCHRONIZE					, CVIEW_Map::On_Map_Zoom_Synchronize)
@@ -142,8 +141,6 @@ CVIEW_Map::CVIEW_Map(CWKSP_Map *pMap, int Frame_Width)
 
 ///////////////////////////////////////////////////////////
 //														 //
-//														 //
-//														 //
 ///////////////////////////////////////////////////////////
 
 //---------------------------------------------------------
@@ -174,6 +171,7 @@ wxMenu * CVIEW_Map::_Create_Menu(void)
 	CMD_Menu_Add_Item(pMenu, false, ID_CMD_MAP_ZOOM_FORWARD);
 	CMD_Menu_Add_Item(pMenu, false, ID_CMD_MAP_ZOOM_FULL);
 	CMD_Menu_Add_Item(pMenu, false, ID_CMD_MAP_ZOOM_ACTIVE);
+	CMD_Menu_Add_Item(pMenu, false, ID_CMD_MAP_PAN_ACTIVE);
 	CMD_Menu_Add_Item(pMenu, false, ID_CMD_MAP_ZOOM_SELECTION);
 	CMD_Menu_Add_Item(pMenu, false, ID_CMD_MAP_ZOOM_EXTENT);
 	pMenu->AppendSeparator();
@@ -197,6 +195,7 @@ wxToolBarBase * CVIEW_Map::_Create_ToolBar(void)
 	CMD_ToolBar_Add_Item(pToolBar, false, ID_CMD_MAP_ZOOM_FORWARD);
 	CMD_ToolBar_Add_Item(pToolBar, false, ID_CMD_MAP_ZOOM_FULL);
 	CMD_ToolBar_Add_Item(pToolBar, false, ID_CMD_MAP_ZOOM_ACTIVE);
+	CMD_ToolBar_Add_Item(pToolBar, false, ID_CMD_MAP_PAN_ACTIVE);
 	CMD_ToolBar_Add_Item(pToolBar, false, ID_CMD_MAP_ZOOM_SELECTION);
 //	CMD_ToolBar_Add_Item(pToolBar, false, ID_CMD_MAP_ZOOM_EXTENT);
 	CMD_ToolBar_Add_Separator(pToolBar);
@@ -223,8 +222,6 @@ wxToolBarBase * CVIEW_Map::_Create_ToolBar(void)
 
 ///////////////////////////////////////////////////////////
 //														 //
-//														 //
-//														 //
 ///////////////////////////////////////////////////////////
 
 //---------------------------------------------------------
@@ -235,8 +232,6 @@ void CVIEW_Map::Do_Update(void)
 
 
 ///////////////////////////////////////////////////////////
-//														 //
-//														 //
 //														 //
 ///////////////////////////////////////////////////////////
 
@@ -310,8 +305,6 @@ void CVIEW_Map::On_Key_Down(wxKeyEvent &event)
 
 ///////////////////////////////////////////////////////////
 //														 //
-//														 //
-//														 //
 ///////////////////////////////////////////////////////////
 
 //---------------------------------------------------------
@@ -365,8 +358,8 @@ void CVIEW_Map::Ruler_Refresh(void)
 	{
 		CSG_Rect	rWorld(m_pMap->Get_World(m_pControl->GetRect()));
 
-		m_pRuler_X2->Set_Mode(m_pMap->is_ScaleBar() ? RULER_MODE_NORMAL : RULER_MODE_SCALE);
-		m_pRuler_Y2->Set_Mode(m_pMap->is_ScaleBar() ? RULER_MODE_NORMAL : RULER_MODE_SCALE);
+		m_pRuler_X2->Set_Mode(m_pMap->is_ScaleBar(true) ? RULER_MODE_SCALE : RULER_MODE_NORMAL);
+		m_pRuler_Y2->Set_Mode(m_pMap->is_ScaleBar(true) ? RULER_MODE_SCALE : RULER_MODE_NORMAL);
 
 		m_pRuler_X1->Set_Range(rWorld.Get_XMin(), rWorld.Get_XMax());
 		m_pRuler_X2->Set_Range(rWorld.Get_XMin(), rWorld.Get_XMax());
@@ -377,8 +370,6 @@ void CVIEW_Map::Ruler_Refresh(void)
 
 
 ///////////////////////////////////////////////////////////
-//														 //
-//														 //
 //														 //
 ///////////////////////////////////////////////////////////
 
@@ -432,6 +423,10 @@ void CVIEW_Map::On_Command_UI(wxUpdateUIEvent &event)
 		event.Enable(g_pActive->Get_Active_Layer() != NULL);
 		break;
 
+	case ID_CMD_MAP_PAN_ACTIVE:
+		event.Enable(g_pActive->Get_Active_Layer() != NULL);
+		break;
+
 	case ID_CMD_MAP_ZOOM_SELECTION:
 		event.Enable(g_pActive->Get_Active_Layer()
 			&& g_pActive->Get_Active_Layer()->Get_Object()->asShapes()
@@ -460,8 +455,6 @@ void CVIEW_Map::On_Command_UI(wxUpdateUIEvent &event)
 
 
 ///////////////////////////////////////////////////////////
-//														 //
-//														 //
 //														 //
 ///////////////////////////////////////////////////////////
 
@@ -516,8 +509,6 @@ void CVIEW_Map::On_Map_Save_Image_ClipboardL(wxCommandEvent &event)
 
 ///////////////////////////////////////////////////////////
 //														 //
-//														 //
-//														 //
 ///////////////////////////////////////////////////////////
 
 //---------------------------------------------------------
@@ -539,15 +530,21 @@ void CVIEW_Map::On_Map_Zoom_Forward(wxCommandEvent &event)
 }
 
 //---------------------------------------------------------
-void CVIEW_Map::On_Map_Zoom_Layer(wxCommandEvent &event)
+void CVIEW_Map::On_Map_Zoom_Active(wxCommandEvent &event)
 {
-	m_pMap->Set_Extent_Active();
+	m_pMap->Set_Extent_Active(false);
+}
+
+//---------------------------------------------------------
+void CVIEW_Map::On_Map_PanTo_Active(wxCommandEvent &event)
+{
+	m_pMap->Set_Extent_Active(true);
 }
 
 //---------------------------------------------------------
 void CVIEW_Map::On_Map_Zoom_Selection(wxCommandEvent &event)
 {
-	m_pMap->Set_Extent_Selection();
+	m_pMap->Set_Extent_Selection(false);
 }
 
 //---------------------------------------------------------

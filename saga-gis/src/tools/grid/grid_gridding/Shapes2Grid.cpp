@@ -1,6 +1,3 @@
-/**********************************************************
- * Version $Id$
- *********************************************************/
 
 ///////////////////////////////////////////////////////////
 //                                                       //
@@ -44,19 +41,8 @@
 //    contact:    Olaf Conrad                            //
 //                Institute of Geography                 //
 //                University of Goettingen               //
-//                Goldschmidtstr. 5                      //
-//                37077 Goettingen                       //
 //                Germany                                //
 //                                                       //
-///////////////////////////////////////////////////////////
-
-//---------------------------------------------------------
-
-
-///////////////////////////////////////////////////////////
-//														 //
-//														 //
-//														 //
 ///////////////////////////////////////////////////////////
 
 //---------------------------------------------------------
@@ -87,7 +73,6 @@
 //---------------------------------------------------------
 CShapes2Grid::CShapes2Grid(void)
 {
-	//-----------------------------------------------------
 	Set_Name		(_TL("Shapes to Grid"));
 
 	Set_Author		("O.Conrad (c) 2003");
@@ -168,9 +153,9 @@ CShapes2Grid::CShapes2Grid(void)
 	);
 
 	//-----------------------------------------------------
-	m_Grid_Target.Create(&Parameters, false, NULL, "TARGET_");
+	m_Grid_Target.Create(&Parameters, false, "", "TARGET_");
 
-	m_Grid_Target.Add_Grid("GRID" , _TL("Grid")            , false);
+	m_Grid_Target.Add_Grid("GRID" , _TL("Grid"            ), false);
 	m_Grid_Target.Add_Grid("COUNT", _TL("Number of Values"),  true);
 }
 
@@ -265,7 +250,6 @@ TSG_Data_Type CShapes2Grid::Get_Data_Type(int Field)
 //---------------------------------------------------------
 bool CShapes2Grid::On_Execute(void)
 {
-	//-----------------------------------------------------
 	CSG_Shapes	*pShapes	= Parameters("INPUT")->asShapes();
 
 	m_Multiple	= Parameters("MULTIPLE")->asInt();
@@ -278,9 +262,9 @@ bool CShapes2Grid::On_Execute(void)
 
 	switch( pShapes->Get_Type() )
 	{
-	default                :	bFat	= false;	break;
-	case SHAPE_TYPE_Line   :	bFat	= Parameters("LINE_TYPE")->asInt() == 1;	break;
-	case SHAPE_TYPE_Polygon:	bFat	= Parameters("POLY_TYPE")->asInt() == 1;	break;
+	default                : bFat = false;                                 break;
+	case SHAPE_TYPE_Line   : bFat = Parameters("LINE_TYPE")->asInt() == 1; break;
+	case SHAPE_TYPE_Polygon: bFat = Parameters("POLY_TYPE")->asInt() == 1; break;
 	}
 
 	//-----------------------------------------------------
@@ -288,9 +272,9 @@ bool CShapes2Grid::On_Execute(void)
 
 	switch( Parameters("OUTPUT")->asInt() )
 	{
-	case  0:	Field	= OUTPUT_NODATA;	break;		// data / no-data
-	case  1:	Field	= OUTPUT_INDEX ;	break;		// index number
-	default:	Field	= Parameters("FIELD")->asInt();	// attribute
+	case  0: Field = OUTPUT_NODATA;         break;	// data / no-data
+	case  1: Field = OUTPUT_INDEX ;         break;	// index number
+	default: Field = Parameters("FIELD")->asInt();	// attribute
 		if( Field < 0 || !SG_Data_Type_is_Numeric(pShapes->Get_Field_Type(Field)) )
 		{
 			Message_Add(_TL("WARNING: selected attribute is not numeric."));
@@ -339,6 +323,8 @@ bool CShapes2Grid::On_Execute(void)
 	for(int i=0; i<pShapes->Get_Count() && Set_Progress(i, pShapes->Get_Count()); i++)
 	{
         CSG_Shape	*pShape	= sort_field>-1?pShapes->Get_Shape_byIndex(i):pShapes->Get_Shape(i);
+
+		m_Cells_On_Shape.clear();
 
 		if( pShapes->Get_Selection_Count() <= 0 || pShape->is_Selected() )
 		{
@@ -392,8 +378,18 @@ bool CShapes2Grid::On_Execute(void)
 ///////////////////////////////////////////////////////////
 
 //---------------------------------------------------------
-inline void CShapes2Grid::Set_Value(int x, int y, double Value)
+inline void CShapes2Grid::Set_Value(int x, int y, double Value, bool bCheckDuplicates)
 {
+	if( bCheckDuplicates )
+	{
+		sLong n = y * m_pGrid->Get_NX() + x;
+
+		if( !m_Cells_On_Shape.insert(n).second )
+		{
+			return;		// this cell has already been rendered for this shape
+		}
+	}
+
 	if( m_pGrid->is_InGrid(x, y, false) )
 	{
 		if( m_pCount->asInt(x, y) == 0 )
@@ -448,7 +444,8 @@ void CShapes2Grid::Set_Points(CSG_Shape *pShape, double Value)
 
 			Set_Value(
 				(int)(0.5 + X_WORLD_TO_GRID(p.x)),
-				(int)(0.5 + Y_WORLD_TO_GRID(p.y)), Value
+				(int)(0.5 + Y_WORLD_TO_GRID(p.y)), Value,
+				false
 			);
 		}
 	}
@@ -748,7 +745,6 @@ void CShapes2Grid::Set_Polygon(CSG_Shape_Polygon *pPolygon, double Value)
 //---------------------------------------------------------
 CPolygons2Grid::CPolygons2Grid(void)
 {
-	//-----------------------------------------------------
 	Set_Name		(_TL("Polygons to Grid"));
 
 	Set_Author		("O.Conrad (c) 2018");
@@ -806,7 +802,7 @@ CPolygons2Grid::CPolygons2Grid(void)
 	);
 
 	//-----------------------------------------------------
-	m_Grid_Target.Create(&Parameters, false, NULL, "TARGET_");
+	m_Grid_Target.Create(&Parameters, false, "", "TARGET_");
 
 	m_Grid_Target.Add_Grid("GRID"    , _TL("Grid"    ), false);
 	m_Grid_Target.Add_Grid("COVERAGE", _TL("Coverage"),  true);

@@ -1,6 +1,3 @@
-/**********************************************************
- * Version $Id$
- *********************************************************/
 
 ///////////////////////////////////////////////////////////
 //                                                       //
@@ -50,13 +47,6 @@
 //                                                       //
 ///////////////////////////////////////////////////////////
 
-
-///////////////////////////////////////////////////////////
-//														 //
-//                                                       //
-//														 //
-///////////////////////////////////////////////////////////
-
 //---------------------------------------------------------
 #include "Grid_Calculator.h"
 
@@ -88,7 +78,6 @@ double CGrid_Calculator_Base::m_NoData_Value	= -99999;
 //---------------------------------------------------------
 CGrid_Calculator_Base::CGrid_Calculator_Base(void)
 {
-	//-----------------------------------------------------
 	CSG_String	s(_TW(
 		"The Grid Calculator calculates a new grid based on existing grids and a mathematical formula. "
 		"The grid variables in the formula begin with the letter 'g' followed by a position index, "
@@ -104,10 +93,10 @@ CGrid_Calculator_Base::CGrid_Calculator_Base(void)
 
 	const CSG_String	Operators[5][2]	=
 	{
-		{	"xpos(), ypos()"  , _TL("Get the x/y coordinates for the current cell")	},
-		{	"col(), row()"    , _TL("Get the current cell's column/row index"     )	},
-		{	"ncols(), nrows()", _TL("Get the number of columns/rows"              )	},
-		{	"nodata()"        , _TL("Returns resulting grid's no-data value"      )	},
+		{	"xpos(), ypos()"  , _TL("Get the x/y coordinates for the current cell"         )	},
+		{	"col(), row()"    , _TL("Get the current cell's column/row index (zero based)" )	},
+		{	"ncols(), nrows()", _TL("Get the number of columns/rows"                       )	},
+		{	"nodata()"        , _TL("Returns resulting grid's no-data value"               )	},
 		{	"", ""	}
 	};
 
@@ -119,7 +108,7 @@ CGrid_Calculator_Base::CGrid_Calculator_Base(void)
 	Parameters.Add_Choice("",
 		"RESAMPLING", _TL("Resampling"),
 		_TL(""),
-		CSG_String::Format("%s|%s|%s|%s|",
+		CSG_String::Format("%s|%s|%s|%s",
 			_TL("Nearest Neighbour"),
 			_TL("Bilinear Interpolation"),
 			_TL("Bicubic Spline Interpolation"),
@@ -168,7 +157,7 @@ CGrid_Calculator_Base::CGrid_Calculator_Base(void)
 	);
 
 	//-----------------------------------------------------
-	m_Formula.Add_Function(SG_T("nodata"), (TSG_PFNC_Formula_1)CGrid_Calculator_Base::Get_NoData_Value, 0, 0);
+	m_Formula.Add_Function("nodata", (TSG_Formula_Function_1)CGrid_Calculator_Base::Get_NoData_Value, 0, false);
 }
 
 
@@ -218,16 +207,21 @@ bool CGrid_Calculator_Base::Initialize(int nGrids, int nXGrids)
 	//-----------------------------------------------------
 	CSG_String	Formula(Parameters("FORMULA")->asString());
 
-	m_nValues	= nGrids + nXGrids;
+	Formula.Replace("\n", "");
+	Formula.Replace("\t", "");
 
-	if( Formula.Find("col()"  ) ) { m_bPosition[0] = true; m_nValues++; } else { m_bPosition[0] = false; }
-	if( Formula.Find("row()"  ) ) { m_bPosition[1] = true; m_nValues++; } else { m_bPosition[1] = false; }
-	if( Formula.Find("xpos()" ) ) { m_bPosition[2] = true; m_nValues++; } else { m_bPosition[2] = false; }
-	if( Formula.Find("ypos()" ) ) { m_bPosition[3] = true; m_nValues++; } else { m_bPosition[3] = false; }
-	if( Formula.Find("ncols()") ) { m_bPosition[4] = true; m_nValues++; } else { m_bPosition[4] = false; }
-	if( Formula.Find("nrows()") ) { m_bPosition[5] = true; m_nValues++; } else { m_bPosition[5] = false; }
+	int	nFuncs	= 0;
+
+	if( (m_bPosition[0] = Formula.Find("col()"  ) >= 0) ) { nFuncs++; }
+	if( (m_bPosition[1] = Formula.Find("row()"  ) >= 0) ) { nFuncs++; }
+	if( (m_bPosition[2] = Formula.Find("xpos()" ) >= 0) ) { nFuncs++; }
+	if( (m_bPosition[3] = Formula.Find("ypos()" ) >= 0) ) { nFuncs++; }
+	if( (m_bPosition[4] = Formula.Find("ncols()") >= 0) ) { nFuncs++; }
+	if( (m_bPosition[5] = Formula.Find("nrows()") >= 0) ) { nFuncs++; }
 
 	//-----------------------------------------------------
+	m_nValues	= nGrids + nXGrids + nFuncs;
+
 	if( m_nValues > nVars )
 	{
 		Error_Set(_TL("too many input variables"));
@@ -250,7 +244,7 @@ bool CGrid_Calculator_Base::Initialize(int nGrids, int nXGrids)
 		Formula.Replace(CSG_String::Format("h%d", i), Vars[--n]);
 	}
 
-	for(i=nGrids; i>0 && n>0; i--)
+	for(i= nGrids; i>0 && n>0; i--)
 	{
 		Formula.Replace(CSG_String::Format("g%d", i), Vars[--n]);
 	}
@@ -273,16 +267,22 @@ bool CGrid_Calculator_Base::Initialize(int nGrids, int nXGrids)
 	//-----------------------------------------------------
 	CSG_String	Used(m_Formula.Get_Used_Variables());
 
-	if( nGrids + nXGrids < (int)Used.Length() )
+	int	nUsed	= (int)Used.Length() - nFuncs;
+
+	if( nGrids + nXGrids < nUsed )
 	{
-		Error_Fmt("%s (%d < %d)", _TL("The number of supplied grids is less than the number of variables in formula."), nGrids + nXGrids, Used.Length());
+		Error_Fmt("%s (%d < %d)", _TL("The number of supplied grids is less than the number of variables in formula."),
+			nGrids + nXGrids, nUsed
+		);
 
 		return( false );
 	}
 
-	if( nGrids + nXGrids > (int)Used.Length() )
+	if( nGrids + nXGrids > nUsed )
 	{
-		Message_Fmt("\n%s: %s (%d > %d)", _TL("Warning"), _TL("The number of supplied grids exceeds the number of variables in formula."), nGrids + nXGrids, Used.Length());
+		Message_Fmt("\n%s: %s (%d > %d)", _TL("Warning"), _TL("The number of supplied grids exceeds the number of variables in formula."),
+			nGrids + nXGrids, nUsed
+		);
 	}
 
 	//-----------------------------------------------------

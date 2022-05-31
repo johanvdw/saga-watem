@@ -72,7 +72,7 @@ CSG_String Get_Info(int i)
 		return( _TL("Import/Export") );
 
 	case TLB_INFO_Author:
-		return( _TL("SAGA User Group Associaton (c) 2008" ));
+		return( _TL("SAGA User Group Associaton (c) 2008-21" ));
 
 	case TLB_INFO_Description:
 		return( CSG_String::Format(SG_T("%s\n%s %s\n%s: %s"),
@@ -82,7 +82,7 @@ CSG_String Get_Info(int i)
 		));
 
 	case TLB_INFO_Version:
-		return( SG_T("2.0") );
+		return( "2.0" );
 
 	case TLB_INFO_Menu_Path:
 		return( _TL("File") );
@@ -100,6 +100,11 @@ CSG_String Get_Info(int i)
 #include "gdal_import_wms.h"
 #include "gdal_import_aster.h"
 #include "gdal_catalogue.h"
+
+#ifdef GDAL_V2_1_OR_NEWER
+#include "gdal_buildvrt.h"
+#endif
+#include "gdal_import_vrt.h"
 
 #include "ogr_import.h"
 #include "ogr_export.h"
@@ -134,11 +139,16 @@ CSG_Tool *		Create_Tool(int i)
 	case  9:	return( new CGDAL_Import_WMS );
 	case 11:	return( new CGDAL_Import_ASTER );
 
+#ifdef GDAL_V2_1_OR_NEWER
+	case 12:	return( new CGDAL_BuildVRT );
+#endif
+	case 13:	return( new CGDAL_Import_VRT );
+
 	case 10:	return( new CGDAL_Formats );
 
 
 	//-----------------------------------------------------
-	case 12:	// initializations
+	case 14:	// initializations
 
 		CPLSetErrorHandler(CPLQuietErrorHandler);
 

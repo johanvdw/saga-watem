@@ -1,6 +1,3 @@
-/**********************************************************
- * Version $Id$
- *********************************************************/
 
 ///////////////////////////////////////////////////////////
 //                                                       //
@@ -51,15 +48,6 @@
 ///////////////////////////////////////////////////////////
 
 //---------------------------------------------------------
-
-
-///////////////////////////////////////////////////////////
-//														 //
-//														 //
-//														 //
-///////////////////////////////////////////////////////////
-
-//---------------------------------------------------------
 #ifndef _HEADER_INCLUDED__SAGA_GUI__VIEW_Table_Diagram_H
 #define _HEADER_INCLUDED__SAGA_GUI__VIEW_Table_Diagram_H
 
@@ -91,6 +79,8 @@ public:
 
 	virtual void						Do_Update			(void);
 
+	virtual void						On_Command_UI		(wxUpdateUIEvent &event);
+
 
 private:
 
@@ -103,6 +93,7 @@ private:
 	void								On_Size_Fit			(wxCommandEvent &event);
 	void								On_Size_Inc			(wxCommandEvent &event);
 	void								On_Size_Dec			(wxCommandEvent &event);
+	void								On_Legend			(wxCommandEvent &event);
 	void								On_SaveToClipboard	(wxCommandEvent &event);
 	void								On_Key_Down			(wxKeyEvent     &event);
 

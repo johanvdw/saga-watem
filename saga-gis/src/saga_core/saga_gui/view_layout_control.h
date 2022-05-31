@@ -1,6 +1,3 @@
-/**********************************************************
- * Version $Id$
- *********************************************************/
 
 ///////////////////////////////////////////////////////////
 //                                                       //
@@ -42,21 +39,10 @@
 //    contact:    Olaf Conrad                            //
 //                Institute of Geography                 //
 //                University of Goettingen               //
-//                Goldschmidtstr. 5                      //
-//                37077 Goettingen                       //
 //                Germany                                //
 //                                                       //
 //    e-mail:     oconrad@saga-gis.org                   //
 //                                                       //
-///////////////////////////////////////////////////////////
-
-//---------------------------------------------------------
-
-
-///////////////////////////////////////////////////////////
-//														 //
-//														 //
-//														 //
 ///////////////////////////////////////////////////////////
 
 //---------------------------------------------------------
@@ -72,7 +58,6 @@
 
 //---------------------------------------------------------
 #include <wx/scrolwin.h>
-#include <wx/image.h>
 
 
 ///////////////////////////////////////////////////////////
@@ -85,45 +70,40 @@
 class CVIEW_Layout_Control : public wxScrolledWindow
 {
 public:
-	CVIEW_Layout_Control(class CVIEW_Layout *pParent);
+	CVIEW_Layout_Control(class CVIEW_Layout *pParent, class CVIEW_Layout_Info *pLayout);
 	virtual ~CVIEW_Layout_Control(void);
 
-	void						On_Mouse_LDown		(wxMouseEvent &event);
-	void						On_Mouse_LUp		(wxMouseEvent &event);
-	void						On_Mouse_LDClick	(wxMouseEvent &event);
-	void						On_Mouse_RDown		(wxMouseEvent &event);
-	void						On_Mouse_RUp		(wxMouseEvent &event);
-	void						On_Mouse_RDClick	(wxMouseEvent &event);
-	void						On_Mouse_Motion		(wxMouseEvent &event);
+	bool							Do_Destroy			(void);
 
-	virtual void				OnDraw				(wxDC &dc);
+	bool							Zoom_In				(void);
+	bool							Zoom_Out			(void);
+	bool							Zoom_Full			(void);
+	bool							Zoom_Original		(void);
 
-	bool						Refresh_Layout		(void);
-	bool						Set_Dimensions		(void);
+	bool							Set_Scrollbars		(void);
+	void							Set_Rulers			(void);
 
-	bool						Fit_To_Size			(int x, int y);
+	virtual void					OnDraw				(wxDC &dc);
 
 
 private:
 
-	double						m_Zoom;
+	double							m_Zoom;
 
-	wxPoint						m_Mouse_Down, m_Mouse_Move;
-
-	wxImage						m_Image;
-
-	class CVIEW_Layout			*m_pLayout;
+	class CVIEW_Layout_Info			*m_pLayout;
 
 
-	bool						_Set_Zoom			(double Zoom);
-	void						_Set_Zoom_Centered	(double Zooming, wxPoint Center);
+	bool							Set_Zoom			(double Zoom);
+	bool							Set_Zoom_Centered	(double Zooming);
+	bool							Set_Zoom_Centered	(double Zooming, wxPoint Center);
 
-	bool						_Draw_Layout		(bool bEraseBkgrd);
-	void						_Set_Rulers			(void);
+	void							On_EraseBackground	(wxEraseEvent &event);
 
+	void							On_Mouse_Event		(wxMouseEvent &event);
+	void							On_Mouse_Wheel		(wxMouseEvent &event);
 
-//---------------------------------------------------------
-DECLARE_EVENT_TABLE()
+	//-----------------------------------------------------
+	DECLARE_EVENT_TABLE()
 };
 
 

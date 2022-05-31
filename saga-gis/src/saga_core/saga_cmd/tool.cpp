@@ -135,7 +135,6 @@ void CCMD_Tool::Usage(void)
 //---------------------------------------------------------
 bool CCMD_Tool::Execute(int argc, char *argv[])
 {
-	//-----------------------------------------------------
 	if( !m_pTool )
 	{
 		return( false );
@@ -173,11 +172,9 @@ bool CCMD_Tool::Execute(int argc, char *argv[])
 	}
 
 	//-----------------------------------------------------
-	int		i;
-
 	bool	bResult	= _Get_Parameters(m_pTool->Get_Parameters(), true);
 
-	for(i=0; bResult && i<m_pTool->Get_Parameters_Count(); i++)
+	for(int i=0; bResult && i<m_pTool->Get_Parameters_Count(); i++)
 	{
 		bResult	= _Get_Parameters(m_pTool->Get_Parameters(i), true);
 	}
@@ -194,7 +191,7 @@ bool CCMD_Tool::Execute(int argc, char *argv[])
 
 	if( m_pTool->On_Before_Execution() )
 	{
-		bResult	= m_pTool->Execute();
+		bResult	= m_pTool->Execute(true);
 
 		m_pTool->On_After_Execution();
 	}
@@ -206,7 +203,7 @@ bool CCMD_Tool::Execute(int argc, char *argv[])
 	{
 		_Save_Output(m_pTool->Get_Parameters());
 
-		for(i=0; i<m_pTool->Get_Parameters_Count(); i++)
+		for(int i=0; i<m_pTool->Get_Parameters_Count(); i++)
 		{
 			_Save_Output(m_pTool->Get_Parameters(i));
 		}
@@ -217,6 +214,8 @@ bool CCMD_Tool::Execute(int argc, char *argv[])
 	{
 		CMD_Print_Error(_TL("executing tool"), m_pTool->Get_Name());
 	}
+
+	SG_UI_ProgressAndMsg_Reset(); SG_UI_Process_Set_Okay();
 
 	return( bResult );
 }
@@ -229,7 +228,7 @@ bool CCMD_Tool::Execute(int argc, char *argv[])
 //---------------------------------------------------------
 wxString CCMD_Tool::_Get_ID(CSG_Parameter *pParameter, const wxString &Modifier)
 {
-	wxString	ID(pParameter->Get_Owner()->Get_Identifier().c_str());
+	wxString	ID(pParameter->Get_Parameters()->Get_Identifier().c_str());
 
 	if( ID.Length() > 0 )
 	{
@@ -242,6 +241,8 @@ wxString CCMD_Tool::_Get_ID(CSG_Parameter *pParameter, const wxString &Modifier)
 	{
 		ID	+= "_" + Modifier;
 	}
+
+	ID.Replace(".", "_");
 
 	return( ID );
 }
@@ -296,69 +297,70 @@ bool CCMD_Tool::_Set_Parameters(CSG_Parameters *pParameters)
 		{
 			switch( pParameter->Get_Type() )
 			{
-			default:
-				break;
-
-			case PARAMETER_TYPE_Parameters:
+			case PARAMETER_TYPE_Parameters  :
 				_Set_Parameters(pParameter->asParameters());
 				break;
 
-			case PARAMETER_TYPE_Bool:
+			case PARAMETER_TYPE_Bool        :
 				m_CMD.AddOption(_Get_ID(pParameter), wxEmptyString, Description, wxCMD_LINE_VAL_STRING, wxCMD_LINE_PARAM_OPTIONAL);
 				break;
 
-			case PARAMETER_TYPE_Int:
+			case PARAMETER_TYPE_Int         :
 				m_CMD.AddOption(_Get_ID(pParameter), wxEmptyString, Description, wxCMD_LINE_VAL_NUMBER, wxCMD_LINE_PARAM_OPTIONAL);
 				break;
 
-			case PARAMETER_TYPE_Choice:
-			case PARAMETER_TYPE_Choices:
-			case PARAMETER_TYPE_Table_Field:
+			case PARAMETER_TYPE_Choice      :
+			case PARAMETER_TYPE_Choices     :
+			case PARAMETER_TYPE_Table_Field :
 			case PARAMETER_TYPE_Table_Fields:
 				m_CMD.AddOption(_Get_ID(pParameter), wxEmptyString, Description, wxCMD_LINE_VAL_STRING, wxCMD_LINE_PARAM_OPTIONAL);
 				break;
 
-			case PARAMETER_TYPE_Double:
-			case PARAMETER_TYPE_Degree:
+			case PARAMETER_TYPE_Double      :
+			case PARAMETER_TYPE_Degree      :
 				m_CMD.AddOption(_Get_ID(pParameter), wxEmptyString, Description, wxCMD_LINE_VAL_DOUBLE, wxCMD_LINE_PARAM_OPTIONAL);
 				break;
 
-			case PARAMETER_TYPE_Date:
+			case PARAMETER_TYPE_Date        :
 				m_CMD.AddOption(_Get_ID(pParameter), wxEmptyString, Description, wxCMD_LINE_VAL_DATE  , wxCMD_LINE_PARAM_OPTIONAL);
 				break;
 
-			case PARAMETER_TYPE_Range:
+			case PARAMETER_TYPE_Range       :
 				m_CMD.AddOption(_Get_ID(pParameter, "MIN"), wxEmptyString, Description, wxCMD_LINE_VAL_DOUBLE, wxCMD_LINE_PARAM_OPTIONAL);
 				m_CMD.AddOption(_Get_ID(pParameter, "MAX"), wxEmptyString, Description, wxCMD_LINE_VAL_DOUBLE, wxCMD_LINE_PARAM_OPTIONAL);
 				break;
 
-			case PARAMETER_TYPE_Color:
+			case PARAMETER_TYPE_Color       :
 				m_CMD.AddOption(_Get_ID(pParameter), wxEmptyString, Description, wxCMD_LINE_VAL_STRING, wxCMD_LINE_PARAM_OPTIONAL);
 				break;
 
-			case PARAMETER_TYPE_Colors:
+			case PARAMETER_TYPE_Colors      :
 				m_CMD.AddOption(_Get_ID(pParameter), wxEmptyString, Description, wxCMD_LINE_VAL_STRING, wxCMD_LINE_PARAM_OPTIONAL);
 				break;
 
-			case PARAMETER_TYPE_String:
-			case PARAMETER_TYPE_Text:
-			case PARAMETER_TYPE_FilePath:
+			case PARAMETER_TYPE_String      :
+			case PARAMETER_TYPE_Text        :
+			case PARAMETER_TYPE_FilePath    :
 				m_CMD.AddOption(_Get_ID(pParameter), wxEmptyString, Description, wxCMD_LINE_VAL_STRING, wxCMD_LINE_PARAM_OPTIONAL);
 				break;
 
-			case PARAMETER_TYPE_FixedTable:
+			case PARAMETER_TYPE_FixedTable  :
 				m_CMD.AddOption(_Get_ID(pParameter), wxEmptyString, Description, wxCMD_LINE_VAL_STRING, wxCMD_LINE_PARAM_OPTIONAL);
 				break;
 
-			case PARAMETER_TYPE_Grid_System:
+			case PARAMETER_TYPE_Grid_System :
 				if( pParameter->Get_Children_Count() == 0 )
 				{
-					m_CMD.AddOption(_Get_ID(pParameter, "NX"), wxEmptyString, Description, wxCMD_LINE_VAL_NUMBER, wxCMD_LINE_PARAM_OPTIONAL);
-					m_CMD.AddOption(_Get_ID(pParameter, "NY"), wxEmptyString, Description, wxCMD_LINE_VAL_NUMBER, wxCMD_LINE_PARAM_OPTIONAL);
-					m_CMD.AddOption(_Get_ID(pParameter,  "X"), wxEmptyString, Description, wxCMD_LINE_VAL_DOUBLE, wxCMD_LINE_PARAM_OPTIONAL);
-					m_CMD.AddOption(_Get_ID(pParameter,  "Y"), wxEmptyString, Description, wxCMD_LINE_VAL_DOUBLE, wxCMD_LINE_PARAM_OPTIONAL);
-					m_CMD.AddOption(_Get_ID(pParameter,  "D"), wxEmptyString, Description, wxCMD_LINE_VAL_DOUBLE, wxCMD_LINE_PARAM_OPTIONAL);
+					m_CMD.AddOption(_Get_ID(pParameter,    "D"), wxEmptyString, _TL("Cell Size"                          ), wxCMD_LINE_VAL_DOUBLE, wxCMD_LINE_PARAM_OPTIONAL);
+					m_CMD.AddOption(_Get_ID(pParameter,    "X"), wxEmptyString, _TL("Lower Left Center Cell X-Coordinate"), wxCMD_LINE_VAL_DOUBLE, wxCMD_LINE_PARAM_OPTIONAL);
+					m_CMD.AddOption(_Get_ID(pParameter,    "Y"), wxEmptyString, _TL("Lower Left Center Cell Y-Coordinate"), wxCMD_LINE_VAL_DOUBLE, wxCMD_LINE_PARAM_OPTIONAL);
+					m_CMD.AddOption(_Get_ID(pParameter,   "NX"), wxEmptyString, _TL("Number of Columns"                  ), wxCMD_LINE_VAL_NUMBER, wxCMD_LINE_PARAM_OPTIONAL);
+					m_CMD.AddOption(_Get_ID(pParameter,   "NY"), wxEmptyString, _TL("Number of Rows"                     ), wxCMD_LINE_VAL_NUMBER, wxCMD_LINE_PARAM_OPTIONAL);
+					m_CMD.AddOption(_Get_ID(pParameter, "FILE"), wxEmptyString, _TL("Grid File"                          ), wxCMD_LINE_VAL_STRING, wxCMD_LINE_PARAM_OPTIONAL);
 				}
+				break;
+
+			default:
 				break;
 			}
 		}
@@ -527,7 +529,14 @@ bool CCMD_Tool::_Get_Options(CSG_Parameters *pParameters, bool bInitialize)
 			case PARAMETER_TYPE_Colors:
 				if( m_CMD.Found(_Get_ID(pParameter), &s) )
 				{
-					pParameter->asColors()->Load(CSG_String(&s));
+					if( SG_File_Exists(&s) )
+					{
+						pParameter->asColors()->Load(&s);
+					}
+					else if( s.ToLong(&l) )
+					{
+						pParameter->Set_Value((int)l);
+					}
 				}
 				break;
 
@@ -586,20 +595,23 @@ bool CCMD_Tool::_Get_Options(CSG_Parameters *pParameters, bool bInitialize)
 			case PARAMETER_TYPE_Grid_System:
 				if( pParameter->Get_Children_Count() == 0 )
 				{
-					long	nx, ny;
-					double	 x,  y;
+					CSG_Grid_File_Info Info; double x, y; long nx, ny;
 
-					if(	!m_CMD.Found(_Get_ID(pParameter, "NX"), &nx)
-					||	!m_CMD.Found(_Get_ID(pParameter, "NY"), &ny)
-					||	!m_CMD.Found(_Get_ID(pParameter,  "X"), &x )
-					||	!m_CMD.Found(_Get_ID(pParameter,  "Y"), &y )
-					||	!m_CMD.Found(_Get_ID(pParameter,  "D"), &d ) )
+					if( m_CMD.Found(_Get_ID(pParameter, "FILE"), &s) && Info.Create(&s) )
 					{
-						pParameter->asGrid_System()->Assign(-1, 0.0, 0.0, 0, 0);
+						pParameter->asGrid_System()->Create(Info.m_System);
+					}
+					else if( m_CMD.Found(_Get_ID(pParameter, "NX"), &nx)
+						&&   m_CMD.Found(_Get_ID(pParameter, "NY"), &ny)
+						&&   m_CMD.Found(_Get_ID(pParameter,  "X"), &x )
+						&&   m_CMD.Found(_Get_ID(pParameter,  "Y"), &y )
+						&&   m_CMD.Found(_Get_ID(pParameter,  "D"), &d ) )
+					{
+						pParameter->asGrid_System()->Create(d, x, y, (int)nx, (int)ny);
 					}
 					else
 					{
-						pParameter->asGrid_System()->Assign(d, x, y, (int)nx, (int)ny);
+						pParameter->asGrid_System()->Create(0., 0., 0., 0, 0);
 					}
 				}
 				break;
@@ -811,9 +823,17 @@ bool CCMD_Tool::_Save_Output(CSG_Parameters *pParameters)
 							CSG_String	fPath	= SG_File_Get_Path     (FileNames[nFileNames]);
 							CSG_String	fName	= SG_File_Get_Name     (FileNames[nFileNames], false);
 							CSG_String	fExt	= SG_File_Get_Extension(FileNames[nFileNames]);
-							CSG_String	fNum	= CSG_String::Format("%0*d", SG_Get_Digit_Count(pParameter->asList()->Get_Item_Count()), 1 + i - nFileNames);
 
-							_Save_Output(pParameter->asList()->Get_Item(i), SG_File_Make_Path(fPath, fName + fNum, fExt));
+							if( fName.is_Empty() || !fName.Cmp("*") )
+							{
+								fName	= pParameter->asList()->Get_Item(i)->Get_Name();
+							}
+							else
+							{
+								fName	+= CSG_String::Format("%0*d", SG_Get_Digit_Count(pParameter->asList()->Get_Item_Count()), 1 + i - nFileNames);
+							}
+
+							_Save_Output(pParameter->asList()->Get_Item(i), SG_File_Make_Path(fPath, fName, fExt));
 						}
 					}
 				}

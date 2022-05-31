@@ -1,6 +1,3 @@
-/**********************************************************
- * Version $Id$
- *********************************************************/
 
 ///////////////////////////////////////////////////////////
 //                                                       //
@@ -50,15 +47,6 @@
 //                                                       //
 //    e-mail:     oconrad@saga-gis.org                   //
 //                                                       //
-///////////////////////////////////////////////////////////
-
-//---------------------------------------------------------
-
-
-///////////////////////////////////////////////////////////
-//														 //
-//														 //
-//														 //
 ///////////////////////////////////////////////////////////
 
 //---------------------------------------------------------
@@ -199,17 +187,17 @@ CSG_Tool * CSG_Tool_Library::Get_Tool(const CSG_String &Name, TSG_Tool_Type Type
   * a tool simultaneously with different settings.
 */
 //---------------------------------------------------------
-CSG_Tool * CSG_Tool_Library::Create_Tool(int Index)
+CSG_Tool * CSG_Tool_Library::Create_Tool(int Index, bool bWithGUI)
 {
-	return( m_pInterface ? m_pInterface->Create_Tool(Index) : NULL );
+	return( m_pInterface ? m_pInterface->Create_Tool(Index, bWithGUI) : NULL );
 }
 
 //---------------------------------------------------------
-CSG_Tool * CSG_Tool_Library::Create_Tool(const char       *Name)	{	return( Create_Tool(CSG_String(Name)) );	}
-CSG_Tool * CSG_Tool_Library::Create_Tool(const wchar_t    *Name)	{	return( Create_Tool(CSG_String(Name)) );	}
-CSG_Tool * CSG_Tool_Library::Create_Tool(const CSG_String &Name)
+CSG_Tool * CSG_Tool_Library::Create_Tool(const char       *Name, bool bWithGUI)	{	return( Create_Tool(CSG_String(Name), bWithGUI) );	}
+CSG_Tool * CSG_Tool_Library::Create_Tool(const wchar_t    *Name, bool bWithGUI)	{	return( Create_Tool(CSG_String(Name), bWithGUI) );	}
+CSG_Tool * CSG_Tool_Library::Create_Tool(const CSG_String &Name, bool bWithGUI)
 {
-	int	Index;	return( Name.asInt(Index) ? Create_Tool(Index) : NULL );
+	int	Index;	return( Name.asInt(Index) ? Create_Tool(Index, bWithGUI) : NULL );
 }
 
 //---------------------------------------------------------
@@ -243,6 +231,45 @@ CSG_String CSG_Tool_Library::Get_Menu(int i) const
 	}
 
 	return( "" );
+}
+
+
+///////////////////////////////////////////////////////////
+//														 //
+///////////////////////////////////////////////////////////
+
+//---------------------------------------------------------
+void CSG_Tool_Library::Add_Reference(const CSG_String &Authors, const CSG_String &Year, const CSG_String &Title, const CSG_String &Where, const SG_Char *Link, const SG_Char *Link_Text)
+{
+	CSG_String	Reference	= Authors;
+
+	Reference.Printf("<b>%s (%s):</b> %s. %s", Authors.c_str(), Year.c_str(), Title.c_str(), Where.c_str());
+
+	if( Link && *Link )
+	{
+		Reference	+= CSG_String::Format(" <a href=\"%s\">%s</a>.", Link, Link_Text && *Link_Text ? Link_Text : Link);
+	}
+
+	if( !Reference.is_Empty() )
+	{
+		m_References	+= Reference;
+	}
+
+	m_References.Sort();
+}
+
+//---------------------------------------------------------
+void CSG_Tool_Library::Add_Reference(const CSG_String &Link, const SG_Char *Link_Text)
+{
+	m_References	+= CSG_String::Format("<a href=\"%s\">%s</a>", Link.c_str(), Link_Text && *Link_Text ? Link_Text : Link.c_str());
+
+	m_References.Sort();
+}
+
+//---------------------------------------------------------
+void CSG_Tool_Library::Del_References(void)
+{
+	m_References.Clear();
 }
 
 
@@ -282,6 +309,24 @@ CSG_Tool_Library_Manager::CSG_Tool_Library_Manager(void)
 CSG_Tool_Library_Manager::~CSG_Tool_Library_Manager(void)
 {
 	Destroy();
+}
+
+
+///////////////////////////////////////////////////////////
+//														 //
+///////////////////////////////////////////////////////////
+
+//---------------------------------------------------------
+int CSG_Tool_Library_Manager::Get_Tool_Count(void)	const
+{
+	int	nTools	= 0;
+
+	for(int i=0; i<m_nLibraries; i++)
+	{
+		nTools	+= m_pLibraries[i]->Get_Count();
+	}
+
+	return( nTools );
 }
 
 
@@ -460,7 +505,7 @@ CSG_Tool_Library * CSG_Tool_Library_Manager::_Add_Tool_Chain(const CSG_String &F
 	}
 
 	//-----------------------------------------------------
-	CSG_String	Library	= pTool->Get_Library();	if( Library.is_Empty() )	Library	= "toolchains";
+	CSG_String	Library	= pTool->Get_Library();
 
 	for(int iLibrary=0; !pLibrary && iLibrary<Get_Count(); iLibrary++)
 	{
@@ -649,17 +694,17 @@ CSG_Tool * CSG_Tool_Library_Manager::Get_Tool(const CSG_String &Library, const C
 ///////////////////////////////////////////////////////////
 
 //---------------------------------------------------------
-CSG_Tool * CSG_Tool_Library_Manager::Create_Tool(const char       *Library, int              Index)	const	{	return( Create_Tool(CSG_String(Library), Index) );	}
-CSG_Tool * CSG_Tool_Library_Manager::Create_Tool(const wchar_t    *Library, int              Index)	const	{	return( Create_Tool(CSG_String(Library), Index) );	}
-CSG_Tool * CSG_Tool_Library_Manager::Create_Tool(const CSG_String &Library, int              Index)	const
+CSG_Tool * CSG_Tool_Library_Manager::Create_Tool(const char       *Library, int              Index, bool bWithGUI)	const	{	return( Create_Tool(CSG_String(Library), Index, bWithGUI) );	}
+CSG_Tool * CSG_Tool_Library_Manager::Create_Tool(const wchar_t    *Library, int              Index, bool bWithGUI)	const	{	return( Create_Tool(CSG_String(Library), Index, bWithGUI) );	}
+CSG_Tool * CSG_Tool_Library_Manager::Create_Tool(const CSG_String &Library, int              Index, bool bWithGUI)	const
 {
-	return( Create_Tool(Library, CSG_String::Format("%d", Index)) );
+	return( Create_Tool(Library, CSG_String::Format("%d", Index), bWithGUI) );
 }
 
 //---------------------------------------------------------
-CSG_Tool * CSG_Tool_Library_Manager::Create_Tool(const char       *Library, const char       *Name)	const	{	return( Create_Tool(CSG_String(Library), CSG_String(Name)) );	}
-CSG_Tool * CSG_Tool_Library_Manager::Create_Tool(const wchar_t    *Library, const wchar_t    *Name)	const	{	return( Create_Tool(CSG_String(Library), CSG_String(Name)) );	}
-CSG_Tool * CSG_Tool_Library_Manager::Create_Tool(const CSG_String &Library, const CSG_String &Name)	const
+CSG_Tool * CSG_Tool_Library_Manager::Create_Tool(const char       *Library, const char       *Name, bool bWithGUI)	const	{	return( Create_Tool(CSG_String(Library), CSG_String(Name), bWithGUI) );	}
+CSG_Tool * CSG_Tool_Library_Manager::Create_Tool(const wchar_t    *Library, const wchar_t    *Name, bool bWithGUI)	const	{	return( Create_Tool(CSG_String(Library), CSG_String(Name), bWithGUI) );	}
+CSG_Tool * CSG_Tool_Library_Manager::Create_Tool(const CSG_String &Library, const CSG_String &Name, bool bWithGUI)	const
 {
 	for(int i=0; i<Get_Count(); i++)
 	{
@@ -667,7 +712,7 @@ CSG_Tool * CSG_Tool_Library_Manager::Create_Tool(const CSG_String &Library, cons
 
 		if( pLibrary->Get_Library_Name().Cmp(Library) == 0 )
 		{
-			CSG_Tool	*pTool	= pLibrary->Create_Tool(Name);
+			CSG_Tool	*pTool	= pLibrary->Create_Tool(Name, bWithGUI);
 
 			if( pTool )
 			{

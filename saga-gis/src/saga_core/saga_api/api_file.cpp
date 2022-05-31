@@ -738,6 +738,17 @@ bool			SG_Dir_Create(const CSG_String &Directory)
 }
 
 //---------------------------------------------------------
+bool			SG_Dir_Delete(const CSG_String &Directory, bool bRecursive)
+{
+	if( !SG_Dir_Exists(Directory) )
+	{
+		return( true );
+	}
+
+	return( wxDir::Remove(Directory.c_str(), bRecursive ? wxPATH_RMDIR_RECURSIVE : 0) );
+}
+
+//---------------------------------------------------------
 CSG_String		SG_Dir_Get_Current(void)
 {
 	wxString cwd = wxFileName::GetCwd();
@@ -919,7 +930,7 @@ bool			SG_File_Cmp_Extension(const CSG_String &FileName, const CSG_String &Exten
 //---------------------------------------------------------
 bool			SG_File_Set_Extension(CSG_String &FileName, const CSG_String &Extension)
 {
-	if( FileName.Length() > 0 && Extension.Length() > 0 )
+	if( FileName.Length() > 0 )
 	{
 		wxFileName	fn(FileName.c_str());
 

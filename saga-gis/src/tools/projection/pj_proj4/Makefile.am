@@ -19,23 +19,29 @@ crs_distance.cpp\
 crs_grid_geogcoords.cpp\
 crs_indicatrix.cpp\
 crs_transform.cpp\
+crs_transform_coords.cpp\
 crs_transform_grid.cpp\
 crs_transform_point.cpp\
 crs_transform_shapes.cpp\
 crs_transform_utm.cpp\
 gcs_graticule.cpp\
 gcs_lon_range.cpp\
+gcs_rotated_grid.cpp\
+globe_gores.cpp\
 crs_assign.h\
 crs_base.h\
 crs_distance.h\
 crs_grid_geogcoords.h\
 crs_indicatrix.h\
 crs_transform.h\
+crs_transform_coords.h\
 crs_transform_grid.h\
 crs_transform_point.h\
 crs_transform_shapes.h\
 crs_transform_utm.h\
 gcs_graticule.h\
-gcs_lon_range.h
+gcs_lon_range.h\
+gcs_rotated_grid.h\
+globe_gores.h
 
 libpj_proj4_la_LIBADD = $(top_srcdir)/src/saga_core/saga_api/libsaga_api.la

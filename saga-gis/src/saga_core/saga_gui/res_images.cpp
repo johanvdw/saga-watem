@@ -111,6 +111,7 @@
 #include "./res/xpm/tb_help.xpm"
 #include "./res/xpm/tb_histogram_as_table.xpm"
 #include "./res/xpm/tb_histogram_cumulative.xpm"
+#include "./res/xpm/tb_histogram_gaussian.xpm"
 #include "./res/xpm/tb_info.xpm"
 #include "./res/xpm/tb_update.xpm"
 #include "./res/xpm/tb_clipboard.xpm"
@@ -118,6 +119,10 @@
 #include "./res/xpm/tb_layout_print.xpm"
 #include "./res/xpm/tb_layout_print_preview.xpm"
 #include "./res/xpm/tb_layout_print_setup.xpm"
+#include "./res/xpm/tb_zoom_in.xpm"
+#include "./res/xpm/tb_zoom_out.xpm"
+#include "./res/xpm/tb_zoom_full.xpm"
+#include "./res/xpm/tb_zoom_original.xpm"
 #include "./res/xpm/tb_map3d_central_less.xpm"
 #include "./res/xpm/tb_map3d_central_more.xpm"
 #include "./res/xpm/tb_map3d_exaggerate_less.xpm"
@@ -147,11 +152,13 @@
 #include "./res/xpm/tb_map_north_arrow.xpm"
 #include "./res/xpm/tb_map_synchronize.xpm"
 #include "./res/xpm/tb_map_zoom_active.xpm"
+#include "./res/xpm/tb_map_pan_active.xpm"
 #include "./res/xpm/tb_map_zoom_full.xpm"
 #include "./res/xpm/tb_map_zoom_last.xpm"
 #include "./res/xpm/tb_map_zoom_next.xpm"
 #include "./res/xpm/tb_map_zoom_selection.xpm"
 #include "./res/xpm/tb_map_crosshair.xpm"
+#include "./res/xpm/tb_new_project.xpm"
 #include "./res/xpm/tb_open.xpm"
 #include "./res/xpm/tb_open_grid.xpm"
 #include "./res/xpm/tb_open_module.xpm"
@@ -167,6 +174,7 @@
 #include "./res/xpm/tb_table_row_del.xpm"
 #include "./res/xpm/tb_table_row_del_all.xpm"
 #include "./res/xpm/tb_table_row_ins.xpm"
+#include "./res/xpm/tb_table_selection_only.xpm"
 #include "./res/xpm/tb_wksp.xpm"
 
 #include "./res/xpm/wksp_data_manager.xpm"
@@ -261,6 +269,7 @@ const char ** IMG_Get_XPM(int ID_IMG)
 	case ID_IMG_TB_HELP:	return( tb_help_xpm );
 	case ID_IMG_TB_HISTOGRAM_AS_TABLE:	return( tb_histogram_as_table_xpm );
 	case ID_IMG_TB_HISTOGRAM_CUMULATIVE:	return( tb_histogram_cumulative_xpm );
+	case ID_IMG_TB_HISTOGRAM_GAUSSIAN:	return( tb_histogram_gaussian_xpm );
 	case ID_IMG_TB_INFO:	return( tb_info_xpm );
 	case ID_IMG_TB_UPDATE:	return( tb_update_xpm );
 	case ID_IMG_TB_CLIPBOARD:	return( tb_clipboard_xpm );
@@ -268,6 +277,10 @@ const char ** IMG_Get_XPM(int ID_IMG)
 	case ID_IMG_TB_LAYOUT_PRINT:	return( tb_layout_print_xpm );
 	case ID_IMG_TB_LAYOUT_PRINT_PREVIEW:	return( tb_layout_print_preview_xpm );
 	case ID_IMG_TB_LAYOUT_PRINT_SETUP:	return( tb_layout_print_setup_xpm );
+	case ID_IMG_TB_ZOOM_IN:	return( tb_zoom_in_xpm );
+	case ID_IMG_TB_ZOOM_OUT:	return( tb_zoom_out_xpm );
+	case ID_IMG_TB_ZOOM_FULL:	return( tb_zoom_full_xpm );
+	case ID_IMG_TB_ZOOM_ORIGINAL:	return( tb_zoom_original_xpm );
 	case ID_IMG_TB_MAP3D_CENTRAL_LESS:	return( tb_map3d_central_less_xpm );
 	case ID_IMG_TB_MAP3D_CENTRAL_MORE:	return( tb_map3d_central_more_xpm );
 	case ID_IMG_TB_MAP3D_EXAGGERATE_LESS:	return( tb_map3d_exaggerate_less_xpm );
@@ -297,11 +310,13 @@ const char ** IMG_Get_XPM(int ID_IMG)
 	case ID_IMG_TB_MAP_NORTH_ARROW:	return( tb_map_north_arrow_xpm );
 	case ID_IMG_TB_MAP_SYNCHRONIZE:	return( tb_map_synchronize_xpm );
 	case ID_IMG_TB_MAP_ZOOM_ACTIVE:	return( tb_map_zoom_active_xpm );
+	case ID_IMG_TB_MAP_PAN_ACTIVE:	return( tb_map_pan_active_xpm );
 	case ID_IMG_TB_MAP_ZOOM_FULL:	return( tb_map_zoom_full_xpm );
 	case ID_IMG_TB_MAP_ZOOM_LAST:	return( tb_map_zoom_last_xpm );
 	case ID_IMG_TB_MAP_ZOOM_NEXT:	return( tb_map_zoom_next_xpm );
 	case ID_IMG_TB_MAP_ZOOM_SELECTION:	return( tb_map_zoom_selection_xpm );
 	case ID_IMG_TB_MAP_CROSSHAIR:	return( tb_map_crosshair_xpm );
+	case ID_IMG_TB_NEW_PROJECT:	return( tb_new_project_xpm );
 	case ID_IMG_TB_OPEN:	return( tb_open_xpm );
 	case ID_IMG_TB_OPEN_GRID:	return( tb_open_grid_xpm );
 	case ID_IMG_TB_OPEN_TOOL:	return( tb_open_module_xpm );
@@ -317,6 +332,7 @@ const char ** IMG_Get_XPM(int ID_IMG)
 	case ID_IMG_TB_TABLE_ROW_DEL:	return( tb_table_row_del_xpm );
 	case ID_IMG_TB_TABLE_ROW_DEL_ALL:	return( tb_table_row_del_all_xpm );
 	case ID_IMG_TB_TABLE_ROW_INS:	return( tb_table_row_ins_xpm );
+	case ID_IMG_TB_TABLE_SELECTION_ONLY:	return( tb_table_selection_only_xpm );
 	case ID_IMG_TB_WKSP:	return( tb_wksp_xpm );
 
 	case ID_IMG_WKSP_DATA_MANAGER:	return( wksp_data_manager_xpm );

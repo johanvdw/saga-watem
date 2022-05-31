@@ -1,6 +1,3 @@
-/**********************************************************
- * Version $Id: Flow_Parallel.cpp 1921 2014-01-09 10:24:11Z oconrad $
- *********************************************************/
 
 ///////////////////////////////////////////////////////////
 //                                                       //
@@ -51,15 +48,6 @@
 ///////////////////////////////////////////////////////////
 
 //---------------------------------------------------------
-
-
-///////////////////////////////////////////////////////////
-//														 //
-//														 //
-//														 //
-///////////////////////////////////////////////////////////
-
-//---------------------------------------------------------
 #include "Flow_Parallel.h"
 
 
@@ -98,46 +86,45 @@ CFlow_Parallel::CFlow_Parallel(void)
 
 	Add_Reference("Fairfield, J. & Leymarie, P.", "1991",
 		"Drainage networks from grid digital elevation models",
-		"Water Resources Research, 27:709-717."
+		"Water Resources Research, 27:709-717.",
+		SG_T("https://doi.org/10.1029/90WR02658"), SG_T("doi:10.1029/90WR02658")
 	);
 
 	Add_Reference("Freeman, G.T.", "1991",
 		"Calculating catchment area with divergent flow based on a regular grid",
 		"Computers and Geosciences, 17:413-22.",
-		SG_T("https://www.sciencedirect.com/science/article/pii/009830049190048I"), SG_T("ScienceDirect")
+		SG_T("https://doi.org/10.1016/0098-3004(91)90048-I"), SG_T("doi:10.1016/0098-3004(91)90048-I")
 	);
 
 	Add_Reference("O'Callaghan, J.F. & Mark, D.M.", "1984",
 		"The extraction of drainage networks from digital elevation data",
 		"Computer Vision, Graphics and Image Processing, 28:323-344.",
-		SG_T("https://www.sciencedirect.com/science/article/pii/S0734189X84800110"), SG_T("ScienceDirect")
+		SG_T("https://doi.org/10.1016/S0734-189X(84)80011-0"), SG_T("doi:10.1016/S0734-189X(84)80011-0")
 	);
 
 	Add_Reference("Qin, C. Z., Zhu, A. X., Pei, T., Li, B. L., Scholten, T., Behrens, T. & Zhou, C. H.", "2011",
 		"An approach to computing topographic wetness index based on maximum downslope gradient",
 		"Precision Agriculture, 12(1), 32-43.",
-		SG_T("https://www.researchgate.net/profile/Cheng-Zhi_Qin/publication/225309245_An_approach_to_computing_topographic_wetness_index_based_on_maximum_downslope_gradient/links/0912f5019cb8cd1521000000.pdf"),
-		SG_T("ResearchGate")
+		SG_T("https://doi.org/10.1007/s11119-009-9152-y"), SG_T("doi:10.1007/s11119-009-9152-y")
 	);
 
 	Add_Reference("Quinn, P.F., Beven, K.J., Chevallier, P. & Planchon, O.", "1991",
 		"The prediction of hillslope flow paths for distributed hydrological modelling using digital terrain models",
 		"Hydrological Processes, 5:59-79.",
-		SG_T("https://www.researchgate.net/profile/Olivier_Planchon/publication/32978462_The_Prediction_of_Hillslope_Flow_Paths_for_Distributed_Hydrological_Modeling_Using_Digital_Terrain_Model/links/0912f5130c356c86e6000000.pdf"),
-		SG_T("ResearchGate")
+		SG_T("https://doi.org/10.1002/hyp.3360050106"), SG_T("doi:10.1002/hyp.3360050106")
 	);
 
 	Add_Reference("Seibert, J. & McGlynn, B.", "2007",
 		"A new triangular multiple flow direction algorithm for computing upslope areas from gridded digital elevation models",
 		"Water Resources Research, Vol. 43, W04501,<br>"
 		"C++ implementation in SAGA by Thomas Grabs (c) 2007, contact: thomas.grabs@natgeo.su.se, jan.seibert@natgeo.su.se.",
-		SG_T("http://onlinelibrary.wiley.com/doi/10.1029/2006WR005128/full"), SG_T("Wiley")
+		SG_T("https://doi.org/10.1029/2006WR005128"), SG_T("doi:10.1029/2006WR005128")
 	);
 
 	Add_Reference("Tarboton, D.G.", "1997",
 		"A new method for the determination of flow directions and upslope areas in grid digital elevation models",
 		"Water Resources Research, Vol.33, No.2, p.309-319.",
-		SG_T("http://onlinelibrary.wiley.com/doi/10.1029/96WR03137/pdf"), SG_T("Wiley")
+		SG_T("https://doi.org/10.1029/96WR03137"), SG_T("doi:10.1029/96WR03137")
 	);
 
 	//-----------------------------------------------------
@@ -184,7 +171,7 @@ CFlow_Parallel::CFlow_Parallel(void)
 	Parameters.Add_Bool("",
 		"LINEAR_DO"		, _TL("Thresholded Linear Flow"),
 		_TL("apply linear flow routing (D8) to all cells, having a flow accumulation greater than the specified threshold"),
-		true
+		false
 	);
 
 	Parameters.Add_Int("LINEAR_DO",
@@ -192,11 +179,17 @@ CFlow_Parallel::CFlow_Parallel(void)
 		_TL("flow accumulation threshold (cells) for linear flow routing"),
 		500, 0, true
 	);
-	
+
 	Parameters.Add_Double("",
 		"CONVERGENCE"	, _TL("Convergence"),
 		_TL("Convergence factor for Multiple Flow Direction Algorithm (Freeman 1991).\nApplies also to the Multiple Triangular Flow Directon Algorithm."),
-		1.1, 0.0, true
+		1.1, 0.001, true
+	);
+
+	Parameters.Add_Bool("",
+		"MFD_CONTOUR"	, _TL("Contour Length"),
+		_TL("Include (pseudo) contour length as additional weighting factor in multiple flow direction routing, reduces flow to diagonal neighbour cells by a factor of 0.71 (s. Quinn et al. 1991 for details)."),
+		false
 	);
 
 	Parameters.Add_Bool("",
@@ -217,6 +210,7 @@ int CFlow_Parallel::On_Parameters_Enable(CSG_Parameters *pParameters, CSG_Parame
 	if( pParameter->Cmp_Identifier("METHOD") )
 	{
 		pParameters->Set_Enabled("CONVERGENCE", pParameter->asInt() == 4 || pParameter->asInt() == 5);
+		pParameters->Set_Enabled("MFD_CONTOUR", pParameter->asInt() == 4 || pParameter->asInt() == 5);
 	}
 
 	if( pParameter->Cmp_Identifier("LINEAR_DO") )
@@ -225,15 +219,11 @@ int CFlow_Parallel::On_Parameters_Enable(CSG_Parameters *pParameters, CSG_Parame
 		pParameters->Set_Enabled("LINEAR_VAL", pParameter->asBool());
 	}
 
-	if( pParameter->Cmp_Identifier("WEIGHTS") )
+	if( pParameter->Cmp_Identifier("WEIGHTS")
+	||  pParameter->Cmp_Identifier("NO_NEGATIVES") )
 	{
-		pParameters->Set_Enabled("NO_NEGATIVES", pParameter->asGrid() != NULL);
-		pParameters->Set_Enabled("WEIGHT_LOSS" , pParameter->asGrid() != NULL && Parameters("NO_NEGATIVES")->asBool());
-	}
-
-	if( pParameter->Cmp_Identifier("NO_NEGATIVES") )
-	{
-		pParameters->Set_Enabled("WEIGHT_LOSS" , pParameter->asBool());
+		pParameters->Set_Enabled("NO_NEGATIVES", (*pParameters)["WEIGHTS"].asGrid() != NULL);
+		pParameters->Set_Enabled("WEIGHT_LOSS" , (*pParameters)["WEIGHTS"].asGrid() != NULL && (*pParameters)["NO_NEGATIVES"].asBool());
 	}
 
 	return( CFlow::On_Parameters_Enable(pParameters, pParameter) );
@@ -247,8 +237,9 @@ int CFlow_Parallel::On_Parameters_Enable(CSG_Parameters *pParameters, CSG_Parame
 //---------------------------------------------------------
 void CFlow_Parallel::On_Initialize(void)
 {
-	m_pFlow_Length	= Parameters("FLOW_LENGTH")->asGrid();
-	m_Converge		= Parameters("CONVERGENCE")->asDouble();
+	m_pFlow_Length = Parameters("FLOW_LENGTH")->asGrid  ();
+	m_MFD_Converge = Parameters("CONVERGENCE")->asDouble();
+	m_MFD_bContour = Parameters("MFD_CONTOUR")->asBool  ();
 }
 
 
@@ -302,7 +293,7 @@ bool CFlow_Parallel::Set_Flow(void)
 	}
 
 	//-----------------------------------------------------
-	double	dLinear	= Parameters("LINEAR_DO")->asBool() ? Parameters("LINEAR_MIN")->asDouble() : -1.0;
+	double	dLinear	= Parameters("LINEAR_DO")->asBool() ? Parameters("LINEAR_MIN")->asDouble() : -1.;
 
 	CSG_Grid	*pLinear_Val	= Parameters("LINEAR_VAL")->asGrid();
 	CSG_Grid	*pLinear_Dir	= Parameters("LINEAR_DIR")->asGrid();
@@ -324,21 +315,21 @@ bool CFlow_Parallel::Set_Flow(void)
 
 		if( m_pDTM->Get_Sorted(n, x, y) )
 		{
-			if( bNoNegatives && m_pFlow->asDouble(x, y) < 0.0 )
+			if( bNoNegatives && m_pFlow->asDouble(x, y) < 0. )
 			{
 				if( pLoss )
 				{
 					pLoss->Set_Value(x, y, fabs(m_pFlow->asDouble(x, y)));
 				}
 
-				m_pFlow->Set_Value(x, y, 0.0);
+				m_pFlow->Set_Value(x, y, 0.);
 			}
 
 			if( pLinear_Dir && !pLinear_Dir->is_NoData(x, y) )
 			{
 				Set_D8(x, y, pLinear_Dir->asInt(x, y));
 			}
-			else if( dLinear > 0.0 && dLinear <= (pLinear_Val && !pLinear_Val->is_NoData(x, y) ? pLinear_Val->asDouble(x, y) : m_pFlow->asDouble(x, y)) )
+			else if( dLinear > 0. && dLinear <= (pLinear_Val && !pLinear_Val->is_NoData(x, y) ? pLinear_Val->asDouble(x, y) : m_pFlow->asDouble(x, y)) )
 			{
 				Set_D8(x, y, pLinear_Dir && !pLinear_Dir->is_NoData(x, y) ? pLinear_Dir->asInt(x, y) : -1);
 			}
@@ -470,7 +461,7 @@ void CFlow_Parallel::Set_Rho8(int x, int y)
 
 			if( i % 2 == 1 )
 			{
-				d	/= 1.0 + rand() / (double)RAND_MAX;
+				d	/= 1. + rand() / (double)RAND_MAX;
 			}
 
 			if( iMax < 0 || dMax < d )
@@ -530,7 +521,7 @@ void CFlow_Parallel::Set_DInf(int x, int y)
 {
 	double	s, a;
 
-	if( m_pDTM->Get_Gradient(x, y, s, a) && a >= 0.0 )
+	if( m_pDTM->Get_Gradient(x, y, s, a) && a >= 0. )
 	{
 		int	i, ix, iy;
 
@@ -541,8 +532,8 @@ void CFlow_Parallel::Set_DInf(int x, int y)
 		if( m_pDTM->is_InGrid(ix = Get_xTo(i + 0, x), iy = Get_yTo(i + 0, y)) && m_pDTM->asDouble(ix, iy) < s
 		&&  m_pDTM->is_InGrid(ix = Get_xTo(i + 1, x), iy = Get_yTo(i + 1, y)) && m_pDTM->asDouble(ix, iy) < s )
 		{
-			Add_Fraction(x, y,  i         , 1.0 - a);
-			Add_Fraction(x, y, (i + 1) % 8,       a);
+			Add_Fraction(x, y,  i         , 1. - a);
+			Add_Fraction(x, y, (i + 1) % 8,      a);
 
 			return;
 		}
@@ -561,50 +552,26 @@ void CFlow_Parallel::Set_DInf(int x, int y)
 //---------------------------------------------------------
 void CFlow_Parallel::Set_MFD(int x, int y)
 {
-	int		i, ix, iy;
-	double	z, d, dzSum, dz[8];
+	double	dz[8], dzSum = 0., z = m_pDTM->asDouble(x, y);
 
 	//-----------------------------------------------------
-	for(i=0, dzSum=0.0, z=m_pDTM->asDouble(x, y); i<8; i++)
+	for(int i=0, ix, iy; i<8; i++)
 	{
-		ix	= Get_xTo(i, x);
-		iy	= Get_yTo(i, y);
+		dz[i]	= m_pDTM->is_InGrid(ix = Get_xTo  (i, x), iy = Get_yTo  (i, y)) ?  (z - m_pDTM->asDouble(ix, iy))
+				: m_pDTM->is_InGrid(ix = Get_xFrom(i, x), iy = Get_yFrom(i, y)) ? -(z - m_pDTM->asDouble(ix, iy)) : 0.;
 
-		if( m_pDTM->is_InGrid(ix, iy) )
+		if( dz[i] > 0. )
 		{
-			d	= z - m_pDTM->asDouble(ix, iy);
-		}
-		else
-		{
-			ix	= Get_xTo(i + 4, x);
-			iy	= Get_yTo(i + 4, y);
-
-			if( m_pDTM->is_InGrid(ix, iy) )
-			{
-				d	= m_pDTM->asDouble(ix, iy) - z;
-			}
-			else
-			{
-				d	= 0.0;
-			}
-		}
-
-		if( d > 0.0 )
-		{
-			dzSum	+= (dz[i] = pow(d / Get_Length(i), m_Converge));
-		}
-		else
-		{
-			dz[i]	= 0.0;
+			dzSum	+= (dz[i] = pow(dz[i] / Get_Length(i), m_MFD_Converge) * (m_MFD_bContour && i % 2 ? sqrt(2.) / 2. : 1.));
 		}
 	}
 
 	//-----------------------------------------------------
-	if( dzSum > 0.0 )
+	if( dzSum > 0. )
 	{
-		for(i=0; i<8; i++)
+		for(int i=0; i<8; i++)
 		{
-			if( dz[i] > 0.0 )
+			if( dz[i] > 0. )
 			{
 				Add_Fraction(x, y, i, dz[i] / dzSum);
 			}
@@ -622,65 +589,36 @@ void CFlow_Parallel::Set_MFD(int x, int y)
 //---------------------------------------------------------
 void CFlow_Parallel::Set_MMDGFD(int x, int y)
 {
-	int		i, ix, iy;
-	double	z, d, dzMax, dzSum, dz[8];
+	double	dz[8], dzMax = 0., z = m_pDTM->asDouble(x, y);
 
 	//-----------------------------------------------------
-	for(i=0, dzMax=0.0, z=m_pDTM->asDouble(x, y); i<8; i++)
+	for(int i=0, ix, iy; i<8; i++)
 	{
-		ix	= Get_xTo(i, x);
-		iy	= Get_yTo(i, y);
+		dz[i]	= m_pDTM->is_InGrid(ix = Get_xTo  (i, x), iy = Get_yTo  (i, y)) ?  (z - m_pDTM->asDouble(ix, iy))
+				: m_pDTM->is_InGrid(ix = Get_xFrom(i, x), iy = Get_yFrom(i, y)) ? -(z - m_pDTM->asDouble(ix, iy)) : 0.;
 
-		if( m_pDTM->is_InGrid(ix, iy) )
+		if( dz[i] > 0. && dzMax < (dz[i] = dz[i] / Get_Length(i)) )
 		{
-			d	= z - m_pDTM->asDouble(ix, iy);
-		}
-		else
-		{
-			ix	= Get_xTo(i + 4, x);
-			iy	= Get_yTo(i + 4, y);
-
-			if( m_pDTM->is_InGrid(ix, iy) )
-			{
-				d	= m_pDTM->asDouble(ix, iy) - z;
-			}
-			else
-			{
-				d	= 0.0;
-			}
-		}
-
-		if( d > 0.0 )
-		{
-			dz[i]	= d / Get_Length(i);
-
-			if( dzMax < dz[i] )
-			{
-				dzMax	= dz[i];
-			}
-		}
-		else
-		{
-			dz[i]	= 0.0;
+			dzMax	= dz[i];
 		}
 	}
 
 	//-----------------------------------------------------
-	if( dzMax > 0.0 )
+	if( dzMax > 0. )
 	{
-		dzMax	= dzMax < 1.0 ? 8.9 * dzMax + 1.1 : 10.0;
+		double dzSum = 0.; dzMax = dzMax < 1. ? 8.9 * dzMax + 1.1 : 10.;
 
-		for(i=0, dzSum=0.0; i<8; i++)
+		for(int i=0; i<8; i++)
 		{
-			if( dz[i] > 0.0 )
+			if( dz[i] > 0. )
 			{
-				dzSum	+= (dz[i]	= pow(dz[i], dzMax));
+				dzSum	+= (dz[i] = pow(dz[i], dzMax) * (m_MFD_bContour && i % 2 ? sqrt(2.) / 2. : 1.));
 			}
 		}
 
-		for(i=0; i<8; i++)
+		for(int i=0; i<8; i++)
 		{
-			if( dz[i] > 0.0 )
+			if( dz[i] > 0. )
 			{
 				Add_Fraction(x, y, i, dz[i] / dzSum);
 			}
@@ -709,7 +647,7 @@ void CFlow_Parallel::Set_MDInf(int x, int y)
 
 	for(i=0; i<8; i++)
 	{
-		s_facet[i]	= r_facet[i]	= -999.0;
+		s_facet[i]	= r_facet[i]	= -999.;
 
 		ix	= Get_xTo(i, x);
 		iy	= Get_yTo(i, y);
@@ -720,7 +658,7 @@ void CFlow_Parallel::Set_MDInf(int x, int y)
 		}
 		else
 		{
-			dz[i]	= 0.0;
+			dz[i]	= 0.;
 		}
 	}
 
@@ -742,11 +680,11 @@ void CFlow_Parallel::Set_MDInf(int x, int y)
 				
 				double	n_norm	= sqrt(nx*nx + ny*ny +nz*nz);
 
-			/*	if( nx == 0.0 )
+			/*	if( nx == 0. )
 				{
-					hr = (ny >= 0.0)? 0.0 : M_PI;
+					hr = (ny >= 0.)? 0. : M_PI;
 				} 
-				else if( nx > 0.0 )
+				else if( nx > 0. )
 				{
 					hr = M_PI_090 - atan(ny / nx);
 				} 
@@ -755,11 +693,11 @@ void CFlow_Parallel::Set_MDInf(int x, int y)
 					hr = M_PI_270 - atan(ny / nx);
 				}	*/
 
-				if( nx == 0.0 )
+				if( nx == 0. )
 				{
-					hr = (ny >= 0.0)? 0.0 : M_PI;
+					hr = (ny >= 0.)? 0. : M_PI;
 				} 
-				else if( nx < 0.0 )
+				else if( nx < 0. )
 				{
 					hr = M_PI_270 - atan(ny / nx);
 				} 
@@ -786,7 +724,7 @@ void CFlow_Parallel::Set_MDInf(int x, int y)
 					}
 				}				
 			}
-			else if( dz[i] > 0.0 )
+			else if( dz[i] > 0. )
 			{
 				hr	= i * M_PI_045;
 				hs	= dz[i] / Get_Length(i);
@@ -798,15 +736,15 @@ void CFlow_Parallel::Set_MDInf(int x, int y)
 	}
 	
 	//-----------------------------------------------------
-	double	dzSum	= 0.0;
+	double	dzSum	= 0.;
 	
 	for(i=0; i<8; i++)
 	{		
-		valley[i]	= 0.0;
+		valley[i]	= 0.;
 
 		int	j	= i < 7 ? i + 1 : 0;
 		
-		if( s_facet[i] > 0.0 )
+		if( s_facet[i] > 0. )
 		{
 			if( r_facet[i] > i * M_PI_045 && r_facet[i] < (i+1) * M_PI_045 )
 			{
@@ -816,7 +754,7 @@ void CFlow_Parallel::Set_MDInf(int x, int y)
 			{
 				valley[i] = s_facet[i];
 			}
-			else if( s_facet[j] == -999.0 && r_facet[i] == (i+1) * M_PI_045 )
+			else if( s_facet[j] == -999. && r_facet[i] == (i+1) * M_PI_045 )
 			{
 				valley[i] = s_facet[i];
 			}
@@ -824,17 +762,17 @@ void CFlow_Parallel::Set_MDInf(int x, int y)
 			{
 				j = i > 0 ? i - 1 : 7;
 
-				if( s_facet[j] == -999.0 && r_facet[i] == i * M_PI_045 )
+				if( s_facet[j] == -999. && r_facet[i] == i * M_PI_045 )
 				{
 					valley[i] = s_facet[i];
 				}
 			}
 			
-			valley[i] = pow(valley[i], m_Converge);
+			valley[i] = pow(valley[i], m_MFD_Converge);
 			dzSum += valley[i];
 		} 
 		
-		portion[i] = 0.0;
+		portion[i] = 0.;
 	}
 
 	//-----------------------------------------------------
@@ -844,7 +782,7 @@ void CFlow_Parallel::Set_MDInf(int x, int y)
 		{
 			int	j	= i < 7 ? i + 1 : 0;
 
-			if( i >= 7 && r_facet[i] == 0.0 )
+			if( i >= 7 && r_facet[i] == 0. )
 			{
 				r_facet[i]	= M_PI_360;
 			}
@@ -1074,7 +1012,7 @@ void CFlow_Parallel::BRM_QStreuung(int i64, int g64, double nnei[6], int nexp[6]
 			s[6], c[6];
 
 	ALinks	= ARecht	= 0;
-	QLinks	= QRecht	= 0.0;
+	QLinks	= QRecht	= 0.;
 
 	for(i=0; i<i64; i++)
 		sg	+= nnei[i];

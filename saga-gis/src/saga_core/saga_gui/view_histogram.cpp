@@ -1,6 +1,3 @@
-/**********************************************************
- * Version $Id$
- *********************************************************/
 
 ///////////////////////////////////////////////////////////
 //                                                       //
@@ -42,8 +39,6 @@
 //    contact:    Olaf Conrad                            //
 //                Institute of Geography                 //
 //                University of Goettingen               //
-//                Goldschmidtstr. 5                      //
-//                37077 Goettingen                       //
 //                Germany                                //
 //                                                       //
 //    e-mail:     oconrad@saga-gis.org                   //
@@ -51,25 +46,17 @@
 ///////////////////////////////////////////////////////////
 
 //---------------------------------------------------------
-
-
-///////////////////////////////////////////////////////////
-//														 //
-//														 //
-//														 //
-///////////////////////////////////////////////////////////
-
-//---------------------------------------------------------
 #include <wx/window.h>
 #include <wx/toolbar.h>
 #include <wx/clipbrd.h>
+
+#include <saga_gdi/sgdi_helper.h>
 
 #include "res_commands.h"
 #include "res_controls.h"
 #include "res_images.h"
 
 #include "helper.h"
-#include "dc_helper.h"
 #include "res_dialogs.h"
 
 #include "active.h"
@@ -97,18 +84,20 @@ IMPLEMENT_CLASS(CVIEW_Histogram, CVIEW_Base);
 
 //---------------------------------------------------------
 BEGIN_EVENT_TABLE(CVIEW_Histogram, CVIEW_Base)
-	EVT_PAINT		(CVIEW_Histogram::On_Paint)
-	EVT_SIZE		(CVIEW_Histogram::On_Size)
+	EVT_PAINT     (CVIEW_Histogram::On_Paint)
+	EVT_SIZE      (CVIEW_Histogram::On_Size)
 
-	EVT_MOTION		(CVIEW_Histogram::On_Mouse_Motion)
-	EVT_LEFT_DOWN	(CVIEW_Histogram::On_Mouse_LDown)
-	EVT_LEFT_UP		(CVIEW_Histogram::On_Mouse_LUp)
-	EVT_RIGHT_DOWN	(CVIEW_Histogram::On_Mouse_RDown)
+	EVT_MOTION    (CVIEW_Histogram::On_Mouse_Motion)
+	EVT_LEFT_DOWN (CVIEW_Histogram::On_Mouse_LDown)
+	EVT_LEFT_UP   (CVIEW_Histogram::On_Mouse_LUp)
+	EVT_RIGHT_DOWN(CVIEW_Histogram::On_Mouse_RDown)
 
-	EVT_MENU		(ID_CMD_HISTOGRAM_CUMULATIVE  , CVIEW_Histogram::On_Cumulative)
-	EVT_MENU		(ID_CMD_HISTOGRAM_CLASS_COUNT , CVIEW_Histogram::On_ClassCount)
-	EVT_MENU		(ID_CMD_HISTOGRAM_AS_TABLE    , CVIEW_Histogram::On_AsTable)
-	EVT_MENU		(ID_CMD_HISTOGRAM_TO_CLIPBOARD, CVIEW_Histogram::On_ToClipboard)
+	EVT_MENU      (ID_CMD_HISTOGRAM_PARAMETERS  , CVIEW_Histogram::On_Properties)
+	EVT_MENU      (ID_CMD_HISTOGRAM_CUMULATIVE  , CVIEW_Histogram::On_Cumulative)
+	EVT_MENU      (ID_CMD_HISTOGRAM_GAUSSIAN    , CVIEW_Histogram::On_Gaussian)
+	EVT_MENU      (ID_CMD_HISTOGRAM_SET_MINMAX  , CVIEW_Histogram::On_Set_MinMax)
+	EVT_MENU      (ID_CMD_HISTOGRAM_AS_TABLE    , CVIEW_Histogram::On_AsTable)
+	EVT_MENU      (ID_CMD_HISTOGRAM_TO_CLIPBOARD, CVIEW_Histogram::On_ToClipboard)
 END_EVENT_TABLE()
 
 
@@ -122,10 +111,20 @@ CVIEW_Histogram::CVIEW_Histogram(CWKSP_Layer *pLayer)
 {
 	SYS_Set_Color_BG_Window(this);
 
-	m_pLayer		= pLayer;
+	m_pLayer         = pLayer;
 
-	m_bCumulative	= false;
-	m_bMouse_Down	= false;
+	m_bCumulative    = false;
+	m_bGaussian      = false;
+	m_Gaussian_Color = 0;
+	m_Gaussian_Size  = 1;
+	m_bColored       = true;
+
+	m_XLabeling      = 0;
+
+	m_Margin_Left    = 30;
+	m_Margin_Bottom  = m_pLayer->Get_Classifier()->Get_Mode() == CLASSIFY_LUT ? 100 : 30;
+
+	m_bMouse_Down    = false;
 
 	Do_Update();
 }
@@ -140,8 +139,10 @@ wxMenu * CVIEW_Histogram::_Create_Menu(void)
 {
 	wxMenu	*pMenu	= new wxMenu;
 
+	CMD_Menu_Add_Item(pMenu, false, ID_CMD_HISTOGRAM_PARAMETERS);
+	pMenu->AppendSeparator();
 	CMD_Menu_Add_Item(pMenu, true , ID_CMD_HISTOGRAM_CUMULATIVE);
-	CMD_Menu_Add_Item(pMenu, false, ID_CMD_HISTOGRAM_CLASS_COUNT);
+	CMD_Menu_Add_Item(pMenu, true , ID_CMD_HISTOGRAM_GAUSSIAN);
 	pMenu->AppendSeparator();
 	CMD_Menu_Add_Item(pMenu, false, ID_CMD_HISTOGRAM_AS_TABLE);
 	CMD_Menu_Add_Item(pMenu, false, ID_CMD_HISTOGRAM_TO_CLIPBOARD);
@@ -154,7 +155,9 @@ wxToolBarBase * CVIEW_Histogram::_Create_ToolBar(void)
 {
 	wxToolBarBase	*pToolBar	= CMD_ToolBar_Create(ID_TB_VIEW_HISTOGRAM);
 
+	CMD_ToolBar_Add_Item(pToolBar, false, ID_CMD_HISTOGRAM_PARAMETERS);
 	CMD_ToolBar_Add_Item(pToolBar, true , ID_CMD_HISTOGRAM_CUMULATIVE);
+	CMD_ToolBar_Add_Item(pToolBar, true , ID_CMD_HISTOGRAM_GAUSSIAN);
 	CMD_ToolBar_Add_Item(pToolBar, false, ID_CMD_HISTOGRAM_AS_TABLE);
 	CMD_ToolBar_Add_Item(pToolBar, false, ID_CMD_HISTOGRAM_TO_CLIPBOARD);
 
@@ -190,9 +193,7 @@ void CVIEW_Histogram::Do_Update(void)
 //---------------------------------------------------------
 void CVIEW_Histogram::Draw(wxDC &dc, wxRect r)
 {
-	wxFont	Font;
-	Font.SetFamily(wxFONTFAMILY_SWISS);
-	dc.SetFont(Font);
+	wxFont Font; Font.SetFamily(wxFONTFAMILY_SWISS); dc.SetFont(Font);
 
 	r	= Draw_Get_rDiagram(r);
 
@@ -205,38 +206,110 @@ void CVIEW_Histogram::Draw_Histogram(wxDC &dc, wxRect r)
 {
 	const CSG_Histogram	&Histogram	= m_pLayer->Get_Classifier()->Histogram_Get();
 
-	if( Histogram.Get_Class_Count() > 0 && Histogram.Get_Element_Count() > 0 )
-	{
-		int		ax, ay, bx, by;
-		double	dx, Value;
-
-		wxColor	Color	= SYS_Get_Color(wxSYS_COLOUR_ACTIVECAPTION); // wxSYS_COLOUR_BTNSHADOW);
-
-		dx	= (double)r.GetWidth() / (double)Histogram.Get_Class_Count();
-		ay	= r.GetBottom();
-		bx	= r.GetLeft();
-
-		for(size_t iClass=0; iClass<Histogram.Get_Class_Count(); iClass++)
-		{
-			Value	= m_bCumulative
-				? Histogram.Get_Cumulative(iClass) / (double)Histogram.Get_Element_Count  ()
-				: Histogram.Get_Elements  (iClass) / (double)Histogram.Get_Element_Maximum();
-
-			ax	= bx;
-			bx	= r.GetLeft() + (int)(dx * (iClass + 1.0));
-			by	= ay - (int)(r.GetHeight() * Value);
-
-			if( m_pLayer->Get_Classifier()->Get_Mode() != CLASSIFY_OVERLAY )
-			{
-				Color	= m_pLayer->Get_Classifier()->Get_Class_Color(iClass);
-			}
-
-			Draw_FillRect(dc, Color, ax, ay, bx, by);
-		}
-	}
-	else
+	if( Histogram.Get_Class_Count() < 1 || Histogram.Get_Element_Count() < 1 )
 	{
 		Draw_Text(dc, TEXTALIGN_CENTER, r.GetLeft() + r.GetWidth() / 2, r.GetBottom() - r.GetHeight() / 2, _TL("invalid histogram"));
+
+		return;
+	}
+
+	//-----------------------------------------------------
+	CSG_Simple_Statistics s;
+
+	if( m_bGaussian && m_pLayer->Get_Classifier()->Get_Mode() != CLASSIFY_LUT )
+	{
+		s.Create(m_pLayer->Get_Classifier()->Statistics_Get());
+	}
+
+	if( s.Get_Count() > 0 )
+	{
+		double	Minimum = m_pLayer->Get_Classifier()->Get_RelativeToMetric(0.);
+		double	Maximum = m_pLayer->Get_Classifier()->Get_RelativeToMetric(1.);
+
+		double dx = (Maximum - Minimum) / (double)r.GetWidth();
+
+		int	ax = (int)(((s.Get_Mean() - s.Get_StdDev()) - Minimum) / dx); if( ax < 0            ) { ax = 0.          ; }
+		int bx = (int)(((s.Get_Mean() + s.Get_StdDev()) - Minimum) / dx); if( bx > r.GetWidth() ) { bx = r.GetWidth(); }
+
+		if( ax <= bx )
+		{
+			Draw_FillRect(dc, wxColour(222, 222, 222), r.GetLeft() + ax, r.GetBottom(), r.GetLeft() + bx, r.GetTop());
+		}
+	}
+
+	//-----------------------------------------------------
+	wxColor	Color	= SYS_Get_Color(wxSYS_COLOUR_ACTIVECAPTION); // wxSYS_COLOUR_BTNSHADOW);
+
+	double dx = (double)r.GetWidth() / (double)Histogram.Get_Class_Count();
+
+	int ax = r.GetLeft(), ay = r.GetBottom();
+
+	for(size_t iClass=0; iClass<Histogram.Get_Class_Count(); iClass++)
+	{
+		double	Value	= m_bCumulative
+			? Histogram.Get_Cumulative(iClass) / (double)Histogram.Get_Element_Count  ()
+			: Histogram.Get_Elements  (iClass) / (double)Histogram.Get_Element_Maximum();
+
+		int bx = ax; ax = r.GetLeft() + (int)(dx * (iClass + 1.));
+		int by = ay - (int)((r.GetHeight() - 1) * Value);
+
+		if( m_bColored && m_pLayer->Get_Classifier()->Get_Mode() != CLASSIFY_OVERLAY && m_pLayer->Get_Classifier()->Get_Mode() != CLASSIFY_SHADE )
+		{
+			Color	= m_pLayer->Get_Classifier()->Get_Class_Color(iClass);
+		}
+
+		Draw_FillRect(dc, Color, bx, ay, ax, by);
+	}
+
+	//-----------------------------------------------------
+	if( s.Get_Count() > 0 )
+	{
+		#define FUNC_NORMAL(X) (m_bCumulative\
+			? (1. / (1. + exp(-((X - s.Get_Mean()) / (0.5 * s.Get_StdDev())))) - y0)\
+			: (exp(-SG_Get_Square(X - s.Get_Mean()) / (2. * s.Get_Variance())))\
+		)
+
+		#define DRAW_LINE(X) if( Minimum < (X) && (X) < Maximum ) {\
+			int ix = r.GetLeft() + (int)(((X) - Minimum) / dx);\
+			dc.DrawLine(ix, r.GetBottom(), ix, r.GetBottom() - (int)(dy * FUNC_NORMAL(X)));\
+		}
+
+		double	Minimum = m_pLayer->Get_Classifier()->Get_RelativeToMetric(0.);
+		double	Maximum = m_pLayer->Get_Classifier()->Get_RelativeToMetric(1.);
+
+		double dx = (Maximum - Minimum) / (double)r.GetWidth(), dy = r.GetHeight() - 1;
+
+		double y0 = 0.; double yMin = FUNC_NORMAL(Minimum), yMax = FUNC_NORMAL(Maximum);
+
+		if( m_bCumulative )
+		{
+			dy	/= (yMax - yMin); y0 = yMin;
+		}
+		else if( s.Get_Mean() < Minimum )
+		{
+			dy	/= yMin;
+		}
+		else if( s.Get_Mean() > Maximum )
+		{
+			dy	/= yMax;
+		}
+
+		wxPen oldPen(dc.GetPen()); dc.SetPen(wxPen(Get_Color_asWX(m_Gaussian_Color), m_Gaussian_Size));
+
+		DRAW_LINE(s.Get_Mean()                 );
+		DRAW_LINE(s.Get_Mean() - s.Get_StdDev());
+		DRAW_LINE(s.Get_Mean() + s.Get_StdDev());
+
+		int y = (int)(dy * FUNC_NORMAL(Minimum));
+
+		for(size_t i=1; i<r.GetWidth(); i++)
+		{
+			double x = Minimum + i * dx; int ay = y; y = (int)(dy * FUNC_NORMAL(x));
+
+			dc.DrawLine(r.GetLeft() + i - 1, r.GetBottom() - ay, r.GetLeft() + i, r.GetBottom() - y);
+		}
+
+		dc.SetPen(oldPen);
 	}
 }
 
@@ -245,6 +318,8 @@ void CVIEW_Histogram::Draw_Frame(wxDC &dc, wxRect r)
 {
 	const int	FontSize	= 12;
 	const int	Precision	= 3;
+
+	dc.SetPen(*wxBLACK_PEN);
 
 	Draw_Edge(dc, EDGE_STYLE_SIMPLE, r);
 
@@ -262,9 +337,7 @@ void CVIEW_Histogram::Draw_Frame(wxDC &dc, wxRect r)
 	}
 
 	//-----------------------------------------------------
-	wxFont	Font	= dc.GetFont();
-	Font.SetPointSize((int)(0.7 * FontSize));
-	dc.SetFont(Font);
+	wxFont Font(dc.GetFont()); Font.SetPointSize((int)(0.7 * FontSize)); dc.SetFont(Font);
 
 	//-----------------------------------------------------
 	if( m_pLayer->Get_Classifier()->Get_Mode() == CLASSIFY_LUT )
@@ -275,11 +348,11 @@ void CVIEW_Histogram::Draw_Frame(wxDC &dc, wxRect r)
 		{
 			if( iClass == 0 || n > (FontSize + 5) )
 			{
-				n	= 0.0;
+				n	= 0.;
 
 				int	ix	= r.GetLeft() + (int)(dx * (0.5 + iClass));
 				dc.DrawLine(ix, r.GetBottom(), ix, r.GetBottom() + 5);
-				Draw_Text(dc, TEXTALIGN_TOPRIGHT, ix, r.GetBottom() + 7, 45.0,
+				Draw_Text(dc, TEXTALIGN_TOPRIGHT, ix, r.GetBottom() + 7, 45.,
 					m_pLayer->Get_Classifier()->Get_Class_Name(iClass)
 				);
 			}
@@ -287,42 +360,53 @@ void CVIEW_Histogram::Draw_Frame(wxDC &dc, wxRect r)
 	}
 
 	//-----------------------------------------------------
-	else
+	else switch( m_XLabeling )
 	{
-		double	dx	= r.GetWidth() / (double)Histogram.Get_Class_Count();
+	case  0: {
+		Draw_Scale(dc, wxRect(r.GetLeft(), r.GetBottom(), r.GetWidth(), 20),
+			m_pLayer->Get_Classifier()->Get_RelativeToMetric(0.),
+			m_pLayer->Get_Classifier()->Get_RelativeToMetric(1.),
+			true , true , true
+		);
+		break; }
 
-		if( dx < (FontSize + 5) )
+	default:
 		{
-			dx	*= 1 + (int)((FontSize + 5) / dx);
-		}
+			double	dx	= r.GetWidth() / (double)Histogram.Get_Class_Count();
 
-		double	dz	= dx / (double)r.GetWidth();
+			if( dx < (FontSize + 5) )
+			{
+				dx	*= 1 + (int)((FontSize + 5) / dx);
+			}
 
-		for(int i=0, n=(int)(r.GetWidth()/dx); i<=n; i++)
-		{
-			int	ix	= r.GetLeft() + (int)(dx * i);
-			dc.DrawLine(ix, r.GetBottom(), ix, r.GetBottom() + 5);
-			Draw_Text(dc, TEXTALIGN_CENTERRIGHT, ix, r.GetBottom() + 7, 45.0,
-				SG_Get_String(m_pLayer->Get_Classifier()->Get_RelativeToMetric(dz * i), -2).c_str()
-			);
-		}
+			double	dz	= dx / (double)r.GetWidth();
+
+			for(int i=0, n=(int)(r.GetWidth()/dx); i<=n; i++)
+			{
+				int	ix	= r.GetLeft() + (int)(dx * i);
+				dc.DrawLine(ix, r.GetBottom(), ix, r.GetBottom() + 5);
+				Draw_Text(dc, TEXTALIGN_CENTERRIGHT, ix, r.GetBottom() + 7, 45.,
+					SG_Get_String(m_pLayer->Get_Classifier()->Get_RelativeToMetric(dz * i), -2).c_str()
+				);
+			}
+		break; }
 	}
 }
 
 //---------------------------------------------------------
 wxRect CVIEW_Histogram::Draw_Get_rDiagram(wxRect r)
 {
-	if( m_pLayer->Get_Classifier()->Get_Mode() == CLASSIFY_LUT )
+	if( m_XLabeling != 0 || m_pLayer->Get_Classifier()->Get_Mode() == CLASSIFY_LUT )
 	{
 		return(	wxRect(
-			wxPoint(r.GetLeft()  + 30, r.GetTop()    +  10),
-			wxPoint(r.GetRight() - 10, r.GetBottom() - 100)
+			wxPoint(r.GetLeft () + m_Margin_Left, r.GetTop   () +  10),
+			wxPoint(r.GetRight() - 10           , r.GetBottom() - m_Margin_Bottom)
 		));
 	}
 
 	return(	wxRect(
-		wxPoint(r.GetLeft()  + 30, r.GetTop()    + 10),
-		wxPoint(r.GetRight() - 10, r.GetBottom() - 40)
+		wxPoint(r.GetLeft () + m_Margin_Left, r.GetTop   () + 10),
+		wxPoint(r.GetRight() - 10           , r.GetBottom() - 30)
 	));
 }
 
@@ -379,7 +463,7 @@ void CVIEW_Histogram::On_Mouse_LDown(wxMouseEvent &event)
 	switch( m_pLayer->Get_Classifier()->Get_Mode() )
 	{
 	case CLASSIFY_GRADUATED:
-	case CLASSIFY_METRIC   :
+	case CLASSIFY_DISCRETE   :
 	case CLASSIFY_SHADE    :
 	case CLASSIFY_OVERLAY  :
 		m_bMouse_Down	= true;
@@ -413,24 +497,28 @@ void CVIEW_Histogram::On_Mouse_LUp(wxMouseEvent &event)
 //---------------------------------------------------------
 void CVIEW_Histogram::On_Mouse_RDown(wxMouseEvent &event)
 {
-	if( IS_BAND_WISE_FIT(pLayer) )
+	wxMenu	Menu;
+
+	if( !IS_BAND_WISE_FIT(pLayer) )
 	{
-		return;
+		CMD_Menu_Add_Item(&Menu, false, ID_CMD_HISTOGRAM_SET_MINMAX);
+		Menu.AppendSeparator();
 	}
 
-	switch( m_pLayer->Get_Classifier()->Get_Mode() )
+	CMD_Menu_Add_Item(&Menu, true , ID_CMD_HISTOGRAM_CUMULATIVE);
+	if( m_pLayer->Get_Classifier()->Get_Mode() != CLASSIFY_LUT )
 	{
-	case CLASSIFY_GRADUATED:
-	case CLASSIFY_METRIC   :
-	case CLASSIFY_SHADE    :
-	case CLASSIFY_OVERLAY  :
-		m_pLayer->Set_Color_Range(
-			m_pLayer->Get_Value_Minimum(),
-			m_pLayer->Get_Value_Maximum()
-		);
-
-	default: break;
+		CMD_Menu_Add_Item(&Menu, true , ID_CMD_HISTOGRAM_GAUSSIAN);
 	}
+
+	Menu.AppendSeparator();
+	CMD_Menu_Add_Item(&Menu, false, ID_CMD_HISTOGRAM_AS_TABLE);
+	CMD_Menu_Add_Item(&Menu, false, ID_CMD_HISTOGRAM_TO_CLIPBOARD);
+
+	Menu.AppendSeparator();
+	CMD_Menu_Add_Item(&Menu, false, ID_CMD_HISTOGRAM_PARAMETERS);
+
+	PopupMenu(&Menu, event.GetPosition());
 }
 
 
@@ -444,18 +532,88 @@ void CVIEW_Histogram::On_Command_UI(wxUpdateUIEvent &event)
 	switch( event.GetId() )
 	{
 	case ID_CMD_HISTOGRAM_CUMULATIVE:
-		event.Check(m_bCumulative);
+		if( m_pLayer->Get_Classifier()->Get_Mode() == CLASSIFY_SINGLE
+		||  m_pLayer->Get_Classifier()->Get_Mode() == CLASSIFY_RGB
+		||  m_pLayer->Get_Classifier()->Get_Mode() == CLASSIFY_LUT )
+		{
+			event.Enable(false);
+			event.Check (false);
+		}
+		else
+		{
+			event.Enable(true);
+			event.Check (m_bCumulative);
+		}
 		break;
 
-	case ID_CMD_HISTOGRAM_CLASS_COUNT:
-		event.Enable(
-			m_pLayer->Get_Classifier()->Get_Mode() == CLASSIFY_GRADUATED
-		||	m_pLayer->Get_Classifier()->Get_Mode() == CLASSIFY_SHADE
-		||	m_pLayer->Get_Classifier()->Get_Mode() == CLASSIFY_OVERLAY
-		);
+	case ID_CMD_HISTOGRAM_GAUSSIAN:
+		if( m_pLayer->Get_Classifier()->Get_Mode() == CLASSIFY_DISCRETE
+		||  m_pLayer->Get_Classifier()->Get_Mode() == CLASSIFY_GRADUATED
+		||  m_pLayer->Get_Classifier()->Get_Mode() == CLASSIFY_SHADE
+		||  m_pLayer->Get_Classifier()->Get_Mode() == CLASSIFY_OVERLAY )
+		{
+			event.Enable(true);
+			event.Check (m_bGaussian);
+		}
+		else
+		{
+			event.Enable(false);
+			event.Check (false);
+		}
 		break;
 
 	default: break;
+	}
+}
+
+//---------------------------------------------------------
+void CVIEW_Histogram::On_Properties(wxCommandEvent &event)
+{
+	CSG_Parameters P(_TL("Histogram"));
+
+	P.Add_Int   (""        , "NCLASSES"      , _TL("Number of Bins"     ), _TL(""), m_pLayer->Get_Classifier()->Get_Class_Count(), 1, true);
+
+	P.Add_Bool  (""        , "CUMULATIVE"    , _TL("Cumulative"         ), _TL(""), m_bCumulative);
+	P.Add_Bool  (""        , "COLORED"       , _TL("Colored"            ), _TL(""), m_bColored);
+
+	P.Add_Choice(""        , "XLABELING"     , _TL("Class Labeling"     ), _TL(""),
+		CSG_String::Format("%s|%s", _TL("horizontal"), _TL("diagonal"), _TL("vertical")), m_XLabeling
+	);
+
+	P.Add_Node  (""        , "MARGINS"       , _TL("Margins"            ), _TL(""));
+	P.Add_Int   ("MARGINS" , "MARGIN_LEFT"   , _TL("Left"               ), _TL(""), m_Margin_Left  , 10, true);
+	P.Add_Int   ("MARGINS" , "MARGIN_BOTTOM" , _TL("Bottom"             ), _TL(""), m_Margin_Bottom, 10, true);
+
+	P.Add_Bool  (""        , "GAUSSIAN"      , _TL("Normal Distribution"), _TL(""), m_bGaussian  );
+	P.Add_Color ("GAUSSIAN", "GAUSSIAN_COLOR", _TL("Color"              ), _TL(""), m_Gaussian_Color);
+	P.Add_Int   ("GAUSSIAN", "GAUSSIAN_SIZE" , _TL("Line Width"         ), _TL(""), m_Gaussian_Size, 1, true);
+
+	//-----------------------------------------------------
+	P.Set_Enabled("NCLASSES",
+		m_pLayer->Get_Classifier()->Get_Mode() == CLASSIFY_GRADUATED
+	||	m_pLayer->Get_Classifier()->Get_Mode() == CLASSIFY_SHADE
+	||	m_pLayer->Get_Classifier()->Get_Mode() == CLASSIFY_OVERLAY
+	);
+
+	P.Set_Enabled("CUMULATIVE", m_pLayer->Get_Classifier()->Get_Mode() != CLASSIFY_LUT);
+	P.Set_Enabled("GAUSSIAN"  , m_pLayer->Get_Classifier()->Get_Mode() != CLASSIFY_LUT);
+	P.Set_Enabled("XLABELING" , m_pLayer->Get_Classifier()->Get_Mode() != CLASSIFY_LUT);
+
+	//-----------------------------------------------------
+	if( DLG_Parameters(&P) )
+	{
+		m_pLayer->Get_Classifier()->Set_Class_Count(P("NCLASSES")->asInt());
+
+		m_bCumulative    = P("CUMULATIVE"    )->asBool();
+		m_bColored       = P("COLORED"       )->asBool();
+		m_XLabeling      = P("XLABELING"     )->asInt();
+		m_Margin_Left    = P("MARGIN_LEFT"   )->asInt();
+		m_Margin_Bottom  = P("MARGIN_BOTTOM" )->asInt();
+		m_bGaussian      = P("GAUSSIAN"      )->asBool();
+		m_Gaussian_Color = P("GAUSSIAN_COLOR")->asInt();
+		m_Gaussian_Size  = P("GAUSSIAN_SIZE" )->asInt();
+
+		Refresh();
 	}
 }
 
@@ -468,16 +626,20 @@ void CVIEW_Histogram::On_Cumulative(wxCommandEvent &event)
 }
 
 //---------------------------------------------------------
-void CVIEW_Histogram::On_ClassCount(wxCommandEvent &event)
+void CVIEW_Histogram::On_Gaussian(wxCommandEvent &event)
 {
-	int	nClasses	= m_pLayer->Get_Classifier()->Get_Class_Count();
+	m_bGaussian	= !m_bGaussian;
 
-	if( DLG_Get_Number(nClasses, _TL("Histogram"), _TL("Number of Classes")) && nClasses > 1 )
-	{
-		m_pLayer->Get_Classifier()->Set_Class_Count(nClasses);
+	Refresh();
+}
 
-		Refresh();
-	}
+//---------------------------------------------------------
+void CVIEW_Histogram::On_Set_MinMax(wxCommandEvent &event)
+{
+	m_pLayer->Set_Color_Range(
+		m_pLayer->Get_Value_Minimum(),
+		m_pLayer->Get_Value_Maximum()
+	);
 }
 
 //---------------------------------------------------------
@@ -502,7 +664,7 @@ void CVIEW_Histogram::On_AsTable(wxCommandEvent &event)
 		pTable->Add_Field(_TL("CENTER"), SG_DATATYPE_Double);
 		pTable->Add_Field(_TL("MAX"   ), SG_DATATYPE_Double);
 
-		double	dArea	= pObject->asGrid() != NULL ? pObject->asGrid()->Get_Cellarea() : 1.0;
+		double	dArea	= pObject->asGrid() != NULL ? pObject->asGrid()->Get_Cellarea() : 1.;
 
 		for(int i=0; i<pClassifier->Get_Class_Count(); i++)
 		{

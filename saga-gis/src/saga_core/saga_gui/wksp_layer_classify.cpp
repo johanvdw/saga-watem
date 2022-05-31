@@ -1,6 +1,3 @@
-/**********************************************************
- * Version $Id$
- *********************************************************/
 
 ///////////////////////////////////////////////////////////
 //                                                       //
@@ -48,15 +45,6 @@
 //                                                       //
 //    e-mail:     oconrad@saga-gis.org                   //
 //                                                       //
-///////////////////////////////////////////////////////////
-
-//---------------------------------------------------------
-
-
-///////////////////////////////////////////////////////////
-//														 //
-//														 //
-//														 //
 ///////////////////////////////////////////////////////////
 
 //---------------------------------------------------------
@@ -112,10 +100,10 @@ bool CSG_Scaler::Set_Interval(double Interval)
 }
 
 //-----------------------------------------------------
-bool CSG_Scaler::Set_Linear(CSG_Table *pTable, int Field, double Interval, double Percent)
+bool CSG_Scaler::Set_Linear(CSG_Table *pTable, int Field, double Interval, double Minimum, double Maximum)
 {
-	double	Minimum	= pTable->Get_Minimum(Field) + 0.01 * Percent;
-	double	Maximum	= pTable->Get_Maximum(Field) - 0.01 * Percent;
+	Minimum	= pTable->Get_Minimum(Field) + pTable->Get_Range(Field) * Minimum / 100.;
+	Maximum	= pTable->Get_Minimum(Field) + pTable->Get_Range(Field) * Maximum / 100.;
 
 	return( Create(Minimum, Maximum, Interval) );
 }
@@ -128,7 +116,7 @@ bool CSG_Scaler::Set_StdDev(CSG_Table *pTable, int Field, double Interval, doubl
 	return( Create(Minimum, Maximum, Interval) );
 }
 
-bool CSG_Scaler::Set_Percentile(CSG_Table *pTable, int Field, double Interval, double Percentile)
+bool CSG_Scaler::Set_Percentile(CSG_Table *pTable, int Field, double Interval, double Minimum, double Maximum)
 {
 	return( false );
 
@@ -140,10 +128,10 @@ bool CSG_Scaler::Set_Percentile(CSG_Table *pTable, int Field, double Interval, d
 
 
 //-----------------------------------------------------
-bool CSG_Scaler::Set_Linear(CSG_Grid *pGrid, double Interval, double Percent)
+bool CSG_Scaler::Set_Linear(CSG_Grid *pGrid, double Interval, double Minimum, double Maximum)
 {
-	double	Minimum	= pGrid->Get_Min() + 0.01 * Percent;
-	double	Maximum	= pGrid->Get_Max() - 0.01 * Percent;
+	Minimum	= pGrid->Get_Min() + pGrid->Get_Range() * Minimum / 100.;
+	Maximum	= pGrid->Get_Min() + pGrid->Get_Range() * Maximum / 100.;
 
 	return( Create(Minimum, Maximum, Interval) );
 }
@@ -156,19 +144,19 @@ bool CSG_Scaler::Set_StdDev(CSG_Grid *pGrid, double Interval, double StdDev, boo
 	return( Create(Minimum, Maximum, Interval) );
 }
 
-bool CSG_Scaler::Set_Percentile(CSG_Grid *pGrid, double Interval, double Percentile)
+bool CSG_Scaler::Set_Percentile(CSG_Grid *pGrid, double Interval, double Minimum, double Maximum)
 {
-	double	Minimum	= pGrid->Get_Percentile(       Percentile);
-	double	Maximum	= pGrid->Get_Percentile(100. - Percentile);
+	Minimum	= pGrid->Get_Percentile(Minimum);
+	Maximum	= pGrid->Get_Percentile(Maximum);
 
 	return( Create(Minimum, Maximum, Interval) );
 }
 
 //-----------------------------------------------------
-bool CSG_Scaler::Set_Linear(CSG_Grids *pGrids, double Interval, double Percent)
+bool CSG_Scaler::Set_Linear(CSG_Grids *pGrids, double Interval, double Minimum, double Maximum)
 {
-	double	Minimum	= pGrids->Get_Min() + 0.01 * Percent;
-	double	Maximum	= pGrids->Get_Max() - 0.01 * Percent;
+	Minimum	= pGrids->Get_Min() + pGrids->Get_Range() * Minimum / 100.;
+	Maximum	= pGrids->Get_Min() + pGrids->Get_Range() * Maximum / 100.;
 
 	return( Create(Minimum, Maximum, Interval) );
 }
@@ -181,10 +169,10 @@ bool CSG_Scaler::Set_StdDev(CSG_Grids *pGrids, double Interval, double StdDev, b
 	return( Create(Minimum, Maximum, Interval) );
 }
 
-bool CSG_Scaler::Set_Percentile(CSG_Grids *pGrids, double Interval, double Percentile)
+bool CSG_Scaler::Set_Percentile(CSG_Grids *pGrids, double Interval, double Minimum, double Maximum)
 {
-	double	Minimum	= pGrids->Get_Percentile(       Percentile);
-	double	Maximum	= pGrids->Get_Percentile(100. - Percentile);
+	Minimum	= pGrids->Get_Percentile(Minimum);
+	Maximum	= pGrids->Get_Percentile(Maximum);
 
 	return( Create(Minimum, Maximum, Interval) );
 }
@@ -199,9 +187,9 @@ bool CSG_Scaler::Set_Percentile(CSG_Grids *pGrids, double Interval, double Perce
 //---------------------------------------------------------
 CWKSP_Layer_Classify::CWKSP_Layer_Classify(void)
 {
-	m_Count			= 100;
+	m_Count			= 64;
 
-	m_Mode			= CLASSIFY_UNIQUE;
+	m_Mode			= CLASSIFY_SINGLE;
 	m_Shade_Mode	= SHADE_MODE_DSC_GREY;
 
 	m_pLayer		= NULL;
@@ -227,8 +215,12 @@ bool CWKSP_Layer_Classify::Initialise(CWKSP_Layer *pLayer, CSG_Table *pLUT, CSG_
 	m_pLUT		= pLUT;
 	m_pColors	= pColors;
 
+	m_Count		=  m_pLayer->Get_Object()->Get_ObjectType() == SG_DATAOBJECT_TYPE_Grid
+				|| m_pLayer->Get_Object()->Get_ObjectType() == SG_DATAOBJECT_TYPE_Grids
+				|| m_pLayer->Get_Object()->Get_ObjectType() == SG_DATAOBJECT_TYPE_PointCloud ? 64 : 16;
+
 	//-----------------------------------------------------
-	if( m_pLUT && m_pLUT->Get_Record_Count() == 0 )
+	if( m_pLUT && m_pLUT->Get_Count() == 0 )
 	{
 		CSG_Table_Record	*pRecord;
 
@@ -275,7 +267,7 @@ double CWKSP_Layer_Classify::Get_Class_Value_Minimum(int iClass)
 		break;
 
 	case CLASSIFY_GRADUATED:
-	case CLASSIFY_METRIC:
+	case CLASSIFY_DISCRETE:
 	case CLASSIFY_SHADE:
 	case CLASSIFY_OVERLAY:
 		if( m_zRange > 0.0 )
@@ -302,7 +294,7 @@ double CWKSP_Layer_Classify::Get_Class_Value_Maximum(int iClass)
 		break;
 
 	case CLASSIFY_GRADUATED:
-	case CLASSIFY_METRIC:
+	case CLASSIFY_DISCRETE:
 	case CLASSIFY_SHADE:
 	case CLASSIFY_OVERLAY:
 		if( m_zRange > 0.0 )
@@ -329,7 +321,7 @@ double CWKSP_Layer_Classify::Get_Class_Value_Center(int iClass)
 		break;
 
 	case CLASSIFY_GRADUATED:
-	case CLASSIFY_METRIC:
+	case CLASSIFY_DISCRETE:
 	case CLASSIFY_SHADE:
 	case CLASSIFY_OVERLAY:
 		if( m_zRange > 0.0 )
@@ -359,7 +351,7 @@ wxString CWKSP_Layer_Classify::Get_Class_Name(int iClass)
 		break;
 
 	case CLASSIFY_GRADUATED:
-	case CLASSIFY_METRIC:
+	case CLASSIFY_DISCRETE:
 	case CLASSIFY_SHADE:
 	case CLASSIFY_OVERLAY:
 		s	= SG_Get_String(Get_Class_Value_Minimum(iClass), -2) + SG_T(" < ")
@@ -420,6 +412,19 @@ bool CWKSP_Layer_Classify::Set_Class_Count(int Count)
 }
 
 //---------------------------------------------------------
+CSG_Colors CWKSP_Layer_Classify::Get_Class_Colors(void)	const
+{
+	CSG_Colors Colors(Get_Class_Count());
+
+	for(int i=0; i<Get_Class_Count(); i++)
+	{
+		Colors[i] = Get_Class_Color(i);
+	}
+
+	return( Colors );
+}
+
+//---------------------------------------------------------
 void CWKSP_Layer_Classify::Set_Metric(int Mode, double LogFactor, double zMin, double zMax)
 {
 	m_zMode		= Mode;
@@ -442,7 +447,7 @@ void CWKSP_Layer_Classify::Set_Metric(int Mode, double LogFactor, double zMin, d
 ///////////////////////////////////////////////////////////
 
 //---------------------------------------------------------
-inline int CWKSP_Layer_Classify::_LUT_Cmp_Class(double Value, int iClass)
+inline int CWKSP_Layer_Classify::_LUT_Cmp_Class(double Value, int iClass)	const
 {
 	CSG_Table_Record	*pClass	= m_pLUT->Get_Record_byIndex(iClass);
 
@@ -460,7 +465,7 @@ inline int CWKSP_Layer_Classify::_LUT_Cmp_Class(double Value, int iClass)
 }
 
 //---------------------------------------------------------
-int CWKSP_Layer_Classify::_LUT_Get_Class(double Value)
+int CWKSP_Layer_Classify::_LUT_Get_Class(double Value)	const
 {
 	int		a, b, i, c;
 
@@ -505,7 +510,7 @@ int CWKSP_Layer_Classify::_LUT_Get_Class(double Value)
 }
 
 //---------------------------------------------------------
-inline int CWKSP_Layer_Classify::_LUT_Cmp_Class(const CSG_String &Value, int iClass)
+inline int CWKSP_Layer_Classify::_LUT_Cmp_Class(const CSG_String &Value, int iClass)	const
 {
 	CSG_Table_Record	*pClass	= m_pLUT->Get_Record_byIndex(iClass);
 
@@ -525,7 +530,7 @@ inline int CWKSP_Layer_Classify::_LUT_Cmp_Class(const CSG_String &Value, int iCl
 }
 
 //---------------------------------------------------------
-int CWKSP_Layer_Classify::_LUT_Get_Class(const CSG_String &Value)
+int CWKSP_Layer_Classify::_LUT_Get_Class(const CSG_String &Value)	const
 {
 	int		a, b, i, c;
 
@@ -637,6 +642,8 @@ void CWKSP_Layer_Classify::Metric2EqualElements(void)
 //---------------------------------------------------------
 bool CWKSP_Layer_Classify::Histogram_Update(void)
 {
+	m_Statistics.Create();
+
 	if( Get_Class_Count() < 1 )
 	{
 		m_Histogram.Destroy();
@@ -669,7 +676,8 @@ bool CWKSP_Layer_Classify::Histogram_Update(void)
 	case WKSP_ITEM_Shapes:
 		_Histogram_Update(((CWKSP_Shapes *)m_pLayer)->Get_Shapes(),
 			((CWKSP_Shapes *)m_pLayer)->Get_Field_Value (),
-			((CWKSP_Shapes *)m_pLayer)->Get_Field_Normal()
+			((CWKSP_Shapes *)m_pLayer)->Get_Field_Normal(),
+			((CWKSP_Shapes *)m_pLayer)->Get_Scale_Normal()
 		);
 		break;
 
@@ -712,6 +720,8 @@ bool CWKSP_Layer_Classify::_Histogram_Update(CSG_Grid *pGrid)
 
 		m_Histogram.Scale_Element_Count(d);
 
+		m_Statistics	= pGrid->Get_Statistics();
+
 		return( true );
 	}
 
@@ -722,6 +732,8 @@ bool CWKSP_Layer_Classify::_Histogram_Update(CSG_Grid *pGrid)
 			m_Histogram	+= Get_Class(pGrid->asDouble(i));
 		}
 	}
+
+	m_Statistics	= pGrid->Get_Statistics();
 
 	return( true );
 }
@@ -748,6 +760,8 @@ bool CWKSP_Layer_Classify::_Histogram_Update(CSG_Grids *pGrids)
 
 		m_Histogram.Scale_Element_Count(d);
 
+		m_Statistics	= pGrids->Get_Statistics();
+
 		return( true );
 	}
 
@@ -759,15 +773,58 @@ bool CWKSP_Layer_Classify::_Histogram_Update(CSG_Grids *pGrids)
 		}
 	}
 
+	m_Statistics	= pGrids->Get_Statistics();
+
 	return( true );
 }
 
 //---------------------------------------------------------
-bool CWKSP_Layer_Classify::_Histogram_Update(CSG_Shapes *pShapes, int Attribute, int Normalize)
+bool CWKSP_Layer_Classify::_Histogram_Update(CSG_Shapes *pShapes, int Attribute, int Normalize, double Scale)
 {
 	if( Attribute < 0 || Attribute >= pShapes->Get_Field_Count() )
 	{
 		return( false );
+	}
+
+	if( pShapes->Get_Max_Samples() > 0 && pShapes->Get_Max_Samples() < pShapes->Get_Count() )
+	{
+		double	d	= (double)pShapes->Get_Count() / (double)pShapes->Get_Max_Samples();
+
+		for(double i=0; i<(double)pShapes->Get_Count() && PROGRESSBAR_Set_Position(i, (double)pShapes->Get_Count()); i+=d)
+		{
+			CSG_Shape	*pShape	= pShapes->Get_Shape((int)i);
+
+			if( m_Mode == CLASSIFY_LUT )
+			{
+				m_Histogram	+= SG_Data_Type_is_Numeric(m_pLUT->Get_Field_Type(LUT_MIN))
+					? Get_Class(pShape->asDouble(Attribute))
+					: Get_Class(pShape->asString(Attribute));
+			}
+			else if( !pShape->is_NoData(Attribute) )
+			{
+				double z = pShape->asDouble(Attribute);
+
+				if( Normalize < 0 )
+				{
+					m_Histogram += Get_Class(z); m_Statistics += z;
+				}
+				else if( !pShape->is_NoData(Normalize) && pShape->asDouble(Normalize) )
+				{
+					z *= Scale / pShape->asDouble(Normalize);
+
+					m_Histogram += Get_Class(z); m_Statistics += z;
+				}
+			}
+		}
+
+		if( m_Histogram.Update() && m_Histogram.Get_Element_Count() < pShapes->Get_Max_Samples() )	// any no-data cells ?
+		{
+			d	*= (double)m_Histogram.Get_Element_Count() / (double)pShapes->Get_Max_Samples();
+		}
+
+		m_Histogram.Scale_Element_Count(d);
+
+		return( true );
 	}
 
 	for(int i=0; i<pShapes->Get_Count() && PROGRESSBAR_Set_Position(i, pShapes->Get_Count()); i++)
@@ -782,13 +839,17 @@ bool CWKSP_Layer_Classify::_Histogram_Update(CSG_Shapes *pShapes, int Attribute,
 		}
 		else if( !pShape->is_NoData(Attribute) )
 		{
+			double z = pShape->asDouble(Attribute);
+
 			if( Normalize < 0 )
 			{
-				m_Histogram	+= Get_Class(pShape->asDouble(Attribute));
+				m_Histogram += Get_Class(z); m_Statistics += z;
 			}
 			else if( !pShape->is_NoData(Normalize) && pShape->asDouble(Normalize) )
 			{
-				m_Histogram	+= Get_Class(pShape->asDouble(Attribute) / pShape->asDouble(Normalize));
+				z *= Scale / pShape->asDouble(Normalize);
+
+				m_Histogram += Get_Class(z); m_Statistics += z;
 			}
 		}
 	}

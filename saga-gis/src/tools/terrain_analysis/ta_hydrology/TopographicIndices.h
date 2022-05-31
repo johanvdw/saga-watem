@@ -48,15 +48,6 @@
 ///////////////////////////////////////////////////////////
 
 //---------------------------------------------------------
-
-
-///////////////////////////////////////////////////////////
-//														 //
-//                                                       //
-//														 //
-///////////////////////////////////////////////////////////
-
-//---------------------------------------------------------
 #ifndef HEADER_INCLUDED__TopographicIndices_H
 #define HEADER_INCLUDED__TopographicIndices_H
 
@@ -124,6 +115,29 @@ private:
 ///////////////////////////////////////////////////////////
 
 //---------------------------------------------------------
+class CCIT : public CSG_Tool_Grid
+{
+public:
+    CCIT(void);
+
+    virtual CSG_String		Get_MenuPath	(void)	{	return( _TL("Topographic Indices" ));	}
+
+
+protected:
+
+    virtual bool			On_Execute		(void);
+
+
+private:
+
+};
+
+
+///////////////////////////////////////////////////////////
+//														 //
+///////////////////////////////////////////////////////////
+
+//---------------------------------------------------------
 class CLS_Factor : public CSG_Tool_Grid
 {
 public:
@@ -144,7 +158,7 @@ private:
 	double					m_Erosivity;
 
 
-	double					Get_LS			(double Slope, double Area);
+	double					Get_LS			(double Slope, double SCA, bool bFeet);
 
 };
 

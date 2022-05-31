@@ -1,6 +1,3 @@
-/**********************************************************
- * Version $Id: DVWK_SoilMoisture.h 1921 2014-01-09 10:24:11Z oconrad $
- *********************************************************/
 
 ///////////////////////////////////////////////////////////
 //                                                       //
@@ -51,15 +48,6 @@
 ///////////////////////////////////////////////////////////
 
 //---------------------------------------------------------
-
-
-///////////////////////////////////////////////////////////
-//														 //
-//														 //
-//														 //
-///////////////////////////////////////////////////////////
-
-//---------------------------------------------------------
 #ifndef HEADER_INCLUDED__DVWK_SoilMoisture_H
 #define HEADER_INCLUDED__DVWK_SoilMoisture_H
 
@@ -71,7 +59,7 @@
 ///////////////////////////////////////////////////////////
 
 //---------------------------------------------------------
-#include "MLB_Interface.h"
+#include <saga_api/saga_api.h>
 
 
 ///////////////////////////////////////////////////////////
@@ -85,7 +73,8 @@ class CDVWK_SoilMoisture : public CSG_Tool_Grid
 {
 public:
 	CDVWK_SoilMoisture(void);
-	virtual ~CDVWK_SoilMoisture(void);
+
+	virtual CSG_String	Get_MenuPath	(void)	{	return( _TL("A:Simulation|Soil Hydrology") );	}
 
 
 protected:
@@ -95,11 +84,11 @@ protected:
 
 private:
 
-	double				FK_mm_Def, PWP_mm_Def;
+	double				m_FK, m_PWP;
 
-	CSG_Grid				*pWi_mm, *pFK_mm, *pPWP_mm, *pLandUse;
+	CSG_Grid			*m_pWi, *m_pFK, *m_pPWP, m_LandUse;
 
-	CSG_Table				*pClimate, *pCropCoeff;
+	CSG_Table			*m_pClimate, *m_pCropCoeff;
 
 
 	int					Get_Month		(int Day);

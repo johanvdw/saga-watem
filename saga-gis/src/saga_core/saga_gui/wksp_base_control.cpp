@@ -1,7 +1,4 @@
-/**********************************************************
- * Version $Id$
- *********************************************************/
-	
+
 ///////////////////////////////////////////////////////////
 //                                                       //
 //                         SAGA                          //
@@ -41,22 +38,11 @@
 //                                                       //
 //    contact:    Olaf Conrad                            //
 //                Institute of Geography                 //
-//                University of Goettingen               //
-//                Goldschmidtstr. 5                      //
-//                37077 Goettingen                       //
+//                University of Hamburg                  //
 //                Germany                                //
 //                                                       //
 //    e-mail:     oconrad@saga-gis.org                   //
 //                                                       //
-///////////////////////////////////////////////////////////
-
-//---------------------------------------------------------
-
-
-///////////////////////////////////////////////////////////
-//														 //
-//														 //
-//														 //
 ///////////////////////////////////////////////////////////
 
 //---------------------------------------------------------
@@ -67,6 +53,8 @@
 #include <saga_api/saga_api.h>
 
 #include "helper.h"
+
+#include "saga_frame.h"
 
 #include "res_commands.h"
 #include "res_controls.h"
@@ -119,23 +107,23 @@ IMPLEMENT_CLASS(CWKSP_Base_Control, wxTreeCtrl)
 
 //---------------------------------------------------------
 BEGIN_EVENT_TABLE(CWKSP_Base_Control, wxTreeCtrl)
-	EVT_TREE_ITEM_RIGHT_CLICK	(ID_WND_WKSP_TOOLS	, CWKSP_Base_Control::On_Item_RClick)
-	EVT_TREE_DELETE_ITEM		(ID_WND_WKSP_TOOLS	, CWKSP_Base_Control::On_Item_Delete)
-	EVT_TREE_SEL_CHANGED		(ID_WND_WKSP_TOOLS	, CWKSP_Base_Control::On_Item_SelChanged)
-	EVT_TREE_KEY_DOWN			(ID_WND_WKSP_TOOLS	, CWKSP_Base_Control::On_Item_KeyDown)
+	EVT_TREE_ITEM_RIGHT_CLICK(ID_WND_WKSP_TOOLS, CWKSP_Base_Control::On_Item_RClick    )
+	EVT_TREE_DELETE_ITEM     (ID_WND_WKSP_TOOLS, CWKSP_Base_Control::On_Item_Delete    )
+	EVT_TREE_SEL_CHANGED     (ID_WND_WKSP_TOOLS, CWKSP_Base_Control::On_Item_SelChanged)
+	EVT_TREE_KEY_DOWN        (ID_WND_WKSP_TOOLS, CWKSP_Base_Control::On_Item_KeyDown   )
 
-	EVT_TREE_ITEM_RIGHT_CLICK	(ID_WND_WKSP_DATA		, CWKSP_Base_Control::On_Item_RClick)
-	EVT_TREE_DELETE_ITEM		(ID_WND_WKSP_DATA		, CWKSP_Base_Control::On_Item_Delete)
-	EVT_TREE_SEL_CHANGED		(ID_WND_WKSP_DATA		, CWKSP_Base_Control::On_Item_SelChanged)
-	EVT_TREE_KEY_DOWN			(ID_WND_WKSP_DATA		, CWKSP_Base_Control::On_Item_KeyDown)
+	EVT_TREE_ITEM_RIGHT_CLICK(ID_WND_WKSP_DATA , CWKSP_Base_Control::On_Item_RClick    )
+	EVT_TREE_DELETE_ITEM     (ID_WND_WKSP_DATA , CWKSP_Base_Control::On_Item_Delete    )
+	EVT_TREE_SEL_CHANGED     (ID_WND_WKSP_DATA , CWKSP_Base_Control::On_Item_SelChanged)
+	EVT_TREE_KEY_DOWN        (ID_WND_WKSP_DATA , CWKSP_Base_Control::On_Item_KeyDown   )
 
-	EVT_TREE_ITEM_RIGHT_CLICK	(ID_WND_WKSP_MAPS		, CWKSP_Base_Control::On_Item_RClick)
-	EVT_TREE_DELETE_ITEM		(ID_WND_WKSP_MAPS		, CWKSP_Base_Control::On_Item_Delete)
-	EVT_TREE_SEL_CHANGED		(ID_WND_WKSP_MAPS		, CWKSP_Base_Control::On_Item_SelChanged)
-	EVT_TREE_KEY_DOWN			(ID_WND_WKSP_MAPS		, CWKSP_Base_Control::On_Item_KeyDown)
+	EVT_TREE_ITEM_RIGHT_CLICK(ID_WND_WKSP_MAPS , CWKSP_Base_Control::On_Item_RClick    )
+	EVT_TREE_DELETE_ITEM     (ID_WND_WKSP_MAPS , CWKSP_Base_Control::On_Item_Delete    )
+	EVT_TREE_SEL_CHANGED     (ID_WND_WKSP_MAPS , CWKSP_Base_Control::On_Item_SelChanged)
+	EVT_TREE_KEY_DOWN        (ID_WND_WKSP_MAPS , CWKSP_Base_Control::On_Item_KeyDown   )
 
-	EVT_LEFT_DOWN				(CWKSP_Base_Control::On_Item_LClick)
-	EVT_LEFT_DCLICK				(CWKSP_Base_Control::On_Item_LDClick)
+	EVT_LEFT_DOWN            (CWKSP_Base_Control::On_Item_LClick )
+	EVT_LEFT_DCLICK          (CWKSP_Base_Control::On_Item_LDClick)
 END_EVENT_TABLE()
 
 
@@ -152,6 +140,7 @@ CWKSP_Base_Control::CWKSP_Base_Control(wxWindow *pParent, wxWindowID id)
 	m_pManager	= NULL;
 
 	AssignImageList(new wxImageList(IMG_SIZE_TREECTRL, IMG_SIZE_TREECTRL, true, 0));
+
 	IMG_ADD_TO_TREECTRL(ID_IMG_WKSP_NOITEMS);
 }
 
@@ -162,8 +151,6 @@ CWKSP_Base_Control::~CWKSP_Base_Control(void)
 
 ///////////////////////////////////////////////////////////
 //														 //
-//														 //
-//														 //
 ///////////////////////////////////////////////////////////
 
 //---------------------------------------------------------
@@ -173,9 +160,9 @@ bool CWKSP_Base_Control::_Set_Manager(CWKSP_Base_Manager *pManager)
 	{
 		m_pManager	= pManager;
 
-		AddRoot		(m_pManager->Get_Name(), IMG_ROOT, IMG_ROOT, m_pManager);
-		AppendItem	(m_pManager->GetId(), _TL("<no items>"), IMG_NO_ITEMS, IMG_NO_ITEMS, NULL);
-		Expand		(m_pManager->GetId());
+		AddRoot   (m_pManager->Get_Name(), IMG_ROOT, IMG_ROOT, m_pManager);
+		AppendItem(m_pManager->GetId(), _TL("<no items>"), IMG_NO_ITEMS, IMG_NO_ITEMS, NULL);
+		Expand    (m_pManager->GetId());
 
 		return( true );
 	}
@@ -199,14 +186,6 @@ void CWKSP_Base_Control::On_Command(wxCommandEvent &event)
 
 	case ID_CMD_WKSP_ITEM_SHOW:
 		_Show_Active();
-		break;
-
-	case ID_CMD_WKSP_ITEM_SETTINGS_LOAD:
-		_Load_Settings();
-		break;
-
-	case ID_CMD_WKSP_ITEM_SETTINGS_COPY:
-		_Copy_Settings();
 		break;
 
 	case ID_CMD_WKSP_ITEM_SEARCH:
@@ -317,6 +296,8 @@ bool CWKSP_Base_Control::_Del_Item(CWKSP_Base_Item *pItem, bool bSilent)
 			{
 				if( g_pData_Buttons )	{	g_pData_Buttons->Freeze();	}
 				if( g_pMap_Buttons  )	{	g_pMap_Buttons ->Freeze();	}
+
+				g_pSAGA_Frame->Close_Children();
 			}
 
 			//---------------------------------------------
@@ -329,6 +310,11 @@ bool CWKSP_Base_Control::_Del_Item(CWKSP_Base_Item *pItem, bool bSilent)
 				g_pTools->Update();
 			}
 
+			if( g_pData == m_pManager )
+			{
+				g_pData->MultiSelect_Check();
+			}
+
 			//---------------------------------------------
 			Thaw();
 
@@ -337,8 +323,6 @@ bool CWKSP_Base_Control::_Del_Item(CWKSP_Base_Item *pItem, bool bSilent)
 				if( g_pData_Buttons )	{	g_pData_Buttons->Thaw();	g_pData_Buttons->Update_Buttons();	}
 				if( g_pMap_Buttons  )	{	g_pMap_Buttons ->Thaw();	g_pMap_Buttons ->Update_Buttons();	}
 			}
-
-			return( true );
 		}
 	}
 
@@ -391,12 +375,10 @@ bool CWKSP_Base_Control::_Del_Item(CWKSP_Base_Item *pItem, bool bSilent)
 		{
 			g_pMap_Buttons->Update_Buttons();
 		}
-
-		return( true );
 	}
 
 	//-----------------------------------------------------
-	return( false );
+	return( true );
 }
 
 //---------------------------------------------------------
@@ -437,14 +419,14 @@ CWKSP_Base_Item * CWKSP_Base_Control::Get_Item_Selected(bool bUpdate)
 //---------------------------------------------------------
 bool CWKSP_Base_Control::Set_Item_Selected(CWKSP_Base_Item *pItem, bool bKeepMultipleSelection)
 {
-	if( !pItem || !pItem->GetId().IsOk() || pItem->Get_Control() != this )
+	if( pItem && pItem->GetId().IsOk() && pItem->Get_Control() == this )
 	{
-		return( false );
+		SelectItem(pItem->GetId());
+
+		return( true );
 	}
 
-	SelectItem(pItem->GetId());
-
-	return( true );
+	return( false );
 }
 
 
@@ -453,21 +435,11 @@ bool CWKSP_Base_Control::Set_Item_Selected(CWKSP_Base_Item *pItem, bool bKeepMul
 ///////////////////////////////////////////////////////////
 
 //---------------------------------------------------------
-wxMenu * CWKSP_Base_Control::Get_Context_Menu(void)
+wxMenu * CWKSP_Base_Control::Get_Menu(void)
 {
 	CWKSP_Base_Item	*pItem	= Get_Item_Selected();
 
-	if( pItem )
-	{
-		return(	pItem->Get_Menu() );
-	}
-
-	//-----------------------------------------------------
-	wxMenu	*pMenu	= new wxMenu;
-
-	CMD_Menu_Add_Item(pMenu, false, ID_CMD_WKSP_ITEM_CLOSE);
-
-	return( pMenu );
+	return( pItem ? pItem->Get_Menu() : NULL );
 }
 
 
@@ -500,28 +472,26 @@ bool CWKSP_Base_Control::_Show_Active(void)
 
 	if( (GetWindowStyle() & wxTR_MULTIPLE) != 0 && GetSelections(IDs) > 0 && ((CWKSP_Base_Item *)GetItemData(IDs[0]))->Get_Control() == this )
 	{
-		int				iMap;
-		size_t			iItem;
-		CWKSP_Base_Item	*pItem;
+		int	iMap = 0;
 
-		for(iItem=0, iMap=0; iItem<IDs.GetCount(); iItem++)
+		for(size_t iItem=0; iItem<IDs.GetCount(); iItem++)
 		{
-			if( IDs[iItem].IsOk() )
-			{
-				pItem	= (CWKSP_Base_Item *)GetItemData(IDs[iItem]);
+			CWKSP_Base_Item *pItem = IDs[iItem].IsOk() ? (CWKSP_Base_Item *)GetItemData(IDs[iItem]) : NULL;
 
+			if( pItem )
+			{
 				switch( pItem->Get_Type() )
 				{
-				case WKSP_ITEM_Grid:
-				case WKSP_ITEM_Grids:
-				case WKSP_ITEM_Shapes:
-				case WKSP_ITEM_TIN:
-				case WKSP_ITEM_PointCloud:
-					iMap	= 1;
+				case WKSP_ITEM_Table     :
+					((CWKSP_Table *)pItem)->Set_View(true);
 					break;
 
-				case WKSP_ITEM_Table:
-					((CWKSP_Table *)pItem)->Set_View(true);
+				case WKSP_ITEM_Grid      :
+				case WKSP_ITEM_Grids     :
+				case WKSP_ITEM_Shapes    :
+				case WKSP_ITEM_TIN       :
+				case WKSP_ITEM_PointCloud:
+					iMap	= 1;
 					break;
 
 				default:
@@ -532,18 +502,18 @@ bool CWKSP_Base_Control::_Show_Active(void)
 
 		if( iMap && (iMap = DLG_Maps_Add()) >= 0 )
 		{
-			for(iItem=0; iItem<IDs.GetCount(); iItem++)
+			for(size_t iItem=0; iItem<IDs.GetCount(); iItem++)
 			{
-				if( IDs[iItem].IsOk() )
-				{
-					pItem	= (CWKSP_Base_Item *)GetItemData(IDs[iItem]);
+				CWKSP_Base_Item *pItem = IDs[iItem].IsOk() ? (CWKSP_Base_Item *)GetItemData(IDs[iItem]) : NULL;
 
+				if( pItem )
+				{
 					switch( pItem->Get_Type() )
 					{
-					case WKSP_ITEM_Grid:
-					case WKSP_ITEM_Grids:
-					case WKSP_ITEM_Shapes:
-					case WKSP_ITEM_TIN:
+					case WKSP_ITEM_Grid      :
+					case WKSP_ITEM_Grids     :
+					case WKSP_ITEM_Shapes    :
+					case WKSP_ITEM_TIN       :
 					case WKSP_ITEM_PointCloud:
 						g_pMaps->Add((CWKSP_Layer *)pItem, g_pMaps->Get_Map(iMap));
 						break;
@@ -557,176 +527,6 @@ bool CWKSP_Base_Control::_Show_Active(void)
 			g_pMaps->Get_Map(iMap)->View_Show(true);
 
 			return( true );
-		}
-	}
-
-	return( false );
-}
-
-
-///////////////////////////////////////////////////////////
-//														 //
-///////////////////////////////////////////////////////////
-
-//---------------------------------------------------------
-bool CWKSP_Base_Control::_Load_Settings(void)
-{
-	wxString		File_Path;
-	CSG_MetaData	Data;
-
-	if( Get_Selection_Count() > 0 && DLG_Open(File_Path, ID_DLG_PARAMETERS_OPEN) && Data.Load(&File_Path) )
-	{
-		if(	GetWindowStyle() & wxTR_MULTIPLE )
-		{
-			wxArrayTreeItemIds	IDs;
-
-			if( GetSelections(IDs) > 0 )
-			{
-				for(size_t i=0; i<IDs.GetCount(); i++)
-				{
-					_Load_Settings(&Data, (CWKSP_Base_Item *)GetItemData(IDs[i]));
-				}
-			}
-		}
-		else
-		{
-			_Load_Settings(&Data, Get_Item_Selected());
-		}
-
-		return( true );
-	}
-
-	return( false );
-}
-
-//---------------------------------------------------------
-bool CWKSP_Base_Control::_Load_Settings(CSG_MetaData *pData, CWKSP_Base_Item *pItem)
-{
-	if( pData && pItem && pItem->Get_Parameters() )
-	{
-		if( pItem->Get_Parameters()->Serialize(*pData, false) )
-		{
-			pItem->Parameters_Changed();
-		}
-
-		return( true );
-	}
-
-	return( false );
-}
-
-//---------------------------------------------------------
-void	DLG_Copy_Settings(CSG_Table &List, CWKSP_Base_Item *pItem)
-{
-	if( pItem )
-	{
-		if( pItem->is_Manager() )
-		{
-			for(int i=0; i<((CWKSP_Base_Manager *)pItem)->Get_Count(); i++)
-			{
-				DLG_Copy_Settings(List, ((CWKSP_Base_Manager *)pItem)->Get_Item(i));
-			}
-		}
-		else if( pItem->Get_Parameters() )
-		{
-			CSG_Table_Record	*pEntry	= List.Add_Record();
-
-			pEntry->Set_Value(0, CSG_String(wxString::Format("[%s] %s", pItem->Get_Manager()->Get_Name(), pItem->Get_Name()).wc_str()));
-			pEntry->Set_Value(1, CSG_String::Format("%p", pItem->Get_Parameters()));
-		}
-	}
-}
-
-CSG_Parameters *	DLG_Copy_Settings(void)
-{
-	CSG_Table	List;
-
-	List.Add_Field(SG_T("NAME"), SG_DATATYPE_String);
-	List.Add_Field(SG_T("PRMS"), SG_DATATYPE_String);
-
-	DLG_Copy_Settings(List, (CWKSP_Base_Item *)g_pData->Get_Grids      ());
-	DLG_Copy_Settings(List, (CWKSP_Base_Item *)g_pData->Get_Shapes     ());
-	DLG_Copy_Settings(List, (CWKSP_Base_Item *)g_pData->Get_TINs       ());
-	DLG_Copy_Settings(List, (CWKSP_Base_Item *)g_pData->Get_PointClouds());
-
-	if( List.Get_Count() > 0 )
-	{
-		wxArrayString	Items;
-
-		for(int i=0; i<List.Get_Count(); i++)
-		{
-			Items.Add(List.Get_Record(i)->asString(0));
-		}
-
-		wxSingleChoiceDialog	dlg(MDI_Get_Top_Window(),
-			_TL("Copy Settings from..."),
-			_TL("Select a layer to copy settings from it."),
-			Items
-		);
-
-		void	*pParameters;
-
-		if( dlg.ShowModal() == wxID_OK && SG_SSCANF(List.Get_Record(dlg.GetSelection())->asString(1), SG_T("%p"), &pParameters) == 1 )
-		{
-			return( (CSG_Parameters *)pParameters );
-		}
-	}
-
-	return( NULL );
-}
-
-//---------------------------------------------------------
-bool CWKSP_Base_Control::_Copy_Settings(CSG_Parameters *pParameters, CWKSP_Base_Item *pItem)
-{
-	if( pParameters && pItem && pParameters != pItem->Get_Parameters() )
-	{
-		for(int i=0; i<pParameters->Get_Count(); i++)
-		{
-			CSG_Parameter	*pSource	= pParameters->Get_Parameter(i);
-
-			if(	SG_STR_CMP(pSource->Get_Identifier(), SG_T("OBJECT_NAME")) )
-		//	&&	SG_STR_CMP(pSource->Get_Identifier(), SG_T("LUT_ATTRIB"))
-		//	&&	SG_STR_CMP(pSource->Get_Identifier(), SG_T("METRIC_ATTRIB"))
-		//	&&	SG_STR_CMP(pSource->Get_Identifier(), SG_T("LABEL_ATTRIB"))
-		//	&&	SG_STR_CMP(pSource->Get_Identifier(), SG_T("LABEL_ATTRIB_SIZE_BY"))	)
-			{
-				CSG_Parameter	*pTarget	= pItem->Get_Parameter(pSource->Get_Identifier());
-
-				if( pTarget && pTarget->Get_Type() == pSource->Get_Type() )
-				{
-					pTarget->Set_Value(pSource);
-				}
-			}
-		}
-
-		pItem->Parameters_Changed();
-
-		return( true );
-	}
-
-	return( false );
-}
-
-//---------------------------------------------------------
-bool CWKSP_Base_Control::_Copy_Settings(void)
-{
-	wxArrayTreeItemIds	IDs;
-	CSG_Parameters		*pParameters;
-
-	if( Get_Selection_Count() > 0 && (pParameters = DLG_Copy_Settings()) != NULL )
-	{
-		if(	(GetWindowStyle() & wxTR_MULTIPLE) && GetSelections(IDs) > 0 )
-		{
-			for(size_t i=0; i<IDs.GetCount(); i++)
-			{
-				_Copy_Settings(pParameters, (CWKSP_Base_Item *)GetItemData(IDs[i]));
-			}
-
-			return( true );
-		}
-		else
-		{
-			return( _Copy_Settings(pParameters, Get_Item_Selected()) );
 		}
 	}
 
@@ -779,7 +579,7 @@ bool CWKSP_Base_Control::_Search_Get_List(CSG_Table *pList, CWKSP_Base_Item *pIt
 //---------------------------------------------------------
 CWKSP_Base_Item * CWKSP_Base_Control::Search_Item(const wxString &Caption, TWKSP_Item Type)
 {
-	static CSG_Parameters	Search(NULL, Caption, _TL(""));
+	static CSG_Parameters	Search(Caption);
 
 	if( Search.Get_Count() == 0 )
 	{
@@ -887,14 +687,17 @@ void CWKSP_Base_Control::On_Item_LDClick(wxMouseEvent &event)
 //---------------------------------------------------------
 void CWKSP_Base_Control::On_Item_RClick(wxTreeEvent &event)
 {
+	if( m_pManager->Get_Type() != WKSP_ITEM_Data_Manager )
+	{
+		SelectItem(event.GetItem());
+	}
+
 	if( Get_Selection_Count() <= 1 )
 	{
-	//	SelectItem(event.GetItem());
-
 		g_pActive->Set_Active(Get_Item_Selected());
 	}
 
-	wxMenu	*pMenu	= Get_Context_Menu();
+	wxMenu	*pMenu	= Get_Menu();
 
 	if( pMenu )
 	{
@@ -909,24 +712,28 @@ void CWKSP_Base_Control::On_Item_RClick(wxTreeEvent &event)
 //---------------------------------------------------------
 void CWKSP_Base_Control::On_Item_KeyDown(wxTreeEvent &event)
 {
-	CWKSP_Base_Item	*pItem;
-
-	if( event.GetKeyCode() == WXK_DELETE )
+	switch( event.GetKeyCode() )
 	{
+	case WXK_DELETE:
 		_Del_Active(false);
-	}
-	else if( (pItem = Get_Item_Selected()) != NULL )
-	{
-		switch( event.GetKeyCode() )
-		{
-		default:
-			pItem->On_Command(event.GetKeyCode());
-			break;
+		break;
 
-		case WXK_RETURN:
-			pItem->On_Command(ID_CMD_WKSP_ITEM_RETURN);
-			break;
+	default: {
+		CWKSP_Base_Item	*pItem = Get_Item_Selected();
+
+		if( pItem )
+		{
+			switch( event.GetKeyCode() )
+			{
+			default:
+				break;
+
+			case WXK_RETURN:
+				pItem->On_Command(ID_CMD_WKSP_ITEM_RETURN);
+				break;
+			}
 		}
+		break; }
 	}
 }
 

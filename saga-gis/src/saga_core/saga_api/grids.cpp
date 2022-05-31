@@ -1,6 +1,3 @@
-/**********************************************************
- * Version $Id$
- *********************************************************/
 
 ///////////////////////////////////////////////////////////
 //                                                       //
@@ -49,15 +46,6 @@
 //                University of Hamburg                  //
 //                Germany                                //
 //                                                       //
-///////////////////////////////////////////////////////////
-
-//---------------------------------------------------------
-
-
-///////////////////////////////////////////////////////////
-//														 //
-//														 //
-//														 //
 ///////////////////////////////////////////////////////////
 
 //---------------------------------------------------------
@@ -160,11 +148,11 @@ CSG_Grids::~CSG_Grids(void)
   * Copy constructor.
 */
 //---------------------------------------------------------
-CSG_Grids::CSG_Grids(const CSG_Grids &Grid)
+CSG_Grids::CSG_Grids(const CSG_Grids &Grids)
 {
 	_On_Construction();
 
-	Create(Grid);
+	Create(Grids);
 }
 
 //---------------------------------------------------------
@@ -289,8 +277,10 @@ bool CSG_Grids::Create(const CSG_Grids &Grids)
 //---------------------------------------------------------
 bool CSG_Grids::Create(const CSG_Grids *pGrids, bool bCopyData)
 {
-	if( pGrids && pGrids->is_Valid() && Create(pGrids->Get_System(), 0, 0.0, pGrids->Get_Type()) )
+	if( pGrids && pGrids->is_Valid() && Create(pGrids->Get_System(), 0, 0., pGrids->Get_Type()) )
 	{
+		Set_NoData_Value_Range(pGrids->Get_NoData_Value(), pGrids->Get_NoData_Value(true));
+
 		m_Attributes.Create(&pGrids->m_Attributes);
 		Set_Z_Attribute (pGrids->Get_Z_Attribute ());
 		Set_Z_Name_Field(pGrids->Get_Z_Name_Field());
@@ -327,7 +317,7 @@ bool CSG_Grids::Create(const CSG_Grid_System &System, int NZ, double zMin, TSG_D
 
 	if( m_pGrids[0]->Create(System, Type) )
 	{
-		Set_NoData_Value_Range(m_pGrids[0]->Get_NoData_Value(), m_pGrids[0]->Get_NoData_hiValue());
+		Set_NoData_Value_Range(m_pGrids[0]->Get_NoData_Value(), m_pGrids[0]->Get_NoData_Value(true));
 
 		for(int i=0; i<NZ; i++, zMin+=System.Get_Cellsize())
 		{
@@ -432,12 +422,12 @@ void CSG_Grids::_Synchronize(CSG_Grid *pGrid)
 	if( pGrid == m_pGrids[0] )
 	{
 		Set_Scaling(pGrid->Get_Scaling(), pGrid->Get_Offset());
-		Set_NoData_Value_Range(pGrid->Get_NoData_Value(), pGrid->Get_NoData_hiValue());
+		Set_NoData_Value_Range(pGrid->Get_NoData_Value(), pGrid->Get_NoData_Value(true));
 	}
 	else // if( pGrid != m_pGrids[0] )
 	{
 		pGrid->Set_Scaling(Get_Scaling(), Get_Offset());
-		pGrid->Set_NoData_Value_Range(Get_NoData_Value(), Get_NoData_hiValue());
+		pGrid->Set_NoData_Value_Range(Get_NoData_Value(), Get_NoData_Value(true));
 	}
 }
 
@@ -563,7 +553,7 @@ bool CSG_Grids::Update_Z_Order(void)
 		
 		CSG_Grid	**pGrids	= (CSG_Grid **)Grids.Create(m_Grids);
 
-		for(int i=0; i<Attributes.Get_Count(); i++)
+		for(int i=0; i<Get_Grid_Count(); i++)
 		{
 			int	Index	= Attributes[i].Get_Index();
 
@@ -575,6 +565,11 @@ bool CSG_Grids::Update_Z_Order(void)
 
 				m_Attributes[i].Assign(&Attributes[i]);
 			}
+		}
+
+		for(int i=0; i<Get_Grid_Count(); i++)
+		{
+			pGrids[i]->Set_Name(Get_Grid_Name(i));
 		}
 	}
 
@@ -678,7 +673,11 @@ bool CSG_Grids::Add_Grid(CSG_Table_Record &Attributes)
 	//-----------------------------------------------------
 	int	n	= Get_NZ();
 
-	if( n > 0 )	// else use dummy grid (m_pGrids[0] is always present)
+	if( n < 1 )	// do some initializations
+	{
+		_Synchronize(m_pGrids[0]);
+	}
+	else // use dummy grid (m_pGrids[0] is always present)
 	{
 		CSG_Grid	*pGrid	= SG_Create_Grid(Get_System(), Get_Type());
 
@@ -695,8 +694,6 @@ bool CSG_Grids::Add_Grid(CSG_Table_Record &Attributes)
 
 	//-----------------------------------------------------
 	m_Attributes.Add_Record(&Attributes);
-
-	m_pGrids[n]->Fmt_Name("%s [%s]", Get_Name(), SG_Get_String(Get_Z(n), -10).c_str());
 
 	SG_FREE_SAFE(m_Index);	// invalidate index
 
@@ -1089,7 +1086,7 @@ bool CSG_Grids::Get_Value(double x, double y, double z, double &Value, TSG_Grid_
 		return( false );
 	}
 
-	if( dz == 0.0 )
+	if( dz == 0. )
 	{
 		return( m_pGrids[iz]->Get_Value(x, y, Value, Resampling) );
 	}
@@ -1162,13 +1159,13 @@ bool CSG_Grids::_Get_Z(double z, int &iz, double &dz) const
 
 		if( z < z1 )
 		{
-			dz	= z0 < z1 ? (z - z0) / (z1 - z0) : 0.0;
+			dz	= z0 < z1 ? (z - z0) / (z1 - z0) : 0.;
 
 			return( true );
 		}
 	}
 
-	return( (dz = z - z1) == 0.0 );
+	return( (dz = z - z1) == 0. );
 }
 
 
@@ -1348,7 +1345,7 @@ bool CSG_Grids::On_Update(void)
 		m_Statistics.Invalidate();
 		m_Histogram.Destroy();
 
-		double	Offset = Get_Offset(), Scaling = is_Scaled() ? Get_Scaling() : 0.0;
+		double	Offset = Get_Offset(), Scaling = is_Scaled() ? Get_Scaling() : 0.;
 
 		if( Get_Max_Samples() > 0 && Get_Max_Samples() < Get_NCells() )
 		{
@@ -1498,7 +1495,7 @@ bool CSG_Grids::Get_Statistics(const CSG_Rect &rWorld, CSG_Simple_Statistics &St
 	int		ny		= 1 + (yMax - yMin);
 	sLong	nCells	= nx * ny;
 
-	double	Offset = Get_Offset(), Scaling = is_Scaled() ? Get_Scaling() : 0.0;
+	double	Offset = Get_Offset(), Scaling = is_Scaled() ? Get_Scaling() : 0.;
 
 	if( Get_Max_Samples() > 0 && Get_Max_Samples() < nCells )
 	{
@@ -1609,7 +1606,7 @@ bool CSG_Grids::Get_Histogram(const CSG_Rect &rWorld, CSG_Histogram &Histogram, 
 	int		ny		= 1 + (yMax - yMin);
 	sLong	nCells	= nx * ny;
 
-	double	Offset = Get_Offset(), Scaling = is_Scaled() ? Get_Scaling() : 0.0;
+	double	Offset = Get_Offset(), Scaling = is_Scaled() ? Get_Scaling() : 0.;
 
 	if( Get_Max_Samples() > 0 && Get_Max_Samples() < nCells )
 	{
@@ -1723,21 +1720,35 @@ bool CSG_Grids::Load(const CSG_String &FileName, bool bLoadData)
 //---------------------------------------------------------
 bool CSG_Grids::Save(const CSG_String &FileName, int Format)
 {
-	SG_UI_Msg_Add(CSG_String::Format("%s: %s...", _TL("Saving grid collection"), FileName.c_str()), true);
+	SG_UI_Msg_Add(CSG_String::Format("%s %s: %s...", _TL("Saving"), _TL("grid collection"), FileName.c_str()), true);
 
 	if( Format == GRIDS_FILE_FORMAT_Undefined )
 	{
-		Format	= SG_File_Cmp_Extension(FileName, "sg-gds")
-			? GRIDS_FILE_FORMAT_Normal
-			: GRIDS_FILE_FORMAT_Compressed;
+		Format	= GRIDS_FILE_FORMAT_Compressed;	// default
+
+		if( SG_File_Cmp_Extension(FileName, "sg-gds"  ) )	Format	= GRIDS_FILE_FORMAT_Normal    ;
+		if( SG_File_Cmp_Extension(FileName, "sg-gds-z") )	Format	= GRIDS_FILE_FORMAT_Compressed;
+		if( SG_File_Cmp_Extension(FileName, "tif"     ) )	Format	= GRIDS_FILE_FORMAT_GeoTIFF   ;
 	}
 
 	bool	bResult	= false;
 
 	switch( Format )
 	{
-	case GRIDS_FILE_FORMAT_Normal    : bResult = _Save_Normal    (FileName); break;
-	case GRIDS_FILE_FORMAT_Compressed: bResult = _Save_Compressed(FileName); break;
+	case GRIDS_FILE_FORMAT_Normal    :
+		bResult = _Save_Normal    (FileName);
+		break;
+
+	case GRIDS_FILE_FORMAT_Compressed: default:
+		bResult = _Save_Compressed(FileName);
+		break;
+
+	case GRIDS_FILE_FORMAT_GeoTIFF   :
+		SG_RUN_TOOL(bResult, "io_gdal", 2,	// Export GeoTIFF
+			SG_TOOL_PARAMLIST_ADD("GRIDS", this)
+		&&	SG_TOOL_PARAMETER_SET("FILE" , FileName)
+		);
+		break;
 	}
 
 	//-----------------------------------------------------
@@ -1781,20 +1792,24 @@ bool CSG_Grids::_Load_External(const CSG_String &FileName)
 	&&	pTool->Execute()
 	&&  Data.Grid_System_Count() > 0 && Data.Get_Grid_System(0)->Count() > 0 && Data.Get_Grid_System(0)->Get(0)->is_Valid() )
 	{
-		CSG_Grids	*pGrids	= (CSG_Grids *)Data.Get_Grid_System(0)->Get(0);
+		CSG_Grids *pGrids = (CSG_Grids *)Data.Get_Grid_System(0)->Get(0);
+
+		m_Attributes.Create(&pGrids->m_Attributes);
 
 		for(int i=0; i<pGrids->Get_Grid_Count(); i++)
 		{
-			Add_Grid(pGrids->Get_Z(i), pGrids->Get_Grid_Ptr(i), true);
+			Add_Grid(pGrids->Get_Attributes(i), pGrids->Get_Grid_Ptr(i), true);
 		}
-
-		pGrids->Del_Grids(true);
 
 		Set_File_Name(FileName, false);
 
-		Set_Name       (pGrids->Get_Name       ());
-		Set_Description(pGrids->Get_Description());
-		
+		Set_Name        (pGrids->Get_Name        ());
+		Set_Description (pGrids->Get_Description ());
+		Set_Z_Attribute (pGrids->Get_Z_Attribute ());
+		Set_Z_Name_Field(pGrids->Get_Z_Name_Field());
+
+		pGrids->Del_Grids(true);
+
 		bResult	= true;
 	}
 
@@ -1834,7 +1849,7 @@ bool CSG_Grids::_Load_PGSQL(const CSG_String &FileName)
 		}
 
 		//-------------------------------------------------
-		CSG_Tool	*pTool	= SG_Get_Tool_Library_Manager().Create_Tool("db_pgsql", 0);	// CGet_Connections
+		CSG_Tool	*pTool	= SG_Get_Tool_Library_Manager().Create_Tool("db_pgsql", 0, true);	// CGet_Connections
 
 		if(	pTool != NULL )
 		{
@@ -1861,7 +1876,7 @@ bool CSG_Grids::_Load_PGSQL(const CSG_String &FileName)
 			SG_Get_Tool_Library_Manager().Delete_Tool(pTool);
 
 			//---------------------------------------------
-			if( bResult && (bResult = (pTool = SG_Get_Tool_Library_Manager().Create_Tool("db_pgsql", 30)) != NULL) == true )	// CPGIS_Raster_Load
+			if( bResult && (bResult = (pTool = SG_Get_Tool_Library_Manager().Create_Tool("db_pgsql", 30, true)) != NULL) == true )	// CPGIS_Raster_Load
 			{
 				CSG_Data_Manager	Grids;
 
@@ -2128,8 +2143,8 @@ bool CSG_Grids::_Load_Header(CSG_File &Stream)
 	if( Header("UNIT"       ) ) Set_Unit       (Header["UNIT"       ].Get_Content());
 
 	Set_Scaling(
-		Header("SCALE" ) ? Header["SCALE" ].Get_Content().asDouble() : 1.0,
-		Header("OFFSET") ? Header["OFFSET"].Get_Content().asDouble() : 0.0
+		Header("SCALE" ) ? Header["SCALE" ].Get_Content().asDouble() : 1.,
+		Header("OFFSET") ? Header["OFFSET"].Get_Content().asDouble() : 0.
 	);
 
 	if( Header("NODATA_MIN") )
@@ -2256,15 +2271,15 @@ bool CSG_Grids::_Save_Header(CSG_File &Stream)
 	//-----------------------------------------------------
 	// general
 
-	Header.Add_Child("NAME"       , Get_Name          ());
-	Header.Add_Child("DESCRIPTION", Get_Description   ());
-	Header.Add_Child("UNIT"       , Get_Unit          ());
+	Header.Add_Child("NAME"       , Get_Name       ());
+	Header.Add_Child("DESCRIPTION", Get_Description());
+	Header.Add_Child("UNIT"       , Get_Unit       ());
 
-	Header.Add_Child("SCALE"      , Get_Scaling       ());
-	Header.Add_Child("OFFSET"     , Get_Offset        ());
+	Header.Add_Child("SCALE"      , Get_Scaling    ());
+	Header.Add_Child("OFFSET"     , Get_Offset     ());
 
-	Header.Add_Child("NODATA_MIN" , Get_NoData_Value  ());
-	Header.Add_Child("NODATA_MAX" , Get_NoData_hiValue());
+	Header.Add_Child("NODATA_MIN" , Get_NoData_Value(false));
+	Header.Add_Child("NODATA_MAX" , Get_NoData_Value(true ));
 
 	Header.Add_Child("TYPE"       , SG_Data_Type_Get_Identifier(Get_Type()));
 

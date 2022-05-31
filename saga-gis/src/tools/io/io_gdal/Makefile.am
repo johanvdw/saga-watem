@@ -7,11 +7,12 @@ endif
 
 DEP_LIBS = $(GDAL_LDFLAGS)
 DEF_SAGA           = -D_SAGA_LINUX -D_TYPEDEF_BYTE -D_TYPEDEF_WORD
-CXX_INCS           = -I$(top_srcdir)/src/saga_core $(GDAL_CFLAGS) $(GDAL2FLAGS)
+CXX_INCS           = -I$(top_srcdir)/src/saga_core $(GDAL_CFLAGS)
 AM_CXXFLAGS        = -fPIC $(CXX_INCS) $(DEF_SAGA) $(DBGFLAGS) $(GOMPFLAGS)
 AM_LDFLAGS         = -fPIC -shared -avoid-version $(DEP_LIBS)
 pkglib_LTLIBRARIES = libio_gdal.la
 libio_gdal_la_SOURCES =\
+gdal_buildvrt.cpp\
 gdal_catalogue.cpp\
 gdal_driver.cpp\
 gdal_export.cpp\
@@ -20,12 +21,14 @@ gdal_formats.cpp\
 gdal_import.cpp\
 gdal_import_aster.cpp\
 gdal_import_netcdf.cpp\
+gdal_import_vrt.cpp\
 gdal_import_wms.cpp\
 MLB_Interface.cpp\
 ogr_driver.cpp\
 ogr_export.cpp\
 ogr_export_kml.cpp\
 ogr_import.cpp\
+gdal_buildvrt.h\
 gdal_catalogue.h\
 gdal_driver.h\
 gdal_export.h\
@@ -34,6 +37,7 @@ gdal_formats.h\
 gdal_import.h\
 gdal_import_aster.h\
 gdal_import_netcdf.h\
+gdal_import_vrt.h\
 gdal_import_wms.h\
 MLB_Interface.h\
 ogr_driver.h\

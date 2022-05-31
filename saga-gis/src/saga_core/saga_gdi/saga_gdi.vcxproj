@@ -1,5 +1,5 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
-<Project DefaultTargets="Build" ToolsVersion="14.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+<Project DefaultTargets="Build" ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="Debug|Win32">
       <Configuration>Debug</Configuration>
@@ -20,19 +20,20 @@
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{5F5137D6-9979-4829-9C23-45D9726D8554}</ProjectGuid>
+    <WindowsTargetPlatformVersion>8.1</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
     <ConfigurationType>DynamicLibrary</ConfigurationType>
     <UseOfMfc>false</UseOfMfc>
     <CharacterSet>Unicode</CharacterSet>
-    <PlatformToolset>v140</PlatformToolset>
+    <PlatformToolset>v141</PlatformToolset>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
     <ConfigurationType>DynamicLibrary</ConfigurationType>
     <UseOfMfc>false</UseOfMfc>
     <CharacterSet>Unicode</CharacterSet>
-    <PlatformToolset>v140</PlatformToolset>
+    <PlatformToolset>v141</PlatformToolset>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
     <ConfigurationType>DynamicLibrary</ConfigurationType>
@@ -44,7 +45,7 @@
     <ConfigurationType>DynamicLibrary</ConfigurationType>
     <UseOfMfc>false</UseOfMfc>
     <CharacterSet>Unicode</CharacterSet>
-    <PlatformToolset>v140</PlatformToolset>
+    <PlatformToolset>v141</PlatformToolset>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
   <ImportGroup Label="ExtensionSettings">
@@ -105,7 +106,7 @@
     </Midl>
     <ClCompile>
       <Optimization>Disabled</Optimization>
-      <AdditionalIncludeDirectories>./..;$(WXWIN_32)/include;$(WXWIN_32)/lib/vc_dll/mswud;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>./..;$(WXWIN)/include;$(WXWIN)/lib/vc_dll/mswud;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>_WINDOWS;_MBCS;_USRDLL;_SAGA_GDI_EXPORTS;WIN32;_DEBUG;__WXMSW__;WXUSINGDLL;__WXDEBUG__;_TYPEDEF_BYTE;_TYPEDEF_WORD;_SAGA_MSW;%(PreprocessorDefinitions);_CRT_SECURE_NO_WARNINGS</PreprocessorDefinitions>
       <MinimalRebuild>true</MinimalRebuild>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
@@ -129,7 +130,7 @@
       <AdditionalDependencies>wxmsw31ud_core.lib;wxbase31ud.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <OutputFile>$(OutDir)$(ProjectName).dll</OutputFile>
       <SuppressStartupBanner>true</SuppressStartupBanner>
-      <AdditionalLibraryDirectories>$(WXWIN_32)/lib/vc_dll;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>$(WXWIN)/lib/vc_dll;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <ProgramDatabaseFile>$(OutDir)$(ProjectName).pdb</ProgramDatabaseFile>
       <RandomizedBaseAddress>false</RandomizedBaseAddress>
@@ -149,9 +150,11 @@ md $(OutDir)include\saga_gdi
 copy 3d_view.h $(OutDir)include\saga_gdi
 copy 3d_view_tools.h $(OutDir)include\saga_gdi
 copy saga_gdi.h $(OutDir)include\saga_gdi
+copy sgdi_core.h $(OutDir)include\saga_gdi
 copy sgdi_diagram.h $(OutDir)include\saga_gdi
 copy sgdi_dialog.h $(OutDir)include\saga_gdi
 copy sgdi_helper.h $(OutDir)include\saga_gdi
+copy sgdi_layout_items.h $(OutDir)include\saga_gdi
 </Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
@@ -168,7 +171,7 @@ copy sgdi_helper.h $(OutDir)include\saga_gdi
     <ClCompile>
       <Optimization>MaxSpeed</Optimization>
       <InlineFunctionExpansion>OnlyExplicitInline</InlineFunctionExpansion>
-      <AdditionalIncludeDirectories>./..;$(WXWIN_32)/include;$(WXWIN_32)/lib/vc_dll/mswu;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>./..;$(WXWIN)/include;$(WXWIN)/lib/vc_dll/mswu;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>NDEBUG;_WINDOWS;_MBCS;_USRDLL;_SAGA_GDI_EXPORTS;WIN32;__WXMSW__;WXUSINGDLL;_TYPEDEF_BYTE;_TYPEDEF_WORD;_SAGA_MSW;%(PreprocessorDefinitions);_CRT_SECURE_NO_WARNINGS</PreprocessorDefinitions>
       <StringPooling>true</StringPooling>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
@@ -193,7 +196,7 @@ copy sgdi_helper.h $(OutDir)include\saga_gdi
       <AdditionalDependencies>wxmsw31u_core.lib;wxbase31u.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <OutputFile>$(OutDir)$(ProjectName).dll</OutputFile>
       <SuppressStartupBanner>true</SuppressStartupBanner>
-      <AdditionalLibraryDirectories>$(WXWIN_32)/lib/vc_dll;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>$(WXWIN)/lib/vc_dll;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <ProgramDatabaseFile>
       </ProgramDatabaseFile>
       <RandomizedBaseAddress>false</RandomizedBaseAddress>
@@ -213,9 +216,11 @@ md $(OutDir)include\saga_gdi
 copy 3d_view.h $(OutDir)include\saga_gdi
 copy 3d_view_tools.h $(OutDir)include\saga_gdi
 copy saga_gdi.h $(OutDir)include\saga_gdi
+copy sgdi_core.h $(OutDir)include\saga_gdi
 copy sgdi_diagram.h $(OutDir)include\saga_gdi
 copy sgdi_dialog.h $(OutDir)include\saga_gdi
 copy sgdi_helper.h $(OutDir)include\saga_gdi
+copy sgdi_layout_items.h $(OutDir)include\saga_gdi
 </Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
@@ -274,9 +279,11 @@ md $(OutDir)include\saga_gdi
 copy 3d_view.h $(OutDir)include\saga_gdi
 copy 3d_view_tools.h $(OutDir)include\saga_gdi
 copy saga_gdi.h $(OutDir)include\saga_gdi
+copy sgdi_core.h $(OutDir)include\saga_gdi
 copy sgdi_diagram.h $(OutDir)include\saga_gdi
 copy sgdi_dialog.h $(OutDir)include\saga_gdi
 copy sgdi_helper.h $(OutDir)include\saga_gdi
+copy sgdi_layout_items.h $(OutDir)include\saga_gdi
 </Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
@@ -338,9 +345,11 @@ md $(OutDir)include\saga_gdi
 copy 3d_view.h $(OutDir)include\saga_gdi
 copy 3d_view_tools.h $(OutDir)include\saga_gdi
 copy saga_gdi.h $(OutDir)include\saga_gdi
+copy sgdi_core.h $(OutDir)include\saga_gdi
 copy sgdi_diagram.h $(OutDir)include\saga_gdi
 copy sgdi_dialog.h $(OutDir)include\saga_gdi
 copy sgdi_helper.h $(OutDir)include\saga_gdi
+copy sgdi_layout_items.h $(OutDir)include\saga_gdi
 </Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
@@ -349,18 +358,22 @@ copy sgdi_helper.h $(OutDir)include\saga_gdi
     <ClCompile Include="3d_view_dialog.cpp" />
     <ClCompile Include="3d_view_panel.cpp" />
     <ClCompile Include="3d_view_projector.cpp" />
+    <ClCompile Include="sgdi_controls.cpp" />
     <ClCompile Include="sgdi_diagram.cpp" />
     <ClCompile Include="sgdi_dialog.cpp" />
     <ClCompile Include="sgdi_helper.cpp" />
+    <ClCompile Include="sgdi_layout_items.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="3d_view.h" />
     <ClInclude Include="3d_view_tools.h" />
     <ClInclude Include="saga_gdi.h" />
+    <ClInclude Include="sgdi_controls.h" />
     <ClInclude Include="sgdi_core.h" />
     <ClInclude Include="sgdi_diagram.h" />
     <ClInclude Include="sgdi_dialog.h" />
     <ClInclude Include="sgdi_helper.h" />
+    <ClInclude Include="sgdi_layout_items.h" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\saga_api\saga_api.vcxproj">

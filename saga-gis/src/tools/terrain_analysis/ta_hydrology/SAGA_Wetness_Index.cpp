@@ -1,6 +1,3 @@
-/**********************************************************
- * Version $Id: SAGA_Wetness_Index.cpp 1921 2014-01-09 10:24:11Z oconrad $
- *********************************************************/
 
 ///////////////////////////////////////////////////////////
 //                                                       //
@@ -51,15 +48,6 @@
 ///////////////////////////////////////////////////////////
 
 //---------------------------------------------------------
-
-
-///////////////////////////////////////////////////////////
-//														 //
-//														 //
-//														 //
-///////////////////////////////////////////////////////////
-
-//---------------------------------------------------------
 #include "SAGA_Wetness_Index.h"
 
 
@@ -72,7 +60,6 @@
 //---------------------------------------------------------
 CSAGA_Wetness_Index::CSAGA_Wetness_Index(void)
 {
-	//-----------------------------------------------------
 	Set_Name		(_TL("SAGA Wetness Index"));
 
 	Set_Author		("J.Boehner, O.Conrad (c) 2001");
@@ -92,7 +79,7 @@ CSAGA_Wetness_Index::CSAGA_Wetness_Index(void)
 		"Soil Regionalisation by Means of Terrain Analysis and Process Parameterisation",
 		"In: Micheli, E., Nachtergaele, F., Montanarella, L. [Ed.]: Soil Classification 2001. "
 		"European Soil Bureau, Research Report No. 7, EUR 20398 EN, Luxembourg. pp.213-222.",
-		SG_T("http://eusoils.jrc.ec.europa.eu/ESDB_Archive/eusoils_docs/esb_rr/EUR22646EN.pdf")
+		SG_T("https://esdac.jrc.ec.europa.eu/ESDB_Archive/eusoils_docs/esb_rr/n07_ESBResRep07/601Bohner.pdf")
 	);
 
 	Add_Reference(
@@ -100,9 +87,8 @@ CSAGA_Wetness_Index::CSAGA_Wetness_Index(void)
 		"Spatial prediction of soil attributes using terrain analysis and climate regionalisation",
 		"In: Boehner, J., McCloy, K.R., Strobl, J. [Eds.]: SAGA - Analysis and Modelling Applications, "
 		"Goettinger Geographische Abhandlungen, Goettingen: 13-28.",
-		SG_T("http://downloads.sourceforge.net/saga-gis/gga115_02.pdf")
+		SG_T("https://downloads.sourceforge.net/saga-gis/gga115_02.pdf")
 	);
-
 
 	//-----------------------------------------------------
 	Parameters.Add_Grid("",
@@ -120,19 +106,19 @@ CSAGA_Wetness_Index::CSAGA_Wetness_Index(void)
 	Parameters.Add_Grid("",
 		"AREA"		, _TL("Catchment Area"),
 		_TL(""),
-		PARAMETER_OUTPUT
+		PARAMETER_OUTPUT_OPTIONAL
 	);
 
 	Parameters.Add_Grid("",
 		"SLOPE"		, _TL("Catchment Slope"),
 		_TL(""),
-		PARAMETER_OUTPUT
+		PARAMETER_OUTPUT_OPTIONAL
 	);
 
 	Parameters.Add_Grid("",
 		"AREA_MOD"	, _TL("Modified Catchment Area"),
 		_TL(""),
-		PARAMETER_OUTPUT
+		PARAMETER_OUTPUT_OPTIONAL
 	);
 
 	Parameters.Add_Grid("",
@@ -144,7 +130,7 @@ CSAGA_Wetness_Index::CSAGA_Wetness_Index(void)
 	Parameters.Add_Double("",
 		"SUCTION"	, _TL("Suction"),
 		_TL("the lower this value is the stronger is the suction effect"),
-		10.0, 0.0, true
+		10., 0., true
 	);
 
 	Parameters.Add_Node("",
@@ -155,17 +141,17 @@ CSAGA_Wetness_Index::CSAGA_Wetness_Index(void)
 	Parameters.Add_Choice("TWI_NODE",
 		"AREA_TYPE"	, _TL("Type of Area"),
 		_TL(""),
-		CSG_String::Format("%s|%s|%s|",
+		CSG_String::Format("%s|%s|%s",
 			_TL("total catchment area"),
 			_TL("square root of catchment area"),
 			_TL("specific catchment area")
-		), 1
+		), 2
 	);
 
 	Parameters.Add_Choice("TWI_NODE",
 		"SLOPE_TYPE", _TL("Type of Slope"),
 		_TL(""),
-		CSG_String::Format("%s|%s|",
+		CSG_String::Format("%s|%s",
 			_TL("local slope"),
 			_TL("catchment slope")
 		), 1
@@ -174,19 +160,19 @@ CSAGA_Wetness_Index::CSAGA_Wetness_Index(void)
 	Parameters.Add_Double("",
 		"SLOPE_MIN"	, _TL("Minimum Slope"),
 		_TL(""),
-		0.0, 0.0, true
+		0., 0., true
 	);
 
 	Parameters.Add_Double("",
 		"SLOPE_OFF"	, _TL("Offset Slope"),
 		_TL(""),
-		0.1, 0.0, true
+		0.1, 0., true
 	);
 
 	Parameters.Add_Double("",
 		"SLOPE_WEIGHT", _TL("Slope Weighting"),
 		_TL("weighting factor for slope in index calculation"),
-		1.0, 0.0, true
+		1., 0., true
 	);
 }
 
@@ -198,19 +184,18 @@ CSAGA_Wetness_Index::CSAGA_Wetness_Index(void)
 //---------------------------------------------------------
 bool CSAGA_Wetness_Index::On_Execute(void)
 {
-	//-----------------------------------------------------
-	m_pDEM		= Parameters("DEM"     )->asGrid();
-	m_pSlope	= Parameters("SLOPE"   )->asGrid();
-	m_pArea		= Parameters("AREA"    )->asGrid();
-	m_pAreaMod	= Parameters("AREA_MOD")->asGrid();
-	m_pTWI		= Parameters("TWI"     )->asGrid();
+	m_pDEM   = Parameters("DEM"     )->asGrid();
+	m_pSlope = Parameters("SLOPE"   )->asGrid(); CSG_Grid Slope; if( !m_pSlope ) { m_pSlope = &Slope; Slope.Create(Get_System()); }
+	m_pArea  = Parameters("AREA"    )->asGrid(); CSG_Grid Area ; if( !m_pArea  ) { m_pArea  = &Area ; Area .Create(Get_System()); }
+	m_pAmod  = Parameters("AREA_MOD")->asGrid(); CSG_Grid Amod ; if( !m_pAmod  ) { m_pAmod  = &Amod ; Amod .Create(Get_System()); }
+	m_pTWI   = Parameters("TWI"     )->asGrid();
 
-	DataObject_Set_Colors(m_pArea   , 100, SG_COLORS_WHITE_BLUE);
-	DataObject_Set_Colors(m_pAreaMod, 100, SG_COLORS_WHITE_BLUE);
-	DataObject_Set_Colors(m_pSlope  , 100, SG_COLORS_YELLOW_RED);
-	DataObject_Set_Colors(m_pTWI    , 100, SG_COLORS_RED_GREY_BLUE);
+	DataObject_Set_Colors(m_pArea , 11, SG_COLORS_WHITE_BLUE     );
+	DataObject_Set_Colors(m_pAmod , 11, SG_COLORS_WHITE_BLUE     );
+	DataObject_Set_Colors(m_pSlope, 11, SG_COLORS_RED_GREEN, true);
+	DataObject_Set_Colors(m_pTWI  , 11, SG_COLORS_RED_GREY_BLUE  );
 
-	m_pSlope->Set_Unit		(_TL("radians"));
+	m_pSlope->Set_Unit(_TL("radians"));
 
 	if( !m_pDEM->Set_Index() )
 	{
@@ -260,33 +245,28 @@ double CSAGA_Wetness_Index::Get_Local_Maximum(CSG_Grid *pGrid, int x, int y)
 // Im Unterschied zu Freeman's urspruenglichen Verfahren
 // wird der Winkel (atan(dz / dx)) und nicht das Gefaelle
 // (dz / dx) fuer die Gewichtung der Abfluszanteile benutzt!
-
 //---------------------------------------------------------
 bool CSAGA_Wetness_Index::Get_Area(void)
 {
-	const double	MFD_Converge	= 1.1;
-
-	int		x, y, i, ix, iy;
-	double	z, d, dz[8], dzSum, Area, Slope;
-
-	CSG_Grid	*pWeight	= Parameters("WEIGHT")->asGrid();
+	const double MFD_Converge = 1.1;
 
 	//-----------------------------------------------------
 	Process_Set_Text(_TL("catchment area and slope..."));
 
-	m_pArea ->Assign(0.0);
-	m_pSlope->Assign(0.0);
-
 	m_Suction.Create(Get_System());
-	m_Suction.Assign(0.0);
+	m_Suction.Assign(0.);
+	m_pArea ->Assign(0.);
+	m_pSlope->Assign(0.);
 
-	double	Suction			= Parameters("SUCTION"     )->asDouble();
-	double	Slope_Weight	= Parameters("SLOPE_WEIGHT")->asDouble();
+	CSG_Grid *pWeight = Parameters("WEIGHT")->asGrid();
+
+	double    Suction = Parameters("SUCTION"     )->asDouble();
+	double    wSlope  = Parameters("SLOPE_WEIGHT")->asDouble();
 
 	//-----------------------------------------------------
 	for(sLong n=0; n<Get_NCells() && Set_Progress_NCells(n); n++)
 	{
-		m_pDEM->Get_Sorted(n, x, y, true, false);
+		int	x, y; m_pDEM->Get_Sorted(n, x, y, true, false);
 
 		if( m_pDEM->is_NoData(x, y) )
 		{
@@ -296,42 +276,41 @@ bool CSAGA_Wetness_Index::Get_Area(void)
 		}
 		else
 		{
-			m_pDEM->Get_Gradient(x, y, Slope, d);
+			double	Area, Slope, Aspect; m_pDEM->Get_Gradient(x, y, Slope, Aspect);
 
-			d	= pow(Suction, Slope_Weight * Slope);
-			m_Suction.Set_Value(x, y, pow(1.0 / d, exp(d)));
+		//	m_Suction.Set_Value(x, y, pow(1. / Suction, wSlope * Slope * exp(pow(Suction, wSlope * Slope)))); // original formula (boehner & selige 2006) is equivalent to following expression
+			double t = pow(Suction, wSlope * Slope); m_Suction.Set_Value(x, y, pow(1. / t, exp(t)));
 
-			Area	= m_pArea ->asDouble(x, y) + (!pWeight ? 1.0 : pWeight->is_NoData(x, y) ? 0.0 : pWeight->asDouble(x, y));
+			Area	= m_pArea ->asDouble(x, y) + (!pWeight ? 1. : pWeight->is_NoData(x, y) ? 0. : pWeight->asDouble(x, y));
 			Slope	= m_pSlope->asDouble(x, y) + Slope;
 
 			m_pArea ->Set_Value(x, y, Area);
 			m_pSlope->Set_Value(x, y, Slope / Area);
 
-			for(i=0, dzSum=0.0, z=m_pDEM->asDouble(x, y); i<8; i++)
+			//---------------------------------------------
+			double	d, dz[8], dzSum = 0., z = m_pDEM->asDouble(x, y);
+
+			for(int i=0, ix, iy; i<8; i++)
 			{
-				if( Get_System().Get_Neighbor_Pos(i, x, y, ix, iy) && !m_pDEM->is_NoData(ix, iy) && (d = z - m_pDEM->asDouble(ix, iy)) > 0.0 )
+				if( Get_System().Get_Neighbor_Pos(i, x, y, ix, iy) && !m_pDEM->is_NoData(ix, iy) && (d = z - m_pDEM->asDouble(ix, iy)) > 0. )
 				{
 					dzSum	+= (dz[i] = pow(atan(d / Get_Length(i)), MFD_Converge));
 				}
 				else
 				{
-					dz[i]	= 0.0;
+					dz[i]	= 0.;
 				}
 			}
 
-			if( dzSum > 0.0 )
+			//---------------------------------------------
+			if( dzSum > 0. )
 			{
-				for(i=0; i<8; i++)
+				for(int i=0, ix, iy; i<8; i++)
 				{
-					if( dz[i] > 0.0 )
+					if( dz[i] > 0. && Get_System().Get_Neighbor_Pos(i, x, y, ix, iy) )
 					{
-						ix		= Get_xTo(i, x);
-						iy		= Get_yTo(i, y);
-
-						d		= dz[i] / dzSum;
-
-						m_pArea ->Add_Value(ix, iy, d * Area);
-						m_pSlope->Add_Value(ix, iy, d * Slope);
+						m_pArea ->Add_Value(ix, iy, Area  * dz[i] / dzSum);
+						m_pSlope->Add_Value(ix, iy, Slope * dz[i] / dzSum);
 					}
 				}
 			}
@@ -339,7 +318,7 @@ bool CSAGA_Wetness_Index::Get_Area(void)
 	}
 
 	//-----------------------------------------------------
-	*m_pArea	*= m_pArea->Get_Cellarea();
+	m_pArea->Multiply(Get_Cellarea());
 
 	return( true );
 }
@@ -358,25 +337,20 @@ bool CSAGA_Wetness_Index::Get_Area(void)
 // Einzugsgebietsgroeße selbst stellt bereits einen Parameter
 // dar, der die raeumliche Relief-bedingte Feuchteverteilung
 // in guter Weise annaehert
-
 //---------------------------------------------------------
 bool CSAGA_Wetness_Index::Get_Modified(void)
 {
-	int			y;
-
-	CSG_Grid	Area(*m_pArea);
-
-	m_pAreaMod->Assign(m_pArea);
+	CSG_Grid Area(*m_pArea); m_pAmod->Assign(m_pArea);
 
 	//-----------------------------------------------------
-	int		nChanges	= 1;
+	int nChanges = 1;
 
 	for(int Iteration=1; nChanges && Process_Get_Okay(); Iteration++)
 	{
 		nChanges	= 0;
 
-		#pragma omp parallel for private(y) reduction(+:nChanges)
-		for(y=0; y<Get_NY(); y++)
+		#pragma omp parallel for reduction(+:nChanges)
+		for(int y=0; y<Get_NY(); y++)
 		{
 			Process_Get_Okay();
 
@@ -384,7 +358,7 @@ bool CSAGA_Wetness_Index::Get_Modified(void)
 			{
 				if( !m_Suction.is_NoData(x, y) )
 				{
-					double z	= m_Suction.asDouble(x, y) * Get_Local_Maximum(&Area, x, y);
+					double z = m_Suction.asDouble(x, y) * Get_Local_Maximum(&Area, x, y);
 
 					if( z > Area.asDouble(x, y) )
 					{
@@ -398,20 +372,20 @@ bool CSAGA_Wetness_Index::Get_Modified(void)
 
 		if( nChanges > 0 )
 		{
-			nChanges	= 0;
+			nChanges = 0;
 
-			#pragma omp parallel for private(y)
-			for(y=0; y<Get_NY(); y++)
+			#pragma omp parallel for
+			for(int y=0; y<Get_NY(); y++)
 			{
 				Process_Get_Okay();
 
 				for(int x=0; x<Get_NX(); x++)
 				{
-					if( Area.asDouble(x, y) != m_pAreaMod->asDouble(x, y) )
+					if( Area.asDouble(x, y) != m_pAmod->asDouble(x, y) )
 					{
 						nChanges++;
 
-						m_pAreaMod->Set_Value(x, y, Area.asDouble(x, y));
+						m_pAmod->Set_Value(x, y, Area.asDouble(x, y));
 					}
 				}
 			}
@@ -423,8 +397,8 @@ bool CSAGA_Wetness_Index::Get_Modified(void)
 	//-----------------------------------------------------
 	Process_Set_Text(_TL("post-processing..."));
 
-	#pragma omp parallel for private(y)
-	for(y=0; y<Get_NY(); y++)
+	#pragma omp parallel for
+	for(int y=0; y<Get_NY(); y++)
 	{
 		Process_Get_Okay();
 
@@ -434,7 +408,7 @@ bool CSAGA_Wetness_Index::Get_Modified(void)
 			{
 				bool	bModify	= false;
 				int		n		= 0;
-				double	z		= 0.0;
+				double	z		= 0.;
 
 				for(int iy=y-1; iy<=y+1; iy++)
 				{
@@ -453,11 +427,11 @@ bool CSAGA_Wetness_Index::Get_Modified(void)
 					}
 				}
 
-				m_pAreaMod->Set_Value(x, y, bModify ? z / n : Area.asDouble(x, y));
+				m_pAmod->Set_Value(x, y, bModify ? z / n : Area.asDouble(x, y));
 			}
 			else
 			{
-				m_pAreaMod->Set_NoData(x, y);
+				m_pAmod->Set_NoData(x, y);
 			}
 		}
 	}
@@ -488,35 +462,34 @@ bool CSAGA_Wetness_Index::Get_TWI(void)
 
 		for(int x=0; x<Get_NX(); x++)
 		{
-			if( m_pAreaMod->is_NoData(x, y) || m_pSlope->is_NoData(x, y) )
+			if( m_pAmod->is_NoData(x, y) || m_pSlope->is_NoData(x, y) )
 			{
 				m_pTWI->Set_NoData(x, y);
 			}
 			else
 			{
-				double	s, a;
+				double	Slope, Aspect, Area;
 
 				if( Slope_Type == 1 )
 				{
-					s	= m_pSlope->asDouble(x, y);
+					Slope	= m_pSlope->asDouble(x, y);
 				}
 				else
 				{
-					m_pDEM->Get_Gradient(x, y, s, a);
+					m_pDEM->Get_Gradient(x, y, Slope, Aspect);
 				}
 
-				s	= s + Slope_Off;
-				s	= 6 * tan(Slope_Min < s ? s : Slope_Min);
+				Slope	= tan(M_GET_MAX(Slope_Min, Slope + Slope_Off));
 
-				a	= m_pAreaMod->asDouble(x, y);
+				Area	= m_pAmod->asDouble(x, y);
 
 				switch( Area_Type )
 				{
-				case 1:	a	= sqrt(a);				break;	// square root of catchment area
-				case 2:	a	= a / Get_Cellsize();	break;	// specific catchment area
+				case 1:	Area = sqrt(Area)           ; break; // square root of catchment area
+				case 2:	Area = Area / Get_Cellsize(); break; // specific catchment area
 				}
 
-				m_pTWI->Set_Value(x, y, log(a / s));
+				m_pTWI->Set_Value(x, y, log(Area / Slope));
 			}
 		}
 	}

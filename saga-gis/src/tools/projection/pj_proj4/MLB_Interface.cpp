@@ -48,15 +48,6 @@
 ///////////////////////////////////////////////////////////
 
 //---------------------------------------------------------
-
-
-///////////////////////////////////////////////////////////
-//														 //
-//           The Tool Link Library Interface             //
-//														 //
-///////////////////////////////////////////////////////////
-
-//---------------------------------------------------------
 // 1. Include the appropriate SAGA-API header...
 
 #include "crs_transform.h"
@@ -76,7 +67,7 @@ CSG_String Get_Info(int i)
 		return( _TL("Projection") );
 
 	case TLB_INFO_Author:
-		return( SG_T("O. Conrad (c) 2004-14") );
+		return( "O. Conrad (c) 2004-21" );
 
 	case TLB_INFO_Description:
 		return( CSG_CRSProjector::Get_Description() );
@@ -99,15 +90,17 @@ CSG_String Get_Info(int i)
 #include "crs_transform_grid.h"
 #include "crs_transform_point.h"
 #include "crs_transform_utm.h"
+#include "crs_transform_coords.h"
 
 #include "gcs_lon_range.h"
-
 #include "gcs_graticule.h"
+#include "gcs_rotated_grid.h"
 
 #include "crs_indicatrix.h"
 #include "crs_grid_geogcoords.h"
-
 #include "crs_distance.h"
+
+#include "globe_gores.h"
 
 
 //---------------------------------------------------------
@@ -134,8 +127,8 @@ CSG_Tool *		Create_Tool(int i)
 	case 15:	return( new CCRS_Picker() );
 
 	case 13:	return( new CGCS_Grid_Longitude_Range() );
-
 	case 14:	return( new CGCS_Graticule() );
+	case 18:	return( new CGCS_Rotated_Grid() );
 
 	case 16:	return( new CCRS_Indicatrix() );
 	case 17:	return( new CCRS_Grid_GeogCoords() );
@@ -143,7 +136,12 @@ CSG_Tool *		Create_Tool(int i)
 	case 21:	return( new CCRS_Distance_Points() );
 	case 22:	return( new CCRS_Distance_Interactive() );
 
-	case 30:	return( NULL );
+	case 30:	return( new CCRS_Transform_Coords_Grid () );
+	case 31:	return( new CCRS_Transform_Coords_Table() );
+
+	case 32:	return( new CGlobe_Gores() );
+
+	case 33:	return( NULL );
 	default:	return( TLB_INTERFACE_SKIP_TOOL );
 	}
 }

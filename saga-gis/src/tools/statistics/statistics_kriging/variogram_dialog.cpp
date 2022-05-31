@@ -1,6 +1,3 @@
-/**********************************************************
- * Version $Id: variogram_dialog.cpp 1921 2014-01-09 10:24:11Z oconrad $
- *********************************************************/
 
 ///////////////////////////////////////////////////////////
 //                                                       //
@@ -9,14 +6,13 @@
 //      System for Automated Geoscientific Analyses      //
 //                                                       //
 //                     Tool Library                      //
-//            geostatistics_kriging_variogram            //
+//                  statistics_kriging                   //
 //                                                       //
 //-------------------------------------------------------//
 //                                                       //
-//                 Variogram_Dialog.cpp                  //
+//                 variogram_dialog.cpp                  //
 //                                                       //
-//                 Copyright (C) 2008 by                 //
-//                      Olaf Conrad                      //
+//                 Olaf Conrad (C) 2008                  //
 //                                                       //
 //-------------------------------------------------------//
 //                                                       //
@@ -51,15 +47,6 @@
 ///////////////////////////////////////////////////////////
 
 //---------------------------------------------------------
-
-
-///////////////////////////////////////////////////////////
-//														 //
-//														 //
-//														 //
-///////////////////////////////////////////////////////////
-
-//---------------------------------------------------------
 #include <wx/dcmemory.h>
 
 #include "variogram_dialog.h"
@@ -72,62 +59,57 @@
 ///////////////////////////////////////////////////////////
 
 //---------------------------------------------------------
-CSG_Variogram::CSG_Variogram(void)
-{}
-
-//---------------------------------------------------------
-bool CSG_Variogram::Calculate(CSG_Shapes *pPoints, int Attribute, bool bLog, CSG_Table *pVariogram, int nClasses, double maxDistance, int nSkip)
+bool CSG_Variogram::Calculate(const CSG_Matrix &Points, CSG_Table *pVariogram, int nClasses, double maxDistance, int nSkip)
 {
-	int		i, n;
+	if( nClasses < 2 )
+	{
+		return( false );
+	}
 
-	//-----------------------------------------------------
+	if( maxDistance <= 0. && (maxDistance = Get_Diagonal(Points)) <= 0. )	// bounding box' diagonal
+	{
+		return( false );
+	}
+
 	if( nSkip < 1 )
 	{
-		nSkip		= 1;
+		nSkip	= 1;
 	}
 
-	if( maxDistance <= 0.0 || maxDistance > SG_Get_Length(pPoints->Get_Extent().Get_XRange(), pPoints->Get_Extent().Get_YRange()) )
-	{
-		maxDistance	= SG_Get_Length(pPoints->Get_Extent().Get_XRange(), pPoints->Get_Extent().Get_YRange());	// bounding box' diagonal
-	}
-
-	double	lagDistance	= maxDistance / nClasses;
-
+	//-----------------------------------------------------
 	CSG_Vector	Count   (nClasses);
 	CSG_Vector	Variance(nClasses);
 
+	double	lagDistance	= maxDistance / nClasses;
+
 	//-----------------------------------------------------
-	for(i=0, n=0; i<pPoints->Get_Count()-nSkip && SG_UI_Process_Set_Progress(n, SG_Get_Square(pPoints->Get_Count()/nSkip)/2); i+=nSkip)
+	for(int i=0, n=0; i<Points.Get_NRows() - nSkip && SG_UI_Process_Set_Progress(n, 0.5 * SG_Get_Square(Points.Get_NRows() / nSkip)); i+=nSkip)
 	{
-		CSG_Shape	*pPoint	= pPoints->Get_Shape(i);
+		CSG_Vector	Point	= Points.Get_Row(i);
 
-		if( !pPoint->is_NoData(Attribute) )
+		for(int j=i+nSkip; j<Points.Get_NRows(); j+=nSkip, n++)
 		{
-			TSG_Point	p	= pPoint->Get_Point(0);
-			double		z	= bLog ? log(pPoint->asDouble(Attribute)) : pPoint->asDouble(Attribute);
+			CSG_Vector	d = Point - Points.Get_Row(j); int	k; double v;
 
-			for(int j=i+nSkip; j<pPoints->Get_Count(); j+=nSkip, n++)
+			switch( d.Get_N() )
 			{
-				pPoint	= pPoints->Get_Shape(j);
+			case  3: k = (int)(sqrt(d[0]*d[0] + d[1]*d[1]            ) / lagDistance); v = d[2]; break;
+			case  4: k = (int)(sqrt(d[0]*d[0] + d[1]*d[1] + d[2]*d[2]) / lagDistance); v = d[3]; break;
+			default: k = nClasses;
+			}
 
-				if( !pPoint->is_NoData(Attribute) )
-				{
-					int	k	= (int)(SG_Get_Distance(p, pPoint->Get_Point(0)) / lagDistance);
-
-					if( k < nClasses )
-					{
-						Count	[k]	++;
-						Variance[k]	+= SG_Get_Square((bLog ? log(pPoint->asDouble(Attribute)) : pPoint->asDouble(Attribute)) - z);
-					}
-				}
+			if( k < nClasses )
+			{
+				Count	[k]	++;
+				Variance[k]	+= v*v;
 			}
 		}
 	}
 
 	//-----------------------------------------------------
+	CSG_String	Name(pVariogram->Get_Name());	// keep current name
 	pVariogram->Destroy();
-
-	pVariogram->Fmt_Name("%s [%s]", _TL("Variogram"), pPoints->Get_Name());
+	pVariogram->Set_Name(Name);
 
 	pVariogram->Add_Field(_TL("Class"   ), SG_DATATYPE_Int   );	// FIELD_CLASS
 	pVariogram->Add_Field(_TL("Distance"), SG_DATATYPE_Double);	// FIELD_DISTANCE
@@ -136,14 +118,14 @@ bool CSG_Variogram::Calculate(CSG_Shapes *pPoints, int Attribute, bool bLog, CSG
 	pVariogram->Add_Field(_TL("Var.cum."), SG_DATATYPE_Double);	// FIELD_VAR_CUM
 	pVariogram->Add_Field(_TL("Model"   ), SG_DATATYPE_Double);	// FIELD_VAR_MODEL
 
-	double	z	= 0.0;
+	double	v	= 0.;
 
-	for(i=0, n=0; i<nClasses; i++)
+	for(int i=0, n=0; i<nClasses; i++)
 	{
 		if( Count[i] > 0 )
 		{
 			n	+= (int)Count[i];
-			z	+= Variance[i];
+			v	+= Variance[i];
 
 			CSG_Table_Record	*pRecord	= pVariogram->Add_Record();
 
@@ -151,7 +133,7 @@ bool CSG_Variogram::Calculate(CSG_Shapes *pPoints, int Attribute, bool bLog, CSG
 			pRecord->Set_Value(FIELD_DISTANCE, (i + 1) * lagDistance);
 			pRecord->Set_Value(FIELD_COUNT   , Count[i]);
 			pRecord->Set_Value(FIELD_VAR_EXP , 0.5 * Variance[i] / Count[i]);
-			pRecord->Set_Value(FIELD_VAR_CUM , 0.5 * z / n);
+			pRecord->Set_Value(FIELD_VAR_CUM , 0.5 * v / n);
 		}
 	}
 
@@ -160,34 +142,93 @@ bool CSG_Variogram::Calculate(CSG_Shapes *pPoints, int Attribute, bool bLog, CSG
 }
 
 //---------------------------------------------------------
-double CSG_Variogram::Get_Lag_Distance(CSG_Shapes *pPoints, int Method, int nSkip)
+bool CSG_Variogram::Get_Extent(const CSG_Matrix &Points, CSG_Matrix &Extent)
+{
+	CSG_Simple_Statistics	s;
+
+	switch( Points.Get_NCols() )
+	{
+	case  4:
+		Extent.Create(2, 3);
+
+		s.Create(Points.Get_Col(0)); Extent[0][0] = s.Get_Minimum(); Extent[0][1] = s.Get_Maximum();
+		s.Create(Points.Get_Col(1)); Extent[1][0] = s.Get_Minimum(); Extent[1][1] = s.Get_Maximum();
+		s.Create(Points.Get_Col(2)); Extent[2][0] = s.Get_Minimum(); Extent[2][1] = s.Get_Maximum();
+
+		return( true );
+
+	case  3:
+		Extent.Create(2, 2);
+
+		s.Create(Points.Get_Col(0)); Extent[0][0] = s.Get_Minimum(); Extent[0][1] = s.Get_Maximum();
+		s.Create(Points.Get_Col(1)); Extent[1][0] = s.Get_Minimum(); Extent[1][1] = s.Get_Maximum();
+
+		return( true );
+	}
+
+	return( false );
+}
+
+//---------------------------------------------------------
+double CSG_Variogram::Get_Diagonal(const CSG_Matrix &Points)
+{
+	double	d	= 0.;	CSG_Simple_Statistics	s;
+
+	switch( Points.Get_NCols() )
+	{
+	case  4:
+		s.Create(Points.Get_Col(2)); d += SG_Get_Square(s.Get_Range());
+	case  3:
+		s.Create(Points.Get_Col(1)); d += SG_Get_Square(s.Get_Range());
+		s.Create(Points.Get_Col(0)); d += SG_Get_Square(s.Get_Range());
+		break;
+
+	default:
+		return( 0. );
+	}
+
+	return( sqrt(d) );
+}
+
+//---------------------------------------------------------
+double CSG_Variogram::Get_Lag_Distance(const CSG_Matrix &Points, int Method, int nSkip)
 {
 	if( Method == 0 )
 	{
-		CSG_PRQuadTree			QT(pPoints, 0);
-		CSG_Simple_Statistics	s;
-
 		if( nSkip < 1 )	{	nSkip	= 1;	}
 
-		for(int iPoint=0; iPoint<pPoints->Get_Count() && ::SG_UI_Process_Set_Progress(iPoint, pPoints->Get_Count()); iPoint+=nSkip)
+		CSG_Simple_Statistics	s;	size_t	Index[2];	double	Distance[2];
+
+		switch( Points.Get_NCols() )
 		{
-			TSG_Point	p	= pPoints->Get_Shape(iPoint)->Get_Point(0);
-
-			double	x, y, z;
-
-			if( QT.Select_Nearest_Points(p.x, p.y, 2) && QT.Get_Selected_Point(1, x, y, z) && (x != p.x || y != p.y) )
+		case  3: {	CSG_KDTree_2D	Search(Points);
+			for(int i=0; i<Points.Get_NRows(); i+=nSkip)
 			{
-				s.Add_Value(SG_Get_Distance(x, y, p.x, p.y));
+				if( Search.Get_Nearest_Points(Points[i], 2, Index, Distance) == 2 && Distance[1] > 0. )
+				{
+					s	+= Distance[1];
+				}
 			}
+			break;	}
+
+		case  4: {	CSG_KDTree_3D	Search(Points);
+			for(int i=0; i<Points.Get_NRows(); i+=nSkip)
+			{
+				if( Search.Get_Nearest_Points(Points[i], 2, Index, Distance) == 2 && Distance[1] > 0. )
+				{
+					s	+= Distance[1];
+				}
+			}
+			break;	}
 		}
 
-		if( s.Get_Count() > 0 && s.Get_Mean() > 0.0 )
+		if( s.Get_Count() > 0 && s.Get_Mean() > 0. )
 		{
 			return( s.Get_Mean() );
 		}
 	}
 
-	return( 0.25 * sqrt((pPoints->Get_Extent().Get_XRange() * pPoints->Get_Extent().Get_YRange()) / pPoints->Get_Count()) );
+	return( 0.25 * Get_Diagonal(Points) / Points.Get_NRows() );
 }
 
 
@@ -374,7 +415,8 @@ CVariogram_Dialog::CVariogram_Dialog(void)
 {
 	m_pPoints		= NULL;
 	m_nPoints		= 0;
-	m_Attribute		= 0;
+	m_Field			= 0;
+	m_zField		= -2;
 	m_pVariogram	= NULL;
 	m_pModel		= NULL;
 	m_Distance		= -1;
@@ -382,12 +424,15 @@ CVariogram_Dialog::CVariogram_Dialog(void)
 	//-----------------------------------------------------
 	wxArrayString	Formulas;
 
-	Formulas.Add("linear"            );
 	Formulas.Add("linear (no nugget)");
+	Formulas.Add("linear"            );
+	Formulas.Add("power"             );
 	Formulas.Add("square root"       );
 	Formulas.Add("logarithmic"       );
 	Formulas.Add("exponential"       );
+	Formulas.Add("stable (0 < k < 2)");
 	Formulas.Add("gaussian"          );
+	Formulas.Add("cubic"             );
 	Formulas.Add("spherical"         );
 
 	//-----------------------------------------------------
@@ -396,14 +441,14 @@ CVariogram_Dialog::CVariogram_Dialog(void)
 
 	Add_Spacer(); m_pSettings   = Add_Button  (_TL("Settings"              ), wxID_ANY);
 	Add_Spacer(); m_pPairs      = Add_CheckBox(_TL("Number of Pairs"       ), false);
-	Add_Spacer(); m_pFormulas   = Add_Choice  (_TL("Predefined Functions"  ), Formulas, 0);
+	Add_Spacer(); m_pFormulas   = Add_Choice  (_TL("Predefined Functions"  ), Formulas, 1);
 	Add_Spacer(); m_pDistance   = Add_Slider  (_TL("Function Fitting Range"), 1, 0, 1);
 	Add_Spacer(); m_pSummary    = Add_TextCtrl(_TL("Summary"               ), wxTE_MULTILINE|wxTE_READONLY);
 
 	//-----------------------------------------------------
 	Add_Output(
 		m_pDiagram = new CVariogram_Diagram(this),
-		m_pFormula = new wxTextCtrl(this, wxID_ANY, Get_Formula(0), wxDefaultPosition, wxDefaultSize, wxTE_PROCESS_ENTER),
+		m_pFormula = new wxTextCtrl(this, wxID_ANY, Get_Formula(1), wxDefaultPosition, wxDefaultSize, wxTE_PROCESS_ENTER),
 		1, 0
 	);
 
@@ -417,27 +462,23 @@ CVariogram_Dialog::CVariogram_Dialog(void)
 }
 
 //---------------------------------------------------------
-bool CVariogram_Dialog::Execute(CSG_Shapes *pPoints, int Attribute, bool bLog, CSG_Table *pVariogram, CSG_Trend *pModel)
+bool CVariogram_Dialog::Execute(const CSG_Matrix &Points, CSG_Table *pVariogram, CSG_Trend *pModel)
 {
-	if( m_pPoints != pPoints || m_nPoints != pPoints->Get_Count() || !m_Extent.is_Equal(pPoints->Get_Extent()) )
+	if( m_pPoints != &Points || m_nPoints != Points.Get_NRows() || m_Diagonal != CSG_Variogram::Get_Diagonal(Points) )
 	{
-		m_pPoints	= pPoints;
-		m_nPoints	= pPoints->Get_Count();
-		m_Extent	= pPoints->Get_Extent();
-		m_Distance	= -1;
+		m_pPoints	= &Points;
+		m_nPoints	= Points.Get_NRows();
 
-		int	nSkip	= 1 + m_pPoints->Get_Count() / 10000;
+		m_Diagonal	= CSG_Variogram::Get_Diagonal(Points);
 
-		m_Settings("SKIP"   )->Set_Value(nSkip);
-		m_Settings("LAGDIST")->Set_Value(CSG_Variogram::Get_Lag_Distance(m_pPoints, 0, nSkip));
-		m_Settings("MAXDIST")->Set_Value(0.5 * sqrt(SG_Get_Square(m_pPoints->Get_Extent().Get_XRange()) + SG_Get_Square(m_pPoints->Get_Extent().Get_YRange())));
+		m_Settings("SKIP"   )->Set_Value(1 + m_nPoints / 10000);
+		m_Settings("LAGDIST")->Set_Value(CSG_Variogram::Get_Lag_Distance(Points, 0, m_Settings("SKIP")->asInt()));
+		m_Settings("MAXDIST")->Set_Value(m_Diagonal * 0.5);
 	}
 
-	m_Attribute		= Attribute;
-	m_bLog			= bLog;
 	m_pVariogram	= pVariogram;
 	m_pModel		= pModel;
-	m_Distance		= -1.0;
+	m_Distance		= -1.;
 
 	m_pDiagram->Initialize(m_pModel, m_pVariogram);
 
@@ -484,16 +525,14 @@ void CVariogram_Dialog::Set_Variogram(void)
 	double	lagDist	= m_Settings("LAGDIST")->asDouble();
 	double	maxDist	= m_Settings("MAXDIST")->asDouble();
 
-	if( lagDist > 0.0 )
+	if( lagDist > 0. )
 	{
-		double	Diagonal	= SG_Get_Length(m_pPoints->Get_Extent().Get_XRange(), m_pPoints->Get_Extent().Get_YRange());	// bounding box's diagonal
-
-		if( maxDist <= 0.0 || maxDist > Diagonal )
+		if( maxDist <= 0. || maxDist > m_Diagonal )
 		{
-			m_Settings("MAXDIST")->Set_Value(maxDist = Diagonal);
+			m_Settings("MAXDIST")->Set_Value(maxDist = m_Diagonal);
 		}
 
-		CSG_Variogram::Calculate(m_pPoints, m_Attribute, m_bLog, m_pVariogram,
+		CSG_Variogram::Calculate(*m_pPoints, m_pVariogram,
 			1 + (int)(0.5 + maxDist / lagDist), maxDist, m_Settings("SKIP")->asInt()
 		);
 
@@ -574,13 +613,16 @@ const char * CVariogram_Dialog::Get_Formula(int Index)
 {
 	switch( Index )
 	{
-	default: return( "a + b * x"                                                                    );	// linear
-	case  1: return( "b * x"                                                                        );	// linear (no nugget)
-	case  2: return( "a + b * sqrt(x)"                                                              );	// square root
-	case  3: return( "a + b * ln(1 + x)"                                                            );	// logarithmic
-	case  4: return( "n + (s - n) * (1 - exp(-(x / r)); n=n; s=s; r=r"                              );	// exponential
-	case  5: return( "n + (s - n) * (1 - exp(-(x / r)^2)); n=n; s=s; r=r"                           );	// gaussian
-	case  6: return( "n + (s - n) * ifelse(x > r, 1, 1.5 * x / r - 0.5 * x^3 / r^3); n=n; s=s; r=r" );	// spherical
+	default: return(     "b * x"                                                                                 );	// linear (no nugget)
+	case  1: return( "a + b * x"                                                                                 );	// linear
+	case  2: return( "a + b * x^k"                                                                               );	// power
+	case  3: return( "a + b * sqrt(x)"                                                                           );	// square root
+	case  4: return( "a + b * ln(1 + x)"                                                                         );	// logarithmic
+	case  5: return( "n + (s-n) * (1 - exp(-k * x/r)); n=n; s=s; r=r; k=3"                                       );	// exponential
+	case  6: return( "n + (s-n) * (1 - exp(-(x/r)^k)); n=n; s=s; r=r; k=1"                                       );	// stable (0 < k <= 2), a.k.a. powered exponential
+	case  7: return( "n + (s-n) * (1 - exp(-(x/r)^2)); n=n; s=s; r=r"                                            );	// gaussian
+	case  8: return( "n + (s-n) * ifelse(x>r, 1, 7*d^2 - 8.75*d^3 + 3.5*d^5 - 0.75*d^7); n=n; s=s; r=r; d=(x/r)" );	// cubic
+	case  9: return( "n + (s-n) * ifelse(x>r, 1, 1.5*d - 0.5*d^3); n=n; s=s; r=r; d=(x/r)"                       );	// spherical
 	}
 }
 
@@ -606,7 +648,7 @@ CSG_String CVariogram_Dialog::Get_Formula(void)
 			{
 				CSG_String	tmp;
 
-				for(int i=0, n=Formula.Length()-1; i<Formula.Length(); i++)
+				for(size_t i=0, n=Formula.Length()-1; i<Formula.Length(); i++)
 				{
 					if( Formula[i] == var[0]
 					&& !(i > 0 && isalpha(Formula[i - 1]))

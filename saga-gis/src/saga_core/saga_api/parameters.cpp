@@ -1,6 +1,3 @@
-/**********************************************************
- * Version $Id$
- *********************************************************/
 
 ///////////////////////////////////////////////////////////
 //                                                       //
@@ -53,17 +50,9 @@
 ///////////////////////////////////////////////////////////
 
 //---------------------------------------------------------
-
-
-///////////////////////////////////////////////////////////
-//														 //
-//														 //
-//														 //
-///////////////////////////////////////////////////////////
-
-//---------------------------------------------------------
 #include "parameters.h"
 #include "data_manager.h"
+#include "tool.h"
 
 
 ///////////////////////////////////////////////////////////
@@ -87,6 +76,14 @@ CSG_Parameters::CSG_Parameters(const CSG_Parameters &Parameters)
 }
 
 //---------------------------------------------------------
+CSG_Parameters::CSG_Parameters(const SG_Char *Name, const SG_Char *Description, const SG_Char *Identifier, bool bGrid_System)
+{
+	_On_Construction();
+
+	Create(Name, Description, Identifier, bGrid_System);
+}
+
+//---------------------------------------------------------
 CSG_Parameters::CSG_Parameters(void *pOwner, const SG_Char *Name, const SG_Char *Description, const SG_Char *Identifier, bool bGrid_System)
 {
 	_On_Construction();
@@ -103,24 +100,22 @@ CSG_Parameters::~CSG_Parameters(void)
 
 ///////////////////////////////////////////////////////////
 //														 //
-//														 //
-//														 //
 ///////////////////////////////////////////////////////////
 
 //---------------------------------------------------------
 void CSG_Parameters::_On_Construction(void)
 {
-	m_pOwner			= NULL;
+	m_pOwner		= NULL;
+	m_pTool			= NULL;
+	m_pManager		= &SG_Get_Data_Manager();
 
-	m_pManager			= &SG_Get_Data_Manager();
+	m_Parameters	= NULL;
+	m_nParameters	= 0;
 
-	m_Parameters		= NULL;
-	m_nParameters		= 0;
+	m_Callback		= NULL;
+	m_bCallback		= true;
 
-	m_Callback			= NULL;
-	m_bCallback			= true;
-
-	m_pGrid_System		= NULL;
+	m_pGrid_System	= NULL;
 }
 
 //---------------------------------------------------------
@@ -129,13 +124,14 @@ bool CSG_Parameters::Create(const CSG_Parameters &Parameters)
 	Destroy();
 
 	m_pOwner		= Parameters.m_pOwner;
+	m_pTool			= Parameters.m_pTool;
 	m_pManager		= Parameters.m_pManager;
 
 	m_Callback		= Parameters.m_Callback;
 	m_bCallback		= Parameters.m_bCallback;
 
-	Set_Identifier	(Parameters.Get_Identifier());
-	Set_Name		(Parameters.Get_Name());
+	Set_Identifier	(Parameters.Get_Identifier ());
+	Set_Name		(Parameters.Get_Name       ());
 	Set_Description	(Parameters.Get_Description());
 
 	//-----------------------------------------------------
@@ -153,28 +149,40 @@ bool CSG_Parameters::Create(const CSG_Parameters &Parameters)
 }
 
 //---------------------------------------------------------
-bool CSG_Parameters::Create(void *pOwner, const SG_Char *Name, const SG_Char *Description, const SG_Char *Identifier, bool bGrid_System)
+bool CSG_Parameters::Create(const SG_Char *Name, const SG_Char *Description, const SG_Char *Identifier, bool bGrid_System)
 {
 	Destroy();
 
-	m_pOwner		= pOwner;
-
-	Set_Identifier	(Identifier);
-	Set_Name		(Name);
-	Set_Description	(Description);
+	Set_Identifier (Identifier);
+	Set_Name       (Name);
+	Set_Description(Description ? Description : SG_T(""));
 
 	if( bGrid_System )
 	{
-		m_pGrid_System	= Add_Grid_System("", "PARAMETERS_GRID_SYSTEM", _TL("Grid system"), _TL(""));
+		Use_Grid_System();
 	}
 
 	return( true );
 }
 
 //---------------------------------------------------------
+bool CSG_Parameters::Create(void *pOwner, const SG_Char *Name, const SG_Char *Description, const SG_Char *Identifier, bool bGrid_System)
+{
+	if( Create(Name, Description, Identifier, bGrid_System) )
+	{
+		m_pOwner	= pOwner;
+
+		return( true );
+	}
+
+	return( false );
+}
+
+//---------------------------------------------------------
 void CSG_Parameters::Destroy(void)
 {
 	m_pOwner		= NULL;
+	m_pTool			= NULL;
 	m_pGrid_System	= NULL;
 
 	Del_Parameters();
@@ -184,8 +192,6 @@ void CSG_Parameters::Destroy(void)
 
 
 ///////////////////////////////////////////////////////////
-//														 //
-//														 //
 //														 //
 ///////////////////////////////////////////////////////////
 
@@ -208,6 +214,34 @@ void CSG_Parameters::Set_Manager(CSG_Data_Manager *pManager)
 			m_Parameters[i]->asParameters()->Set_Manager(pManager);
 		}
 	}
+}
+
+//---------------------------------------------------------
+/**
+* Let parameters list provide a default grid system after construction.
+*/
+//---------------------------------------------------------
+bool CSG_Parameters::Use_Grid_System(void)
+{
+	if( !m_pGrid_System )
+	{
+		m_pGrid_System	= Add_Grid_System("", "PARAMETERS_GRID_SYSTEM", _TL("Grid System"), _TL(""));
+
+		return( true );
+	}
+
+	return( false );
+}
+
+//---------------------------------------------------------
+/**
+* If parameters are owned by a tool the function returns the
+* tool's GUI mode, or the presence of a GUI frame otherwise.
+*/
+//---------------------------------------------------------
+bool CSG_Parameters::has_GUI(void) const
+{
+	return( Get_Tool() ? Get_Tool()->has_GUI() : SG_UI_Get_Window_Main() != NULL );
 }
 
 //---------------------------------------------------------
@@ -270,16 +304,30 @@ void CSG_Parameters::Add_Reference(const CSG_String &Authors, const CSG_String &
 	{
 		m_References	+= Reference;
 	}
+
+	m_References.Sort();
 }
 
 //---------------------------------------------------------
 /**
-  * Add a reference to the list of references.
+* Add a reference to the list of references.
 */
 //---------------------------------------------------------
 void CSG_Parameters::Add_Reference(const CSG_String &Link, const SG_Char *Link_Text)
 {
 	m_References	+= CSG_String::Format("<a href=\"%s\">%s</a>", Link.c_str(), Link_Text && *Link_Text ? Link_Text : Link.c_str());
+
+	m_References.Sort();
+}
+
+//---------------------------------------------------------
+/**
+* Delete all references.
+*/
+//---------------------------------------------------------
+void CSG_Parameters::Del_References(void)
+{
+	m_References.Clear();
 }
 
 //---------------------------------------------------------
@@ -312,8 +360,6 @@ void CSG_Parameters::Set_Enabled(const CSG_String &Identifier, bool bEnabled)
 
 
 ///////////////////////////////////////////////////////////
-//														 //
-//														 //
 //														 //
 ///////////////////////////////////////////////////////////
 
@@ -371,6 +417,11 @@ CSG_Parameter * CSG_Parameters::Add_Degree(const CSG_String &ParentID, const CSG
 
 CSG_Parameter * CSG_Parameters::Add_Date  (const CSG_String &ParentID, const CSG_String &ID, const CSG_String &Name, const CSG_String &Description, double Value)	// Julian Day Number
 {
+	if( !Value )
+	{
+		Value	= CSG_DateTime::Now().Get_JDN();
+	}
+
 	return( Add_Value(ParentID, ID, Name, Description, PARAMETER_TYPE_Date  , Value) );
 }
 
@@ -569,7 +620,7 @@ CSG_Parameter * CSG_Parameters::Add_Grid_List(const CSG_String &ParentID, const 
 	{
 		SystemID	= pParent->Get_Identifier();
 	}
-	else if( bSystem_Dependent && m_pGrid_System && (Constraint & PARAMETER_INPUT) )
+	else if( bSystem_Dependent && m_pGrid_System && !((Constraint & PARAMETER_OUTPUT) && (Constraint & PARAMETER_OPTIONAL)) )
 	{
 		SystemID	= m_pGrid_System->Get_Identifier();
 	}
@@ -635,7 +686,7 @@ CSG_Parameter * CSG_Parameters::Add_Grids_List(const CSG_String &ParentID, const
 	{
 		SystemID	= pParent->Get_Identifier();
 	}
-	else if( bSystem_Dependent && m_pGrid_System && (Constraint & PARAMETER_INPUT) )
+	else if( bSystem_Dependent && m_pGrid_System && !((Constraint & PARAMETER_OUTPUT) && (Constraint & PARAMETER_OPTIONAL)) )
 	{
 		SystemID	= m_pGrid_System->Get_Identifier();
 	}
@@ -856,7 +907,8 @@ CSG_Parameter * CSG_Parameters::Add_Parameters(const CSG_String &ParentID, const
 
 	pParameter	= _Add(ParentID, ID, Name, Description, PARAMETER_TYPE_Parameters, 0);
 
-	pParameter->asParameters()->m_Callback	= m_Callback;
+	pParameter->asParameters()->m_Callback = m_Callback;
+	pParameter->asParameters()->m_pTool    = m_pTool;
 
 	return( pParameter );
 }
@@ -885,6 +937,8 @@ CSG_Parameter * CSG_Parameters::_Add_Value(const CSG_String &ParentID, const CSG
 
 	CSG_Parameter	*pParameter	= _Add(ParentID, ID, Name, Description, Type, bInformation ? PARAMETER_INFORMATION : 0);
 
+	bool	bCallback	= Set_Callback(false);
+
 	if( !bInformation )
 	{
 		if( Type == PARAMETER_TYPE_Int
@@ -896,8 +950,8 @@ CSG_Parameter * CSG_Parameters::_Add_Value(const CSG_String &ParentID, const CSG
 		}
 	}
 
-	bool	bCallback	= Set_Callback(false);
-	pParameter->Set_Value  (Value);
+	pParameter->Set_Value(Value);
+
 	Set_Callback(bCallback);
 
 	if( !bInformation )
@@ -1243,9 +1297,11 @@ bool CSG_Parameters::_On_Parameter_Changed(CSG_Parameter *pParameter, int Flags)
 {
 	if( m_Callback && m_bCallback )
 	{
-		Set_Callback(false);
+		bool	bCallback	= Set_Callback(false);
+
 		m_Callback(pParameter, Flags);
-		Set_Callback(true);
+
+		Set_Callback(bCallback);
 
 		return( true );
 	}
@@ -1255,8 +1311,6 @@ bool CSG_Parameters::_On_Parameter_Changed(CSG_Parameter *pParameter, int Flags)
 
 
 ///////////////////////////////////////////////////////////
-//														 //
-//														 //
 //														 //
 ///////////////////////////////////////////////////////////
 
@@ -1333,13 +1387,13 @@ bool CSG_Parameters::Set_Parameter(const wchar_t    *ID, const wchar_t *Value, i
 
 ///////////////////////////////////////////////////////////
 //														 //
-//														 //
-//														 //
 ///////////////////////////////////////////////////////////
 
 //---------------------------------------------------------
 bool CSG_Parameters::Restore_Defaults(bool bClearData)
 {
+	Set_Callback(false);
+
 	for(int i=0; i<Get_Count(); i++)
 	{
 		m_Parameters[i]->Restore_Default();
@@ -1357,13 +1411,13 @@ bool CSG_Parameters::Restore_Defaults(bool bClearData)
 		}
 	}
 
+	Set_Callback(true);
+
 	return( true );
 }
 
 
 ///////////////////////////////////////////////////////////
-//														 //
-//														 //
 //														 //
 ///////////////////////////////////////////////////////////
 
@@ -1406,17 +1460,29 @@ bool CSG_Parameters::Assign_Parameters(CSG_Parameters *pSource)
 		return( false );
 	}
 
-	//-----------------------------------------------------
-	int		i;
-
 	Del_Parameters();
 
-	for(i=0; i<pSource->m_nParameters; i++)
+	//-----------------------------------------------------
+	for(int i=0; i<pSource->m_nParameters; i++)
 	{
-		_Add(pSource->m_Parameters[i]);
+		CSG_Parameter	*pParameter	= pSource->m_Parameters[i];
+
+		if( pParameter->Get_Type() == PARAMETER_TYPE_Parameters )
+		{
+			Add_Parameters("",
+				pParameter->Get_Identifier (),
+				pParameter->Get_Name       (),
+				pParameter->Get_Description()
+			)->asParameters()->Assign_Parameters(pParameter->asParameters());
+		}
+		else
+		{
+			_Add(pParameter);
+		}
 	}
 
-	for(i=0; i<pSource->m_nParameters; i++)
+	//-----------------------------------------------------
+	for(int i=0; i<pSource->m_nParameters; i++)
 	{
 		if( Get_Parameter(i) && pSource->m_Parameters[i]->m_pParent )
 		{
@@ -1434,8 +1500,6 @@ bool CSG_Parameters::Assign_Parameters(CSG_Parameters *pSource)
 
 
 ///////////////////////////////////////////////////////////
-//														 //
-//														 //
 //														 //
 ///////////////////////////////////////////////////////////
 
@@ -1489,7 +1553,7 @@ bool CSG_Parameters::DataObjects_Create(void)
 		}
 		else if( p->is_Input() )
 		{
-			bResult	= p->Check(true);
+			bResult	= !p->is_Enabled() || p->Check(true);
 		}
 
 		//-------------------------------------------------
@@ -1507,7 +1571,7 @@ bool CSG_Parameters::DataObjects_Create(void)
 		//-------------------------------------------------
 		else if( p->is_DataObject() && p->is_Enabled() == false )
 		{
-			if( !m_pManager || !m_pManager->Exists(p->asDataObject()) )
+			if( p->asDataObject() != DATAOBJECT_CREATE && (!m_pManager || !m_pManager->Exists(p->asDataObject())) )
 			{
 				p->Set_Value(DATAOBJECT_NOTSET);
 			}
@@ -1609,11 +1673,13 @@ bool CSG_Parameters::DataObjects_Synchronize(void)
 			{
 				CSG_Data_Object	*pObject	= p->asDataObject();
 
-				if( pObject != DATAOBJECT_NOTSET
-				&&  pObject != DATAOBJECT_CREATE )
+				if( pObject == DATAOBJECT_CREATE )
 				{
-					if( pObject->Get_ObjectType() == SG_DATAOBJECT_TYPE_Shapes
-					&&  p->asShapes()->Get_Type() == SHAPE_TYPE_Undefined
+					p->Set_Value(DATAOBJECT_NOTSET);
+				}
+				else if( pObject != DATAOBJECT_NOTSET )
+				{
+					if( pObject->asShapes() && pObject->asShapes()->Get_Type() == SHAPE_TYPE_Undefined
 					&&  (m_pManager == &SG_Get_Data_Manager() || !SG_Get_Data_Manager().Exists(pObject)) )
 					{
 						if( m_pManager && !m_pManager->Delete(pObject) )
@@ -1734,8 +1800,6 @@ bool CSG_Parameters::DataObjects_Set_Projection(const CSG_Projection &Projection
 
 ///////////////////////////////////////////////////////////
 //														 //
-//														 //
-//														 //
 ///////////////////////////////////////////////////////////
 
 //---------------------------------------------------------
@@ -1745,15 +1809,23 @@ bool CSG_Parameters::Get_String(CSG_String &String, bool bOptionsOnly)
 
 	if( Get_Count() > 0 )
 	{
+		if( m_pGrid_System )
+		{
+			m_pGrid_System->_Set_String();
+
+			String	+= CSG_String::Format("%s: %s\n", m_pGrid_System->Get_Name(), m_pGrid_System->asString());
+		}
+
 		for(int i=0; i<Get_Count(); i++)
 		{
 			CSG_Parameter	*p	= m_Parameters[i];
 
-			if( (!bOptionsOnly || p->is_Option()) && p->is_Enabled() && !p->is_Information() && !(p->Get_Type() == PARAMETER_TYPE_String && ((CSG_Parameter_String *)p)->is_Password()) )
+			if( (!bOptionsOnly || p->is_Option()) && !p->asGrid_System() && p->is_Enabled() && !p->is_Information() && !(p->Get_Type() == PARAMETER_TYPE_String && ((CSG_Parameter_String *)p)->is_Password()) )
 			{
 				bResult	= true;
 
-			//	String	+= CSG_String::Format("[%s] %s: %s\n", p->Get_Type_Name(), p->Get_Name(), p->asString());
+				p->_Set_String(); // forcing update (at scripting level some parameter types can be changed without the Set_Parameter() mechanism)
+
 				String	+= CSG_String::Format("%s: %s\n", p->Get_Name(), p->asString());
 			}
 		}
@@ -1765,14 +1837,16 @@ bool CSG_Parameters::Get_String(CSG_String &String, bool bOptionsOnly)
 //---------------------------------------------------------
 bool CSG_Parameters::Msg_String(bool bOptionsOnly)
 {
-	CSG_String	s;
+	CSG_String	Msg;
 
-	if( Get_String(s, bOptionsOnly) )
+	if( Get_String(Msg, bOptionsOnly) )
 	{
-		SG_UI_Msg_Add_Execution("\n", false);
-		SG_UI_Msg_Add_Execution(bOptionsOnly ? _TL("Options") : _TL("Parameters"), false);
-		SG_UI_Msg_Add_Execution("\n", false);
-		SG_UI_Msg_Add_Execution(s, false, SG_UI_MSG_STYLE_01);
+		SG_UI_Msg_Add_Execution(CSG_String::Format("\n__________\n[%s] %s:\n", m_Name.c_str(),
+			bOptionsOnly ? _TL("Options") : _TL("Parameters")),
+			false, SG_UI_MSG_STYLE_NORMAL
+		);
+
+		SG_UI_Msg_Add_Execution(Msg, false, SG_UI_MSG_STYLE_01);
 
 		return( true );
 	}
@@ -1782,8 +1856,6 @@ bool CSG_Parameters::Msg_String(bool bOptionsOnly)
 
 
 ///////////////////////////////////////////////////////////
-//														 //
-//														 //
 //														 //
 ///////////////////////////////////////////////////////////
 
@@ -1902,20 +1974,18 @@ bool CSG_Parameters::Set_History(CSG_MetaData &MetaData, bool bOptions, bool bDa
 ///////////////////////////////////////////////////////////
 
 //---------------------------------------------------------
+/**
+* Sets the parameters' grid system if it has one. This is
+* typically the case, if it represents the parameters list of a 
+* CSG_Tool_Grid object.
+*/
 bool CSG_Parameters::Set_Grid_System(const CSG_Grid_System &System)
 {
-	if( m_pGrid_System && m_pGrid_System->asGrid_System() )
-	{
-		m_pGrid_System->Set_Value((void *)&System);
-
-		return( true );
-	}
-
-	return( false );
+	return( m_pGrid_System && m_pGrid_System->asGrid_System() && m_pGrid_System->Set_Value((void *)&System) );
 }
 
 //---------------------------------------------------------
-/*
+/**
 * Resets the parameters' grid system if it has one. This is
 * typically the case, if it represents the parameters list of a 
 * CSG_Tool_Grid object.
@@ -1935,46 +2005,17 @@ bool CSG_Parameters::Reset_Grid_System(void)
 ///////////////////////////////////////////////////////////
 
 //---------------------------------------------------------
-bool CSG_Parameters::Serialize(const CSG_String &File_Name, bool bSave)
+bool CSG_Parameters::Load(const CSG_MetaData &Data)
 {
-	CSG_MetaData	MetaData;
-
-	if( bSave )
+	if( Data.Cmp_Name("parameters") )
 	{
-		return( Serialize(MetaData, true) && MetaData.Save(File_Name) );
-	}
-	else
-	{
-		return( MetaData.Load(File_Name) && Serialize(MetaData, false) );
-	}
-}
+		Data.Get_Property("name", m_Name);
 
-//---------------------------------------------------------
-bool CSG_Parameters::Serialize(CSG_MetaData &MetaData, bool bSave)
-{
-	if( bSave )
-	{
-		MetaData.Destroy();
-
-		MetaData.Set_Name("parameters");
-		MetaData.Set_Property("name", m_Name);
-
-		for(int i=0; i<Get_Count(); i++)
+		for(int i=0; i<Data.Get_Children_Count(); i++)
 		{
-			m_Parameters[i]->Serialize(MetaData, true);
-		}
+			CSG_Parameter	*pParameter = Get_Parameter(Data(i)->Get_Property("id"));
 
-		return( true );
-	}
-	else if( MetaData.Cmp_Name("parameters") )
-	{
-		MetaData.Get_Property("name", m_Name);
-
-		for(int i=0; i<MetaData.Get_Children_Count(); i++)
-		{
-			CSG_Parameter	*pParameter = Get_Parameter(MetaData.Get_Child(i)->Get_Property("id"));
-
-			if(	pParameter && pParameter->Serialize(*MetaData.Get_Child(i), false) )
+			if(	pParameter && pParameter->Serialize(*Data(i), false) )
 			{
 				pParameter->has_Changed();
 			}
@@ -1984,6 +2025,34 @@ bool CSG_Parameters::Serialize(CSG_MetaData &MetaData, bool bSave)
 	}
 
 	return( false );
+}
+
+//---------------------------------------------------------
+bool CSG_Parameters::Save(CSG_MetaData &Data) const
+{
+	Data.Destroy();
+
+	Data.Set_Name("parameters");
+	Data.Set_Property("name", m_Name);
+
+	for(int i=0; i<Get_Count(); i++)
+	{
+		m_Parameters[i]->Serialize(Data, true);
+	}
+
+	return( true );
+}
+
+//---------------------------------------------------------
+bool CSG_Parameters::Load(const CSG_String &File)
+{
+	CSG_MetaData Data; return( Data.Load(File) && Load(Data) );
+}
+
+//---------------------------------------------------------
+bool CSG_Parameters::Save(const CSG_String &File) const
+{
+	CSG_MetaData Data; return( Save(Data) && Data.Save(File) );
 }
 
 //---------------------------------------------------------

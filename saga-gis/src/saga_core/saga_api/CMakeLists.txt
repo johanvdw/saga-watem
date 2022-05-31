@@ -1,7 +1,6 @@
 project(saga_api)
-message(STATUS "project: ${PROJECT_NAME}")
 
-# TODO: if SAGA_PYTHON
+message(STATUS "project: ${PROJECT_NAME}")
 
 # define headers
 set(SAGA_API_PUBLIC_HEADERS
@@ -26,6 +25,7 @@ set(SAGA_API_PUBLIC_HEADERS
 	tool.h
 	tool_library.h
 )
+
 # define sources
 set(SAGA_API_SOURCES
 	api_callback.cpp
@@ -56,7 +56,6 @@ set(SAGA_API_SOURCES
 	mat_regression.cpp
 	mat_regression_multiple.cpp
 	mat_regression_weighted.cpp
-	mat_mRMR.cpp
 	mat_spline.cpp
 	mat_tools.cpp
 	mat_trend.cpp
@@ -121,6 +120,17 @@ set(SAGA_API_SOURCES
 	tool_library.h
 )
 
+#________________________________________
+option(WITH_MRMR "Check to include mRMR code (Minimum Redundancy Feature Selection, incompatible with Debian licensing)" OFF)
+
+if(WITH_MRMR)
+	set(SAGA_API_SOURCES
+		${SAGA_API_SOURCES}
+		mat_mRMR.cpp
+	)
+endif()
+
+#________________________________________
 add_library(saga_api SHARED
 	${SAGA_API_SOURCES}
 	${SAGA_API_PUBLIC_HEADERS} # just cosmetic, show headers in IDE
@@ -129,25 +139,60 @@ add_library(saga_api SHARED
 target_include_directories(saga_api INTERFACE "${saga_core_include_dir}")
 
 find_package(wxWidgets COMPONENTS base net xml html REQUIRED)
-target_link_libraries(saga_api ${wxWidgets_LIBRARIES})
+target_link_libraries(saga_api PRIVATE ${wxWidgets_LIBRARIES})
 
 if(MSVC) # windows msvc
-	target_compile_definitions(saga_api PUBLIC -D_SAGA_MSW)
-else() #expect g++ on linux
-	set_target_properties(saga_api PROPERTIES COMPILE_FLAGS -fPIC)
+	target_compile_definitions(saga_api PUBLIC -D_SAGA_MSW -DUNICODE)
+else() # unix like systems
 	target_compile_definitions(saga_api PUBLIC -D_SAGA_LINUX)
+	target_compile_definitions(saga_api PRIVATE -D${MTOOLSPATH} -D${MSHAREPATH})
+	set_target_properties(saga_api PROPERTIES COMPILE_FLAGS -fPIC)
 endif()
-target_compile_definitions(saga_api PUBLIC -D_SAGA_UNICODE)
-target_compile_definitions(saga_api PUBLIC -D_TYPEDEF_BYTE -D_TYPEDEF_WORD)
 
-# define for compiling libraries
+target_compile_definitions(saga_api PUBLIC -D_TYPEDEF_BYTE -D_TYPEDEF_WORD)
 target_compile_definitions(saga_api PRIVATE -D_SAGA_API_EXPORTS)
+
+if(WITH_MRMR)
+	target_compile_definitions(saga_api PUBLIC -DWITH_MRMR)
+endif()
 
 # set version number for library
 set_target_properties(saga_api PROPERTIES
 	VERSION ${SAGA_VERSION_STRING}
-	SOVERSION ${SAGA_VERSION_MAJOR})
+	SOVERSION ${SAGA_VERSION_MAJOR}
+)
 
 # where to install the library
 install(TARGETS saga_api DESTINATION lib)
-install(FILES ${SAGA_API_PUBLIC_HEADERS} DESTINATION include/saga/saga_core/saga_api)
+install(FILES ${SAGA_API_PUBLIC_HEADERS} DESTINATION include/saga/saga_api)
+
+if(MSVC)
+	string(REPLACE "/" "\\" SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/")
+	add_custom_command(TARGET saga_api POST_BUILD
+		COMMAND IF NOT EXIST "$(OutDir)include" MKDIR "$(OutDir)include"
+		COMMAND IF EXIST "$(OutDir)include\\saga_api" RMDIR /S/Q "$(OutDir)include\\saga_api"
+		COMMAND MKDIR    "$(OutDir)include\\saga_api"
+		COMMAND COPY "${SOURCE_DIR}api_core.h"     "$(OutDir)include\\saga_api"
+		COMMAND COPY "${SOURCE_DIR}data_manager.h" "$(OutDir)include\\saga_api"
+		COMMAND COPY "${SOURCE_DIR}dataobject.h"   "$(OutDir)include\\saga_api"
+		COMMAND COPY "${SOURCE_DIR}datetime.h"     "$(OutDir)include\\saga_api"
+		COMMAND COPY "${SOURCE_DIR}geo_tools.h"    "$(OutDir)include\\saga_api"
+		COMMAND COPY "${SOURCE_DIR}grid.h"         "$(OutDir)include\\saga_api"
+		COMMAND COPY "${SOURCE_DIR}grid_pyramid.h" "$(OutDir)include\\saga_api"
+		COMMAND COPY "${SOURCE_DIR}grids.h"        "$(OutDir)include\\saga_api"
+		COMMAND COPY "${SOURCE_DIR}mat_tools.h"    "$(OutDir)include\\saga_api"
+		COMMAND COPY "${SOURCE_DIR}metadata.h"     "$(OutDir)include\\saga_api"
+		COMMAND COPY "${SOURCE_DIR}parameters.h"   "$(OutDir)include\\saga_api"
+		COMMAND COPY "${SOURCE_DIR}pointcloud.h"   "$(OutDir)include\\saga_api"
+		COMMAND COPY "${SOURCE_DIR}saga_api.h"     "$(OutDir)include\\saga_api"
+		COMMAND COPY "${SOURCE_DIR}shapes.h"       "$(OutDir)include\\saga_api"
+		COMMAND COPY "${SOURCE_DIR}table.h"        "$(OutDir)include\\saga_api"
+		COMMAND COPY "${SOURCE_DIR}table_value.h"  "$(OutDir)include\\saga_api"
+		COMMAND COPY "${SOURCE_DIR}tin.h"          "$(OutDir)include\\saga_api"
+		COMMAND COPY "${SOURCE_DIR}tool.h"         "$(OutDir)include\\saga_api"
+		COMMAND COPY "${SOURCE_DIR}tool_library.h" "$(OutDir)include\\saga_api"
+	)
+endif()
+
+#-#-#-#-#-# SWIG / Python #-#-#-#-#-#
+add_subdirectory(saga_api_python)

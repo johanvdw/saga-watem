@@ -1,6 +1,3 @@
-/**********************************************************
- * Version $Id: Morphometry.h 1921 2014-01-09 10:24:11Z oconrad $
- *********************************************************/
 
 ///////////////////////////////////////////////////////////
 //                                                       //
@@ -51,15 +48,6 @@
 ///////////////////////////////////////////////////////////
 
 //---------------------------------------------------------
-
-
-///////////////////////////////////////////////////////////
-//														 //
-//														 //
-//														 //
-///////////////////////////////////////////////////////////
-
-//---------------------------------------------------------
 #ifndef HEADER_INCLUDED__Morphometry_H
 #define HEADER_INCLUDED__Morphometry_H
 
@@ -71,7 +59,7 @@
 ///////////////////////////////////////////////////////////
 
 //---------------------------------------------------------
-#include "MLB_Interface.h"
+#include <saga_api/saga_api.h>
 
 
 ///////////////////////////////////////////////////////////
@@ -81,7 +69,7 @@
 ///////////////////////////////////////////////////////////
 
 //---------------------------------------------------------
-class ta_morphometry_EXPORT CMorphometry : public CSG_Tool_Grid
+class CMorphometry : public CSG_Tool_Grid
 {
 public:
 	CMorphometry(void);
@@ -103,7 +91,7 @@ private:
 
 	//-----------------------------------------------------
 	void					Get_SubMatrix3x3		(int x, int y, double Z[ 9], int Orientation = 0);
-	void					Get_SubMatrix5x5		(int x, int y, double Z[25]);
+	void					Get_SubMatrix5x5		(int x, int y, double Z[25], int Orientation = 0);
 
 	//-----------------------------------------------------
 	void					Set_NoData				(int x, int y);
@@ -120,7 +108,7 @@ private:
 	void					Set_BRM					(int x, int y);
 	void					Set_Zevenbergen			(int x, int y);
 	void					Set_Haralick			(int x, int y);
-
+	void					Set_Florinsky			(int x, int y);
 
 };
 

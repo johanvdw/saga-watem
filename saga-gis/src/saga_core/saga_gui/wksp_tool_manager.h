@@ -1,6 +1,3 @@
-/**********************************************************
- * Version $Id$
- *********************************************************/
 
 ///////////////////////////////////////////////////////////
 //                                                       //
@@ -48,15 +45,6 @@
 //                                                       //
 //    e-mail:     oconrad@saga-gis.org                   //
 //                                                       //
-///////////////////////////////////////////////////////////
-
-//---------------------------------------------------------
-
-
-///////////////////////////////////////////////////////////
-//														 //
-//														 //
-//														 //
 ///////////////////////////////////////////////////////////
 
 //---------------------------------------------------------
@@ -111,11 +99,11 @@ public:
 	class CWKSP_Tool_Group *		Get_Group			(int i)		{	return( (class CWKSP_Tool_Group *)Get_Item(i) );	}
 	class CWKSP_Tool_Group *		Get_Group			(const wxString &Group);
 
-	class CWKSP_Tool_Library *	Get_Library			(CSG_Tool_Library *pLibrary);
+	class CWKSP_Tool_Library *		Get_Library			(CSG_Tool_Library *pLibrary);
 
 	bool							Update				(void);
 
-	wxMenu *						Get_Menu_Tools	(void);
+	wxMenu *						Get_Menu_Tools		(void);
 	void							Set_Recently_Used	(class CWKSP_Tool *pTool);
 
 	bool							Do_Beep				(void);
@@ -125,14 +113,15 @@ public:
 
 	bool							Exists				(class CWKSP_Tool *pTool);
 
-	class CWKSP_Tool *			Get_Tool_byID		(int CMD_ID);
+	class CWKSP_Tool *				Get_Tool_byID		(int CMD_ID);
 
 
 private:
 
-	class CWKSP_Tool_Menu		*m_pMenu_Tools;
+	class CWKSP_Tool_Menu			*m_pMenu_Tools;
 
 
+	bool							_Reload				(void);
 	bool							_Update				(bool bSyncToCtrl);
 
 };
@@ -142,8 +131,6 @@ extern CWKSP_Tool_Manager			*g_pTools;
 
 
 ///////////////////////////////////////////////////////////
-//														 //
-//														 //
 //														 //
 ///////////////////////////////////////////////////////////
 
@@ -159,12 +146,14 @@ public:
 	virtual wxString				Get_Name			(void)		{	return( m_Name );	}
 	virtual wxString				Get_Description		(void);
 
+	virtual wxMenu *				Get_Menu			(void);
+
 	virtual bool					On_Command			(int Cmd_ID);
 	virtual bool					On_Command_UI		(wxUpdateUIEvent &event);
 
 	bool							Add_Library			(CSG_Tool_Library *pLibrary);
-	class CWKSP_Tool_Library *	Get_Library			(int i)		{	return( (class CWKSP_Tool_Library *)Get_Item(i) );	}
-	class CWKSP_Tool_Library *	Get_Library			(CSG_Tool_Library *pLibrary);
+	class CWKSP_Tool_Library *		Get_Library			(int i)		{	return( (class CWKSP_Tool_Library *)Get_Item(i) );	}
+	class CWKSP_Tool_Library *		Get_Library			(CSG_Tool_Library *pLibrary);
 
 
 private:

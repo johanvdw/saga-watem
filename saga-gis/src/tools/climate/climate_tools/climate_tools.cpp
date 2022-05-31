@@ -45,15 +45,6 @@
 ///////////////////////////////////////////////////////////
 
 //---------------------------------------------------------
-
-
-///////////////////////////////////////////////////////////
-//														 //
-//														 //
-//														 //
-///////////////////////////////////////////////////////////
-
-//---------------------------------------------------------
 #include "climate_tools.h"
 
 
@@ -64,37 +55,12 @@
 ///////////////////////////////////////////////////////////
 
 //---------------------------------------------------------
-bool	SG_Grid_Get_Geographic_Coordinates	(CSG_Grid *pGrid, CSG_Grid *pLon, CSG_Grid *pLat)
-{
-	bool	bResult	= false;
-
-	if( pGrid && pGrid->is_Valid() && pGrid->Get_Projection().is_Okay() && (pLon || pLat) )
-	{
-		CSG_Grid Lon; if( !pLon ) { pLon = &Lon; } pLon->Create(pGrid->Get_System());
-		CSG_Grid Lat; if( !pLat ) { pLat = &Lat; } pLat->Create(pGrid->Get_System());
-
-		SG_RUN_TOOL(bResult, "pj_proj4", 17,	// geographic coordinate grids
-				SG_TOOL_PARAMETER_SET("GRID", pGrid)
-			&&	SG_TOOL_PARAMETER_SET("LON" , pLon )
-			&&	SG_TOOL_PARAMETER_SET("LAT" , pLat )
-		)
-	}
-
-	return( bResult );
-}
-
-
-///////////////////////////////////////////////////////////
-//														 //
-//														 //
-//														 //
-///////////////////////////////////////////////////////////
-
-//---------------------------------------------------------
-// Allen R.G., Pereira L.S., Raes D., Smith M. (1998):
-// Crop evapotranspiration: guidelines for computing crop water requirements.
-// FAO Irrigation and Drainage Paper 56. FAO, Rome
-// http://www.fao.org/docrep/X0490E/x0490e07.htm#radiation
+/**
+* Allen R.G., Pereira L.S., Raes D., Smith M. (1998):
+* Crop evapotranspiration: guidelines for computing crop water requirements.
+* FAO Irrigation and Drainage Paper 56. FAO, Rome
+* http://www.fao.org/docrep/X0490E/x0490e07.htm#radiation
+*/
 //---------------------------------------------------------
 double	CT_Get_Radiation_Daily_TopOfAtmosphere	(int DayOfYear, double Latitude, bool bWaterEquivalent)
 {
@@ -109,7 +75,7 @@ double	CT_Get_Radiation_Daily_TopOfAtmosphere	(int DayOfYear, double Latitude, b
 	double	SunDec	= 0.4093 * sin(JD - 1.405);	// solar declination
 
 	double	d		= -tanLat * tan(SunDec);	// sunset hour angle
-	double	SunSet	= acos(d < -1 ? -1 : d < 1 ? d : 1);
+	double	SunSet	= acos(d < -1. ? -1. : d < 1. ? d : 1.);
 
 //	double	R0		= dR * (SunSet * sinLat * sin(SunDec) + cosLat * cos(SunDec) * sin(SunSet)) * Gsc * 24 * 60 / M_PI; // Gsc (solar constant) = 0.0820 [MJ m-2 min-1]
 	double	R0		= dR * (SunSet * sinLat * sin(SunDec) + cosLat * cos(SunDec) * sin(SunSet)) * 37.58603136;
@@ -123,43 +89,167 @@ double	CT_Get_Radiation_Daily_TopOfAtmosphere	(int DayOfYear, double Latitude, b
 ///////////////////////////////////////////////////////////
 
 //---------------------------------------------------------
-// Allen R.G., Pereira L.S., Raes D., Smith M. (1998):
-// Crop evapotranspiration: guidelines for computing crop water requirements.
-// FAO Irrigation and Drainage Paper 56. FAO, Rome
-// http://www.fao.org/docrep/X0490E/x0490e07.htm#an%20alternative%20equation%20for%20eto%20when%20weather%20data%20are%20missing
+/**
+* DVWK (1996): Ermittlung der Verdunstung von Land- u. Wasserflaechen. Merkblaetter 238/1996.
+* Allen R.G., Pereira L.S., Raes D., Smith M. (1998):
+* Crop evapotranspiration: guidelines for computing crop water requirements.
+* FAO Irrigation and Drainage Paper 56. FAO, Rome
+* http://www.fao.org/docrep/X0490E/x0490e07.htm#an%20alternative%20equation%20for%20eto%20when%20weather%20data%20are%20missing
+* T, Tmin, Tmax = temperatures [°C]
+* R0 = extraterrestrial radiation [MJ/m2/day]
+*/
 //---------------------------------------------------------
-double	CT_Get_ETpot_Hargreave	(double R0, double T, double Tmin, double Tmax)
+double	CT_Get_ETpot_Hargreave	(double T, double Tmin, double Tmax, double R0)
 {
-	double	ETpot	= 0.0023 * R0 * (T + 17.8) * sqrt(Tmax - Tmin);	// reference crop evapotranspiration mm per day
-
-	return( ETpot > 0.0 ? ETpot : 0.0 );
-}
-
-//---------------------------------------------------------
-double	CT_Get_ETpot_Hargreave	(int DayOfYear, double Latitude, double T, double Tmin, double Tmax)
-{
-	double	R0	= CT_Get_Radiation_Daily_TopOfAtmosphere(DayOfYear, Latitude);
-
-	return( CT_Get_ETpot_Hargreave(R0, T, Tmin, Tmax) );
-}
-
-//---------------------------------------------------------
-bool	CT_Get_ETpot_Hargreave_DailyFromMonthly	(CSG_Vector &ETpot, double Latitude, const double T[12], const double Tmin[12], const double Tmax[12])
-{
-	CSG_Vector	dT, dTmin, dTmax;
-
-	CT_Get_Daily_Splined(dT   , T   );
-	CT_Get_Daily_Splined(dTmin, Tmin);
-	CT_Get_Daily_Splined(dTmax, Tmax);
-
-	ETpot.Create(365);
-
-	for(int i=0; i<365; i++)
+	if( (T + 17.8) <= 0. || Tmin >= Tmax )
 	{
-		ETpot[i]	= CT_Get_ETpot_Hargreave(i + 1, Latitude, dT[i], dTmin[i], dTmax[i]);
+		return( 0. );
 	}
 
-	return( true );
+	double	ETpot	= 0.0023 * R0 * (T + 17.8) * sqrt(Tmax - Tmin);	// reference crop evapotranspiration mm per day
+
+	return( ETpot < 0. ? 0. : ETpot );
+}
+
+//---------------------------------------------------------
+double	CT_Get_ETpot_Hargreave	(double T, double Tmin, double Tmax, int DayOfYear, double Latitude)
+{
+	double	R0	= CT_Get_Radiation_Daily_TopOfAtmosphere(DayOfYear, Latitude, false);
+
+	return( CT_Get_ETpot_Hargreave(T, Tmin, Tmax, R0) );
+}
+
+
+///////////////////////////////////////////////////////////
+//														 //
+///////////////////////////////////////////////////////////
+
+//---------------------------------------------------------
+/**
+* Daily potential evapotranspiration (ETpot) after Turc:
+* T  = daily mean of temperature [°C]
+* Rg = daily sum of global radiation [J/cm^2]
+* rH = daily mean relative humidity [%]
+* DVWK (1996): Ermittlung der Verdunstung von Land- u. Wasserflaechen. Merkblaetter 238/1996.
+*/
+//---------------------------------------------------------
+double	CT_Get_ETpot_Turc	(double T, double Rg, double rH)
+{
+	if( (T + 15.) <= 0. )
+	{
+		return( 0. );
+	}
+
+	double	ETpot	= 0.0031 * (Rg + 209.) * T / (T + 15.);
+
+	if( rH < 50. )
+	{
+		ETpot	*= 1. + (50. - rH) / 70.;
+	}
+
+	return( ETpot < 0. ? 0. : ETpot );
+}
+
+
+///////////////////////////////////////////////////////////
+//														 //
+///////////////////////////////////////////////////////////
+
+//---------------------------------------------------------
+/**
+* Daily potential evapotranspiration (ETpot) after Penman (simplified):
+* T  = daily mean of temperature [°C]
+* Rg = daily sum of global radiation [J/cm^2]
+* rH = daily mean relative humidity [%]
+* V  = daily mean of wind speed at 2m above ground [m/s]
+* S0 = day length [h] (= astronomically possible sun shine duration in hours)
+* DVWK (1996): Ermittlung der Verdunstung von Land- u. Wasserflaechen. Merkblaetter 238/1996.
+* Allen R.G., Pereira L.S., Raes D., Smith M. (1998):
+* Crop evapotranspiration: guidelines for computing crop water requirements.
+* FAO Irrigation and Drainage Paper 56. FAO, Rome
+* http://www.fao.org/3/X0490E/x0490e00.htm
+*/
+//---------------------------------------------------------
+double	CT_Get_ETpot_Penman	(double T, double Rg, double rH, double V, double S0)
+{
+	if( (T + 22.) <= 0. || S0 <= 0. || Rg <= 0. )
+	{
+		return( 0. );
+	}
+
+	// Latent heat of vaporization. As L varies only slightly over normal
+	// temperature ranges a single value of 2.45 MJ/kg is taken in the
+	// simplification of the FAO Penman-Monteith equation (T of about 20°C).
+	const double	L	= 245.;	// Latent heat of vaporization [J/cm^2]
+
+	double	gT	= 2.3 * (T + 22.) / (T + 123.);
+
+	double	ETpot	= gT * ((0.6 * Rg / L) + 0.66 * (1. + 1.08 * V) * (1. - rH / 100.) * S0 / 12.);
+
+	return( ETpot < 0. ? 0. : ETpot );
+}
+
+//---------------------------------------------------------
+double	CT_Get_ETpot_Penman	(double T, double Rg, double rH, double V, int DayOfYear, double Latitude)
+{
+	return( CT_Get_ETpot_Penman(T, Rg, rH, V, SG_Get_Day_Length(DayOfYear, Latitude)) );
+}
+
+
+///////////////////////////////////////////////////////////
+//														 //
+///////////////////////////////////////////////////////////
+
+//---------------------------------------------------------
+/**
+* Daily potential FAO grass reference evapotranspiration (ETpot) after Penman & Monteith:
+* T    = daily mean of temperature [°C]
+* Tmin = daily minimum of temperature [°C]
+* Tmax = daily maximum of temperature [°C]
+* Rg   = daily sum of global radiation [J/cm^2]
+* rH   = daily mean relative humidity [%]
+* V    = daily mean of wind speed at 2m above ground [m/s]
+* P    = atmospheric pressure [kPa]
+* DVWK (1996): Ermittlung der Verdunstung von Land- u. Wasserflaechen. Merkblaetter 238/1996.
+* Allen R.G., Pereira L.S., Raes D., Smith M. (1998):
+* Crop evapotranspiration: guidelines for computing crop water requirements.
+* FAO Irrigation and Drainage Paper 56. FAO, Rome
+* http://www.fao.org/3/X0490E/x0490e00.htm
+*/
+//---------------------------------------------------------
+double	CT_Get_ETpot_FAORef	(double T, double Tmin, double Tmax, double Rg, double rH, double V, double P, double dZ)
+{
+	if( T <= -237.3 || Rg <= 0. )
+	{
+		return( 0. );
+	}
+
+	if( dZ != 0. ) // (3. 1) adjustment of the atmospheric pressure [kPa]
+	{
+		P	*= pow(1. - (0.0065 * dZ / (273.15 + T)), 5.255);
+	}
+
+	// (3. 2) psychrometric constant [kPa/°C]
+	double	y	= 0.000664742 * P;
+
+	// (3. 6) slope of saturation vapour pressure curve at air temperature T [kPa/°C]
+	double	A	= 4098. * (0.6108 * exp((17.27 * T) / (T + 237.3))) / SG_Get_Square(T + 237.3);
+
+	// (3. 4) saturation vapour pressure at the air temperature T [kPa]
+	#define Get_PVapourSat(t)	(0.610 * exp((17.27 * t) / (t + 237.3)))
+
+	// (3. 5) (mean!) saturation vapour pressure [kPa]
+	double	es	= 0.5 * (Get_PVapourSat(Tmin) + Get_PVapourSat(Tmax));
+
+	// (3.12) actual vapour pressure (e0(Tmean) * rH / 100.) [kPa]
+	double	ea	= Get_PVapourSat(T) * rH / 100.;
+
+	Rg	/= 100.; // [J/cm^2] -> [MJ/m^2] -> 10,000 / 1,000,000
+
+	// (3.28) reference evapotranspiration [mm/day]
+	double	ETpot	= (0.408 * A * Rg + y * (900. / (T + 273.15)) * V * (es - ea)) / (A + y * (1. + 0.34 * V));
+
+	return( ETpot < 0. ? 0. : ETpot );
 }
 
 
@@ -204,6 +294,36 @@ bool	CT_Get_Daily_Splined(CSG_Vector &Daily, const double Monthly[12])
 ///////////////////////////////////////////////////////////
 //														 //
 ///////////////////////////////////////////////////////////
+
+//---------------------------------------------------------
+bool	CT_Get_Daily_Precipitation(CSG_Vector &Daily_P, const double Monthly_P[12])	// linear interpolation
+{
+	static const int	nDaysOfMonth[13]	=
+	// JAN  FEB  MAR  APR  MAY  JUN  JUL  AUG  SEP  OCT  NOV  DEC  JAN
+	{	31,  28,  31,  30,  31,  30,  31,  31,  30,  31,  30,  31,  31	};
+
+	static const int	MidOfMonth[13]	=
+	// JAN  FEB  MAR  APR  MAY  JUN  JUL  AUG  SEP  OCT  NOV  DEC  JAN
+	//	 0,  31,  59,  90, 120, 151, 181, 212, 243, 273, 304, 334, 365
+	{	15,  45,  74, 105, 135, 166, 196, 227, 258, 288, 319, 349, 380	};
+
+	Daily_P.Create(365);
+
+	for(int iMonth=0, jMonth=1; iMonth<12; iMonth++, jMonth++)
+	{
+		int	Day0	= MidOfMonth[iMonth     ];
+		int	nDays	= MidOfMonth[jMonth     ] - Day0;
+		double	P0	= Monthly_P [iMonth     ] / nDaysOfMonth[iMonth];
+		double	dP	= Monthly_P [jMonth % 12] / nDaysOfMonth[jMonth] - P0;
+
+		for(int iDay=0; iDay<=nDays; iDay++)
+		{
+			Daily_P[(Day0 + iDay) % 365]	= P0 + iDay * dP / nDays;
+		}
+	}
+
+	return( true );
+}
 
 //---------------------------------------------------------
 bool	CT_Get_Daily_Precipitation(CSG_Vector &Daily_P, const double Monthly_P[12], const double Monthly_T[12])
@@ -279,9 +399,9 @@ bool CCT_Snow_Accumulation::Calculate(const double T[365], const double P[365])
 
 	if( iStart < 0 )	// no frost/non-frost change
 	{
-		if( T[0] < 0.0 )	// no day without frost
+		if( T[0] < 0. )	// no day without frost
 		{
-			double	Snow	= 0.0;
+			double	Snow	= 0.;
 
 			for(int i=0; i<365; i++)
 			{
@@ -293,7 +413,7 @@ bool CCT_Snow_Accumulation::Calculate(const double T[365], const double P[365])
 		}
 		else				// no frost at all
 		{
-			m_Snow	= 0.0;
+			m_Snow	= 0.;
 			m_nSnow	= 0;
 		}
 
@@ -303,9 +423,9 @@ bool CCT_Snow_Accumulation::Calculate(const double T[365], const double P[365])
 	//-----------------------------------------------------
 	int	nSnow, iPass = 0, maxIter = 64;
 
-	double	Snow	= 0.0;
+	double	Snow	= 0.;
 
-	m_Snow	= 0.0;
+	m_Snow	= 0.;
 	m_nSnow	= 0;	// days with snow cover
 
 	do
@@ -316,16 +436,16 @@ bool CCT_Snow_Accumulation::Calculate(const double T[365], const double P[365])
 		{
 			int	i	= iDay % 365;
 
-			if( T[i] < 0.0 )		// snow accumulation
+			if( T[i] < 0. )		// snow accumulation
 			{
 				Snow	+= P[i];
 			}
-			else if( Snow > 0.0 )	// snow melt
+			else if( Snow > 0. )	// snow melt
 			{
 				Snow	-= Get_SnowMelt(Snow, T[i], P[i]);
 			}
 
-			if( Snow > 0.0 )
+			if( Snow > 0. )
 			{
 				m_nSnow++;
 			}
@@ -351,11 +471,11 @@ int CCT_Snow_Accumulation::Get_Start(const double *T)
 
 	for(int iDay=0; iDay<365; iDay++)
 	{
-		if( T[iDay] <= 0.0 )
+		if( T[iDay] <= 0. )
 		{
 			int	i = iDay + 1, n = 0;
 
-			while( T[i % 365] > 0.0 )	{	i++; n++;	}
+			while( T[i % 365] > 0. )	{	i++; n++;	}
 
 			if( nMax < n )
 			{
@@ -376,14 +496,14 @@ int CCT_Snow_Accumulation::Get_Start(const double *T)
 //---------------------------------------------------------
 double CCT_Snow_Accumulation::Get_SnowMelt(double Snow, double T, double P)
 {
-	if( T > 0.0 && Snow > 0.0 )
+	if( T > 0. && Snow > 0. )
 	{
 		double	dSnow	= T * (0.84 + 0.125 * P);
 
 		return( dSnow > Snow ? Snow : dSnow );
 	}
 
-	return( 0.0 );
+	return( 0. );
 }
 
 
@@ -399,8 +519,8 @@ CCT_Soil_Water::CCT_Soil_Water(void)
 	m_SW_Capacity  [0]	=  20;
 	m_SW_Capacity  [1]	= 200;
 
-	m_SW_Resistance[0]	= 0.0;
-	m_SW_Resistance[1]	= 1.0;
+	m_SW_Resistance[0]	= 0.;
+	m_SW_Resistance[1]	= 1.;
 }
 
 //---------------------------------------------------------
@@ -433,7 +553,7 @@ CCT_Soil_Water::~CCT_Soil_Water(void)
 //---------------------------------------------------------
 bool CCT_Soil_Water::Set_Capacity(int Layer, double Value)
 {
-	if( Layer >= 0 && Layer <= 1 && Value >= 0.0 )
+	if( Layer >= 0 && Layer <= 1 && Value >= 0. )
 	{
 		m_SW_Capacity[Layer]	= Value;
 
@@ -446,7 +566,7 @@ bool CCT_Soil_Water::Set_Capacity(int Layer, double Value)
 //---------------------------------------------------------
 bool CCT_Soil_Water::Set_ET_Resistance(int Layer, double Value)
 {
-	if( Layer >= 0 && Layer <= 1 && Value > 0.0 )
+	if( Layer >= 0 && Layer <= 1 && Value > 0. )
 	{
 		m_SW_Resistance[Layer]	= Value;
 
@@ -472,10 +592,10 @@ bool CCT_Soil_Water::Calculate(const double T[365], const double P[365], const d
 	m_SW[0].Create(365);
 	m_SW[1].Create(365);
 
-	if( m_SW_Capacity[0] + m_SW_Capacity[1] <= 0.0 )
+	if( m_SW_Capacity[0] + m_SW_Capacity[1] <= 0. )
 	{
-		m_SW[0]	= 0.0;
-		m_SW[1]	= 0.0;
+		m_SW[0]	= 0.;
+		m_SW[1]	= 0.;
 
 		return( true );
 	}
@@ -492,14 +612,14 @@ bool CCT_Soil_Water::Calculate(const double T[365], const double P[365], const d
 		{
 			int	i	= iDay % 365;
 
-			if( T[i] > 0.0 )
+			if( T[i] > 0. )
 			{
 				//---------------------------------------------
 				// upper soil layer
 
 				double	dSW	= P[i];
 
-				if( Snow[i] > 0.0 )
+				if( Snow[i] > 0. )
 				{
 					dSW	+= CCT_Snow_Accumulation::Get_SnowMelt(Snow[i], T[i], P[i]);
 				}
@@ -515,15 +635,15 @@ bool CCT_Soil_Water::Calculate(const double T[365], const double P[365], const d
 					dSW		= SW[0] - m_SW_Capacity[0];
 					SW[0]	= m_SW_Capacity[0];
 				}
-				else if( SW[0] < 0.0 )	// evapotranspiration exceeds available water
+				else if( SW[0] < 0. )	// evapotranspiration exceeds available water
 				{
-				//	dSW		= m_SW_Capacity[1] > 0.0 ? (SW[0] > -SW[1] ? SW[0] : -SW[1]) * sqrt(SW[1] / m_SW_Capacity[1]) : 0.0;
-					dSW		= m_SW_Capacity[1] > 0.0 ? SW[0] * pow(SW[1] / m_SW_Capacity[1], m_SW_Resistance[1]) : 0.0;	// positive: runoff, negative: loss by evapotranspiration not covered by upper layer, with water loss resistance;
-					SW[0]	= 0.0;
+				//	dSW		= m_SW_Capacity[1] > 0. ? (SW[0] > -SW[1] ? SW[0] : -SW[1]) * sqrt(SW[1] / m_SW_Capacity[1]) : 0.;
+					dSW		= m_SW_Capacity[1] > 0. ? SW[0] * pow(SW[1] / m_SW_Capacity[1], m_SW_Resistance[1]) : 0.;	// positive: runoff, negative: loss by evapotranspiration not covered by upper layer, with water loss resistance;
+					SW[0]	= 0.;
 				}
 				else
 				{
-					dSW		= 0.0;
+					dSW		= 0.;
 				}
 
 				//---------------------------------------------
@@ -535,9 +655,9 @@ bool CCT_Soil_Water::Calculate(const double T[365], const double P[365], const d
 				{
 					SW[1]	= m_SW_Capacity[1];
 				}
-				else if( SW[1] < 0.0 )	// evapotranspiration exceeds available water
+				else if( SW[1] < 0. )	// evapotranspiration exceeds available water
 				{
-					SW[1]	= 0.0;
+					SW[1]	= 0.;
 				}
 			}
 
@@ -564,11 +684,11 @@ int CCT_Soil_Water::Get_Start(const double *P, const double *ETpot)
 
 	for(int iDay=0; iDay<365; iDay++)
 	{
-		if( P[iDay] <= 0.0 )
+		if( P[iDay] <= 0. )
 		{
 			int	i = iDay + 1, n = 0;
 
-			while( P[i % 365] > 0.0 )	{	i++; n++;	}
+			while( P[i % 365] > 0. )	{	i++; n++;	}
 
 			if( nMax < n )
 			{
@@ -684,7 +804,7 @@ bool CCT_Water_Balance::Set_Soil_Capacity(double SWC)
 	if( SWC < m_Soil.Get_Capacity(0) )
 	{
 		m_Soil.Set_Capacity(0, SWC);
-		m_Soil.Set_Capacity(1, 0.0);
+		m_Soil.Set_Capacity(1, 0. );
 	}
 	else
 	{
@@ -709,7 +829,7 @@ const double * CCT_Water_Balance::Set_ETpot(double Latitude, const double Tmin[1
 
 	for(int i=0; i<365; i++)
 	{
-		m_Daily[DAILY_ETpot][i]	= CT_Get_ETpot_Hargreave(i + 1, Latitude, m_Daily[DAILY_T][i], dTmin[i], dTmax[i]);
+		m_Daily[DAILY_ETpot][i]	= CT_Get_ETpot_Hargreave(m_Daily[DAILY_T][i], dTmin[i], dTmax[i], i + 1, Latitude);
 	}
 
 	return( m_Daily[DAILY_ETpot] );

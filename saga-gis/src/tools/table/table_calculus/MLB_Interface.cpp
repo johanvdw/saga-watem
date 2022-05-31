@@ -48,15 +48,6 @@
 ///////////////////////////////////////////////////////////
 
 //---------------------------------------------------------
-
-
-///////////////////////////////////////////////////////////
-//														 //
-//           The Tool Link Library Interface             //
-//														 //
-///////////////////////////////////////////////////////////
-
-//---------------------------------------------------------
 // 1. Include the appropriate SAGA-API header...
 
 #include <saga_api/saga_api.h>
@@ -104,6 +95,7 @@ CSG_String Get_Info(int i)
 #include "table_field_statistics.h"
 #include "table_record_statistics.h"
 #include "table_aggregate_by_field.h"
+#include "confusion_matrix.h"
 
 
 //---------------------------------------------------------
@@ -128,7 +120,9 @@ CSG_Tool *		Create_Tool(int i)
 
 	case 11:	return( new CTable_Field_Extreme );
 
+#ifdef WITH_MRMR
 	case 12:	return( new CTable_mRMR );
+#endif // WITH_MRMR
 
 	case 15:	return( new CTable_Field_Statistics() );
 	case 16:	return( new CTable_Record_Statistics() );
@@ -136,8 +130,10 @@ CSG_Tool *		Create_Tool(int i)
 
 	case 18:	return( new CTable_Aggregate_by_Field() );
 
+	case 19:	return( new CConfusion_Matrix() );
+
 	//-----------------------------------------------------
-	case 19:	return( NULL );
+	case 20:	return( NULL );
 	default:	return( TLB_INTERFACE_SKIP_TOOL );
 	}
 }

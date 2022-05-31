@@ -107,7 +107,7 @@ CWKSP_Data_Item::~CWKSP_Data_Item(void)
 	//-----------------------------------------------------
 	if( pObject )
 	{
-		MSG_General_Add(wxString::Format("%s: %s...", _TL("Close"), pObject->Get_Name()), true, true);
+		MSG_General_Add(wxString::Format("%s: %s...", _TL("Closing"), pObject->Get_Name()), true, true);
 
 		g_pData->On_Data_Deletion(pObject);
 
@@ -208,6 +208,18 @@ bool CWKSP_Data_Item::On_Command(int Cmd_ID)
 
 			DLG_Parameters(&P, wxString::Format("%s [%s]", _TL("View Metadata"), m_pObject->Get_Name()));
 		}
+		break;
+
+	case ID_CMD_DATA_FORCE_UPDATE:
+		Force_Update();
+		break;
+
+	case ID_CMD_DATA_SETTINGS_LOAD:
+		Load_Settings();
+		break;
+
+	case ID_CMD_DATA_SETTINGS_COPY:
+		Copy_Settings();
 		break;
 	}
 
@@ -390,10 +402,10 @@ bool CWKSP_Data_Item::DataObject_Changed(void)
 {
 	m_Parameters.Set_Name(CSG_String::Format("%02d. %s", 1 + Get_ID(), m_pObject->Get_Name()));
 
-	m_Parameters.Set_Parameter("OBJECT_NAME"      , m_pObject->Get_Name          ());
-	m_Parameters.Set_Parameter("OBJECT_DESC"      , m_pObject->Get_Description   ());
-	m_Parameters.Set_Parameter("OBJECT_NODATA.MIN", m_pObject->Get_NoData_Value  ());
-	m_Parameters.Set_Parameter("OBJECT_NODATA.MAX", m_pObject->Get_NoData_hiValue());
+	m_Parameters.Set_Parameter("OBJECT_NAME"      , m_pObject->Get_Name             ());
+	m_Parameters.Set_Parameter("OBJECT_DESC"      , m_pObject->Get_Description      ());
+	m_Parameters.Set_Parameter("OBJECT_NODATA.MIN", m_pObject->Get_NoData_Value(false));
+	m_Parameters.Set_Parameter("OBJECT_NODATA.MAX", m_pObject->Get_NoData_Value(true ));
 
 	//-----------------------------------------------------
 	On_DataObject_Changed();
@@ -485,6 +497,79 @@ bool CWKSP_Data_Item::Update_Views(bool bAll)
 	}
 
 	return( false );
+}
+
+
+///////////////////////////////////////////////////////////
+//														 //
+///////////////////////////////////////////////////////////
+
+//---------------------------------------------------------
+bool CWKSP_Data_Item::Force_Update(void)
+{
+	m_pObject->Update(true);
+	DataObject_Changed();
+
+	return( true );
+}
+
+//---------------------------------------------------------
+bool CWKSP_Data_Item::Load_Settings(const CSG_MetaData &Data)
+{
+	if( Get_Parameters()->Load(Data) )
+	{
+		Parameters_Changed();
+
+		return( true );
+	}
+
+	return( false );
+}
+
+bool CWKSP_Data_Item::Load_Settings(void)
+{
+	wxString File; CSG_MetaData Data;
+
+	return( DLG_Open(File, ID_DLG_PARAMETERS_OPEN) && Data.Load(&File) && Load_Settings(Data) );
+}
+
+//---------------------------------------------------------
+bool CWKSP_Data_Item::Copy_Settings(CSG_Parameters *pParameters)
+{
+	if( pParameters && pParameters != Get_Parameters() )
+	{
+		for(int i=0; i<pParameters->Get_Count(); i++)
+		{
+			CSG_Parameter *pSource = pParameters->Get_Parameter(i);
+
+			if(	SG_STR_CMP(pSource->Get_Identifier(), SG_T("OBJECT_NAME"  ))
+			&&	SG_STR_CMP(pSource->Get_Identifier(), SG_T("OBJECT_DESC"  ))
+			&&	SG_STR_CMP(pSource->Get_Identifier(), SG_T("OBJECT_NODATA")) )
+		//	&&	SG_STR_CMP(pSource->Get_Identifier(), SG_T("LUT_ATTRIB"))
+		//	&&	SG_STR_CMP(pSource->Get_Identifier(), SG_T("METRIC_ATTRIB"))
+		//	&&	SG_STR_CMP(pSource->Get_Identifier(), SG_T("LABEL_ATTRIB"))
+		//	&&	SG_STR_CMP(pSource->Get_Identifier(), SG_T("LABEL_ATTRIB_SIZE_BY"))	)
+			{
+				CSG_Parameter *pTarget = Get_Parameter(pSource->Get_Identifier());
+
+				if( pTarget && pTarget->Get_Type() == pSource->Get_Type() )
+				{
+					pTarget->Set_Value(pSource);
+				}
+			}
+		}
+
+		Parameters_Changed();
+
+		return( true );
+	}
+
+	return( false );
+}
+
+bool CWKSP_Data_Item::Copy_Settings(void)
+{
+	return( Copy_Settings(CWKSP_Data_Manager::Get_Settings_Dialog()) );
 }
 
 

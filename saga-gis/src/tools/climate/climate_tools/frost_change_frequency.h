@@ -1,6 +1,3 @@
-/**********************************************************
- * Version $Id: frost_change_frequency.h 1380 2012-04-26 12:02:19Z reklov_w $
- *********************************************************/
 
 ///////////////////////////////////////////////////////////
 //                                                       //
@@ -46,15 +43,6 @@
 //                University of Hamburg                  //
 //                Germany                                //
 //                                                       //
-///////////////////////////////////////////////////////////
-
-//---------------------------------------------------------
-
-
-///////////////////////////////////////////////////////////
-//														 //
-//														 //
-//														 //
 ///////////////////////////////////////////////////////////
 
 //---------------------------------------------------------
@@ -112,7 +100,7 @@ class CFrost_Change_Frequency : public CSG_Tool_Grid
 public:
 	CFrost_Change_Frequency(void);
 
-	virtual CSG_String			Get_MenuPath			(void)	{	return( _TL("Tools") );	}
+	virtual CSG_String			Get_MenuPath			(void)	{	return( _TL("Temperature") );	}
 
 
 protected:
@@ -132,7 +120,7 @@ class CFrost_Change_Frequency_Interactive : public CSG_Tool_Grid_Interactive
 public:
 	CFrost_Change_Frequency_Interactive(void);
 
-	virtual CSG_String			Get_MenuPath			(void)	{	return( _TL("Tools") );	}
+	virtual CSG_String			Get_MenuPath			(void)	{	return( _TL("Temperature") );	}
 
 
 protected:

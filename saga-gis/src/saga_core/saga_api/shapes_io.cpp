@@ -1,6 +1,3 @@
-/**********************************************************
- * Version $Id$
- *********************************************************/
 
 ///////////////////////////////////////////////////////////
 //                                                       //
@@ -50,15 +47,6 @@
 //                                                       //
 //    e-mail:     oconrad@saga-gis.org                   //
 //                                                       //
-///////////////////////////////////////////////////////////
-
-//---------------------------------------------------------
-
-
-///////////////////////////////////////////////////////////
-//														 //
-//														 //
-//														 //
 ///////////////////////////////////////////////////////////
 
 //---------------------------------------------------------
@@ -159,8 +147,8 @@ bool CSG_Shapes::_Save_GDAL(const CSG_String &File_Name, const CSG_String &Drive
 
 	SG_RUN_TOOL(bResult, "io_gdal", 4,	// Export Shapes
 		    SG_TOOL_PARAMETER_SET("SHAPES", this)
-		&&	SG_TOOL_PARAMETER_SET("FILE"  , File_Name)
 		&&	SG_TOOL_PARAMETER_SET("FORMAT", Driver)
+		&&	SG_TOOL_PARAMETER_SET("FILE"  , File_Name)
 	);
 
 	return( bResult );
@@ -208,9 +196,11 @@ bool CSG_Shapes::_Load_ESRI(const CSG_String &File_Name)
 		return( false );
 	}
 
-	if( !fDBF.Move_First() || fDBF.Get_Record_Count() <= 0 )
+    fDBF.Move_First();
+
+    if( fDBF.Get_Field_Count() < 1 )
 	{
-		SG_UI_Msg_Add_Error(_TL("DBase file does not contain any records."));
+		SG_UI_Msg_Add_Error(_TL("DBase file does not contain any attribute fields."));
 
 		return( false );
 	}

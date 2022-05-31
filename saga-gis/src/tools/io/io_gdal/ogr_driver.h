@@ -104,7 +104,7 @@ public:
 
 	int							Get_Count			(void)						const;
 
-#ifdef USE_GDAL_V2
+#ifdef GDAL_V2_0_OR_NEWER
 	GDALDriverH					Get_Driver			(const CSG_String &Name)	const;
 	GDALDriverH					Get_Driver			(int Index)					const;
 #else
@@ -115,6 +115,7 @@ public:
 	CSG_String					Get_Name			(int Index)					const;
 	CSG_String					Get_Description		(int Index)					const;
 	CSG_String					Get_Extension		(int Index)					const;
+	CSG_String					Get_Extension		(const CSG_String &Name)	const;
 
 	bool						is_Vector			(int Index)					const;
 
@@ -151,7 +152,7 @@ public:
 	virtual ~CSG_OGR_DataSet(void);
 
 	bool						Create				(const CSG_String &File);
-	bool						Create				(const CSG_String &File, const CSG_String &DriverName);
+	bool						Create				(const CSG_String &File, const CSG_String &DriverName, const CSG_String &Options);
 	bool						Destroy				(void);
 
 	CSG_String					Get_DriverID		(void)			const;
@@ -165,12 +166,12 @@ public:
 	CSG_Projection				Get_Projection		(int iLayer)	const;
 
 	CSG_Shapes *				Read				(int iLayer, int iGeomTypeChoice);
-	bool						Write				(CSG_Shapes *pShapes);
+	bool						Write				(CSG_Shapes *pShapes, const CSG_String &CreationOptions);
 
 
 private:
 
-#ifdef USE_GDAL_V2
+#ifdef GDAL_V2_0_OR_NEWER
 	GDALDatasetH				m_pDataSet;
 #else
 	OGRDataSourceH				m_pDataSet;

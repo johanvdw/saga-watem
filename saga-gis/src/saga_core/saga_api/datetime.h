@@ -1,6 +1,3 @@
-/**********************************************************
- * Version $Id: datetime.h 2266 2014-10-01 15:00:52Z oconrad $
- *********************************************************/
 
 ///////////////////////////////////////////////////////////
 //                                                       //
@@ -51,15 +48,6 @@
 ///////////////////////////////////////////////////////////
 
 //---------------------------------------------------------
-
-
-///////////////////////////////////////////////////////////
-//														 //
-//														 //
-//														 //
-///////////////////////////////////////////////////////////
-
-//---------------------------------------------------------
 #ifndef HEADER_INCLUDED__SAGA_API__datetime_H
 #define HEADER_INCLUDED__SAGA_API__datetime_H
 
@@ -71,7 +59,15 @@
 ///////////////////////////////////////////////////////////
 
 //---------------------------------------------------------
-#include "api_core.h"
+/** \file datetime.h
+* Simplified wrappers for wxDateTime and related classes
+* including functions for the calculation of the Sun's position
+* and the day length.
+* @see CSG_DateTime
+* @see CSG_TimeSpan
+* @see SG_Get_Sun_Position
+* @see SG_Get_Day_Length
+*/
 
 
 ///////////////////////////////////////////////////////////
@@ -81,7 +77,7 @@
 ///////////////////////////////////////////////////////////
 
 //---------------------------------------------------------
-// simplified wrappers for wxDateTime and related classes.
+#include "api_core.h"
 
 
 ///////////////////////////////////////////////////////////
@@ -223,6 +219,7 @@ public:
 	//-----------------------------------------------------
 	CSG_DateTime(void);
 	CSG_DateTime(const CSG_DateTime &DateTime);
+	CSG_DateTime(const CSG_String &ISODate);
 	CSG_DateTime(double JDN);
 	CSG_DateTime(                                                    TSG_DateTime Hour    , TSG_DateTime Minute = 0, TSG_DateTime Second = 0, TSG_DateTime Millisec = 0);
 	CSG_DateTime(TSG_DateTime Day, Month Month, int Year = Inv_Year, TSG_DateTime Hour = 0, TSG_DateTime Minute = 0, TSG_DateTime Second = 0, TSG_DateTime Millisec = 0);
@@ -232,6 +229,7 @@ public:
 
 	//-----------------------------------------------------
 	CSG_DateTime &				Set						(const CSG_DateTime &DateTime);
+	CSG_DateTime &				Set						(const CSG_String &ISODate);
 	CSG_DateTime &				Set						(double JDN);
 	CSG_DateTime &				Set						(                                                    TSG_DateTime Hour    , TSG_DateTime Minute = 0, TSG_DateTime Second = 0, TSG_DateTime Millisec = 0);
 	CSG_DateTime &				Set						(TSG_DateTime Day, Month Month, int Year = Inv_Year, TSG_DateTime Hour = 0, TSG_DateTime Minute = 0, TSG_DateTime Second = 0, TSG_DateTime Millisec = 0);

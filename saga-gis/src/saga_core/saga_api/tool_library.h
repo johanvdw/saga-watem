@@ -1,6 +1,3 @@
-/**********************************************************
- * Version $Id$
- *********************************************************/
 
 ///////////////////////////////////////////////////////////
 //                                                       //
@@ -53,6 +50,8 @@
 ///////////////////////////////////////////////////////////
 
 //---------------------------------------------------------
+#ifndef HEADER_INCLUDED__SAGA_API__tool_library_H
+#define HEADER_INCLUDED__SAGA_API__tool_library_H
 
 
 ///////////////////////////////////////////////////////////
@@ -62,8 +61,14 @@
 ///////////////////////////////////////////////////////////
 
 //---------------------------------------------------------
-#ifndef HEADER_INCLUDED__SAGA_API__tool_library_H
-#define HEADER_INCLUDED__SAGA_API__tool_library_H
+/** \file tool_library.h
+* The definitions needed for any SAGA tool library and the
+* tool library management, including the SAGA API's default
+* tool library manager.
+* @see SG_Get_Tool_Library_Manager
+* @see CSG_Tool_Library_Manager
+* @see CSG_Tool_Library
+*/
 
 
 ///////////////////////////////////////////////////////////
@@ -129,16 +134,21 @@ public:
 	virtual CSG_Tool *				Get_Tool			(const char       *Name, TSG_Tool_Type Type = TOOL_TYPE_Base)	const;
 	virtual CSG_Tool *				Get_Tool			(const wchar_t    *Name, TSG_Tool_Type Type = TOOL_TYPE_Base)	const;
 
-	virtual CSG_Tool *				Create_Tool			(int              Index);
-	virtual CSG_Tool *				Create_Tool			(const CSG_String &Name);
-	virtual CSG_Tool *				Create_Tool			(const char       *Name);
-	virtual CSG_Tool *				Create_Tool			(const wchar_t    *Name);
+	virtual CSG_Tool *				Create_Tool			(int              Index, bool bWithGUI = false);
+	virtual CSG_Tool *				Create_Tool			(const CSG_String &Name, bool bWithGUI = false);
+	virtual CSG_Tool *				Create_Tool			(const char       *Name, bool bWithGUI = false);
+	virtual CSG_Tool *				Create_Tool			(const wchar_t    *Name, bool bWithGUI = false);
 
 	virtual bool					Delete_Tool			(CSG_Tool *pTool);
 	virtual bool					Delete_Tools		(void);
 
 	virtual CSG_String				Get_File_Name		(int i)	const	{	return( "" );	}
 	virtual CSG_String				Get_Menu			(int i)	const;
+
+	void							Add_Reference			(const CSG_String &Authors, const CSG_String &Year, const CSG_String &Title, const CSG_String &Where, const SG_Char *Link = NULL, const SG_Char *Link_Text = NULL);
+	void							Add_Reference			(const CSG_String &Link, const SG_Char *Link_Text = NULL);
+	void							Del_References			(void);
+	const CSG_Strings &				Get_References			(void)	const	{	return( m_References );		}
 
 
 protected:
@@ -155,6 +165,8 @@ private:
 
 	bool							_Destroy			(void);
 
+
+	CSG_Strings						m_References;
 
 	CSG_Tool_Library_Interface		*m_pInterface;
 
@@ -179,6 +191,7 @@ public:
 	bool						Destroy				(void);
 
 	int							Get_Count			(void)	const	{	return( m_nLibraries );	}
+	int							Get_Tool_Count		(void)	const;
 
 	CSG_Tool_Library *			Add_Library			(const CSG_String &File);
 	CSG_Tool_Library *			Add_Library			(const char       *File);
@@ -205,12 +218,12 @@ public:
 	CSG_Tool *					Get_Tool			(const char       *Library, const char       *Name)	const;
 	CSG_Tool *					Get_Tool			(const wchar_t    *Library, const wchar_t    *Name)	const;
 
-	CSG_Tool *					Create_Tool			(const CSG_String &Library, int              Index)	const;
-	CSG_Tool *					Create_Tool			(const char       *Library, int              Index)	const;
-	CSG_Tool *					Create_Tool			(const wchar_t    *Library, int              Index)	const;
-	CSG_Tool *					Create_Tool			(const CSG_String &Library, const CSG_String &Name)	const;
-	CSG_Tool *					Create_Tool			(const char       *Library, const char       *Name)	const;
-	CSG_Tool *					Create_Tool			(const wchar_t    *Library, const wchar_t    *Name)	const;
+	CSG_Tool *					Create_Tool			(const CSG_String &Library, int              Index, bool bWithGUI = false)	const;
+	CSG_Tool *					Create_Tool			(const char       *Library, int              Index, bool bWithGUI = false)	const;
+	CSG_Tool *					Create_Tool			(const wchar_t    *Library, int              Index, bool bWithGUI = false)	const;
+	CSG_Tool *					Create_Tool			(const CSG_String &Library, const CSG_String &Name, bool bWithGUI = false)	const;
+	CSG_Tool *					Create_Tool			(const char       *Library, const char       *Name, bool bWithGUI = false)	const;
+	CSG_Tool *					Create_Tool			(const wchar_t    *Library, const wchar_t    *Name, bool bWithGUI = false)	const;
 	bool						Delete_Tool			(CSG_Tool *pTool)	const;
 
 	CSG_String					Get_Summary			(int Format = SG_SUMMARY_FMT_HTML)	const;
@@ -259,7 +272,7 @@ SAGA_API_DLL_EXPORT CSG_Tool_Library_Manager &	SG_Get_Tool_Library_Manager	(void
 		{\
 			SG_UI_Msg_Add_Error(CSG_String::Format("%s [%s].[%s]", _TL("could not initialize tool"), SG_T(LIBRARY), pTool->Get_Name().c_str()));\
 		}\
-		else if( !pTool->Execute() )\
+		else if( !pTool->Execute(false) )\
 		{\
 			SG_UI_Msg_Add_Error(CSG_String::Format("%s [%s].[%s]", _TL("could not execute tool"   ), SG_T(LIBRARY), pTool->Get_Name().c_str()));\
 		}\
@@ -305,7 +318,7 @@ SAGA_API_DLL_EXPORT CSG_Tool_Library_Manager &	SG_Get_Tool_Library_Manager	(void
 		{\
 			SG_UI_Msg_Add_Error(CSG_String::Format("%s [%s].[%s]", _TL("could not initialize tool"), SG_T(LIBRARY), pTool->Get_Name().c_str()));\
 		}\
-		else if( !pTool->Execute() )\
+		else if( !pTool->Execute(false) )\
 		{\
 			SG_UI_Msg_Add_Error(CSG_String::Format("%s [%s].[%s]", _TL("could not execute tool"   ), SG_T(LIBRARY), pTool->Get_Name().c_str()));\
 		}\
@@ -320,7 +333,7 @@ SAGA_API_DLL_EXPORT CSG_Tool_Library_Manager &	SG_Get_Tool_Library_Manager	(void
 	}\
 }
 
-#define SG_RUN_TOOL_KEEP_PARMS_ExitOnError(LIBRARY, TOOL, CONDITION)	{\
+#define SG_RUN_TOOL_KEEP_PARMS_ExitOnError(LIBRARY, TOOL, PARMS, CONDITION)	{\
 	\
 	bool	bResult;\
 	\

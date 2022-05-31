@@ -50,15 +50,6 @@
 ///////////////////////////////////////////////////////////
 
 //---------------------------------------------------------
-
-
-///////////////////////////////////////////////////////////
-//														 //
-//					class CData_Object					 //
-//														 //
-///////////////////////////////////////////////////////////
-
-//---------------------------------------------------------
 #include "dataobject.h"
 
 #include <wx/string.h>
@@ -189,8 +180,8 @@ CSG_Data_Object::CSG_Data_Object(void)
 	m_File_Type			= 0;
 	m_bModified			= true;
 
-	m_NoData_Value		= -99999.0;
-	m_NoData_hiValue	= -99999.0;
+	m_NoData_Value[0]	= -99999.;
+	m_NoData_Value[1]	= -99999.;
 
 	m_Max_Samples		= gSG_DataObject_Max_Samples;
 
@@ -294,7 +285,7 @@ void CSG_Data_Object::Set_Description(const CSG_String &Description)
 
 const SG_Char * CSG_Data_Object::Get_Description(void) const
 {
-	return( m_pOwner ? m_pOwner->m_Description : m_Description );
+	return( m_Description.is_Empty() && m_pOwner ? m_pOwner->m_Description : m_Description );
 }
 
 //---------------------------------------------------------
@@ -306,12 +297,19 @@ void CSG_Data_Object::Set_File_Name	(const CSG_String &FileName)
 //---------------------------------------------------------
 void CSG_Data_Object::Set_File_Name(const CSG_String &FileName, bool bNative)
 {
-	m_FileName		= FileName;
-	m_File_bNative	= bNative;
-
-	m_Name			= SG_File_Get_Name(FileName, false);
-
-	m_bModified		= false;
+	if( FileName.is_Empty() )
+	{
+		m_FileName      .Clear();
+		m_File_bNative	= false;
+		m_bModified		= true;
+	}
+	else
+	{
+		m_FileName		= FileName;
+		m_File_bNative	= bNative;
+		m_bModified		= false;
+		m_Name			= SG_File_Get_Name(FileName, false);
+	}
 }
 
 //---------------------------------------------------------
@@ -400,19 +398,19 @@ bool CSG_Data_Object::Set_NoData_Value(double Value)
 }
 
 //---------------------------------------------------------
-bool CSG_Data_Object::Set_NoData_Value_Range(double loValue, double hiValue)
+bool CSG_Data_Object::Set_NoData_Value_Range(double Lower, double Upper)
 {
-	if( loValue > hiValue )
+	if( Lower > Upper )
 	{
-		double	d	= loValue;
-		loValue		= hiValue;
-		hiValue		= d;
+		double d = Lower; Lower = Upper; Upper = d;
 	}
 
-	if( loValue != m_NoData_Value || hiValue != m_NoData_hiValue )
+	if( Lower != m_NoData_Value[0] || Upper != m_NoData_Value[1] )
 	{
-		m_NoData_Value		= loValue;
-		m_NoData_hiValue	= hiValue;
+		m_NoData_Value[0]	= Lower;
+		m_NoData_Value[1]	= Upper;
+
+		Set_Modified();
 
 		On_NoData_Changed();
 
@@ -441,11 +439,13 @@ bool CSG_Data_Object::On_NoData_Changed(void)
 //---------------------------------------------------------
 bool CSG_Data_Object::Set_Max_Samples(sLong Max_Samples)
 {
-	if( m_Max_Samples != Max_Samples )
+	#define	Min_Samples	100
+
+	if( m_Max_Samples != Max_Samples && Max_Samples >= Min_Samples )
 	{
 		m_Max_Samples	= Max_Samples;
 
-		Set_Update_Flag();
+        On_Update();
 	}
 
 	return( true );

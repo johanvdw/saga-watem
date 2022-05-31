@@ -1,6 +1,3 @@
-/**********************************************************
- * Version $Id$
- *********************************************************/
 
 ///////////////////////////////////////////////////////////
 //                                                       //
@@ -48,15 +45,6 @@
 //                                                       //
 //    e-mail:     oconrad@saga-gis.org                   //
 //                                                       //
-///////////////////////////////////////////////////////////
-
-//---------------------------------------------------------
-
-
-///////////////////////////////////////////////////////////
-//														 //
-//				Grid: File Operations					 //
-//														 //
 ///////////////////////////////////////////////////////////
 
 //---------------------------------------------------------
@@ -123,6 +111,7 @@ bool					SG_Grid_Set_File_Format_Default	(int Format)
 	case GRID_FILE_FORMAT_Binary    :
 	case GRID_FILE_FORMAT_Compressed:
 	case GRID_FILE_FORMAT_ASCII     :
+	case GRID_FILE_FORMAT_GeoTIFF   :
 		gSG_Grid_File_Format_Default	= (TSG_Grid_File_Format)Format;
 		return( true );
 	}
@@ -142,9 +131,10 @@ CSG_String				SG_Grid_Get_File_Extension_Default	(void)
 	switch( gSG_Grid_File_Format_Default )
 	{
 	default:
-	case GRID_FILE_FORMAT_Binary_old:	return( "sgrd"     );
-	case GRID_FILE_FORMAT_Binary    :	return( "sg-grd"   );
 	case GRID_FILE_FORMAT_Compressed:	return( "sg-grd-z" );
+	case GRID_FILE_FORMAT_Binary    :	return( "sg-grd"   );
+	case GRID_FILE_FORMAT_Binary_old:	return( "sgrd"     );
+	case GRID_FILE_FORMAT_GeoTIFF   :	return( "tif"      );
 	}
 }
 
@@ -156,7 +146,7 @@ CSG_String				SG_Grid_Get_File_Extension_Default	(void)
 //---------------------------------------------------------
 bool CSG_Grid::Save(const CSG_String &FileName, int Format)
 {
-	SG_UI_Msg_Add(CSG_String::Format("%s: %s...", _TL("Saving grid"), FileName.c_str()), true);
+	SG_UI_Msg_Add(CSG_String::Format("%s %s: %s...", _TL("Saving"), _TL("grid"), FileName.c_str()), true);
 
 	//-----------------------------------------------------
 	if( Format == GRID_FILE_FORMAT_Undefined )
@@ -166,6 +156,7 @@ bool CSG_Grid::Save(const CSG_String &FileName, int Format)
 		if( SG_File_Cmp_Extension(FileName, "sg-grd-z") )	Format	= GRID_FILE_FORMAT_Compressed;
 		if( SG_File_Cmp_Extension(FileName, "sg-grd"  ) )	Format	= GRID_FILE_FORMAT_Binary    ;
 		if( SG_File_Cmp_Extension(FileName, "sgrd"    ) )	Format	= GRID_FILE_FORMAT_Binary_old;
+		if( SG_File_Cmp_Extension(FileName, "tif"     ) )	Format	= GRID_FILE_FORMAT_GeoTIFF   ;
 	}
 
 	//-----------------------------------------------------
@@ -179,6 +170,13 @@ bool CSG_Grid::Save(const CSG_String &FileName, int Format)
 
 	case GRID_FILE_FORMAT_Compressed:
 		bResult = _Save_Compressed(FileName);
+		break;
+
+	case GRID_FILE_FORMAT_GeoTIFF:
+		SG_RUN_TOOL(bResult, "io_gdal", 2,	// Export GeoTIFF
+			    SG_TOOL_PARAMLIST_ADD("GRIDS", this)
+			&&	SG_TOOL_PARAMETER_SET("FILE" , FileName)
+		);
 		break;
 	}
 
@@ -215,7 +213,7 @@ bool CSG_Grid::_Load_External(const CSG_String &FileName, bool bCached, bool bLo
 
 	CSG_Data_Manager	Data;
 
-	CSG_Tool	*pTool;
+	CSG_Tool	*pTool	= NULL;
 
 	SG_UI_Msg_Lock(true);
 
@@ -282,7 +280,7 @@ bool CSG_Grid::_Load_External(const CSG_String &FileName, bool bCached, bool bLo
 		Get_MetaData  ()	= pGrid->Get_MetaData  ();
 		Get_Projection()	= pGrid->Get_Projection();
 
-		Set_NoData_Value_Range(pGrid->Get_NoData_Value(), pGrid->Get_NoData_hiValue());
+		Set_NoData_Value_Range(pGrid->Get_NoData_Value(), pGrid->Get_NoData_Value(true));
 		
 		return( true );
 	}
@@ -305,7 +303,7 @@ bool CSG_Grid::_Load_PGSQL(const CSG_String &FileName, bool bCached, bool bLoadD
 		s	= s.AfterFirst(':');	CSG_String	Table (s.BeforeFirst(':'));
 		s	= s.AfterFirst(':');	CSG_String	rid   (s.BeforeFirst(':').AfterFirst('='));
 
-		CSG_Tool	*pTool	= SG_Get_Tool_Library_Manager().Create_Tool("db_pgsql", 0);	// CGet_Connections
+		CSG_Tool	*pTool	= SG_Get_Tool_Library_Manager().Create_Tool("db_pgsql", 0, true);	// CGet_Connections
 
 		if(	pTool != NULL )
 		{
@@ -332,7 +330,7 @@ bool CSG_Grid::_Load_PGSQL(const CSG_String &FileName, bool bCached, bool bLoadD
 			SG_Get_Tool_Library_Manager().Delete_Tool(pTool);
 
 			//---------------------------------------------
-			if( bResult && (bResult = (pTool = SG_Get_Tool_Library_Manager().Create_Tool("db_pgsql", 33)) != NULL) == true )	// CPGIS_Raster_Load_Band
+			if( bResult && (bResult = (pTool = SG_Get_Tool_Library_Manager().Create_Tool("db_pgsql", 33, true)) != NULL) == true )	// CPGIS_Raster_Load_Band
 			{
 				pTool->Set_Manager(NULL);
 				pTool->On_Before_Execution();
@@ -516,19 +514,20 @@ bool CSG_Grid::_Load_Compressed(const CSG_String &_FileName, bool bCached, bool 
 	if( !Stream.Get_File(FileName + "sgrd"  )
 	&&  !Stream.Get_File(FileName + "sg-grd") )
 	{
+		FileName.Clear();
+
 		for(size_t i=0; i<Stream.Get_File_Count(); i++)
 		{
 			if( SG_File_Cmp_Extension(Stream.Get_File_Name(i), "sgrd"  )
 			||  SG_File_Cmp_Extension(Stream.Get_File_Name(i), "sg-grd") )
 			{
 				FileName	= SG_File_Get_Name(Stream.Get_File_Name(i), false) + ".";
-
+				Stream.Get_File(Stream.Get_File_Name(i));
 				break;
 			}
 		}
 
-		if( !Stream.Get_File(FileName + "sgrd"  )
-		&&  !Stream.Get_File(FileName + "sg-grd") )
+		if( FileName.is_Empty() )
 		{
 			return( false );
 		}
@@ -1085,8 +1084,8 @@ bool CSG_Grid_File_Info::Create(const CSG_Grid &Grid)
 	m_Type			= Grid.Get_Type();
 	m_zScale		= Grid.Get_Scaling();
 	m_zOffset		= Grid.Get_Offset();
-	m_NoData[0]		= Grid.Get_NoData_Value  ();
-	m_NoData[1]		= Grid.Get_NoData_hiValue();
+	m_NoData[0]		= Grid.Get_NoData_Value();
+	m_NoData[1]		= Grid.Get_NoData_Value(true);
 	m_Data_File		.Clear();
 	m_bFlip			= false;
 	m_bSwapBytes	= false;
@@ -1104,9 +1103,45 @@ CSG_Grid_File_Info::CSG_Grid_File_Info(const CSG_String &FileName)
 
 bool CSG_Grid_File_Info::Create(const CSG_String &FileName)
 {
-	CSG_File	Stream(FileName, SG_FILE_R, false);
-	
-	return( Create(Stream) );
+	if( !SG_File_Cmp_Extension(FileName, "sg-grd-z") )
+	{
+		if( SG_File_Cmp_Extension(FileName, "sgrd")
+		||  SG_File_Cmp_Extension(FileName, "sg-grd") )
+		{
+			CSG_File	Stream(FileName, SG_FILE_R, false);
+
+			return( Create(Stream) );
+		}
+
+		return( false );
+	}
+
+	//-----------------------------------------------------
+	CSG_File_Zip	Stream(FileName, SG_FILE_R);
+
+	if( Stream.is_Reading() )
+	{
+		CSG_String	File(SG_File_Get_Name(FileName, false) + ".");
+
+		if( !Stream.Get_File(File + "sgrd"  )
+		&&  !Stream.Get_File(File + "sg-grd") )
+		{
+			for(size_t i=0; i<Stream.Get_File_Count(); i++)
+			{
+				if( SG_File_Cmp_Extension(Stream.Get_File_Name(i), "sgrd"  )
+				||  SG_File_Cmp_Extension(Stream.Get_File_Name(i), "sg-grd") )
+				{
+					Stream.Get_File(Stream.Get_File_Name(i));
+					break;
+				}
+			}
+		}
+
+		return( Create(Stream) );
+	}
+
+	//-----------------------------------------------------
+	return( false );
 }
 
 //---------------------------------------------------------

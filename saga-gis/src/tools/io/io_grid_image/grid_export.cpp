@@ -1,6 +1,3 @@
-/**********************************************************
- * Version $Id$
- *********************************************************/
 
 ///////////////////////////////////////////////////////////
 //                                                       //
@@ -49,15 +46,6 @@
 ///////////////////////////////////////////////////////////
 
 //---------------------------------------------------------
-
-
-///////////////////////////////////////////////////////////
-//														 //
-//														 //
-//														 //
-///////////////////////////////////////////////////////////
-
-//---------------------------------------------------------
 #include <wx/filename.h>
 #include <wx/image.h>
 #include <wx/quantize.h>
@@ -100,6 +88,12 @@ CGrid_Export::CGrid_Export(void)
 	);
 
 	Parameters.Add_Bool("",
+		"FILE_WORLD", _TL("Create World File"),
+		_TL("Store georeference along image to an additional file."),
+		true
+	);
+
+	Parameters.Add_Bool("",
 		"FILE_KML"	, _TL("Create KML File"),
 		_TL("Expects that the input grid uses geographic coordinates."),
 		false
@@ -112,10 +106,10 @@ CGrid_Export::CGrid_Export(void)
 	);
 
 	//-----------------------------------------------------
-	if( SG_UI_Get_Window_Main() )
+	if( has_GUI() )
 	{
 		Parameters.Add_Choice("",
-			"COLOURING"		, _TL("Colouring"),
+			"COLOURING"		, _TL("Coloring"),
 			_TL(""),
 			CSG_String::Format("%s|%s|%s|%s|%s|%s",
 				_TL("histogram stretch to standard deviation"),
@@ -126,16 +120,11 @@ CGrid_Export::CGrid_Export(void)
 				_TL("same as in graphical user interface")
 			), 5
 		);
-
-		Parameters.Add_Colors("",
-			"COL_PALETTE"	, _TL("Colours Palette"),
-			_TL("")
-		);
 	}
 	else
 	{
 		Parameters.Add_Choice("",
-			"COLOURING"		, _TL("Colouring"),
+			"COLOURING"		, _TL("Coloring"),
 			_TL(""),
 			CSG_String::Format("%s|%s|%s|%s|%s",
 				_TL("histogram stretch to standard deviation"),
@@ -143,20 +132,6 @@ CGrid_Export::CGrid_Export(void)
 				_TL("histogram stretch to value range"),
 				_TL("lookup table"),
 				_TL("rgb coded values")
-			), 0
-		);
-
-		Parameters.Add_Choice("",
-			"COL_PALETTE"	, _TL("Color Palette"),
-			_TL(""),
-			CSG_String::Format("%s|%s|%s|%s|%s|%s|%s|%s|%s|%s|%s|%s|%s|%s|%s|%s|%s|%s|%s|%s|%s|%s|%s|%s|%s|%s|%s",
-				_TL("DEFAULT"       ),	_TL("DEFAULT_BRIGHT" ),	_TL("BLACK_WHITE"   ),	_TL("BLACK_RED"     ),
-				_TL("BLACK_GREEN"   ),	_TL("BLACK_BLUE"     ),	_TL("WHITE_RED"     ),	_TL("WHITE_GREEN"   ),
-				_TL("WHITE_BLUE"    ),	_TL("YELLOW_RED"     ),	_TL("YELLOW_GREEN"  ),	_TL("YELLOW_BLUE"   ),
-				_TL("RED_GREEN"     ),	_TL("RED_BLUE"       ),	_TL("GREEN_BLUE"    ),	_TL("RED_GREY_BLUE" ),
-				_TL("RED_GREY_GREEN"),	_TL("GREEN_GREY_BLUE"),	_TL("RED_GREEN_BLUE"),	_TL("RED_BLUE_GREEN"),
-				_TL("GREEN_RED_BLUE"),	_TL("RAINBOW"        ),	_TL("NEON"          ),	_TL("TOPOGRAPHY"    ),
-				_TL("ASPECT_1"      ),	_TL("ASPECT_2"       ),	_TL("ASPECT_3"      )
 			), 0
 		);
 
@@ -172,6 +147,11 @@ CGrid_Export::CGrid_Export(void)
 			false
 		);
 	}
+
+	Parameters.Add_Colors("",
+		"COL_PALETTE"	, _TL("Colors Palette"),
+		_TL("")
+	);
 
 	Parameters.Add_Bool("COL_PALETTE",
 		"GRADUATED"		, _TL("Graduated Colors"),
@@ -199,7 +179,7 @@ CGrid_Export::CGrid_Export(void)
 
 	Parameters.Add_Choice("COL_PALETTE",
 		"SCALE_MODE"	, _TL("Scaling"),
-		_TL("Scaling applied to colouring choices (i) grid's standard deviation, (ii) grid's value range, (iii) specified value range"),
+		_TL("Scaling applied to coloring choices (i) grid's standard deviation, (ii) grid's value range, (iii) specified value range"),
 		CSG_String::Format("%s|%s|%s",
 			_TL("linear intervals"),
 			_TL("increasing geometrical intervals"),
@@ -210,7 +190,7 @@ CGrid_Export::CGrid_Export(void)
 	Parameters.Add_Double("SCALE_MODE",
 		"SCALE_LOG"		, _TL("Geometrical Interval Factor"),
 		_TL(""),
-		10.0, 0.001, true
+		10., 0.001, true
 	);
 
 	//-----------------------------------------------------
@@ -349,7 +329,7 @@ bool CGrid_Export::On_Execute(void)
 	case  5:	// same as in graphical user interface
 		if( !SG_UI_DataObject_asImage(Parameters("GRID")->asGrid(), &Grid) )
 		{
-			Error_Set("could not retrieve colour coding from graphical user interface.");
+			Error_Set("could not retrieve color coding from graphical user interface.");
 
 			return( false );
 		}
@@ -418,7 +398,7 @@ bool CGrid_Export::On_Execute(void)
 	//-----------------------------------------------------
 	wxImageHandler	*pImgHandler = NULL;
 
-	if( !SG_UI_Get_Window_Main() )
+	if( !has_GUI() )
 	{
 		if     ( SG_File_Cmp_Extension(fName, "jpg") )	pImgHandler = new wxJPEGHandler;
 		else if( SG_File_Cmp_Extension(fName, "pcx") )	pImgHandler = new wxPCXHandler ;
@@ -446,19 +426,22 @@ bool CGrid_Export::On_Execute(void)
 	}
 
 	//-----------------------------------------------------
-	CSG_File	Stream;
-
-	if     ( SG_File_Cmp_Extension(fName, "bmp") ) Stream.Open(SG_File_Make_Path("", fName, "bpw"), SG_FILE_W, false);
-	else if( SG_File_Cmp_Extension(fName, "jpg") ) Stream.Open(SG_File_Make_Path("", fName, "jgw"), SG_FILE_W, false);
-	else if( SG_File_Cmp_Extension(fName, "pcx") ) Stream.Open(SG_File_Make_Path("", fName, "pxw"), SG_FILE_W, false);
-	else if( SG_File_Cmp_Extension(fName, "png") ) Stream.Open(SG_File_Make_Path("", fName, "pgw"), SG_FILE_W, false);
-	else if( SG_File_Cmp_Extension(fName, "tif") ) Stream.Open(SG_File_Make_Path("", fName, "tfw"), SG_FILE_W, false);
-
-	if( Stream.is_Open() )
+	if( Parameters("FILE_WORLD")->asBool() )
 	{
-		Stream.Printf("%.10f\n%f\n%f\n%.10f\n%.10f\n%.10f\n",
-			 Get_Cellsize(), 0.0, 0.0, -Get_Cellsize(), Get_XMin(), Get_YMax()
-		);
+		CSG_File	Stream;
+
+		if     ( SG_File_Cmp_Extension(fName, "bmp") ) Stream.Open(SG_File_Make_Path("", fName, "bpw"), SG_FILE_W, false);
+		else if( SG_File_Cmp_Extension(fName, "jpg") ) Stream.Open(SG_File_Make_Path("", fName, "jgw"), SG_FILE_W, false);
+		else if( SG_File_Cmp_Extension(fName, "pcx") ) Stream.Open(SG_File_Make_Path("", fName, "pxw"), SG_FILE_W, false);
+		else if( SG_File_Cmp_Extension(fName, "png") ) Stream.Open(SG_File_Make_Path("", fName, "pgw"), SG_FILE_W, false);
+		else if( SG_File_Cmp_Extension(fName, "tif") ) Stream.Open(SG_File_Make_Path("", fName, "tfw"), SG_FILE_W, false);
+
+		if( Stream.is_Open() )
+		{
+			Stream.Printf("%.10f\n%f\n%f\n%.10f\n%.10f\n%.10f\n",
+				Get_Cellsize(), 0., 0., -Get_Cellsize(), Get_XMin(), Get_YMax()
+			);
+		}
 	}
 
 	//-----------------------------------------------------
@@ -503,19 +486,16 @@ bool CGrid_Export::Set_Metric(CSG_Grid &Grid)
 	CSG_Grid	*pGrid	= Parameters("GRID")->asGrid();
 
 	//-----------------------------------------------------
-	CSG_Colors	Colors;
+	CSG_Colors	Colors(*Parameters("COL_PALETTE")->asColors());
 
-	if( SG_UI_Get_Window_Main() )
+	if( !has_GUI() )
 	{
-		Colors.Assign(Parameters("COL_PALETTE")->asColors());
-	}
-	else
-	{
-		Colors.Set_Palette(
-			Parameters("COL_PALETTE")->asInt (),
-			Parameters("COL_REVERT" )->asBool(),
-			Parameters("COL_COUNT"  )->asInt ()
-		);
+		Colors.Set_Count(Parameters("COL_COUNT")->asInt ());
+
+		if( Parameters("COL_REVERT")->asBool() )
+		{
+			Colors.Revert();
+		}
 	}
 
 	bool	bGraduated	= Parameters("GRADUATED")->asBool();
@@ -543,7 +523,7 @@ bool CGrid_Export::Set_Metric(CSG_Grid &Grid)
 		break;
 	}
 
-	if( Minimum >= Maximum || pGrid->Get_Range() <= 0.0 )
+	if( Minimum >= Maximum || pGrid->Get_Range() <= 0. )
 	{
 		Error_Set(_TL("invalid user specified value range."));
 
@@ -683,13 +663,13 @@ bool CGrid_Export::Add_Shading(CSG_Grid &Grid)
 {
 	CSG_Grid	*pShade	= Parameters("SHADE")->asGrid();
 
-	if( !pShade || pShade->Get_Range() <= 0.0 || Parameters("SHADE_BRIGHT.MIN")->asDouble() >= Parameters("SHADE_BRIGHT.MAX")->asDouble() )
+	if( !pShade || pShade->Get_Range() <= 0. || Parameters("SHADE_BRIGHT.MIN")->asDouble() >= Parameters("SHADE_BRIGHT.MAX")->asDouble() )
 	{
 		return( false );
 	}
 
 	//-----------------------------------------------------
-	double	Minimum, Maximum, Scale, Transparency	= Parameters("SHADE_TRANS")->asDouble() / 100.0;
+	double	Minimum, Maximum, Scale, Transparency	= Parameters("SHADE_TRANS")->asDouble() / 100.;
 
 	switch( Parameters("SHADE_COLOURING")->asInt() )
 	{
@@ -712,7 +692,6 @@ bool CGrid_Export::Add_Shading(CSG_Grid &Grid)
 	Scale	= 255 * (1 - Transparency) / (Maximum - Minimum);
 
 	//-----------------------------------------------------
-	#pragma omp parallel
 	for(int y=0; y<Get_NY(); y++)
 	{
 		int	yy	= Get_NY() - y - 1;

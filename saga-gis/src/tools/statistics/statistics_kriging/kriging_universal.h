@@ -1,6 +1,3 @@
-/**********************************************************
- * Version $Id: kriging_universal.h 1921 2014-01-09 10:24:11Z oconrad $
- *********************************************************/
 
 ///////////////////////////////////////////////////////////
 //                                                       //
@@ -9,14 +6,13 @@
 //      System for Automated Geoscientific Analyses      //
 //                                                       //
 //                     Tool Library                      //
-//            geostatistics_kriging_variogram            //
+//                  statistics_kriging                   //
 //                                                       //
 //-------------------------------------------------------//
 //                                                       //
 //                  Kriging_Universal.h                  //
 //                                                       //
-//                 Copyright (C) 2008 by                 //
-//                      Olaf Conrad                      //
+//                 Olaf Conrad (C) 2008                  //
 //                                                       //
 //-------------------------------------------------------//
 //                                                       //
@@ -51,15 +47,6 @@
 ///////////////////////////////////////////////////////////
 
 //---------------------------------------------------------
-
-
-///////////////////////////////////////////////////////////
-//														 //
-//                                                       //
-//														 //
-///////////////////////////////////////////////////////////
-
-//---------------------------------------------------------
 #ifndef HEADER_INCLUDED__Kriging_Universal_H
 #define HEADER_INCLUDED__Kriging_Universal_H
 
@@ -89,11 +76,11 @@ public:
 
 protected:
 
-	virtual bool			On_Initialize		(void);
+	virtual bool			Init_Points			(CSG_Shapes *pPoints, int Field, bool bLog);
 
-	virtual bool			Get_Weights			(const CSG_Points_Z &Points, CSG_Matrix &W);
+	virtual bool			Get_Weights			(const CSG_Matrix &Points, CSG_Matrix &W);
 
-	virtual bool			Get_Value			(const TSG_Point &p, double &z, double &v);
+	virtual bool			Get_Value			(double x, double y, double &v, double &e);
 
 
 private:
@@ -102,7 +89,7 @@ private:
 
 	TSG_Grid_Resampling		m_Resampling;
 
-	CSG_Parameter_Grid_List	*m_pGrids;
+	CSG_Parameter_Grid_List	*m_pPredictors;
 
 };
 

@@ -1,6 +1,3 @@
-/**********************************************************
- * Version $Id$
- *********************************************************/
 
 ///////////////////////////////////////////////////////////
 //                                                       //
@@ -51,17 +48,9 @@
 ///////////////////////////////////////////////////////////
 
 //---------------------------------------------------------
+#include <saga_gdi/sgdi_helper.h>
 
-
-///////////////////////////////////////////////////////////
-//														 //
-//														 //
-//														 //
-///////////////////////////////////////////////////////////
-
-//---------------------------------------------------------
 #include "helper.h"
-#include "dc_helper.h"
 
 #include "wksp_shapes_point.h"
 #include "wksp_shapes_line.h"
@@ -175,9 +164,9 @@ void CWKSP_Layer_Legend::Draw(wxDC &dc, double Zoom, double Zoom_Map, wxPoint Po
 	m_Zoom_Map	= Zoom_Map;
 
 	//-----------------------------------------------------
-	m_oldPen	= dc.GetPen();
+	m_oldPen	= dc.GetPen  ();
 	m_oldBrush	= dc.GetBrush();
-	m_oldFont	= dc.GetFont();
+	m_oldFont	= dc.GetFont ();
 
 	//-----------------------------------------------------
 	m_xBox		= m_Position.x;
@@ -244,20 +233,17 @@ inline void CWKSP_Layer_Legend::_Set_Size(int xSet, int yAdd)
 //---------------------------------------------------------
 inline void CWKSP_Layer_Legend::_Set_Font(wxDC &dc, int Style)
 {
+	wxFont	Font;
+
 	switch( Style )
 	{
-	case FONT_TITLE:
-		dc.SetFont(wxFont(FONT_SIZE_TITLE   , wxFONTFAMILY_SWISS, wxFONTSTYLE_NORMAL, wxFONTWEIGHT_BOLD, false));
-		break;
-
-	case FONT_SUBTITLE:
-		dc.SetFont(wxFont(FONT_SIZE_SUBTITLE, wxFONTFAMILY_SWISS, wxFONTSTYLE_NORMAL, wxFONTWEIGHT_BOLD));
-		break;
-
-	case FONT_LABEL:	default:
-		dc.SetFont(wxFont(FONT_SIZE_LABEL   , wxFONTFAMILY_SWISS, wxFONTSTYLE_ITALIC, wxFONTWEIGHT_NORMAL));
-		break;
+	default:
+	case FONT_LABEL   : Font.Create(FONT_SIZE_LABEL   , wxFONTFAMILY_SWISS, wxFONTSTYLE_ITALIC, wxFONTWEIGHT_NORMAL); break;
+	case FONT_SUBTITLE: Font.Create(FONT_SIZE_SUBTITLE, wxFONTFAMILY_SWISS, wxFONTSTYLE_NORMAL, wxFONTWEIGHT_BOLD  ); break;
+	case FONT_TITLE   : Font.Create(FONT_SIZE_TITLE   , wxFONTFAMILY_SWISS, wxFONTSTYLE_NORMAL, wxFONTWEIGHT_BOLD  ); break;
 	}
+
+	dc.SetFont(Font);
 }
 
 //---------------------------------------------------------
@@ -311,7 +297,7 @@ inline void CWKSP_Layer_Legend::_Draw_Label(wxDC &dc, int y, wxString Text, int 
 //---------------------------------------------------------
 inline void CWKSP_Layer_Legend::_Draw_Box(wxDC &dc, int y, int dy, int Style, int LineColor, int FillColor, wxString Text)
 {
-	if( (Style & BOX_STYLE_OUTL) == 0 )
+	if( (Style & BOX_STYLE_OUTL) != 0 )
 	{
 		wxPen	Pen		= dc.GetPen();
 		Pen		.SetColour(Get_Color_asWX(LineColor));
@@ -356,8 +342,8 @@ inline void CWKSP_Layer_Legend::_Draw_Box(wxDC &dc, int y, int dy, int Style, in
 //---------------------------------------------------------
 inline void CWKSP_Layer_Legend::_Draw_Box(wxDC &dc, int y, int dy, int Style, int iClass)
 {
-	int	LineColor	= Get_Color_asInt(dc.GetPen  ().IsOk() ? dc.GetPen  ().GetColour() : *wxBLACK);
-	int	FillColor	= Get_Color_asInt(dc.GetBrush().IsOk() ? dc.GetBrush().GetColour() : *wxWHITE);
+	int	LineColor	= Get_Color_asInt(dc.GetTextForeground());
+	int	FillColor	= Get_Color_asInt(dc.GetBrush().IsOk() ? dc.GetBrush().GetColour() : dc.GetTextBackground());
 
 	wxString	Text;
 
@@ -385,18 +371,16 @@ void CWKSP_Layer_Legend::_Draw_Boxes(wxDC &dc, int y, int Style, double zFactor)
 	switch( m_pClassify->Get_Mode() )
 	{
 	case CLASSIFY_GRADUATED:
-	case CLASSIFY_SHADE:
-		if( METRIC_HEIGHT < m_pClassify->Get_Class_Count() * BOX_HEIGHT )
+	case CLASSIFY_SHADE    :
+		_Draw_Continuum(dc, m_Position.y, zFactor);
+		break;
+
+	default:
+		for(int iClass=m_pClassify->Get_Class_Count()-1; iClass>=0; iClass--, y+=BOX_HEIGHT)
 		{
-			_Draw_Continuum(dc, m_Position.y, zFactor);
-
-			return;
+			_Draw_Box(dc, y, BOX_HEIGHT, Style, iClass);
 		}
-	}
-
-	for(int iClass=m_pClassify->Get_Class_Count()-1; iClass>=0; iClass--, y+=BOX_HEIGHT)
-	{
-		_Draw_Box(dc, y, BOX_HEIGHT, Style, iClass);
+		break;
 	}
 }
 
@@ -440,7 +424,7 @@ void CWKSP_Layer_Legend::_Draw_Point(wxDC &dc, CWKSP_Shapes_Point *pLayer)
 
 		_Set_Size(0, SIZE_HEIGHT + dc.GetFont().GetPointSize());
 
-		if( m_pClassify->Get_Mode() == CLASSIFY_UNIQUE )
+		if( m_pClassify->Get_Mode() == CLASSIFY_SINGLE )
 		{
 			return;
 		}
@@ -476,7 +460,7 @@ void CWKSP_Layer_Legend::_Draw_Line(wxDC &dc, CWKSP_Shapes_Line *pLayer)
 			_Draw_Label	(dc, y, wxString::Format(wxT("%f"), size_Min_Value + (iSize - size_Min) / size_dValue), TEXTALIGN_TOP);
 		}
 
-		if( m_pClassify->Get_Mode() == CLASSIFY_UNIQUE )
+		if( m_pClassify->Get_Mode() == CLASSIFY_SINGLE )
 		{
 			return;
 		}
@@ -516,7 +500,7 @@ void CWKSP_Layer_Legend::_Draw_Grid(wxDC &dc, CWKSP_Grid *pLayer)
 	switch( m_pClassify->Get_Mode() )
 	{
 	case CLASSIFY_GRADUATED:
-	case CLASSIFY_METRIC:
+	case CLASSIFY_DISCRETE:
 	case CLASSIFY_SHADE:
 		if( !pLayer->Get_Grid()->Get_Unit().is_Empty() )
 		{
@@ -540,7 +524,7 @@ void CWKSP_Layer_Legend::_Draw_Grids(wxDC &dc, CWKSP_Grids *pLayer)
 	switch( m_pClassify->Get_Mode() )
 	{
 	case CLASSIFY_GRADUATED:
-	case CLASSIFY_METRIC:
+	case CLASSIFY_DISCRETE:
 	case CLASSIFY_SHADE:
 		if( *pLayer->Get_Grids()->Get_Unit() )
 		{
@@ -618,7 +602,7 @@ void CWKSP_Layer_Legend::_Draw_Continuum(wxDC &dc, int y, double zFactor)
 		int		dxFont, dyFont;
 		double	yToDC, dz;
 
-		dc.SetPen(*wxBLACK_PEN);
+		dc.SetPen(dc.GetTextForeground());
 
 		_Set_Font(dc, FONT_LABEL);
 		dc.GetTextExtent(wxString::Format(wxT("01234567")), &dxFont, &dyFont);
@@ -646,18 +630,26 @@ void CWKSP_Layer_Legend::_Draw_Continuum(wxDC &dc, int y, double zFactor)
 //---------------------------------------------------------
 void CWKSP_Layer_Legend::_Draw_Continuum_V(wxDC &dc, int y, double yToDC, double zMin, double zMax, double zFactor, double dz, int dyFont)
 {
-	int		i, iy, jy;
-	double	z;
+	CSG_Colors Colors(*m_pClassify->Get_Metric_Colors());
 
-	//-----------------------------------------------------
-	for(i=0, z=y+METRIC_HEIGHT; i<m_pClassify->Get_Class_Count(); i++, z-=yToDC)
+	Colors.Set_Count(METRIC_HEIGHT);
+
+	wxPen oldPen(dc.GetPen());
+
+	for(int i=0, iy=y+METRIC_HEIGHT; i<Colors.Get_Count(); i++, iy--)
 	{
-		Draw_FillRect(dc, Get_Color_asWX(m_pClassify->Get_Class_Color(i)), m_xBox, (int)(z), m_xTick, (int)(z - yToDC));
+		dc.SetPen(wxPen(Get_Color_asWX(Colors[i])));
+
+		dc.DrawLine(m_xBox, iy, m_xTick, iy);
 	}
+
+	dc.SetPen(oldPen);
 
 	Draw_Edge(dc, EDGE_STYLE_SIMPLE, m_xBox, y, m_xTick, y + METRIC_HEIGHT);
 
 	//-----------------------------------------------------
+	int iy, jy; double z;
+
 	switch( m_pClassify->Get_Metric_Mode() )
 	{
 	case METRIC_MODE_NORMAL:	default:
@@ -689,7 +681,7 @@ void CWKSP_Layer_Legend::_Draw_Continuum_V(wxDC &dc, int y, double yToDC, double
 				_Draw_Label(dc, iy, METRIC_GET_STRING(z, dz), TEXTALIGN_YCENTER);
 			}
 
-			while( abs(iy - METRIC_POS_V(z - dz)) > 2 * dyFont )
+			while( dz >= 10. && abs(iy - METRIC_POS_V(z - dz)) > 2 * dyFont )
 				dz	*= 0.1;
 		}
 		break;
@@ -710,7 +702,7 @@ void CWKSP_Layer_Legend::_Draw_Continuum_V(wxDC &dc, int y, double yToDC, double
 				_Draw_Label(dc, iy, METRIC_GET_STRING(z, dz), TEXTALIGN_YCENTER);
 			}
 
-			while( abs(iy - METRIC_POS_V(z + dz)) > 2 * dyFont )
+			while( dz >= 10. && abs(iy - METRIC_POS_V(z + dz)) > 2 * dyFont )
 				dz	*= 0.1;
 		}
 		break;
@@ -723,22 +715,29 @@ void CWKSP_Layer_Legend::_Draw_Continuum_V(wxDC &dc, int y, double yToDC, double
 //---------------------------------------------------------
 void CWKSP_Layer_Legend::_Draw_Continuum_H(wxDC &dc, int y, double yToDC, double zMin, double zMax, double zFactor, double dz, int dyFont)
 {
-	int			i, iy, jy, yTick, yText, sx, sy;
-	double		z;
-	wxString	s;
+	CSG_Colors Colors(*m_pClassify->Get_Metric_Colors());
 
-	yTick	= y + m_dxBox;
-	yText	= y + m_dxBox + m_dxTick;
+	Colors.Set_Count(METRIC_HEIGHT);
 
-	//-----------------------------------------------------
-	for(i=0, z=m_xBox; i<m_pClassify->Get_Class_Count(); i++, z+=yToDC)
+	wxPen oldPen(dc.GetPen());
+
+	int yTick = y + m_dxBox;
+	int yText = y + m_dxBox + m_dxTick;
+
+	for(int i=0, ix=m_xBox; i<Colors.Get_Count(); i++, ix++)
 	{
-		Draw_FillRect(dc, Get_Color_asWX(m_pClassify->Get_Class_Color(i)), (int)(z), y, (int)(z + yToDC), yTick);
+		dc.SetPen(wxPen(Get_Color_asWX(Colors[i])));
+
+		dc.DrawLine(ix, y, ix, yTick);
 	}
+
+	dc.SetPen(oldPen);
 
 	Draw_Edge(dc, EDGE_STYLE_SIMPLE, m_xBox, y, m_xBox + METRIC_HEIGHT, yTick);
 
 	//-----------------------------------------------------
+	int iy, jy, sx, sy; double z; wxString s;
+
 	switch( m_pClassify->Get_Metric_Mode() )
 	{
 	case METRIC_MODE_NORMAL:	default:
