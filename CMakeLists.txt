@@ -84,11 +84,6 @@ file(GLOB CMAKE_FILES "cmake/*.cmake" "cmake/modules/*.cmake")
 file(GLOB SHARED_CMAKE_FILES "shared_cmake/scripts/*.cmake")
 add_custom_target(saga-other-files SOURCES
 	.gitignore
-	COPYING
-	README
-	src/gpl.txt
-	src/lgpl.txt
-	src/install.txt
 	cmake/Config.cmake
 	cmake/config.h.cmake
 	${CMAKE_FILES}
@@ -100,7 +95,8 @@ include(cmake/Config.cmake)
 Config()
 
 # add subdirectories
-add_subdirectory(src)
+add_subdirectory(watem)
+add_subdirectory(network)
 
 # in case some automated tests will be written
 #option(BUILD_TESTING "Build tests for saga-gis" ON)
