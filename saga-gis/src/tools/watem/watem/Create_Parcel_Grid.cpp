@@ -76,7 +76,10 @@ bool Create_Parcel_Grid::On_Execute()
 			prc->Set_Value(i, landuse->asInt(i));
 	}
 
-	delete gbg, gba, wga, knw;
+	delete gbg;
+    delete gba;
+    delete wga;
+    delete knw;
 
 	CSG_Grid * parcel_grid = new CSG_Grid(prc->Get_System(), SG_DATATYPE_Long);
 
@@ -135,7 +138,10 @@ bool Create_Parcel_Grid::On_Execute()
 	}
 
 
-	delete vha_pol, vha_line, wbn, sbn;
+	delete vha_pol;
+    delete vha_line;
+    delete wbn;
+    delete sbn;
 	//todo: no data op 0 zetten!
 	// nu komt nodata van landuse denk ik?
 
