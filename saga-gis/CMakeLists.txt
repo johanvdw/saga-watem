@@ -8,17 +8,18 @@ if (POLICY CMP0043)
 endif (POLICY CMP0043)
 
 # define project name and its description
-project(saga)
+project(saga_vpo)
 message(STATUS "folder: ${PROJECT_NAME}")
 set(TOP_PROJECT ${PROJECT_NAME})
 string(TOLOWER ${TOP_PROJECT} TOP_PROJECT_LOWER)
-set(PROJECT_DESCRIPTION "SAGA - System for Automated Geoscientific Analyses")
+set(PROJECT_DESCRIPTION "SAGA - VPO extensions")
 
 # Set a default build type for single-configuration cmake generators if
 # no build type is set.
 if(NOT CMAKE_CONFIGURATION_TYPES AND NOT CMAKE_BUILD_TYPE)
 	message(STATUS "Set default build type to Release")
 	set(CMAKE_BUILD_TYPE Release)
+    set(CMAKE_CXX_FLAGS "-I /usr/include/saga/")
 endif()
 
 if(MSVC)

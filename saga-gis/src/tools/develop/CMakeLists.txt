@@ -1,2 +1,0 @@
-add_subdirectory(dev_tools)
-add_subdirectory(dev_exercises)
