@@ -57,8 +57,7 @@ bool CTopologize::On_Execute(void)
     CSG_Grid *grid = Parameters("SYSTEM")->asGrid();
 
     CSG_Grid_System system;
-    if (grid != NULL)
-        system = grid->Get_System();
+    if (grid != NULL) system = grid->Get_System();
 
 	int iPart, MaxNodeID=0;
     double tolerance;
