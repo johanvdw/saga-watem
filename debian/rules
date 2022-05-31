@@ -1,0 +1,59 @@
+#!/usr/bin/make -f
+
+# Enable hardening build flags
+export DEB_BUILD_MAINT_OPTIONS=hardening=+all
+
+CFLAGS += $(CPPFLAGS)
+
+VERSION := $(shell grep '^AC_INIT' configure.ac | sed 's/AC_INIT(saga, \([0-9|\.]*\)\,.*)/\1/g')
+
+TEMPLATES = $(wildcard debian/*.in)
+
+templates:
+	for TEMPLATE in $(TEMPLATES) ; do \
+		sed -e 's/@VERSION@/$(VERSION)/g' $$TEMPLATE > `echo $$TEMPLATE | sed 's/.in$$//'` ; \
+	done
+
+%:
+	dh $@ --with python3 --with autoreconf --parallel
+
+override_dh_clean:
+	dh_clean src/saga_core/saga_api/saga_api.py saga_cmd.1 saga_gui.1
+
+override_dh_auto_configure: templates
+	dh_auto_configure -- \
+		--prefix=/usr \
+		--disable-libfire \
+		--disable-triangle \
+		--enable-openmp \
+		--enable-python \
+		--with-system-dxflib \
+		--disable-opencv \
+		$(shell dpkg-buildflags --export=configure)
+
+override_dh_auto_build:
+	pod2man --section=1 --release=$(VERSION) --center " " debian/saga_gui.pod > saga_gui.1
+	pod2man --section=1 --release=$(VERSION) --center " " debian/saga_cmd.pod > saga_cmd.1
+	dh_auto_build
+
+override_dh_auto_install:
+	dh_auto_install
+
+	# Remove executable bit from resource files
+	chmod -x debian/*/usr/share/saga/*.*
+
+	# Explicitly remove files not to be installed
+	find $(CURDIR)/debian/tmp/usr/lib -name "*.a" -delete
+	find $(CURDIR)/debian/tmp/usr/lib -name "*.la" -delete
+	find $(CURDIR)/debian/tmp/usr/lib -name "*.pyc" -delete
+	find $(CURDIR)/debian/tmp/usr/lib -name "*.pyo" -delete
+	$(RM) -r $(CURDIR)/debian/tmp/usr/include
+
+override_dh_install:
+	dh_install --list-missing
+
+override_dh_python2:
+	dh_python2 --no-guessing-versions
+
+override_dh_makeshlibs:
+	dh_makeshlibs -Xpython-saga
