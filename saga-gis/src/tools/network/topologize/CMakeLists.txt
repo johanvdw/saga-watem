@@ -1,5 +1,5 @@
 if(WITH_TOOLS)
-	project(line_direction)
+	project(topologize)
 
 	# load common tool template
 	include(../../CMakePluginTemplate.cmake )
