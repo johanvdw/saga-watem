@@ -54,7 +54,7 @@ bool Calculate_C_Grid::On_Execute()
 		}
 	}
 
-
+	return true;
 }
 
 Calculate_C_Grid::~Calculate_C_Grid()
