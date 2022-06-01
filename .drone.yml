@@ -46,7 +46,7 @@ steps:
     - cmake .. -A x64
     - ../ci/build-win.bat
   - name: publish dll on release
-    image: plugins/gitea-release
+    image: registry.fluves.net/test/drone-plugin-windows
     settings:
       api_key:
         from_secret: release_token
