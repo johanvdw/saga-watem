@@ -7,7 +7,6 @@ steps:
   - name: build bullseye
     image: registry.fluves.net/drone/saga-watem/build-bullseye
     commands:
-      - apt install libsaga
       - dch --newversion $(dpkg-parsechangelog --show-field Version)+$DRONE_BUILD_NUMBER "Automated build for $DRONE_COMMIT~bullseye"
       - debuild -b -us -uc -j8
       - mkdir ../package
@@ -30,7 +29,7 @@ steps:
       event:
         exclude:
           - pull_request
----
+# ---
 #kind: pipeline
 # name: focal build
 # 
@@ -72,7 +71,7 @@ kind: pipeline
 type: docker
 name: reindex repo
 depends_on:
-- focal build
+  # - focal build
 - bullseye build
 
 steps:
