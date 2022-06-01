@@ -44,6 +44,7 @@ steps:
     - mkdir build
     - cd build
     - cmake ..
+    - RUN setx path "%path%;C:\\Program Files (x86)\\Microsoft Visual Studio\\2017\\MSBuild\\Current\\Bin"
     - msbuild saga-vpo.sln
 # ---
 #kind: pipeline
