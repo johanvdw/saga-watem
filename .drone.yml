@@ -45,7 +45,21 @@ steps:
     - cd build
     - cmake .. -A x64
     - ../ci/build-win.bat
-    - tree
+  - name: publish dll on release
+    image: plugins/gitea-release
+    settings:
+      api_key:
+        from_secret: release_token
+      base_url: https://git.fluves.net
+      files: build/release/*.dll
+      prerelease: true
+      note: automatic build
+      title: ${DRONE_TAG}
+    when:
+      event: [tag]
+
+
+
 # ---
 #kind: pipeline
 # name: focal build
