@@ -43,7 +43,7 @@ steps:
     commands:
     - mkdir build
     - cd build
-    - cmake ..
+    - cmake .. -A x64
     - ../ci/build-win.bat
 # ---
 #kind: pipeline
