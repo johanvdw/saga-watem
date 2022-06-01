@@ -29,6 +29,20 @@ steps:
       event:
         exclude:
           - pull_request
+---
+kind: pipeline
+name: windows build
+platform:
+  os: windows
+  version: "1809"
+steps:
+  - name: build dll
+    image: registry.fluves.net/drone/saga-watem/build-windows
+    commands:
+    - mkdir build
+    - cd build
+    - cmake ..
+    - msbuild saga-vpo.sln
 # ---
 #kind: pipeline
 # name: focal build
