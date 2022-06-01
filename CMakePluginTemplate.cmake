@@ -38,7 +38,7 @@ endif()
 target_compile_definitions(${PROJECT_NAME} PUBLIC -D_TYPEDEF_BYTE -D_TYPEDEF_WORD)
 
 # link saga_api
-target_link_libraries(${PROJECT_NAME} saga_api)
+target_link_libraries(${PROJECT_NAME} ${SAGA_API})
 
 install(TARGETS ${PROJECT_NAME} DESTINATION lib/saga)
 
