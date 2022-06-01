@@ -45,6 +45,7 @@ steps:
     - cd build
     - cmake .. -A x64
     - ../ci/build-win.bat
+    - dir release/*
   - name: publish dll on release
     image: registry.fluves.net/test/drone-plugin-windows
     settings:
