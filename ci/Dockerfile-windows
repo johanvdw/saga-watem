@@ -1,5 +1,4 @@
-# escape=`
-# builds  registry.fluves.net/drone/saga-watem/build-windows
+# escape=` # builds  registry.fluves.net/drone/saga-watem/build-windows
 FROM mcr.microsoft.com/windows/servercore:ltsc2019
 
 RUN @"%SystemRoot%\System32\WindowsPowerShell\v1.0\powershell.exe" -NoProfile -InputFormat None -ExecutionPolicy Bypass -Command "iex ((New-Object System.Net.WebClient).DownloadString('https://chocolatey.org/install.ps1'))" && SET "PATH=%PATH%;%ALLUSERSPROFILE%\chocolatey\bin"
@@ -15,5 +14,8 @@ RUN `
 
 RUN choco feature enable -n=allowGlobalConfirmation
 RUN choco install cmake --installargs 'ADD_CMAKE_TO_PATH=""System""' 
+
+RUN powershell Invoke-WebRequest https://jztkft.dl.sourceforge.net/project/saga-gis/SAGA%20-%208/SAGA%20-%208.2.1/saga-8.2.1_x64.zip -OutFile saga_8.2.1-X64.zip
+RUN powershell Expand-Archive -Path saga_8.2.1-X64.zip -DestinationPath c:\saga\
 
 ENTRYPOINT ["C:\\Program Files (x86)\\Microsoft Visual Studio\\2017\\BuildTools\\Common7\\Tools\\VsDevCmd.bat", "&&", "powershell.exe", "-NoLogo", "-ExecutionPolicy", "Bypass"]
