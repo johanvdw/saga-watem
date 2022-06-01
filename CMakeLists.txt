@@ -38,13 +38,16 @@ if(MSVC)
 	set(CMAKE_EXE_LINKER_FLAGS_DEBUG    "/debug /INCREMENTAL /LTCG:OFF" CACHE STRING "" FORCE)
 	set(CMAKE_MODULE_LINKER_FLAGS_DEBUG "/debug /INCREMENTAL /LTCG:OFF" CACHE STRING "" FORCE)
 	set(CMAKE_SHARED_LINKER_FLAGS_DEBUG "/debug /INCREMENTAL /LTCG:OFF" CACHE STRING "" FORCE)
+	set(CMAKE_CXX_FLAGS "-I %SAGA%/include")
+	set(CMAKE_PREFIX_PATH "%SAGA")
+	FIND_LIBRARY(SAGA_API NAMES saga_api PATHS
+		"$ENV{SAGA}"
+		)
+	# target_link_libraries(${PROJECT_NAME} ${SAGA_API})
 endif()
 
 # options
-option(WITH_GUI "Build SAGA with GUI" ON)
 option(WITH_TOOLS "Build SAGA with tools" ON)
-option(OpenMP_SUPPORT "Compile with OpenMP optimizations" ON)
-#option(WITH_LINK_TESTER "Check to enable testing if tools are successfully linking" OFF)
 
 # include version and debianize
 include(version.cmake)
