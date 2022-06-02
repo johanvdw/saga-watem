@@ -52,7 +52,7 @@ steps:
       api_key:
         from_secret: release_token
       base_url: https://git.fluves.net
-      files: build/release/*.dll
+      files: saga-vpo_${DRONE_TAG}.zip
       prerelease: true
       note: automatic build
       title: ${DRONE_TAG}
