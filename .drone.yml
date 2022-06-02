@@ -43,7 +43,7 @@ steps:
     commands:
     - mkdir build
     - cd build
-    - cmake .. -A x64
+    - cmake ..
     - ../ci/build-win.bat
     - dir release/*
   - name: publish dll on release
