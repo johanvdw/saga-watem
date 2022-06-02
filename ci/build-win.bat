@@ -3,4 +3,4 @@ mkdir release
 xcopy C:\drone\src\build\network\line_direction\Release\line_direction.dll release
 xcopy C:\drone\src\build\network\topologize\Release\topologize.dll release
 xcopy C:\drone\src\build\watem\watem\Release\watem.dll release
-powershell Compress-Archive -Path release\*.dll -DestinationPath c:\saga-vpo_%DRONE_TAG%.zip
+powershell Compress-Archive -Path release\*.dll -DestinationPath ..\saga-vpo_%DRONE_TAG%.zip
