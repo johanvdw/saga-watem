@@ -9,8 +9,8 @@ steps:
     commands:
       - dch --newversion $(dpkg-parsechangelog --show-field Version)+$DRONE_BUILD_NUMBER "Automated build for $DRONE_COMMIT~bullseye"
       - debuild -b -us -uc -j8
-      - mkdir ../package
-      - mv ../*saga*deb ../package
+      - mkdir package
+      - mv ../*saga*deb package
   - name: rsync-apt
     image: drillster/drone-rsync
     settings:
