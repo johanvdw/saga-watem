@@ -22,13 +22,7 @@ steps:
       source: package/*.deb
       target: /appdata/static/apt/bullseye/amd64
     when:
-      branch:
-        - master
-        - saga-watem
-        - drone
-      event:
-        exclude:
-          - pull_request
+      event: [tag]
 ---
 kind: pipeline
 name: windows build
@@ -138,9 +132,4 @@ steps:
       - gpg -abs -o Release.gpg Release
       - rsync -av . docs@ijzer:/appdata/static/apt/bullseye
     when:
-      branch:
-        - master
-        - saga-watem
-      event:
-        exclude:
-          - pull_request
+      event: tag
