@@ -7,15 +7,10 @@ steps:
   - name: build bullseye
     image: registry.fluves.net/drone/saga-watem/build-bullseye
     commands:
-      - cd saga-gis
-      - apt install -y dh-python
-        # not working as debian is unfortunately not in the main dir
-        #- gbp dch --snapshot --ignore-branch --snapshot-number=$DRONE_BUILD_NUMBER
-        # Alternative version
       - dch --newversion $(dpkg-parsechangelog --show-field Version)+$DRONE_BUILD_NUMBER "Automated build for $DRONE_COMMIT~bullseye"
       - debuild -b -us -uc -j8
-      - mkdir ../package
-      - mv ../*saga*deb ../package
+      - mkdir package
+      - mv ../*saga*deb package
   - name: rsync-apt
     image: drillster/drone-rsync
     settings:
@@ -27,57 +22,84 @@ steps:
       source: package/*.deb
       target: /appdata/static/apt/bullseye/amd64
     when:
-      branch:
-        - master
-        - saga-watem
-        - drone
-      event:
-        exclude:
-          - pull_request
+      event: [tag]
 ---
 kind: pipeline
-type: docker
-name: focal build
-
+name: windows build
+platform:
+  os: windows
+  version: "1809"
 steps:
-  - name: build focal
-    image: registry.fluves.net/drone/saga-watem/build-focal
+  - name: build dll
+    image: registry.fluves.net/drone/saga-watem/build-windows
+    environment:
+      SAGA: c:\saga\saga-8.2.1_x64
     commands:
-      - cd saga-gis
-      - apt install -y dh-python
-        # not working as debian is unfortunately not in the main dir
-        #- gbp dch --snapshot --ignore-branch --snapshot-number=$DRONE_BUILD_NUMBER
-        # Alternative version
-      - dch --newversion $(dpkg-parsechangelog --show-field Version)+$DRONE_BUILD_NUMBER "Automated build for $DRONE_COMMIT~focal"
-      - debuild -b -us -uc -j8
-      - mkdir ../package
-      - mv ../*saga*deb ../package
+    - mkdir build
+    - cd build
+    - cmake .. -G "Visual Studio 16 2019" -A x64
+    - ../ci/build-win.bat
+    - dir release/*
+    failure: ignore
 
-  - name: rsync-apt
-    image: drillster/drone-rsync
+  - name: publish dll on release
+    image: registry.fluves.net/test/drone-plugin-windows
     settings:
-      hosts:
-        - ijzer
-      user: docs
-      key:
-         from_secret: ssh-key
-      source: package/*.deb
-      target: /appdata/static/apt/amd64
+      api_key:
+        from_secret: release_token
+      base_url: https://git.fluves.net
+      files: saga-vpo_${DRONE_TAG}.zip
+      prerelease: true
+      note: automatic build
+      title: ${DRONE_TAG}
     when:
-      branch:
-        - master
-        - saga-watem
-        - drone
-      event:
-        exclude:
-          - pull_request
+      event: [tag]
 
+
+
+# ---
+#kind: pipeline
+# name: focal build
+# 
+# steps:
+#   - name: build focal
+#     image: registry.fluves.net/drone/saga-watem/build-focal
+#     commands:
+#       - cd saga-gis
+#       - apt install -y dh-python
+#         # not working as debian is unfortunately not in the main dir
+#         #- gbp dch --snapshot --ignore-branch --snapshot-number=$DRONE_BUILD_NUMBER
+#         # Alternative version
+#       - dch --newversion $(dpkg-parsechangelog --show-field Version)+$DRONE_BUILD_NUMBER "Automated build for $DRONE_COMMIT~focal"
+#       - debuild -b -us -uc -j8
+#       - mkdir ../package
+#       - mv ../*saga*deb ../package
+# 
+#   - name: rsync-apt
+#     image: drillster/drone-rsync
+#     settings:
+#       hosts:
+#         - ijzer
+#       user: docs
+#       key:
+#          from_secret: ssh-key
+#       source: package/*.deb
+#       target: /appdata/static/apt/amd64
+#     when:
+#       branch:
+#         - master
+#         - saga-watem
+#         - drone
+#       event:
+#         exclude:
+#           - pull_request
+# 
 ---
 kind: pipeline
 type: docker
 name: reindex repo
 depends_on:
-- focal build
+  # - focal build
 - bullseye build
 
 steps:
@@ -112,9 +134,4 @@ steps:
       - gpg -abs -o Release.gpg Release
       - rsync -av . docs@ijzer:/appdata/static/apt/bullseye
     when:
-      branch:
-        - master
-        - saga-watem
-      event:
-        exclude:
-          - pull_request
+      event: tag
