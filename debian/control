@@ -1,0 +1,16 @@
+Source: saga-vpo
+Maintainer: Johan Van de Wauw <johan@fluves.com>
+Section: science
+Priority: optional
+Build-Depends: libsaga-dev(=8.2.1+dfsg-2)
+Standards-Version: 4.2.0
+Vcs-Browser: https://git.fluves.net/fluves/saga-watem
+Vcs-Git: https://git.fluves.net/fluves/saga-watem.git
+
+Package: saga-vpo
+Architecture: any
+Depends: ${shlibs:Depends},
+         ${misc:Depends}
+Pre-Depends: ${misc:Pre-Depends}
+Description: SAGA modules for VPO
+ Specific modules for running watem and watem/sedem.

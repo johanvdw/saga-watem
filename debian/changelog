@@ -1,0 +1,6 @@
+saga-vpo (8.2.1) UNRELEASED; urgency=medium
+
+  * Build separate from saga
+
+ -- Johan Van de Wauw <johan@gisky.be>  Tue, 31 May 2022 16:34:07 +0200
+

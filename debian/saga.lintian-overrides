@@ -1,0 +1,13 @@
+# False positive on German text
+saga: spelling-error-in-binary * Programms Programs
+
+# Build uses -D_FORTIFY_SOURCE=2, but hardening-check reports:
+#  Fortify Source functions: no, only unprotected functions found!
+saga: hardening-no-fortify-functions *
+
+# False positive on LGPL-2.1 text:
+# [This is the first released version of the Lesser GPL.  It also counts
+#  as the successor of the GNU Library Public License, version 2, hence
+#  the version number 2.1.]
+saga: spelling-error-in-binary usr/bin/saga_gui GNU Library Public License GNU Library General Public License
+

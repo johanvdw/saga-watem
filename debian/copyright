@@ -1,0 +1,8 @@
+Format: https://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
+Upstream-Name: SAGA GIS VPO modules
+Upstream-Contact: Johan Van de Wauw
+Source: http://git.fluves.net/fluves/saga-watem
+
+Files: *
+Copyright: Johan Van de Wauw, Vlaams Planbureau Omgeving
+License: proprietary
