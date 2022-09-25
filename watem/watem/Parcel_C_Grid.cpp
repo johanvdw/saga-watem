@@ -6,7 +6,7 @@ Parcel_C_Grid::Parcel_C_Grid()
 	//-----------------------------------------------------
 	// Give some information about your tool...
 
-	Set_Name(_TL("3.3. C berekening attribuut"));
+	Set_Name(_TL("3.6. C berekening attribuut"));
 
 	Set_Author(_TL("Copyright (c) 2022, Johan Van de Wauw"));
 
@@ -59,7 +59,6 @@ bool Parcel_C_Grid::On_Execute()
 	
 
 	// fill gaps with reclassified landuse
-	#pragma omp parallel for
 	for (int i = 0; i < C->Get_NCells(); i++) {
 		if (C->is_NoData(i))
 		{
