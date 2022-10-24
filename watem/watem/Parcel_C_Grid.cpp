@@ -6,7 +6,7 @@ Parcel_C_Grid::Parcel_C_Grid()
 	//-----------------------------------------------------
 	// Give some information about your tool...
 
-	Set_Name(_TL("3.3. C berekening attribuut"));
+	Set_Name(_TL("3.6. C berekening attribuut"));
 
 	Set_Author(_TL("Copyright (c) 2022, Johan Van de Wauw"));
 
@@ -65,17 +65,25 @@ bool Parcel_C_Grid::On_Execute()
 		{
 			switch (LANDUSE->asInt(i))
 			{
-			case -9999:
+			case -9999: 
+			case 0:
+				break;
 			case -1:
 			case -2:
-			case 0: break;
-			case -3: C->Set_Value(i, 0.001); break;
+			case -5:
+				C->Set_Value(i, 0);  break;
+			case -3:
+				C->Set_Value(i, 0.001); break;
+			case -4:
+			case -6:
+				C->Set_Value(i, 0.01); break;
 			default: C->Set_Value(i, 0.37); break;
 			}
 		}
 
 	}
 
+	// C->Set_Name(SG_T("C Grid") + C->Get_Name());
 
 	return true;
 }
