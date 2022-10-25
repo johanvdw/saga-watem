@@ -59,6 +59,7 @@ bool Parcel_C_Grid::On_Execute()
 	
 
 	// fill gaps with reclassified landuse
+	#pragma omp parallel for
 	for (int i = 0; i < C->Get_NCells(); i++) {
 		if (C->is_NoData(i))
 		{
@@ -66,7 +67,7 @@ bool Parcel_C_Grid::On_Execute()
 			{
 			case -9999: 
 			case 0:
-				break;
+				break; // remains nodata
 			case -1:
 			case -2:
 			case -5:
