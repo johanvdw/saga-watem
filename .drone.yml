@@ -1,6 +1,23 @@
 ---
 kind: pipeline
 type: docker
+name: run tests debian
+steps:
+  - name: build
+    image: registry.fluves.net/drone/saga-watem/build-bullseye
+    commands:
+      - mkdir build
+      - cd build
+      - cmake ..
+      - make
+  - name: test
+    image: registry.fluves.net/drone/saga-watem/build-bullseye
+    commands:
+      - pytest-3
+
+---
+kind: pipeline
+type: docker
 name: bullseye build
 
 steps:
@@ -11,6 +28,7 @@ steps:
       - debuild -b -us -uc -j8
       - mkdir package
       - mv ../*saga*deb package
+
   - name: rsync-apt
     image: drillster/drone-rsync
     settings:
