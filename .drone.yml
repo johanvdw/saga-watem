@@ -75,23 +75,18 @@ steps:
 
 
 
- ---
+---
 kind: pipeline
- name: focal build
+name: focal build
  
- steps:
+steps:
    - name: build focal
      image: registry.fluves.net/drone/saga-watem/build-focal
      commands:
-       - cd saga-gis
-       - apt install -y dh-python
-         # not working as debian is unfortunately not in the main dir
-         #- gbp dch --snapshot --ignore-branch --snapshot-number=$DRONE_BUILD_NUMBER
-         # Alternative version
-       - dch --newversion $(dpkg-parsechangelog --show-field Version)+$DRONE_BUILD_NUMBER "Automated build for $DRONE_COMMIT~focal"
-       - debuild -b -us -uc -j8
-       - mkdir ../package
-       - mv ../*saga*deb ../package
+      - dch --newversion $(dpkg-parsechangelog --show-field Version)+$DRONE_BUILD_NUMBER "Automated build for $DRONE_COMMIT~bullseye"
+      - debuild -b -us -uc -j8
+      - mkdir package
+      - mv ../*saga*deb package
  
    - name: rsync-apt
      image: drillster/drone-rsync
@@ -103,7 +98,7 @@ kind: pipeline
           from_secret: ssh-key
        source: package/*.deb
        target: /appdata/static/apt/amd64
-    when:
+     when:
       event: [tag]
  
 ---
@@ -111,12 +106,12 @@ kind: pipeline
 type: docker
 name: reindex repo
 depends_on:
-  # - focal build
+- focal build
 - bullseye build
 
 steps:
   # copy all packages from repo and rebuild index
-  - name: Update repo
+  - name: Update repo bullseye
     image: registry.fluves.net/drone/cn_ws/debian11-build
     environment:
       GPG_KEY:
