@@ -2,7 +2,7 @@ Source: saga-vpo
 Maintainer: Johan Van de Wauw <johan@fluves.com>
 Section: science
 Priority: optional
-Build-Depends: libsaga-dev(=8.2.1+dfsg-2)
+Build-Depends: libsaga-dev
 Standards-Version: 4.2.0
 Vcs-Browser: https://git.fluves.net/fluves/saga-watem
 Vcs-Git: https://git.fluves.net/fluves/saga-watem.git
