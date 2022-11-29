@@ -1,6 +1,23 @@
 ---
 kind: pipeline
 type: docker
+name: run tests debian
+steps:
+  - name: build
+    image: registry.fluves.net/drone/saga-watem/build-bullseye
+    commands:
+      - mkdir build
+      - cd build
+      - cmake ..
+      - make
+  - name: test
+    image: registry.fluves.net/drone/saga-watem/build-bullseye
+    commands:
+      - pytest-3
+
+---
+kind: pipeline
+type: docker
 name: bullseye build
 
 steps:
@@ -11,6 +28,7 @@ steps:
       - debuild -b -us -uc -j8
       - mkdir package
       - mv ../*saga*deb package
+
   - name: rsync-apt
     image: drillster/drone-rsync
     settings:
@@ -57,54 +75,43 @@ steps:
 
 
 
-# ---
-#kind: pipeline
-# name: focal build
-# 
-# steps:
-#   - name: build focal
-#     image: registry.fluves.net/drone/saga-watem/build-focal
-#     commands:
-#       - cd saga-gis
-#       - apt install -y dh-python
-#         # not working as debian is unfortunately not in the main dir
-#         #- gbp dch --snapshot --ignore-branch --snapshot-number=$DRONE_BUILD_NUMBER
-#         # Alternative version
-#       - dch --newversion $(dpkg-parsechangelog --show-field Version)+$DRONE_BUILD_NUMBER "Automated build for $DRONE_COMMIT~focal"
-#       - debuild -b -us -uc -j8
-#       - mkdir ../package
-#       - mv ../*saga*deb ../package
-# 
-#   - name: rsync-apt
-#     image: drillster/drone-rsync
-#     settings:
-#       hosts:
-#         - ijzer
-#       user: docs
-#       key:
-#          from_secret: ssh-key
-#       source: package/*.deb
-#       target: /appdata/static/apt/amd64
-#     when:
-#       branch:
-#         - master
-#         - saga-watem
-#         - drone
-#       event:
-#         exclude:
-#           - pull_request
-# 
+---
+kind: pipeline
+name: focal build
+ 
+steps:
+   - name: build focal
+     image: registry.fluves.net/drone/saga-watem/build-focal
+     commands:
+      - dch --newversion $(dpkg-parsechangelog --show-field Version)+$DRONE_BUILD_NUMBER "Automated build for $DRONE_COMMIT~focal"
+      - debuild -b -us -uc -j8
+      - mkdir package
+      - mv ../*saga*deb package
+ 
+   - name: rsync-apt
+     image: drillster/drone-rsync
+     settings:
+       hosts:
+         - ijzer
+       user: docs
+       key:
+          from_secret: ssh-key
+       source: package/*.deb
+       target: /appdata/static/apt/amd64
+     when:
+      event: [tag]
+ 
 ---
 kind: pipeline
 type: docker
 name: reindex repo
 depends_on:
-  # - focal build
+- focal build
 - bullseye build
 
 steps:
   # copy all packages from repo and rebuild index
-  - name: Update repo
+  - name: Update repo bullseye
     image: registry.fluves.net/drone/cn_ws/debian11-build
     environment:
       GPG_KEY:

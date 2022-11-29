@@ -1,6 +1,6 @@
 FROM debian:bullseye 
-RUN echo "deb [trusted=yes] https://apt.fluves.net/bullseye/ /" >/etc/apt/sources.list.d/fluves.list && \
-    apt-get update && apt-get upgrade -y && \
+RUN apt-get update && \
     apt-get -y install ca-certificates && \
-    apt-get update && \
-    DEBIAN_FRONTEND=noninteractive apt-get -y install git-buildpackage libsaga-dev cmake
+    echo "deb [trusted=yes] https://apt.fluves.net/bullseye/ /" >/etc/apt/sources.list.d/fluves.list && \
+    apt-get update && apt-get upgrade -y && \
+    apt-get -y install git-buildpackage libsaga-dev saga cmake python3-pytest python3-rasterio python3-geopandas
