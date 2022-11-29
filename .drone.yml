@@ -83,7 +83,7 @@ steps:
    - name: build focal
      image: registry.fluves.net/drone/saga-watem/build-focal
      commands:
-      - dch --newversion $(dpkg-parsechangelog --show-field Version)+$DRONE_BUILD_NUMBER "Automated build for $DRONE_COMMIT~bullseye"
+      - dch --newversion $(dpkg-parsechangelog --show-field Version)+$DRONE_BUILD_NUMBER "Automated build for $DRONE_COMMIT~focal"
       - debuild -b -us -uc -j8
       - mkdir package
       - mv ../*saga*deb package
