@@ -133,11 +133,11 @@ bool CTopologize::On_Execute(void)
 			
 			auto start_it = vertices.emplace(std::map<Vertex, int>::value_type(start, -1));
 			if (start_it.second)
-				(*start_it.first).second = MaxNodeID++;
+				(*start_it.first).second = ++MaxNodeID;
 			pOut->Set_Value("startpt_id", (*start_it.first).second);
 			auto it = vertices.emplace(std::map<Vertex, int>::value_type(end, -1));
 			if (it.second)
-				(*it.first).second = MaxNodeID++;
+				(*it.first).second = ++MaxNodeID;
 			pOut->Set_Value("endpt_id", (*it.first).second);
             pOut->Set_Value("length", pInLine->Get_Length(iPart));
 		}
