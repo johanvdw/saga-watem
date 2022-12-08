@@ -38,7 +38,7 @@ def test_topology(tmpdir):
     assert set(df.columns) == {"line_id", "startpt_id", "endpt_id", "length", "geometry"}
     assert len(df) == 6 # one more than original because it contains one multiline with two parts
 
-    assert np.sum(df["endpt_id"]==1) ==2
+    assert np.sum(df["endpt_id"]==2) ==2
 
     points = gpd.read_file(str(outputpoints))
     assert set(points) == {"point_id", "geometry"}
