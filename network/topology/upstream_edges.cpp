@@ -240,8 +240,10 @@ bool Upstream_Edges::On_Execute(void)
 
     for (int iLine = 0; iLine < pInLines->Get_Count() && SG_UI_Process_Set_Progress(iLine, pInLines->Get_Count()); iLine++)
     {
-        pInLines->Set_Value(iLine, shreve_field, edges[iLine].shreve_order);
-        pInLines->Set_Value(iLine, sort_field, edges[iLine].sort_order);
+        CSG_Shape * pLine = pInLines->Get_Shape(iLine);
+        const int line_id = pLine->Get_Value(line_field)->asInt();
+        pInLines->Set_Value(iLine, shreve_field, edges[line_id].shreve_order);
+        pInLines->Set_Value(iLine, sort_field, edges[line_id].sort_order);
     }
 
     for (auto const& it : edges)

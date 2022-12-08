@@ -6,8 +6,8 @@
       <FIELD TYPE="LONGINT">startpt_id</FIELD>
       <FIELD TYPE="LONGINT">endpt_id</FIELD>
       <FIELD TYPE="DOUBLE">length</FIELD>
-      <FIELD TYPE="INTEGER">shreve_order</FIELD>
-      <FIELD TYPE="INTEGER">sort_order</FIELD>
+      <FIELD TYPE="LONGINT">shreve_order</FIELD>
+      <FIELD TYPE="LONGINT">sort_order</FIELD>
     </FIELDS>
   </DATABASE>
   <SOURCE></SOURCE>
