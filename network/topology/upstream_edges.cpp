@@ -1,6 +1,7 @@
 #include "upstream_edges.h"
 #include <queue>
 #include <algorithm>
+#include <iostream>
 
 Upstream_Edges::Upstream_Edges(void)
 {
@@ -16,12 +17,12 @@ Upstream_Edges::Upstream_Edges(void)
 
     Parameters.Add_Table(
         NULL, "INPUTLINES"	, _TL("Input Topology"),
-        _TL(""),
+        _TL("Line result of the topology tool."),
         PARAMETER_INPUT
     );
 
     Parameters.Add_Table(
-        NULL, "ADJECTANT_EDGES", _TL("adjectant edges"),
+        NULL, "ADJECANT_EDGES", _TL("adjecant edges"),
         "",
         PARAMETER_OUTPUT);
 
@@ -29,9 +30,6 @@ Upstream_Edges::Upstream_Edges(void)
         NULL, "UPSTREAM_EDGES", _TL("upstream edges"),
         "",
         PARAMETER_OUTPUT);
-
-    Parameters.Add_Bool(
-        NULL, "ZERO_BASED", _TL("Zero based index"), _TL(""), true);
 
 }
 
@@ -79,58 +77,57 @@ bool Upstream_Edges::On_Execute(void)
 {
     auto pInLines	= Parameters("INPUTLINES")->asShapes();
     CSG_Table * pUpstreamEdges = Parameters("UPSTREAM_EDGES")->asTable();
-    CSG_Table * pAdjectantEdges = Parameters("ADJECTANT_EDGES")->asTable();
+    CSG_Table * pAdjecantEdges = Parameters("ADJECANT_EDGES")->asTable();
 
-    int start_field = pInLines->Get_Field("start_id");
-    int end_field = pInLines->Get_Field("end_id");
-
-    bool zero_based = Parameters("ZERO_BASED")->asBool();
+    int start_field = pInLines->Get_Field("startpt_id");
+    int end_field = pInLines->Get_Field("endpt_id");
+    int line_field = pInLines->Get_Field("line_id");
 
     if ((start_field == -1)||(end_field == -1))
     {
-        SG_UI_Msg_Add("Source does not contain start_id and end_id columns", SG_UI_MSG_STYLE_FAILURE);
+        SG_UI_Msg_Add("Source does not contain start_point_id and end_point_id columns", SG_UI_MSG_STYLE_FAILURE);
         return false;
     }
 
     pUpstreamEdges->Del_Records();
-    pAdjectantEdges->Del_Records();
+    pAdjecantEdges->Del_Records();
 
-    if (pUpstreamEdges->Get_Field("edge")==-1)
-        pUpstreamEdges->Add_Field("edge", SG_DATATYPE_Int);
-    if (pUpstreamEdges->Get_Field("upstream_edge")==-1)
-        pUpstreamEdges->Add_Field("upstream_edge", SG_DATATYPE_Int);
+    if (pUpstreamEdges->Get_Field("line_id")==-1)
+        pUpstreamEdges->Add_Field("line_id", SG_DATATYPE_Int);
+    if (pUpstreamEdges->Get_Field("upstream_line")==-1)
+        pUpstreamEdges->Add_Field("upstream_line", SG_DATATYPE_Int);
     if (pUpstreamEdges->Get_Field("proportion")==-1)
         pUpstreamEdges->Add_Field("proportion", SG_DATATYPE_Double);
 
-    if (pAdjectantEdges->Get_Field("from")==-1)
-        pAdjectantEdges->Add_Field("from", SG_DATATYPE_Int);
-    int from_field = pAdjectantEdges->Get_Field("from");
-    if (pAdjectantEdges->Get_Field("to")==-1)
-        pAdjectantEdges->Add_Field("to", SG_DATATYPE_Int);
-    int to_field = pAdjectantEdges->Get_Field("to");
+    if (pAdjecantEdges->Get_Field("from")==-1)
+        pAdjecantEdges->Add_Field("from", SG_DATATYPE_Int);
+    int from_field = pAdjecantEdges->Get_Field("from");
+    if (pAdjecantEdges->Get_Field("to")==-1)
+        pAdjecantEdges->Add_Field("to", SG_DATATYPE_Int);
+    int to_field = pAdjecantEdges->Get_Field("to");
 
     for (int iLine = 0; iLine < pInLines->Get_Count() && SG_UI_Process_Set_Progress(iLine, pInLines->Get_Count()); iLine++)
     {
         CSG_Shape * pLine = pInLines->Get_Shape(iLine);
         int start_id = pLine->Get_Value(start_field)->asInt();
         int end_id = pLine->Get_Value(end_field)->asInt();
+        const int line_id = pLine->Get_Value(line_field)->asInt();
 
         // skip lines which connect to themselve (eg when using a large tolerance)
         if (start_id == end_id) continue;
 
-        edges[iLine].start_node = start_id;
-        edges[iLine].end_node = end_id;
+        edges[line_id].start_node = start_id;
+        edges[line_id].end_node = end_id;
 
         nodes[start_id].to.push_back(end_id);
         nodes[end_id].from.push_back(start_id);
-        nodes[start_id].to_edge.push_back(iLine);
-        nodes[end_id].from_edge.push_back(iLine);
+        nodes[start_id].to_edge.push_back(line_id);
+        nodes[end_id].from_edge.push_back(line_id);
     }
 
     // fill graph for edges
     for (auto const& it : nodes)
     {
-        int node_id = it.first;
         const Node node  = it.second;
         for (auto start_edge_id: node.from_edge)
         {
@@ -217,7 +214,6 @@ bool Upstream_Edges::On_Execute(void)
 
 
 
-    int add_one = !zero_based;
     // convert results to a nice table
 
     for (auto const& it : edges)
@@ -227,8 +223,8 @@ bool Upstream_Edges::On_Execute(void)
         for (auto const& prop : edge.proportion)
         {
             auto *pRecord = pUpstreamEdges->Add_Record();
-            pRecord->Set_Value("edge", edge_id + add_one);
-            pRecord->Set_Value("upstream_edge", prop.first + add_one);
+            pRecord->Set_Value("line_id", edge_id);
+            pRecord->Set_Value("upstream_line", prop.first);
             pRecord->Set_Value("proportion", prop.second);
         }
     }
@@ -254,9 +250,9 @@ bool Upstream_Edges::On_Execute(void)
         const auto &edge = it.second;
         for (auto const & to: edge.to)
         {
-            auto *pRecord = pAdjectantEdges->Add_Record();
-            pRecord->Set_Value(from_field, edge_id + add_one);
-            pRecord->Set_Value(to_field, to + add_one);
+            auto *pRecord = pAdjecantEdges->Add_Record();
+            pRecord->Set_Value(from_field, edge_id);
+            pRecord->Set_Value(to_field, to);
         }
     }
 
