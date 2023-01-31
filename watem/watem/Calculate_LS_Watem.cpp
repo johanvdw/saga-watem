@@ -85,6 +85,12 @@ CCalculate_LS_Watem::CCalculate_LS_Watem(void)
 		PARAMETER_OUTPUT
 	);
 
+	Parameters.Add_Grid(
+		NULL, "SLOPE", _TL("Slope"),
+		_TL("Optional Slope output grid "),
+		PARAMETER_OUTPUT_OPTIONAL
+	);
+
 	Parameters.Add_Choice("",
 		"METHOD", _TL("LS Calculation"),
 		_TL(""),
@@ -124,6 +130,7 @@ bool CCalculate_LS_Watem::On_Execute(void)
 	use_prc = Parameters("USEPRC")->asBool();
 
 	pLS		= Parameters("LS")->asGrid();
+	m_pSlope = Parameters("SLOPE")->asGrid();
 	m_Stability = 0;
 	m_Erosivity = 1;
 	m_Method = Parameters("METHOD")->asInt();
@@ -142,6 +149,7 @@ bool CCalculate_LS_Watem::On_Execute(void)
 		{
 			if (m_pDEM->is_NoData(x, y))
 				pLS->Set_NoData(x, y);
+				if (m_pSlope) m_pSlope->Set_NoData(x, y);
 			else
 				pLS->Set_Value(x, y, Get_LS(x, y));
 		}
@@ -217,6 +225,10 @@ double CCalculate_LS_Watem::Get_LS(int x, int y)
 
 	if (Slope <= 0.0)	Slope = 0.000001;
 	if (Aspect < 0.0)	Aspect = 0.0;
+
+	if (m_pSlope) {
+		m_pSlope->Set_Value(x, y, Slope);
+	}
 
 	sin_Slope = sin(Slope);
 
