@@ -86,7 +86,7 @@ protected: /// protected members and functions: ///////////
 
 private: ///// private members and functions: /////////////
 	double					Get_LS(int x, int y);
-	CSG_Grid				*m_pDEM, *m_pUp_Area, *PRC;
+	CSG_Grid				*m_pDEM, *m_pUp_Area, *PRC, *m_pSlope;
 	bool					use_prc;
 	double					m_Erosivity, m_Stability;
 	int						m_Method;
