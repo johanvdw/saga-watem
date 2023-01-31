@@ -104,6 +104,7 @@ CSG_String Get_Info(int i)
 #include "Create_Parcel_Grid.h"
 #include "Parcel_Filter.h"
 #include "Calculate_C_Grid.h"
+#include "Parcel_C_Grid.h"
 
 //---------------------------------------------------------
 // 4. Allow your tools to be created here...
@@ -126,6 +127,7 @@ CSG_Tool *		Create_Tool(int i)
 		case 6:    return (new Water_Erosion);
 		case 7:	return (new Tillage_Erosion);
 		case 8:     return (new Calculate_C_Grid);
+		case 9:     return (new Parcel_C_Grid);
 
 		default:	return( NULL );
 	}
