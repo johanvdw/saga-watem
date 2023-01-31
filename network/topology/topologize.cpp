@@ -5,7 +5,7 @@ CTopologize::CTopologize(void)
 {
     Set_Name(_TL("Topologize Polylines"));
 
-    Set_Author(_TL("Copyrights (c) 2018 by Johan Van de Wauw"));
+    Set_Author(_TL("Copyright (c) 2018-2022 by Johan Van de Wauw"));
 
     Set_Description(_TL(
         "Topologize Polylines.")
@@ -71,18 +71,21 @@ bool CTopologize::On_Execute(void)
 
     pOutLines->Set_Name(CSG_String::Format(_TL("Topology of %s"),pInLines->Get_Name()));
 
-    if (pOutLines->Get_Field("start_id")==-1) pOutLines->Add_Field("start_id", SG_DATATYPE_Int);
-    if (pOutLines->Get_Field("end_id")==-1) pOutLines->Add_Field("end_id", SG_DATATYPE_Int);
+    if (pOutLines->Get_Field("line_id")==-1) pOutLines->Add_Field("line_id", SG_DATATYPE_Double);
+    if (pOutLines->Get_Field("startpt_id")==-1) pOutLines->Add_Field("startpt_id", SG_DATATYPE_Int);
+    if (pOutLines->Get_Field("endpt_id")==-1) pOutLines->Add_Field("endpt_id", SG_DATATYPE_Int);
     if (pOutLines->Get_Field("length")==-1) pOutLines->Add_Field("length", SG_DATATYPE_Double);
 	
 	if (pOutPoints != 0) {
 		pOutPoints->Set_Name(CSG_String::Format(_TL("Vertices of %s"), pInLines->Get_Name()));
-        if (pOutPoints->Get_Field("ID")==-1) pOutPoints->Add_Field("ID", SG_DATATYPE_Int);
+        if (pOutPoints->Get_Field("point_id")==-1) pOutPoints->Add_Field("point_id", SG_DATATYPE_Int);
         pOutPoints->Del_Records();
 	}
 
 
     pOutLines->Del_Records();
+
+    int line_id=0;
 
     for (int iLine = 0; iLine < pInLines->Get_Count() && SG_UI_Process_Set_Progress(iLine, pInLines->Get_Count()); iLine++)
     {
@@ -92,6 +95,7 @@ bool CTopologize::On_Execute(void)
 		{
 			// Copy the shape
 			CSG_Shape *pOut = pOutLines->Add_Shape();
+            pOut->Set_Value("line_id", ++line_id);
             if (simplify)
             {
                 pOut->Add_Point(pInLine->Get_Point(0, iPart));
@@ -129,13 +133,12 @@ bool CTopologize::On_Execute(void)
 			
 			auto start_it = vertices.emplace(std::map<Vertex, int>::value_type(start, -1));
 			if (start_it.second)
-				(*start_it.first).second = MaxNodeID++;
-			pOut->Set_Value("start_id", (*start_it.first).second);
-
+				(*start_it.first).second = ++MaxNodeID;
+			pOut->Set_Value("startpt_id", (*start_it.first).second);
 			auto it = vertices.emplace(std::map<Vertex, int>::value_type(end, -1));
 			if (it.second)
-				(*it.first).second = MaxNodeID++;
-			pOut->Set_Value("end_id", (*it.first).second);
+				(*it.first).second = ++MaxNodeID;
+			pOut->Set_Value("endpt_id", (*it.first).second);
             pOut->Set_Value("length", pInLine->Get_Length(iPart));
 		}
 	}
@@ -145,7 +148,7 @@ bool CTopologize::On_Execute(void)
 		for (auto iVertex = vertices.begin(); iVertex != vertices.end(); iVertex++)
 		{
 			CSG_Shape * pOut = pOutPoints->Add_Shape();
-			pOut->Set_Value("ID", iVertex->second);
+            pOut->Set_Value("point_id", iVertex->second);
             pOut->Add_Point(iVertex->first.x + tolerance/2, iVertex->first.y + tolerance/2);
 		}
 	}
