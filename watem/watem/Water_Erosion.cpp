@@ -61,6 +61,18 @@ Water_Erosion::Water_Erosion()
 		PARAMETER_OUTPUT
 	);
 
+
+	Parameters.Add_Value(
+		NULL, "EROSION_CROP_MAX", "Maximale erosie per pixel aftoppen",
+		"", PARAMETER_TYPE_Bool, 1
+	);
+
+	Parameters.Add_Value(
+		"EROSION_CROP_MAX", "EROSION_MAX", "Maximale erosie, hogere waarden worden afgetopt",
+		"", PARAMETER_TYPE_Double, 150, 0, 10000000
+	);
+
+
 }
 
 
@@ -79,6 +91,8 @@ bool Water_Erosion::On_Execute()
 	R = Parameters("R")->asDouble();
 	P = Parameters("P")->asDouble();
 	double corr = Parameters("CORR")->asDouble();
+	double erosion_crop_max = Parameters("EROSION_MAX")->asDouble();
+	bool erosion_crop = Parameters("EROSION_CROP_MAX")->asBool();
 	water_erosion->Set_NoData_Value(-99999);
 #pragma omp parallel for
 	for (int i = 0; i < Get_NCells(); i++){
@@ -87,8 +101,8 @@ bool Water_Erosion::On_Execute()
 		else
 		{
 			double v = R * K->asDouble(i) * LS->asDouble(i) * C->asDouble(i) * P / corr; 
-			if (v > 150)
-				v = 150;
+			if (erosion_crop && (v > erosion_crop_max))
+				v = erosion_crop_max;
 			if (v < 0) v = -99999;
 			water_erosion->Set_Value(i, v);
 		}

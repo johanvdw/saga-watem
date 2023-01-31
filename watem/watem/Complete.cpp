@@ -85,6 +85,17 @@ Complete::Complete()
 		), 1
 	);
 
+	Parameters.Add_Value(
+		NULL, "EROSION_CROP_MAX", "Maximale erosie per pixel aftoppen",
+		"", PARAMETER_TYPE_Bool, 1
+	);
+
+	Parameters.Add_Value(
+		"EROSION_CROP_MAX", "EROSION_MAX", "Maximale erosie, hogere waarden worden afgetopt",
+		"", PARAMETER_TYPE_Double, 150, 0, 10000000
+	);
+
+
 };
 
 bool Complete::On_Execute(void)
@@ -168,6 +179,8 @@ bool Complete::On_Execute(void)
 		&& SG_TOOL_PARAMETER_SET("R", Parameters("R"))
 		&& SG_TOOL_PARAMETER_SET("P", Parameters("P"))
 		&& SG_TOOL_PARAMETER_SET("CORR", Parameters("CORR"))
+		&& SG_TOOL_PARAMETER_SET("EROSION_CROP_MAX", Parameters("EROSION_CROP_MAX"))
+		&& SG_TOOL_PARAMETER_SET("EROSION_MAX", Parameters("EROSION_MAX"))
 		);
 
 	delete C;
