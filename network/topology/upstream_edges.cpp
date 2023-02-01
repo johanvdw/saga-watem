@@ -75,7 +75,7 @@ void Upstream_Edges::break_cycles(int edge_id, std::vector<int> upstream, int de
 
 bool Upstream_Edges::On_Execute(void)
 {
-    auto pInLines	= Parameters("INPUTLINES")->asShapes();
+    auto pInLines	= Parameters("INPUTLINES")->asTable();
     CSG_Table * pUpstreamEdges = Parameters("UPSTREAM_EDGES")->asTable();
     CSG_Table * pAdjecantEdges = Parameters("ADJECANT_EDGES")->asTable();
 
@@ -83,9 +83,15 @@ bool Upstream_Edges::On_Execute(void)
     int end_field = pInLines->Get_Field("endpt_id");
     int line_field = pInLines->Get_Field("line_id");
 
-    if ((start_field == -1)||(end_field == -1))
+    if ((start_field == -1)||(end_field == -1)||(line_field == -1))
     {
-        SG_UI_Msg_Add("Source does not contain start_point_id and end_point_id columns", SG_UI_MSG_STYLE_FAILURE);
+        SG_UI_Msg_Add("Source does not contain startpt_id, endpt_id or line_id columns", true, SG_UI_MSG_STYLE_FAILURE);
+        SG_Printf("Available columns:");
+        for (auto iField=0; iField < pInLines->Get_Field_Count(); iField++)
+        {
+            SG_Printf("Column %d: %s\n", iField, pInLines->Get_Field_Name(iField));
+        }
+
         return false;
     }
 
@@ -108,7 +114,7 @@ bool Upstream_Edges::On_Execute(void)
 
     for (int iLine = 0; iLine < pInLines->Get_Count() && SG_UI_Process_Set_Progress(iLine, pInLines->Get_Count()); iLine++)
     {
-        CSG_Shape * pLine = pInLines->Get_Shape(iLine);
+        CSG_Table_Record * pLine = pInLines->Get_Record(iLine);
         int start_id = pLine->Get_Value(start_field)->asInt();
         int end_id = pLine->Get_Value(end_field)->asInt();
         const int line_id = pLine->Get_Value(line_field)->asInt();
@@ -240,7 +246,7 @@ bool Upstream_Edges::On_Execute(void)
 
     for (int iLine = 0; iLine < pInLines->Get_Count() && SG_UI_Process_Set_Progress(iLine, pInLines->Get_Count()); iLine++)
     {
-        CSG_Shape * pLine = pInLines->Get_Shape(iLine);
+        CSG_Table_Record * pLine = pInLines->Get_Record(iLine);
         const int line_id = pLine->Get_Value(line_field)->asInt();
         pInLines->Set_Value(iLine, shreve_field, edges[line_id].shreve_order);
         pInLines->Set_Value(iLine, sort_field, edges[line_id].sort_order);
