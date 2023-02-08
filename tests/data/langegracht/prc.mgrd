@@ -1,0 +1,277 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<SAGA_METADATA>
+  <DATABASE></DATABASE>
+  <SOURCE></SOURCE>
+  <HISTORY saga-version="8.2.1">
+    <TOOL library="watem" id="1" name="1. Aanmaak percelengrid (PRC)">
+      <OPTION type="grid_system" id="PARAMETERS_GRID_SYSTEM" name="Grid System">
+        <CELLSIZE>5</CELLSIZE>
+        <XMIN>162092.5</XMIN>
+        <XMAX>167757.5</XMAX>
+        <YMIN>165802.5</YMIN>
+        <YMAX>169472.5</YMAX>
+      </OPTION>
+      <INPUT type="shapes" id="PARCEL_SHAPES" name="Percelen">
+        <TOOL library="shapes_polygons" id="11" name="Polygon Clipping">
+          <OPTION type="boolean" id="DISSOLVE" name="Dissolve Clip Features">true</OPTION>
+          <OPTION type="boolean" id="MULTIPLE" name="Multiple Input Features">true</OPTION>
+          <INPUT type="shapes" id="CLIP" name="Clip Features">
+            <FILE>/nas/fluves/projecten/FL_P_2020_DepO_CNWSMod_1/01_data/cn_ws_model/catchments/pilot_areas/catchm_langegracht.shp</FILE>
+          </INPUT>
+          <INPUT_LIST type="shapes_list" id="M_INPUT" name="Input Features">
+            <INPUT type="shapes_list" id="M_INPUT" name="Input Features">
+              <FILE>/nas/homes/johan-1000001/Downloads/GRB_20230130_e768698_Shapefile/Shapefile/Adpe768698.shp</FILE>
+            </INPUT>
+          </INPUT_LIST>
+          <OUTPUT type="shapes_list" id="M_OUTPUT" name="Output Features">Adpe768698 [clipped]</OUTPUT>
+        </TOOL>
+      </INPUT>
+      <INPUT type="grid" id="LANDUSE" name="Landgebruik" system="PARAMETERS_GRID_SYSTEM">
+        <FILE>tests/data/langegracht/Landgebruik_def.sgrd</FILE>
+      </INPUT>
+      <INPUT type="shapes" id="WTZ" name="GRB WTZ (VHA-polygoon)">
+        <TOOL library="shapes_polygons" id="11" name="Polygon Clipping">
+          <OPTION type="boolean" id="DISSOLVE" name="Dissolve Clip Features">true</OPTION>
+          <OPTION type="boolean" id="MULTIPLE" name="Multiple Input Features">true</OPTION>
+          <INPUT type="shapes" id="CLIP" name="Clip Features">
+            <FILE>/nas/fluves/projecten/FL_P_2020_DepO_CNWSMod_1/01_data/cn_ws_model/catchments/pilot_areas/catchm_langegracht.shp</FILE>
+          </INPUT>
+          <INPUT_LIST type="shapes_list" id="M_INPUT" name="Input Features">
+            <INPUT type="shapes_list" id="M_INPUT" name="Input Features">
+              <FILE>/nas/homes/johan-1000001/Downloads/GRB_20230130_e768698_Shapefile/Shapefile/Gbae768698.shp</FILE>
+            </INPUT>
+            <INPUT type="shapes_list" id="M_INPUT" name="Input Features">
+              <FILE>/nas/homes/johan-1000001/Downloads/GRB_20230130_e768698_Shapefile/Shapefile/Gbge768698.shp</FILE>
+            </INPUT>
+            <INPUT type="shapes_list" id="M_INPUT" name="Input Features">
+              <FILE>/nas/homes/johan-1000001/Downloads/GRB_20230130_e768698_Shapefile/Shapefile/Sbne768698.shp</FILE>
+            </INPUT>
+            <INPUT type="shapes_list" id="M_INPUT" name="Input Features">
+              <FILE>/nas/homes/johan-1000001/Downloads/GRB_20230130_e768698_Shapefile/Shapefile/Wtze768698.shp</FILE>
+            </INPUT>
+            <INPUT type="shapes_list" id="M_INPUT" name="Input Features">
+              <FILE>/nas/homes/johan-1000001/Downloads/GRB_20230130_e768698_Shapefile/Shapefile/Wbne768698.shp</FILE>
+            </INPUT>
+            <INPUT type="shapes_list" id="M_INPUT" name="Input Features">
+              <FILE>/nas/homes/johan-1000001/Downloads/GRB_20230130_e768698_Shapefile/Shapefile/Wgae768698.shp</FILE>
+            </INPUT>
+            <INPUT type="shapes_list" id="M_INPUT" name="Input Features">
+              <FILE>/nas/homes/johan-1000001/Downloads/GRB_20230130_e768698_Shapefile/Shapefile/Trne768698.shp</FILE>
+            </INPUT>
+            <INPUT type="shapes_list" id="M_INPUT" name="Input Features">
+              <FILE>/nas/homes/johan-1000001/Downloads/GRB_20230130_e768698_Shapefile/Shapefile/Knwe768698.shp</FILE>
+            </INPUT>
+          </INPUT_LIST>
+          <OUTPUT type="shapes_list" id="M_OUTPUT" name="Output Features">Wtze768698 [clipped]</OUTPUT>
+        </TOOL>
+      </INPUT>
+      <INPUT type="shapes" id="WLAS" name="VHA Lijnen">
+        <TOOL library="shapes_lines" id="3" name="Line-Polygon Intersection">
+          <OPTION type="choice" id="OUTPUT" name="Output" index="0">intersection</OPTION>
+          <OPTION type="choice" id="ATTRIBUTES" name="Attributes" index="1">line</OPTION>
+          <INPUT type="shapes" id="LINES" name="Lines">
+            <FILE>/nas/homes/johan-1000001/Downloads/GRB_20230130_e768698_Shapefile/Shapefile/Wlase768698.shp</FILE>
+          </INPUT>
+          <INPUT type="shapes" id="POLYGONS" name="Polygons">
+            <FILE>/nas/fluves/projecten/FL_P_2020_DepO_CNWSMod_1/01_data/cn_ws_model/catchments/pilot_areas/catchm_langegracht.shp</FILE>
+          </INPUT>
+          <OUTPUT type="shapes" id="INTERSECT" name="Intersection">Wlase768698 [Intersection: catchm_langegracht]</OUTPUT>
+        </TOOL>
+      </INPUT>
+      <INPUT type="shapes" id="SBN" name="GRB Sbn (spoorbaan)">
+        <FILE>tests/data/langegracht/Sbne768698.shp</FILE>
+      </INPUT>
+      <INPUT type="shapes" id="WBN" name="GRB Wbn (wegbaan)">
+        <TOOL library="shapes_polygons" id="11" name="Polygon Clipping">
+          <OPTION type="boolean" id="DISSOLVE" name="Dissolve Clip Features">true</OPTION>
+          <OPTION type="boolean" id="MULTIPLE" name="Multiple Input Features">true</OPTION>
+          <INPUT type="shapes" id="CLIP" name="Clip Features">
+            <FILE>/nas/fluves/projecten/FL_P_2020_DepO_CNWSMod_1/01_data/cn_ws_model/catchments/pilot_areas/catchm_langegracht.shp</FILE>
+          </INPUT>
+          <INPUT_LIST type="shapes_list" id="M_INPUT" name="Input Features">
+            <INPUT type="shapes_list" id="M_INPUT" name="Input Features">
+              <FILE>/nas/homes/johan-1000001/Downloads/GRB_20230130_e768698_Shapefile/Shapefile/Gbae768698.shp</FILE>
+            </INPUT>
+            <INPUT type="shapes_list" id="M_INPUT" name="Input Features">
+              <FILE>/nas/homes/johan-1000001/Downloads/GRB_20230130_e768698_Shapefile/Shapefile/Gbge768698.shp</FILE>
+            </INPUT>
+            <INPUT type="shapes_list" id="M_INPUT" name="Input Features">
+              <FILE>/nas/homes/johan-1000001/Downloads/GRB_20230130_e768698_Shapefile/Shapefile/Sbne768698.shp</FILE>
+            </INPUT>
+            <INPUT type="shapes_list" id="M_INPUT" name="Input Features">
+              <FILE>/nas/homes/johan-1000001/Downloads/GRB_20230130_e768698_Shapefile/Shapefile/Wtze768698.shp</FILE>
+            </INPUT>
+            <INPUT type="shapes_list" id="M_INPUT" name="Input Features">
+              <FILE>/nas/homes/johan-1000001/Downloads/GRB_20230130_e768698_Shapefile/Shapefile/Wbne768698.shp</FILE>
+            </INPUT>
+            <INPUT type="shapes_list" id="M_INPUT" name="Input Features">
+              <FILE>/nas/homes/johan-1000001/Downloads/GRB_20230130_e768698_Shapefile/Shapefile/Wgae768698.shp</FILE>
+            </INPUT>
+            <INPUT type="shapes_list" id="M_INPUT" name="Input Features">
+              <FILE>/nas/homes/johan-1000001/Downloads/GRB_20230130_e768698_Shapefile/Shapefile/Trne768698.shp</FILE>
+            </INPUT>
+            <INPUT type="shapes_list" id="M_INPUT" name="Input Features">
+              <FILE>/nas/homes/johan-1000001/Downloads/GRB_20230130_e768698_Shapefile/Shapefile/Knwe768698.shp</FILE>
+            </INPUT>
+          </INPUT_LIST>
+          <OUTPUT type="shapes_list" id="M_OUTPUT" name="Output Features">Wbne768698 [clipped]</OUTPUT>
+        </TOOL>
+      </INPUT>
+      <INPUT type="shapes" id="WGA" name="GRB Wga (wegaanhorigheid)">
+        <TOOL library="shapes_polygons" id="11" name="Polygon Clipping">
+          <OPTION type="boolean" id="DISSOLVE" name="Dissolve Clip Features">true</OPTION>
+          <OPTION type="boolean" id="MULTIPLE" name="Multiple Input Features">true</OPTION>
+          <INPUT type="shapes" id="CLIP" name="Clip Features">
+            <FILE>/nas/fluves/projecten/FL_P_2020_DepO_CNWSMod_1/01_data/cn_ws_model/catchments/pilot_areas/catchm_langegracht.shp</FILE>
+          </INPUT>
+          <INPUT_LIST type="shapes_list" id="M_INPUT" name="Input Features">
+            <INPUT type="shapes_list" id="M_INPUT" name="Input Features">
+              <FILE>/nas/homes/johan-1000001/Downloads/GRB_20230130_e768698_Shapefile/Shapefile/Gbae768698.shp</FILE>
+            </INPUT>
+            <INPUT type="shapes_list" id="M_INPUT" name="Input Features">
+              <FILE>/nas/homes/johan-1000001/Downloads/GRB_20230130_e768698_Shapefile/Shapefile/Gbge768698.shp</FILE>
+            </INPUT>
+            <INPUT type="shapes_list" id="M_INPUT" name="Input Features">
+              <FILE>/nas/homes/johan-1000001/Downloads/GRB_20230130_e768698_Shapefile/Shapefile/Sbne768698.shp</FILE>
+            </INPUT>
+            <INPUT type="shapes_list" id="M_INPUT" name="Input Features">
+              <FILE>/nas/homes/johan-1000001/Downloads/GRB_20230130_e768698_Shapefile/Shapefile/Wtze768698.shp</FILE>
+            </INPUT>
+            <INPUT type="shapes_list" id="M_INPUT" name="Input Features">
+              <FILE>/nas/homes/johan-1000001/Downloads/GRB_20230130_e768698_Shapefile/Shapefile/Wbne768698.shp</FILE>
+            </INPUT>
+            <INPUT type="shapes_list" id="M_INPUT" name="Input Features">
+              <FILE>/nas/homes/johan-1000001/Downloads/GRB_20230130_e768698_Shapefile/Shapefile/Wgae768698.shp</FILE>
+            </INPUT>
+            <INPUT type="shapes_list" id="M_INPUT" name="Input Features">
+              <FILE>/nas/homes/johan-1000001/Downloads/GRB_20230130_e768698_Shapefile/Shapefile/Trne768698.shp</FILE>
+            </INPUT>
+            <INPUT type="shapes_list" id="M_INPUT" name="Input Features">
+              <FILE>/nas/homes/johan-1000001/Downloads/GRB_20230130_e768698_Shapefile/Shapefile/Knwe768698.shp</FILE>
+            </INPUT>
+          </INPUT_LIST>
+          <OUTPUT type="shapes_list" id="M_OUTPUT" name="Output Features">Wgae768698 [clipped]</OUTPUT>
+        </TOOL>
+      </INPUT>
+      <INPUT type="shapes" id="GBG" name="GRB Gbg (gebouw aan de grond)">
+        <TOOL library="shapes_polygons" id="11" name="Polygon Clipping">
+          <OPTION type="boolean" id="DISSOLVE" name="Dissolve Clip Features">true</OPTION>
+          <OPTION type="boolean" id="MULTIPLE" name="Multiple Input Features">true</OPTION>
+          <INPUT type="shapes" id="CLIP" name="Clip Features">
+            <FILE>/nas/fluves/projecten/FL_P_2020_DepO_CNWSMod_1/01_data/cn_ws_model/catchments/pilot_areas/catchm_langegracht.shp</FILE>
+          </INPUT>
+          <INPUT_LIST type="shapes_list" id="M_INPUT" name="Input Features">
+            <INPUT type="shapes_list" id="M_INPUT" name="Input Features">
+              <FILE>/nas/homes/johan-1000001/Downloads/GRB_20230130_e768698_Shapefile/Shapefile/Gbae768698.shp</FILE>
+            </INPUT>
+            <INPUT type="shapes_list" id="M_INPUT" name="Input Features">
+              <FILE>/nas/homes/johan-1000001/Downloads/GRB_20230130_e768698_Shapefile/Shapefile/Gbge768698.shp</FILE>
+            </INPUT>
+            <INPUT type="shapes_list" id="M_INPUT" name="Input Features">
+              <FILE>/nas/homes/johan-1000001/Downloads/GRB_20230130_e768698_Shapefile/Shapefile/Sbne768698.shp</FILE>
+            </INPUT>
+            <INPUT type="shapes_list" id="M_INPUT" name="Input Features">
+              <FILE>/nas/homes/johan-1000001/Downloads/GRB_20230130_e768698_Shapefile/Shapefile/Wtze768698.shp</FILE>
+            </INPUT>
+            <INPUT type="shapes_list" id="M_INPUT" name="Input Features">
+              <FILE>/nas/homes/johan-1000001/Downloads/GRB_20230130_e768698_Shapefile/Shapefile/Wbne768698.shp</FILE>
+            </INPUT>
+            <INPUT type="shapes_list" id="M_INPUT" name="Input Features">
+              <FILE>/nas/homes/johan-1000001/Downloads/GRB_20230130_e768698_Shapefile/Shapefile/Wgae768698.shp</FILE>
+            </INPUT>
+            <INPUT type="shapes_list" id="M_INPUT" name="Input Features">
+              <FILE>/nas/homes/johan-1000001/Downloads/GRB_20230130_e768698_Shapefile/Shapefile/Trne768698.shp</FILE>
+            </INPUT>
+            <INPUT type="shapes_list" id="M_INPUT" name="Input Features">
+              <FILE>/nas/homes/johan-1000001/Downloads/GRB_20230130_e768698_Shapefile/Shapefile/Knwe768698.shp</FILE>
+            </INPUT>
+          </INPUT_LIST>
+          <OUTPUT type="shapes_list" id="M_OUTPUT" name="Output Features">Gbge768698 [clipped]</OUTPUT>
+        </TOOL>
+      </INPUT>
+      <INPUT type="shapes" id="GBA" name="GRB Gba (gebouwaanhorigheid)">
+        <TOOL library="shapes_polygons" id="11" name="Polygon Clipping">
+          <OPTION type="boolean" id="DISSOLVE" name="Dissolve Clip Features">true</OPTION>
+          <OPTION type="boolean" id="MULTIPLE" name="Multiple Input Features">true</OPTION>
+          <INPUT type="shapes" id="CLIP" name="Clip Features">
+            <FILE>/nas/fluves/projecten/FL_P_2020_DepO_CNWSMod_1/01_data/cn_ws_model/catchments/pilot_areas/catchm_langegracht.shp</FILE>
+          </INPUT>
+          <INPUT_LIST type="shapes_list" id="M_INPUT" name="Input Features">
+            <INPUT type="shapes_list" id="M_INPUT" name="Input Features">
+              <FILE>/nas/homes/johan-1000001/Downloads/GRB_20230130_e768698_Shapefile/Shapefile/Gbae768698.shp</FILE>
+            </INPUT>
+            <INPUT type="shapes_list" id="M_INPUT" name="Input Features">
+              <FILE>/nas/homes/johan-1000001/Downloads/GRB_20230130_e768698_Shapefile/Shapefile/Gbge768698.shp</FILE>
+            </INPUT>
+            <INPUT type="shapes_list" id="M_INPUT" name="Input Features">
+              <FILE>/nas/homes/johan-1000001/Downloads/GRB_20230130_e768698_Shapefile/Shapefile/Sbne768698.shp</FILE>
+            </INPUT>
+            <INPUT type="shapes_list" id="M_INPUT" name="Input Features">
+              <FILE>/nas/homes/johan-1000001/Downloads/GRB_20230130_e768698_Shapefile/Shapefile/Wtze768698.shp</FILE>
+            </INPUT>
+            <INPUT type="shapes_list" id="M_INPUT" name="Input Features">
+              <FILE>/nas/homes/johan-1000001/Downloads/GRB_20230130_e768698_Shapefile/Shapefile/Wbne768698.shp</FILE>
+            </INPUT>
+            <INPUT type="shapes_list" id="M_INPUT" name="Input Features">
+              <FILE>/nas/homes/johan-1000001/Downloads/GRB_20230130_e768698_Shapefile/Shapefile/Wgae768698.shp</FILE>
+            </INPUT>
+            <INPUT type="shapes_list" id="M_INPUT" name="Input Features">
+              <FILE>/nas/homes/johan-1000001/Downloads/GRB_20230130_e768698_Shapefile/Shapefile/Trne768698.shp</FILE>
+            </INPUT>
+            <INPUT type="shapes_list" id="M_INPUT" name="Input Features">
+              <FILE>/nas/homes/johan-1000001/Downloads/GRB_20230130_e768698_Shapefile/Shapefile/Knwe768698.shp</FILE>
+            </INPUT>
+          </INPUT_LIST>
+          <OUTPUT type="shapes_list" id="M_OUTPUT" name="Output Features">Gbae768698 [clipped]</OUTPUT>
+        </TOOL>
+      </INPUT>
+      <INPUT type="shapes" id="TRN" name="GRB Trn (terrein)">
+        <FILE>tests/data/langegracht/Trne768698.shp</FILE>
+      </INPUT>
+      <INPUT type="shapes" id="KNW" name="GRB Knw (Kunstwerk)">
+        <TOOL library="shapes_polygons" id="11" name="Polygon Clipping">
+          <OPTION type="boolean" id="DISSOLVE" name="Dissolve Clip Features">true</OPTION>
+          <OPTION type="boolean" id="MULTIPLE" name="Multiple Input Features">true</OPTION>
+          <INPUT type="shapes" id="CLIP" name="Clip Features">
+            <FILE>/nas/fluves/projecten/FL_P_2020_DepO_CNWSMod_1/01_data/cn_ws_model/catchments/pilot_areas/catchm_langegracht.shp</FILE>
+          </INPUT>
+          <INPUT_LIST type="shapes_list" id="M_INPUT" name="Input Features">
+            <INPUT type="shapes_list" id="M_INPUT" name="Input Features">
+              <FILE>/nas/homes/johan-1000001/Downloads/GRB_20230130_e768698_Shapefile/Shapefile/Gbae768698.shp</FILE>
+            </INPUT>
+            <INPUT type="shapes_list" id="M_INPUT" name="Input Features">
+              <FILE>/nas/homes/johan-1000001/Downloads/GRB_20230130_e768698_Shapefile/Shapefile/Gbge768698.shp</FILE>
+            </INPUT>
+            <INPUT type="shapes_list" id="M_INPUT" name="Input Features">
+              <FILE>/nas/homes/johan-1000001/Downloads/GRB_20230130_e768698_Shapefile/Shapefile/Sbne768698.shp</FILE>
+            </INPUT>
+            <INPUT type="shapes_list" id="M_INPUT" name="Input Features">
+              <FILE>/nas/homes/johan-1000001/Downloads/GRB_20230130_e768698_Shapefile/Shapefile/Wtze768698.shp</FILE>
+            </INPUT>
+            <INPUT type="shapes_list" id="M_INPUT" name="Input Features">
+              <FILE>/nas/homes/johan-1000001/Downloads/GRB_20230130_e768698_Shapefile/Shapefile/Wbne768698.shp</FILE>
+            </INPUT>
+            <INPUT type="shapes_list" id="M_INPUT" name="Input Features">
+              <FILE>/nas/homes/johan-1000001/Downloads/GRB_20230130_e768698_Shapefile/Shapefile/Wgae768698.shp</FILE>
+            </INPUT>
+            <INPUT type="shapes_list" id="M_INPUT" name="Input Features">
+              <FILE>/nas/homes/johan-1000001/Downloads/GRB_20230130_e768698_Shapefile/Shapefile/Trne768698.shp</FILE>
+            </INPUT>
+            <INPUT type="shapes_list" id="M_INPUT" name="Input Features">
+              <FILE>/nas/homes/johan-1000001/Downloads/GRB_20230130_e768698_Shapefile/Shapefile/Knwe768698.shp</FILE>
+            </INPUT>
+          </INPUT_LIST>
+          <OUTPUT type="shapes_list" id="M_OUTPUT" name="Output Features">Knwe768698 [clipped]</OUTPUT>
+        </TOOL>
+      </INPUT>
+      <OUTPUT type="grid" id="PRC" name="Percelen grid">Percelen grid</OUTPUT>
+    </TOOL>
+  </HISTORY>
+  <FILE></FILE>
+  <DESCRIPTION></DESCRIPTION>
+  <PROJECTION>
+    <OGC_WKT>PROJCS["Belge_1972_Belgian_Lambert_72",GEOGCS["GCS_Belge 1972",DATUM["D_Belge_1972",SPHEROID["International_1924",6378388,297]],PRIMEM["Greenwich",0],UNIT["Degree",0.017453292519943295]],PROJECTION["Lambert_Conformal_Conic"],PARAMETER["standard_parallel_1",51.16666723333333],PARAMETER["standard_parallel_2",49.8333339],PARAMETER["latitude_of_origin",90],PARAMETER["central_meridian",4.367486666666666],PARAMETER["false_easting",150000.013],PARAMETER["false_northing",5400088.438],UNIT["Meter",1]]</OGC_WKT>
+    <PROJ4>+proj=lcc +a=6378388.000000 +b=6356911.946128 +lat_1=51.16666723333333 +lat_2=49.8333339 +lat_0=90 +lon_0=4.367486666666666 +x_0=150000.013 +y_0=5400088.438 +no_defs</PROJ4>
+    <EPSG>-1</EPSG>
+  </PROJECTION>
+</SAGA_METADATA>
