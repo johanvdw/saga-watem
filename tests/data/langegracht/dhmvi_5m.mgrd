@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<SAGA_METADATA>
+  <DATABASE></DATABASE>
+  <SOURCE>
+    <GDAL_DRIVER>VRT</GDAL_DRIVER>
+    <Band></Band>
+  </SOURCE>
+  <HISTORY saga-version="8.2.1">
+    <TOOL library="grid_tools" id="0" name="Resampling">
+      <OPTION type="grid_system" id="PARAMETERS_GRID_SYSTEM" name="Grid System">
+        <CELLSIZE>5</CELLSIZE>
+        <XMIN>18002.5</XMIN>
+        <XMAX>265997.5</XMAX>
+        <YMIN>148002.5</YMIN>
+        <YMAX>247997.5</YMAX>
+      </OPTION>
+      <OPTION type="boolean" id="KEEP_TYPE" name="Preserve Data Type">true</OPTION>
+      <OPTION type="choice" id="SCALE_DOWN" name="Downscaling Method" index="3">B-Spline Interpolation</OPTION>
+      <OPTION type="choice" id="TARGET_DEFINITION" name="Target Grid System" index="1">grid or grid system</OPTION>
+      <OPTION type="grid_system" id="TARGET_SYSTEM" name="Grid System">
+        <CELLSIZE>5</CELLSIZE>
+        <XMIN>162092.5</XMIN>
+        <XMAX>167757.5</XMAX>
+        <YMIN>165802.5</YMIN>
+        <YMAX>169472.5</YMAX>
+      </OPTION>
+      <INPUT_LIST type="grid_list" id="INPUT" name="Grids" system="PARAMETERS_GRID_SYSTEM">
+        <INPUT type="grid_list" id="INPUT" name="Grids" system="PARAMETERS_GRID_SYSTEM"/>
+      </INPUT_LIST>
+      <OUTPUT type="grid_list" id="OUTPUT" name="Resampled Grids">dhmvi_5m</OUTPUT>
+    </TOOL>
+  </HISTORY>
+  <FILE></FILE>
+  <DESCRIPTION></DESCRIPTION>
+  <PROJECTION>
+    <OGC_WKT>PROJCS["BD72 / Belgian Lambert 72",GEOGCS["BD72",DATUM["Reseau_National_Belge_1972",SPHEROID["International 1924",6378388,297,AUTHORITY["EPSG","7022"]],AUTHORITY["EPSG","6313"]],PRIMEM["Greenwich",0],UNIT["degree",0.0174532925199433]],PROJECTION["Lambert_Conformal_Conic_2SP"],PARAMETER["standard_parallel_1",49.8333339],PARAMETER["standard_parallel_2",51.1666672333333],PARAMETER["latitude_of_origin",90],PARAMETER["central_meridian",4.36748666666667],PARAMETER["false_easting",150000.01256],PARAMETER["false_northing",5400088.4378],UNIT["metre",1,AUTHORITY["EPSG","9001"]],AXIS["Easting",EAST],AXIS["Northing",NORTH]]</OGC_WKT>
+    <PROJ4>+proj=lcc +lat_0=90 +lon_0=4.36748666666667 +lat_1=49.8333339 +lat_2=51.1666672333333 +x_0=150000.01256 +y_0=5400088.4378 +ellps=intl +units=m +no_defs</PROJ4>
+    <EPSG>-1</EPSG>
+  </PROJECTION>
+</SAGA_METADATA>
