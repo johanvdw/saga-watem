@@ -147,9 +147,10 @@ bool CCalculate_LS_Watem::On_Execute(void)
 		#pragma omp parallel for
 		for(x=0; x<Get_NX(); x++)
 		{
-			if (m_pDEM->is_NoData(x, y))
+			if (m_pDEM->is_NoData(x, y)){
 				pLS->Set_NoData(x, y);
 				if (m_pSlope) m_pSlope->Set_NoData(x, y);
+            }
 			else
 				pLS->Set_Value(x, y, Get_LS(x, y));
 		}
