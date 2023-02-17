@@ -1,4 +1,5 @@
 #include "Parcel_C_Grid.h"
+#include "Calculate_C_Grid.h"
 
 Parcel_C_Grid::Parcel_C_Grid()
 {
@@ -32,7 +33,24 @@ Parcel_C_Grid::Parcel_C_Grid()
 
 	Parameters.Add_Grid(
 		NULL, "C", "C Grid", "C Grid", PARAMETER_OUTPUT, true, SG_DATATYPE_Short); // we use a short to save memory
+
+	Parameters.Add_Bool(NULL, "GRB_VHA", "Use GRB and VHA as extra landuse", "", false);
+	// Optional shapes
+	Parameters.Add_Shapes("GRB_VHA", "WTZ", "GRB WTZ (VHA-polygoon)", "VHA (polygoon)", PARAMETER_INPUT_OPTIONAL, SHAPE_TYPE_Polygon);
+	Parameters.Add_Shapes("GRB_VHA", "WLAS", "VHA Lijnen", "VHA (lijnen). Eventueel kan de laag GRB Wlas gebruikt worden, deze loopt echter soms achter op de VHA.", PARAMETER_INPUT_OPTIONAL, SHAPE_TYPE_Line);
+
+	Parameters.Add_Shapes("GRB_VHA", "SBN", "GRB Sbn (spoorbaan)", "GRB Sbn (spoorbaan)", PARAMETER_INPUT_OPTIONAL, SHAPE_TYPE_Polygon);
+	Parameters.Add_Shapes("GRB_VHA", "WBN", "GRB Wbn (wegbaan)", "GRB Wbn (wegbaan)", PARAMETER_INPUT_OPTIONAL, SHAPE_TYPE_Polygon);
+
+	Parameters.Add_Shapes("GRB_VHA", "WGA", "GRB Wga (wegaanhorigheid)", "GRB Wga (wegaanhorigheid)", PARAMETER_INPUT_OPTIONAL, SHAPE_TYPE_Polygon);
+
+	Parameters.Add_Shapes("GRB_VHA", "GBG", "GRB Gbg (gebouw aan de grond)", "GRB Gbg (gebouw aan de grond)", PARAMETER_INPUT_OPTIONAL, SHAPE_TYPE_Polygon);
+	Parameters.Add_Shapes("GRB_VHA", "GBA", "GRB Gba (gebouwaanhorigheid)", "GRB Gba (gebouwaanhorigheid)", PARAMETER_INPUT_OPTIONAL, SHAPE_TYPE_Polygon);
+	Parameters.Add_Shapes("GRB_VHA", "TRN", "GRB Trn (terrein)", "GRB Trn (Terrein) - enkel bepaalde klassen worden gebruikt", PARAMETER_INPUT_OPTIONAL, SHAPE_TYPE_Polygon);
+	Parameters.Add_Shapes("GRB_VHA", "KNW", "GRB Knw (Kunstwerk)", "GRB Knw (Kunstwerk)", PARAMETER_INPUT_OPTIONAL, SHAPE_TYPE_Polygon);
+
 }
+
 
 bool Parcel_C_Grid::On_Execute()
 {
@@ -56,34 +74,64 @@ bool Parcel_C_Grid::On_Execute()
 		&& SG_TOOL_PARAMETER_SET("MULTIPLE", 1) // last value 
 		&& SG_TOOL_PARAMETER_SET("POLY_TYPE", 1)//cell: als er een pixels overlapt met infrastructuur moet hele pixels infrastructuur  worden
 	);
-	
+	if (!result) {
+		return false;
+	}
+
+
+	CSG_Grid* gbg, * gba, * wga, * knw, * wlas, * wtz;
+
+	if (Parameters("GRB_VHA")->asBool())
+	{
+		// grid maken van GRB achtergrondlagen (gebouwen, kunstwerken)
+		
+		gbg = BinaryShapetoGrid(Parameters("GBG"), this->Get_System(), 1);
+		gba = BinaryShapetoGrid(Parameters("GBA"), this->Get_System(), 1);
+		wga = BinaryShapetoGrid(Parameters("WGA"), this->Get_System(), 1);
+		knw = BinaryShapetoGrid(Parameters("KNW"), this->Get_System(), 1);
+		wlas = BinaryShapetoGrid(Parameters("WLAS"), this->Get_System(), 1);
+		wtz = BinaryShapetoGrid(Parameters("WTZ"), this->Get_System(), 1);
+
+
+	}
 
 	// fill gaps with reclassified landuse
 	#pragma omp parallel for
 	for (int i = 0; i < C->Get_NCells(); i++) {
 		if (C->is_NoData(i))
 		{
-			switch (LANDUSE->asInt(i))
+			if (gbg->asInt(i) || gba->asInt(i) || wga->asInt(i) || knw->asInt(i) || wlas->asInt(i) || wtz->asInt(i))
 			{
-			case -9999: 
-			case 0:
-				break; // remains nodata
-			case -1:
-			case -2:
-			case -5:
-				C->Set_Value(i, 0);  break;
-			case -3:
-				C->Set_Value(i, 0.001); break;
-			case -4:
-			case -6:
-				C->Set_Value(i, 0.01); break;
-			default: C->Set_Value(i, 0.37); break;
+				C->Set_Value(i, 0);
+			}
+			else
+			{
+				switch (LANDUSE->asInt(i))
+				{
+				case -9999:
+				case 0:
+					break; // remains nodata
+				case -1:
+				case -2:
+				case -5:
+					C->Set_Value(i, 0);  break;
+				case -3:
+					C->Set_Value(i, 0.001); break;
+				case -4:
+				case -6:
+					C->Set_Value(i, 0.01); break;
+				default: C->Set_Value(i, 0.37); break;
+				}
 			}
 		}
 
 	}
 
 	// C->Set_Name(SG_T("C Grid") + C->Get_Name());
+	if (Parameters("GRB_VHA")->asBool())
+	{
+		delete gbg, gba, wga, knw, wlas, wtz;
+	}
 
 	return true;
 }

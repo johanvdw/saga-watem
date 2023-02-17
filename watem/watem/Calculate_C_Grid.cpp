@@ -1,7 +1,6 @@
 #include "Calculate_C_Grid.h"
 
 
-
 Calculate_C_Grid::Calculate_C_Grid()
 {
 
