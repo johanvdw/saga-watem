@@ -81,7 +81,9 @@ bool Parcel_C_Grid::On_Execute()
 
 	CSG_Grid* gbg, * gba, * wga, * knw, * wlas, * wtz;
 
-	if (Parameters("GRB_VHA")->asBool())
+    const bool grb_vha=Parameters("GRB_VHA")->asBool();
+
+	if (grb_vha)
 	{
 		// grid maken van GRB achtergrondlagen (gebouwen, kunstwerken)
 		
@@ -100,7 +102,7 @@ bool Parcel_C_Grid::On_Execute()
 	for (int i = 0; i < C->Get_NCells(); i++) {
 		if (C->is_NoData(i))
 		{
-			if (gbg->asInt(i) || gba->asInt(i) || wga->asInt(i) || knw->asInt(i) || wlas->asInt(i) || wtz->asInt(i))
+			if ((grb_vha) && (gbg->asInt(i) || gba->asInt(i) || wga->asInt(i) || knw->asInt(i) || wlas->asInt(i) || wtz->asInt(i)))
 			{
 				C->Set_Value(i, 0);
 			}
@@ -130,7 +132,12 @@ bool Parcel_C_Grid::On_Execute()
 	// C->Set_Name(SG_T("C Grid") + C->Get_Name());
 	if (Parameters("GRB_VHA")->asBool())
 	{
-		delete gbg, gba, wga, knw, wlas, wtz;
+		delete gbg;
+        delete gba;
+        delete wga;
+        delete knw;
+        delete wlas;
+        delete wtz;
 	}
 
 	return true;
