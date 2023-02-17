@@ -9,3 +9,4 @@ public:
 	~Calculate_C_Grid();
 };
 
+CSG_Grid* BinaryShapetoGrid(CSG_Parameter* shape, const CSG_Grid_System& system, const int poly_type);
