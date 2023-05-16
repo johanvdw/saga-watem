@@ -196,12 +196,11 @@ void CCalculate_Uparea::CalculateUparea()
 	SG_UI_Process_Set_Text(_TL("Indexing finished"));
 	for (int t = 0; t < ncol*nrow; t++)
 	{
-		Set_Progress_NCells(t);
-		//if (t%ncol == 0) Set_Progress_NCells(t);
+		if (t%ncol == 0) Set_Progress_NCells(t);
 		int i, j;
-		int ret = DEM->Get_Sorted(t, i, j);
+		bool ret = DEM->Get_Sorted(t, i, j);
 		
-		if (ret == 0) continue;
+		if (!ret) continue;
 
 		if (PRC->asInt(i, j) == 0 || DEM->is_NoData(i,j)) {
 			Up_Area->Set_Value(i, j, 0);
