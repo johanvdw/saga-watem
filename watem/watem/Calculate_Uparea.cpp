@@ -192,11 +192,16 @@ void CCalculate_Uparea::CalculateUparea()
 
 	SG_UI_Process_Set_Text(_TL("Calculating Uparea"));
 	//eerst sorteren, dan van hoogste naar laagste pixel gaan.
+	DEM->Set_Index();
+	SG_UI_Process_Set_Text(_TL("Indexing finished"));
 	for (int t = 0; t < ncol*nrow; t++)
 	{
-		if (t%ncol == 0) Set_Progress_NCells(t);
+		Set_Progress_NCells(t);
+		//if (t%ncol == 0) Set_Progress_NCells(t);
 		int i, j;
-		DEM->Get_Sorted(t, i, j);
+		int ret = DEM->Get_Sorted(t, i, j);
+		
+		if (ret == 0) continue;
 
 		if (PRC->asInt(i, j) == 0 || DEM->is_NoData(i,j)) {
 			Up_Area->Set_Value(i, j, 0);
