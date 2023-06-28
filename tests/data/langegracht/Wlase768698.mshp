@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<SAGA_METADATA>
+  <DATABASE>
+    <FIELDS>
+      <FIELD TYPE="LONGINT">OIDN</FIELD>
+      <FIELD TYPE="LONGINT">UIDN</FIELD>
+      <FIELD TYPE="DATE">VERSDATUM</FIELD>
+      <FIELD TYPE="LONGINT">VHAS</FIELD>
+      <FIELD TYPE="LONGINT">VHAG</FIELD>
+      <FIELD TYPE="STRING">NAAM</FIELD>
+      <FIELD TYPE="STRING">REGCODE</FIELD>
+      <FIELD TYPE="STRING">REGCODE1</FIELD>
+      <FIELD TYPE="STRING">BEHEER</FIELD>
+      <FIELD TYPE="LONGINT">CATC</FIELD>
+      <FIELD TYPE="STRING">LBLCATC</FIELD>
+      <FIELD TYPE="LONGINT">BEKNR</FIELD>
+      <FIELD TYPE="STRING">BEKNAAM</FIELD>
+      <FIELD TYPE="STRING">STRMGEB</FIELD>
+      <FIELD TYPE="LONGINT">GEO</FIELD>
+      <FIELD TYPE="STRING">LBLGEO</FIELD>
+      <FIELD TYPE="STRING">VHAZONENR</FIELD>
+      <FIELD TYPE="STRING">WTRLICHC</FIELD>
+      <FIELD TYPE="DOUBLE">LENGTE</FIELD>
+    </FIELDS>
+  </DATABASE>
+  <SOURCE></SOURCE>
+  <HISTORY saga-version="8.2.1">
+    <TOOL library="shapes_lines" id="3" name="Line-Polygon Intersection">
+      <OPTION type="choice" id="OUTPUT" name="Output" index="0">intersection</OPTION>
+      <OPTION type="choice" id="ATTRIBUTES" name="Attributes" index="1">line</OPTION>
+      <INPUT type="shapes" id="LINES" name="Lines">
+        <FILE>/nas/homes/johan-1000001/Downloads/GRB_20230130_e768698_Shapefile/Shapefile/Wlase768698.shp</FILE>
+      </INPUT>
+      <INPUT type="shapes" id="POLYGONS" name="Polygons">
+        <FILE>/nas/fluves/projecten/FL_P_2020_DepO_CNWSMod_1/01_data/cn_ws_model/catchments/pilot_areas/catchm_langegracht.shp</FILE>
+      </INPUT>
+      <OUTPUT type="shapes" id="INTERSECT" name="Intersection">Wlase768698 [Intersection: catchm_langegracht]</OUTPUT>
+    </TOOL>
+  </HISTORY>
+  <FILE></FILE>
+  <DESCRIPTION></DESCRIPTION>
+  <PROJECTION>
+    <OGC_WKT>PROJCS["Belge_Lambert_1972",GEOGCS["GCS_Belge_1972",DATUM["D_Belge_1972",SPHEROID["International_1924",6378388.0,297.0]],PRIMEM["Greenwich",0.0],UNIT["Degree",0.0174532925199433]],PROJECTION["Lambert_Conformal_Conic"],PARAMETER["False_Easting",150000.01256],PARAMETER["False_Northing",5400088.4378],PARAMETER["Central_Meridian",4.367486666666666],PARAMETER["Standard_Parallel_1",49.8333339],PARAMETER["Standard_Parallel_2",51.16666723333333],PARAMETER["Latitude_Of_Origin",90.0],UNIT["Meter",1.0]]&#xD;
+</OGC_WKT>
+    <PROJ4>+proj=lcc +a=6378388.000000 +b=6356911.946128 +x_0=150000.01256 +y_0=5400088.4378 +lon_0=4.367486666666666 +lat_1=49.8333339 +lat_2=51.16666723333333 +lat_0=90.0 +no_defs</PROJ4>
+    <EPSG>-1</EPSG>
+  </PROJECTION>
+</SAGA_METADATA>

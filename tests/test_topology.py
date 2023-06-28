@@ -7,7 +7,6 @@ import numpy as np
 import pandas as pd
 
 # make sure saga vpo libs are added to path
-os.environ["SAGA_TLB"]="build/network/topology"
 
 def sagify(d: dict):
     """Convert a dict to a list of saga arguments
@@ -15,6 +14,7 @@ def sagify(d: dict):
     eg convert {"INPUTLINES": "file.shp"} to
     ["-INPUTLINES", "file.shp"]
     """
+    os.environ["SAGA_TLB"]="build/network/topology"
     output_list = []
     for k in d:
         output_list += ["-"+k, d[k]]
