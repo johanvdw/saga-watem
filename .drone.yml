@@ -36,7 +36,7 @@ steps:
         - ijzer
       user: docs
       key:
-         from_secret: ssh-key
+         from_secret: rsync_key
       source: package/*.deb
       target: /appdata/static/apt/bullseye/amd64
     when:
@@ -95,7 +95,7 @@ steps:
          - ijzer
        user: docs
        key:
-          from_secret: ssh-key
+          from_secret: rsync_key
        source: package/*.deb
        target: /appdata/static/apt/amd64
      when:
@@ -117,7 +117,7 @@ steps:
       GPG_KEY:
          from_secret: gpg-key
       SSH_KEY:
-          from_secret: ssh-key
+          from_secret: rsync_key
       DEBFULLNAME: "Fluves Drone CI"
       DEBEMAIL: donotreply@fluves.net
     commands:
