@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<SAGA_METADATA>
+  <DATABASE>
+    <FIELDS>
+      <FIELD TYPE="FLOAT">fake_c</FIELD>
+    </FIELDS>
+  </DATABASE>
+  <SOURCE></SOURCE>
+  <HISTORY saga-version="8.2.1">
+    <TOOL library="shapes_polygons" id="11" name="Polygon Clipping">
+      <OPTION type="boolean" id="DISSOLVE" name="Dissolve Clip Features">true</OPTION>
+      <OPTION type="boolean" id="MULTIPLE" name="Multiple Input Features">true</OPTION>
+      <INPUT type="shapes" id="CLIP" name="Clip Features">
+        <FILE>/nas/fluves/projecten/FL_P_2020_DepO_CNWSMod_1/01_data/cn_ws_model/catchments/pilot_areas/catchm_langegracht.shp</FILE>
+      </INPUT>
+      <INPUT_LIST type="shapes_list" id="M_INPUT" name="Input Features">
+        <INPUT type="shapes_list" id="M_INPUT" name="Input Features">
+          <FILE>/nas/homes/johan-1000001/Downloads/GRB_20230130_e768698_Shapefile/Shapefile/Adpe768698.shp</FILE>
+        </INPUT>
+      </INPUT_LIST>
+      <OUTPUT type="shapes_list" id="M_OUTPUT" name="Output Features">Adpe768698 [clipped]</OUTPUT>
+    </TOOL>
+  </HISTORY>
+  <PROJECTION>
+    <OGC_WKT>PROJCS["Belge_1972_Belgian_Lambert_72",GEOGCS["GCS_Belge 1972",DATUM["D_Belge_1972",SPHEROID["International_1924",6378388,297]],PRIMEM["Greenwich",0],UNIT["Degree",0.017453292519943295]],PROJECTION["Lambert_Conformal_Conic"],PARAMETER["standard_parallel_1",51.16666723333333],PARAMETER["standard_parallel_2",49.8333339],PARAMETER["latitude_of_origin",90],PARAMETER["central_meridian",4.367486666666666],PARAMETER["false_easting",150000.013],PARAMETER["false_northing",5400088.438],UNIT["Meter",1]]</OGC_WKT>
+    <PROJ4>+proj=lcc +a=6378388.000000 +b=6356911.946128 +lat_1=51.16666723333333 +lat_2=49.8333339 +lat_0=90 +lon_0=4.367486666666666 +x_0=150000.013 +y_0=5400088.438 +no_defs</PROJ4>
+    <EPSG>-1</EPSG>
+  </PROJECTION>
+  <FILE>tests/data/langegracht/Adpe768698.shp</FILE>
+  <DESCRIPTION></DESCRIPTION>
+</SAGA_METADATA>

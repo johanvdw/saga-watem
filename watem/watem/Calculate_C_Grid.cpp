@@ -1,7 +1,6 @@
 #include "Calculate_C_Grid.h"
 
 
-
 Calculate_C_Grid::Calculate_C_Grid()
 {
 
@@ -45,12 +44,16 @@ bool Calculate_C_Grid::On_Execute()
 	for (int i = 0; i < C->Get_NCells(); i++) {
 		switch (PRC->asInt(i))
 		{
-		case 10000: C->Set_Value(i, 0.001); break;
+		case 10000: 
+			C->Set_Value(i, 0.001); break;
 		case -9999:
+		case 0: 
+			C->Set_NoData(i); break;
 		case -1:
 		case -2:
-		case 0: C->Set_NoData(i); break;
-		default: C->Set_Value(i, 0.37); break;
+			C->Set_Value(i, 0 ); break;
+		default: 
+			C->Set_Value(i, 0.37); break;
 		}
 	}
 

@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<SAGA_METADATA>
+  <DATABASE></DATABASE>
+  <SOURCE>
+    <GDAL_DRIVER>GTiff</GDAL_DRIVER>
+    <Band></Band>
+  </SOURCE>
+  <HISTORY></HISTORY>
+  <FILE></FILE>
+  <DESCRIPTION></DESCRIPTION>
+</SAGA_METADATA>
