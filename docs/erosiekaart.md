@@ -1,6 +1,6 @@
 # 1 Introduction
 
-The complete calculation of the erosion map in SAGA GIS consists of 4 steps:
+This tutorial is a rework of the [Dutch report](https://archief.algemeen.omgeving.vlaanderen.be/xmlui/handle/acd/269123). The complete calculation of the erosion map in SAGA GIS consists of 4 steps:
 
 ![img1](/img/img1.png)
 
