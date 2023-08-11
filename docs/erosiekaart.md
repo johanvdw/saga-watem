@@ -2,7 +2,7 @@
 
 This tutorial is a rework of the [Dutch report](https://archief.algemeen.omgeving.vlaanderen.be/xmlui/handle/acd/269123). The complete calculation of the erosion map in SAGA GIS consists of 4 steps:
 
-![img1](/img/img1.png)
+![img1](/img/erosiekaart-img1.png)
 
 *Figure 1: The process of calculating an erosion map*
 
@@ -72,7 +72,7 @@ Where there is missing data, it was filled in with an nearest neighbour algorith
 
 The land use map is created based on the reclassified land use map with forest pointer of the sediment model (file  Landgebruik_boswijzer_reclassified'). The reclassification of the 'Landgebruik_boswijzer' file is done using the 'reclassify grid values' and the file 'reclasslanduse' (shown below). You can find this tool under 'Tool > Grid > Tools > Reclassify Grid Values'.
 
-![img2](/img/img2.png)
+![img2](/img/erosiekaart-img2.png)
 
 *Figure 2: creation of land-use map*
 
@@ -92,7 +92,7 @@ Note: value -2 remains -2 in the new map and is therefore not converted.
 
 ## 2.4 CREATION OF THE PARCEL GRID (PRC MAP) (MODULE 1.)
 
-![img4](/img/img4.png)
+![img4](/img/erosiekaart-img4.png)
 
 *Figure 3: The process of calculating an erosion map, creation of the parcel grid (in Dutch)*
 
@@ -125,19 +125,19 @@ order used is this: (where later map layers are superimposed on previous map lay
     was used and not WLas from GRB (because VHA was more recent)], WTZ (VHA polygons) 
     (-1)
 
-![img5](/img/img5.png)
+![img5](/img/erosiekaart-img5.png)
 
 *Figure 4: module '1. Creation of parcel grid (PRC)'.*
 
 ## 2.5 3X3 FILTER WITHIN PLOT BOUNDARIES (MODULE 2.)
 
-![img6](/img/img6.png)
+![img6](/img/erosiekaart-img6.png)
 
 *Figure 5: The process of calculating an erosion map, filtering within plot boundaries (in Dutch)*
 
 A second optional step is to perform a 3x3 filter on the grid. This filters a digital elevation model but only considers cells that lie within the same plot. This filter can be done in SAGA using the tool '2. 3x3 filter within plot boundaries'. This option is on by default because in 2017 it was decided to use this option to be used starting from the calculation of the erosion map 2018.
 
-![img7](/img/img7.png)
+![img7](/img/erosiekaart-img7.png)
 
 *Figure 6: Module 2. 3x3 filter within plot boundaries*
 
@@ -147,13 +147,13 @@ A second optional step is to perform a 3x3 filter on the grid. This filters a di
 
 In SAGA GIS, all modules can be called from the "Geoprocessing" menu, in the 'Watem' submenu.
 
-![img8](/img/img8.png)
+![img8](/img/erosiekaart-img8.png)
 
 *Figure 7: Calling the Watem module from the menu*
 
 It is also possible to launch the same modules from the tools tab in the "manager" window. The description tab then also displays the module's documentation.
 
-![img9](/img/img9.png)
+![img9](/img/erosiekaart-img9.png)
 
 *Figure 8: Calling up the Watem module via the "manager" window*
 
@@ -161,7 +161,7 @@ The import grids are displayed in the interface with ">>" This means that they a
 
 ## 3.2 EROSION MAP CALCULATION
 
-![img10](/img/img10.png)
+![img10](/img/erosiekaart-img10.png)
 
 *Figure 9: The process of calculating an erosion map, the creation of an erosion map (in Dutch)*
 
@@ -171,25 +171,25 @@ The calculation of water erosion can be done in several steps (different tools 3
 
 ### 3.3.1 Calculation of the upslope area (module 3.1)
 
-![img11](/img/img11.png)
+![img11](/img/erosiekaart-img11.png)
 
 *Figure 10: Module 3.1. Uparea calculation*
 
 ### 3.3.2 LS Calculation (module 3.2)
 
-![img12](/img/img12.png)
+![img12](/img/erosiekaart-img12.png)
 
 *Figure 11: Module 3.2. LS calculation*
 
 ### 3.3.3 C calculation (Module 3.3)
 
-![img13](/img/img13.png)
+![img13](/img/erosiekaart-img13.png)
 
 *Figure 12: Module 3.3. C calculation*
 
 ### 3.3.4 Water erosion calculation based on LS (module 3.4)
 
-![img14](/img/img14.png)
+![img14](/img/erosiekaart-img14.png)
 
 *Figure 13: Module 3.4. Water erosion calculation based on LS*
 
@@ -197,13 +197,13 @@ The calculation of water erosion can be done in several steps (different tools 3
 
 Tillage erosion is not included in the annual Potential soil erosion map per plot.
 
-![img15](/img/img15.png)
+![img15](/img/erosiekaart-img15.png)
 
 *Figure 14: Module 3.5. Tillage erosion calculation*
 
 ## 3.4 SINGLE MODULE EROSION MAP CALCULATION (MODULE 3.)
 
-![img16](/img/img16.png)
+![img16](/img/erosiekaart-img16.png)
 
 *Figure 15: Module 3. Erosion map calculation (complete).*
 
@@ -211,7 +211,7 @@ Initially, under "Grid system" you need to select the correct system. Then the o
 
 # 4 Postprocessing
 
-![img17](/img/img17.png)
+![img17](/img/erosiekaart-img17.png)
 
 *Figure 16: The process of calculating an erosion map, adding the erosion map to the parcel grid (in Dutch)*
 
@@ -224,11 +224,14 @@ Here it is important to use the standard method, i.e. assigning a cell to a poly
 Finally, it is also possible to run the module(s) from the command line. This is particularly useful if several scenarios need to be executed.
 This takes the following form.
 
-![img18](/img/img18.png)
+
+```bash
+saga_cmd watem 2 -DEM=DEM.sg-grd-z -PRC=prc.sg-grd-z -DEM_FILTER=DEM-filtered.sggrd-z
+```
 
 Here the first command (watem) indicates which library is used, and the second (in this case 2) indicates which tool within the library is used. In this example, the tool 3x3 filter within plot boundaries is called (identifier 2). This information can be derived from the tools' documentation given earlier:
 
-![img19](/img/img19.png)
+![img19](/img/erosiekaart-img19.png)
 
 The tool performs a 3x3 filter on a digital elevation model using only cells within the plot.
 
@@ -242,15 +245,54 @@ The tool performs a 3x3 filter on a digital elevation model using only cells wit
 
 It is also possible to create a sample script from the tool manager in the graphical interface (save to script file or copy to clipboard).
 
-![img20](/img/img20.png)
+![img20](/img/erosiekaart-img20.png)
 
 *Figure 17: A script can also be created from the graphical interface*
 
 ## 5.1 EXAMPLE SCRIPT: FINAL SCRIPT EROSION MAP 2018
 
-![img21](/img/img21.png)
-
-![img22](/img/img22.png)
+```shell
+@ECHO OFF
+REM SET SAGA_MLB=C:\SAGA\Tools
+SET PATH=D:\erosiekaart\2018\saga_watem_1.7\saga_vc_x64
+set OUTPUT=D:\erosiekaart\2018\RESULTS
+set INPUT=D:\erosiekaart\2018\INPUTDATA
+set K=%INPUT%\K3.tif
+set GRB=D:\erosiekaart\2018\INPUTDATA\GRB
+if not exist "%OUTPUT%" (mkdir "%OUTPUT%")
+REM Tool: Aanmaak percelengrid
+saga_cmd watem 1 -PARCEL_SHAPES="%INPUT%\basis_ALBON_2018.shp" -
+LANDUSE="%INPUT%\Landgebruik_boswijzer_reclassified.sg-grd-z" -PRC="%OUTPUT%\PRC.sg-
+grd-z" -WTZ="%GRB%\wtz.shp" -WLAS="%INPUT%\VHA_09052017.shp" -SBN="%GRB%\sbn.shp" 
+WBN="%GRB%\wbn.shp" -WGA="%GRB%\wga.shp" -GBG="%GRB%\gbg.shp" -GBA="%GRB%\gba.shp" -
+TRN="%GRB%\trn.shp" -KNW="%GRB%\knw.shp"
+REM Tool: 3x3 binnen perceel
+saga_cmd watem 2 -DEM="%INPUT%\dhmv2-mosaic.sg-grd-z" -PRC="%OUTPUT%\PRC.sg-grd-z" -
+DEM_FILTER="%OUTPUT%\dhmv2_parcelfilter.sg-grd-z"
+REM Tool: Complete Berekening Erosiekaart
+REM scenario 5: nieuw dem, nieuwe landuse, 3x3 filter (enkel in veld) - flow vanuit
+pit (max 4 pixels) + slope (LS) enkel binnen veld berekend
+set SCEN=%OUTPUT%\WAT30_2018
+if not exist "%SCEN%" (mkdir "%SCEN%")
+saga_cmd watem 3 -DEM="%OUTPUT%\dhmv2_parcelfilter.sg-grd-z" -PRC="%OUTPUT%\PRC.sg-
+grd-z" -K="%K%" -PIT="%SCEN%\Pit.sg-grd-z" -UPSLOPE_AREA="%SCEN%\upslope_area_30.sg-
+grd-z" -LS="%SCEN%\ls_30.sg-grd-z" -R=880.000000 -P=1.000000 -CORR=1.400000 -
+WATER_EROSION="%SCEN%\WAT30_2018.sg-grd-z" -PCTOCROP=70.000000 -
+PCTOFOREST=100.000000 -SAVE_MEMORY=1 -PIT_FLOW=1 -PIT_RADIUS=4 -LS_USE_PRC=1
+set SCEN=%OUTPUT%\WAT00_2018
+if not exist "%SCEN%" (mkdir "%SCEN%")
+REM berekening watererosie zonder connectivitiet
+saga_cmd watem 3 -DEM="%OUTPUT%\dhmv2_parcelfilter.sg-grd-z" -PRC="%OUTPUT%\PRC.sg-
+grd-z" -K="%K%" -PIT="%SCEN%\Pit.sg-grd-z" -UPSLOPE_AREA="%SCEN%\upslope_area_00.sg-
+grd-z" -LS="%SCEN%\ls_00.sg-grd-z" -R=880.000000 -P=1.000000 -CORR=1.400000 -
+WATER_EROSION="%SCEN%\WAT00_2018.sg-grd-z" -PCTOCROP=100.000000 -
+PCTOFOREST=100.000000 -SAVE_MEMORY=1 -PIT_FLOW=1 -PIT_RADIUS=4 -LS_USE_PRC=1
+REM Tot slot de waarden van de grids toevoegen aan de shapefile
+saga_cmd shapes_grid 1 -SHAPES="%INPUT%\basis_ALBON_2018.shp" -
+GRIDS="%OUTPUT%\WAT30_2018\WAT30_2018.sg-grd-z;%OUTPUT%\WAT00_2018\WAT00_2018.sg-
+grd-z" -RESULT="%OUTPUT%\erosie_berekend.shp"
+PAUSE
+```
 
 # 6 Extra information
 
