@@ -14,7 +14,7 @@ The complete calculation of the erosion map in SAGA GIS consists of 4 steps:
 4. Adding water erosion map values to the plot map.
 
 
-All steps can be performed in SAGA GIS. For the first 3 a nes saga module was 
+All steps can be performed in SAGA GIS. For the first 3 a new saga module was 
 developed. For the last step (adding erosion map to plot map) an existing 
 module is used. The creation of the water erosion map itself is conceived in
 give different steps, which can be performed together, but also separately:
