@@ -1,3 +1,46 @@
-version https://git-lfs.github.com/spec/v1
-oid sha256:27a7f018c182485d474e86b9e2aad298f40121a30aeec95c2d275eaf391ec4a8
-size 2278
+<?xml version="1.0" encoding="UTF-8"?>
+<SAGA_METADATA>
+  <DATABASE>
+    <FIELDS>
+      <FIELD TYPE="DOUBLE">line_id</FIELD>
+      <FIELD TYPE="LONGINT">startpt_id</FIELD>
+      <FIELD TYPE="LONGINT">endpt_id</FIELD>
+      <FIELD TYPE="DOUBLE">length</FIELD>
+      <FIELD TYPE="LONGINT">shreve_order</FIELD>
+      <FIELD TYPE="LONGINT">sort_order</FIELD>
+    </FIELDS>
+  </DATABASE>
+  <SOURCE></SOURCE>
+  <HISTORY saga-version="8.2.2">
+    <TOOL library="topology" id="0" name="Topologize Polylines">
+      <OPTION type="double" id="TOLERANCE" name="Tolerance Distance">0.01</OPTION>
+      <OPTION type="grid_system" id="SYSTEM_GRIDSYSTEM" name="Grid system">
+        <CELLSIZE>20</CELLSIZE>
+        <XMIN>162310</XMIN>
+        <XMAX>167550</XMAX>
+        <YMIN>165770</YMIN>
+        <YMAX>169510</YMAX>
+      </OPTION>
+      <OPTION type="boolean" id="SIMPLIFY" name="Simplify">false</OPTION>
+      <INPUT type="shapes" id="INPUTLINES" name="Input Lines">
+        <TOOL library="shapes_tools" id="0" name="Create New Shapes Layer">
+          <OPTION type="text" id="NAME" name="Name">New Shapes Layer</OPTION>
+          <OPTION type="choice" id="TYPE" name="Shape Type" index="2">Lines</OPTION>
+          <OPTION type="choice" id="VERTEX" name="Vertex Type" index="0">x, y</OPTION>
+          <OPTION type="integer" id="NFIELDS" name="Number of Attributes">2</OPTION>
+          <parameters name="Attributes" id="FIELDS" type="parameters">
+            <OPTION type="text" id="NAME0" name="Name" parms="FIELDS">ID</OPTION>
+            <OPTION type="choice" id="TYPE0" name="Type" parms="FIELDS" index="3">unsigned 1 byte integer</OPTION>
+            <OPTION type="text" id="NAME1" name="Name" parms="FIELDS">Name</OPTION>
+            <OPTION type="choice" id="TYPE1" name="Type" parms="FIELDS" index="0">string</OPTION>
+          </parameters>
+          <OUTPUT type="data_object" id="SHAPES" name="Shapes">New Shapes Layer</OUTPUT>
+        </TOOL>
+      </INPUT>
+      <INPUT type="grid" id="SYSTEM" name="Target grid (for grid system)" system="SYSTEM_GRIDSYSTEM"/>
+      <OUTPUT type="shapes" id="OUTPUTLINES" name="Output Lines">Topology of input_artificial</OUTPUT>
+    </TOOL>
+  </HISTORY>
+  <FILE>tests/data/topology.shp</FILE>
+  <DESCRIPTION></DESCRIPTION>
+</SAGA_METADATA>
