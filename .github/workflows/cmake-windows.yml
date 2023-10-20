@@ -42,7 +42,7 @@ jobs:
       run: |
         mkdir d:\\deps
         C:\\msys64\\usr\\bin\\wget https://sourceforge.net/projects/saga-gis/files/SAGA%20-%209/SAGA%20-%209.2.0/saga-9.2.0_x64.zip/download -O d:/deps/saga.zip
-        7z x d:\\deps\\saga.zip -o"d:\\deps\\saga-9.2.0_x64"
+        7z x d:\\deps\\saga.zip -o"d:\\deps\\"
      
     - name: Configure CMake
       # Configure CMake in a 'build' subdirectory. `CMAKE_BUILD_TYPE` is only required if you are using a single-configuration generator such as make.
