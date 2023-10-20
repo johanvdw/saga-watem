@@ -1,5 +1,10 @@
 #include "Calculate_Uparea.h"
 
+#if SAGA_MAJOR_VERSION >=9
+#define PROGRESS Set_Progress_Cells
+#else
+# define PROGRESS Set_Progress_NCells
+#endif
 CCalculate_Uparea::CCalculate_Uparea()
 {
 	Set_Name(_TL("3.1. Uparea berekening"));
@@ -196,7 +201,7 @@ void CCalculate_Uparea::CalculateUparea()
 	SG_UI_Process_Set_Text(_TL("Indexing finished"));
 	for (int t = 0; t < ncol*nrow; t++)
 	{
-		if (t%ncol == 0) Set_Progress_NCells(t);
+		if (t%ncol == 0) PROGRESS(t);
 		int i, j;
 		bool ret = DEM->Get_Sorted(t, i, j);
 		

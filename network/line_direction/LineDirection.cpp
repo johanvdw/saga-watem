@@ -180,7 +180,7 @@ bool CLineDirection::On_Execute(void)
     pShapes->Set_Index(sort_field, TABLE_INDEX_Ascending);
 
 	//-----------------------------------------------------
-	for(int i=0; i<pShapes->Get_Count() && Set_Progress(i, pShapes->Get_Count()); i++)
+	for(sLong i=0; i<pShapes->Get_Count() && Set_Progress(i, pShapes->Get_Count()); i++)
 	{
         CSG_Shape	*pShape;
         pShape	= sort_field>-1?pShapes->Get_Shape_byIndex(i):pShapes->Get_Shape(i);

@@ -112,7 +112,7 @@ bool Upstream_Edges::On_Execute(void)
         pAdjecantEdges->Add_Field("to", SG_DATATYPE_Int);
     int to_field = pAdjecantEdges->Get_Field("to");
 
-    for (int iLine = 0; iLine < pInLines->Get_Count() && SG_UI_Process_Set_Progress(iLine, pInLines->Get_Count()); iLine++)
+    for (sLong iLine = 0; iLine < pInLines->Get_Count() && SG_UI_Process_Set_Progress(iLine, pInLines->Get_Count()); iLine++)
     {
         CSG_Table_Record * pLine = pInLines->Get_Record(iLine);
         int start_id = pLine->Get_Value(start_field)->asInt();
@@ -244,10 +244,10 @@ bool Upstream_Edges::On_Execute(void)
     int shreve_field  = pInLines->Get_Field("shreve_order");
     int sort_field  = pInLines->Get_Field("sort_order");
 
-    for (int iLine = 0; iLine < pInLines->Get_Count() && SG_UI_Process_Set_Progress(iLine, pInLines->Get_Count()); iLine++)
+    for (sLong iLine = 0; iLine < pInLines->Get_Count() && SG_UI_Process_Set_Progress(iLine, pInLines->Get_Count()); iLine++)
     {
         CSG_Table_Record * pLine = pInLines->Get_Record(iLine);
-        const int line_id = pLine->Get_Value(line_field)->asInt();
+        const sLong line_id = pLine->Get_Value(line_field)->asInt();
         pInLines->Set_Value(iLine, shreve_field, edges[line_id].shreve_order);
         pInLines->Set_Value(iLine, sort_field, edges[line_id].sort_order);
     }

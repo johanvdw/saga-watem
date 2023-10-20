@@ -87,7 +87,7 @@ bool CTopologize::On_Execute(void)
 
     int line_id=0;
 
-    for (int iLine = 0; iLine < pInLines->Get_Count() && SG_UI_Process_Set_Progress(iLine, pInLines->Get_Count()); iLine++)
+    for (sLong iLine = 0; iLine < pInLines->Get_Count() && SG_UI_Process_Set_Progress(iLine, pInLines->Get_Count()); iLine++)
     {
         pInLine = (CSG_Shape_Line*) pInLines->Get_Shape(iLine);
 
