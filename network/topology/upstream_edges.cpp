@@ -3,6 +3,10 @@
 #include <algorithm>
 #include <iostream>
 
+#ifndef SG_PRINTF
+#define SG_PRINTF wprintf
+#endif
+
 Upstream_Edges::Upstream_Edges(void)
 {
     Set_Name(_TL("Upstream Edges"));
@@ -86,10 +90,10 @@ bool Upstream_Edges::On_Execute(void)
     if ((start_field == -1)||(end_field == -1)||(line_field == -1))
     {
         SG_UI_Msg_Add("Source does not contain startpt_id, endpt_id or line_id columns", true, SG_UI_MSG_STYLE_FAILURE);
-        SG_Printf("Available columns:");
+        SG_PRINTF("Available columns:");
         for (auto iField=0; iField < pInLines->Get_Field_Count(); iField++)
         {
-            SG_Printf("Column %d: %s\n", iField, pInLines->Get_Field_Name(iField));
+            SG_PRINTF("Column %d: %s\n", iField, pInLines->Get_Field_Name(iField));
         }
 
         return false;

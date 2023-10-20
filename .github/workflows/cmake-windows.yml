@@ -11,7 +11,7 @@ jobs:
     runs-on: ${{ matrix.os }}
 
     env:
-      SAGA: D:\deps\saga-9.2.0_x64
+      SAGA: D:\deps\saga-8.5.1_x64
 
     strategy:
       fail-fast: false
@@ -34,15 +34,23 @@ jobs:
       id: get-saga-cache
       uses: actions/cache@v3
       with:
-        path: d:/deps/saga-9.2.0_x64
-        key: saga-9.2.0_x64
+        path: d:/deps/saga-8.5.1_x64
+        key: saga-8.5.1_x64
     - if: ${{ steps.get-saga-cache.outputs.cache-hit != 'true' }}
       name: get saga build
       shell: bash
       run: |
         mkdir d:\\deps
-        C:\\msys64\\usr\\bin\\wget https://sourceforge.net/projects/saga-gis/files/SAGA%20-%209/SAGA%20-%209.2.0/saga-9.2.0_x64.zip/download -O d:/deps/saga.zip
+        C:\\msys64\\usr\\bin\\wget https://sourceforge.net/projects/saga-gis/files/SAGA%20-%208/SAGA%20-%208.5.1/saga-8.5.1_x64.zip/download -O d:/deps/saga.zip
         7z x d:\\deps\\saga.zip -o"d:\\deps\\"
+
+    - name: store cache
+      if: ${{ steps.get-saga-cache.outputs.cache-hit != 'true' }}
+      id: store-saga-cache
+      uses: actions/cache/save@v3
+      with:
+        path: d:\deps\saga-8.5.1_x64
+        key: saga-8.5.1_x64
      
     - name: Configure CMake
       # Configure CMake in a 'build' subdirectory. `CMAKE_BUILD_TYPE` is only required if you are using a single-configuration generator such as make.
@@ -59,6 +67,8 @@ jobs:
     - name: Build
       # Build your program with the given configuration. Note that --config is needed because the default Windows generator is a multi-config generator (Visual Studio generator).
       run: cmake --build ${{ steps.strings.outputs.build-output-dir }} --config ${{ matrix.build_type }}
-
-    - name: Test
-      run: pytest
+    - name: 'Upload Artifact'
+      uses: actions/upload-artifact@v3
+      with:
+        name: Release dll files
+        Path: build/**/*.dll

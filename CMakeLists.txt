@@ -43,7 +43,6 @@ if(MSVC)
 	FIND_LIBRARY(SAGA_API NAMES saga_api PATHS
 		"$ENV{SAGA}"
 		)
-	# target_link_libraries(${PROJECT_NAME} ${SAGA_API})
 else()
     set(CMAKE_CXX_FLAGS "-I /usr/include/saga/")
 endif()

@@ -29,9 +29,9 @@ target_include_directories(${PROJECT_NAME} PRIVATE "${saga_core_include_dir}")
 
 # set common compile flags
 if(MSVC)
-#	target_compile_definitions(${PROJECT_NAME} PUBLIC -D_SAGA_MSW -DUNICODE)
+	target_compile_definitions(${PROJECT_NAME} PUBLIC -D_SAGA_MSW -DUNICODE)
 else() # if(NOT MSVC) # expect g++ on Linux
-#	target_compile_definitions(${PROJECT_NAME} PUBLIC -D_SAGA_LINUX)
+	target_compile_definitions(${PROJECT_NAME} PUBLIC -D_SAGA_LINUX)
 	set_target_properties(${PROJECT_NAME} PROPERTIES COMPILE_FLAGS -fPIC)
 endif()
 
