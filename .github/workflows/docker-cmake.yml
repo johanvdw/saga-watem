@@ -24,9 +24,15 @@ jobs:
         cd build
         cmake ..
         make
+        zip "{{ matrix.os }}.zip" $(find . -name *.so) -j
     - name: run tests
       run: |
         pytest-3 -vv || true
+    - name: 'Upload Artifact'
+      uses: actions/upload-artifact@v3
+      with:
+        name: Release zip files
+        Path: build/*.zip
       
   bullseye-container-build-deb:
     runs-on: ubuntu-latest
@@ -44,12 +50,13 @@ jobs:
       with:
         fetch-tags: true
         fetch-depth: 0
-    - name: run cmake
+    - name: build deb packages
       run: |
         dch --newversion $(git describe --tags)  "autobuild $(git describe --tags)"
         fakeroot debian/rules binary
+        mv ../*.deb .
     - name: 'Upload Artifact'
       uses: actions/upload-artifact@v3
       with:
-        name: Release de files
-        Path: ../*.deb
+        name: Release deb files
+        Path: *.deb
