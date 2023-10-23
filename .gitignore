@@ -7,3 +7,4 @@ debian/saga-vpo.debhelper.log
 debian/saga-vpo.substvars
 debian/saga-vpo/
 
+tests/__pycache__
