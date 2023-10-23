@@ -51,8 +51,9 @@ jobs:
         fetch-tags: true
         fetch-depth: 0
     - name: build deb packages
+      shell: bash
       run: |
-        IFS=':' read -r os release <<< $(echo '${{ matrix.os }}')
+        IFS=':' read -r os release <<< '${{ matrix.os }}'
         dch --newversion $(git describe --tags)~$release  "autobuild $(git describe --tags)"
         fakeroot debian/rules binary
         mv ../*.deb .
