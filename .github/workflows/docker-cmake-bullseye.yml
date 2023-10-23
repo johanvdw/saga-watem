@@ -7,8 +7,9 @@ on:
 jobs:
   bullseye-container-test:
     runs-on: ubuntu-latest
-    matrix:
-      os: [bullseye, bookworm, focal]
+    strategy:
+      matrix:
+        os: [bullseye, bookworm, focal]
     container:
       image: ghcr.io/johanvdw/saga-watem-build-${{ matrix.os }}
       options: --user 1001
@@ -28,8 +29,9 @@ jobs:
       
   bullseye-container-build-deb:
     runs-on: ubuntu-latest
-    matrix:
-      os: [bullseye, bookworm, focal]
+    strategy:
+      matrix:
+        os: [bullseye, bookworm, focal]
     container:
       image: ghcr.io/johanvdw/saga-watem-build-${{ matrix.os }}
       options: --user 1001
