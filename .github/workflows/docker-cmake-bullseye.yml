@@ -7,8 +7,10 @@ on:
 jobs:
   bullseye-container-test:
     runs-on: ubuntu-latest
+    matrix:
+      os: [bullseye, bookworm, focal]
     container:
-      image: ghcr.io/johanvdw/saga-watem-build-bullseye
+      image: ghcr.io/johanvdw/saga-watem-build-${{ matrix.os }}
       options: --user 1001
       credentials:
         username: ${{ github.actor }}
@@ -26,8 +28,10 @@ jobs:
       
   bullseye-container-build-deb:
     runs-on: ubuntu-latest
+    matrix:
+      os: [bullseye, bookworm, focal]
     container:
-      image: ghcr.io/johanvdw/saga-watem-build-bullseye
+      image: ghcr.io/johanvdw/saga-watem-build-${{ matrix.os }}
       options: --user 1001
       credentials:
         username: ${{ github.actor }}
@@ -37,6 +41,6 @@ jobs:
     - name: run cmake
       run: |
         git pull --tags
-        dch --newversion $(git describe --tags)  "autobuild $(git describe --tags)" -r
+        dch --newversion $(git describe --tags)  "autobuild $(git describe --tags)"
         debuild -b
 

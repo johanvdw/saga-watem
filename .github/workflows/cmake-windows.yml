@@ -63,6 +63,8 @@ jobs:
         -DCMAKE_C_COMPILER=${{ matrix.c_compiler }} `
         -DCMAKE_BUILD_TYPE=${{ matrix.build_type }} `
         -S ${{ github.workspace }}
+        7za a -tzip -mx=9 -r -i!build\*.dll -xr!* saga_watem.zip
+
 
     - name: Build
       # Build your program with the given configuration. Note that --config is needed because the default Windows generator is a multi-config generator (Visual Studio generator).
@@ -71,4 +73,4 @@ jobs:
       uses: actions/upload-artifact@v3
       with:
         name: Release dll files
-        Path: build/**/*.dll
+        Path: saga_watem.zip
