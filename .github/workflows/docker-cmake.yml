@@ -26,8 +26,7 @@ jobs:
         cmake ..
         make
         IFS=':' read -r os release <<< '${{ matrix.os }}'
-        version=$(git describe --tags)~$release
-        zip "saga_watem_$version.zip" $(find . -name *.so) -j
+        zip "saga_watem_$release.zip" $(find . -name *.so) -j
     - name: run tests
       run: |
         pytest-3 -vv || true
