@@ -1,5 +1,6 @@
 #include "Parcel_C_Grid.h"
 #include "Calculate_C_Grid.h"
+#include <config.h>
 
 Parcel_C_Grid::Parcel_C_Grid()
 {
@@ -11,7 +12,7 @@ Parcel_C_Grid::Parcel_C_Grid()
 
 	Set_Author(_TL("Copyright (c) 2022, Johan Van de Wauw"));
 
-	Set_Version("1.8.0");
+	Set_Version(VERSION);
 
 	Set_Description(_TW(
 		"Berekening van de C kaart op basis van percelen met C attribuut. "

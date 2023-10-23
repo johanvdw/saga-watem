@@ -8,7 +8,7 @@ Parcel_Filter::Parcel_Filter()
 
 	Set_Author(_TL("Copyright (c) 2017.  Johan Van de Wauw"));
 
-	Set_Version("1.7.1");
+	Set_Version(VERSION);
 
 	Set_Description(_TW(
 		"De tool voert een 3x3 filter uit op een digitaal hoogtemodel die enkel cellen binnen het perceel gebruikt."

@@ -11,6 +11,8 @@ CTopologize::CTopologize(void)
         "Topologize Polylines.")
     );
 
+    Set_Version(VERSION);
+
     //----------------------------------------------------
 
     Parameters.Add_Shapes(

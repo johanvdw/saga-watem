@@ -11,7 +11,7 @@ Calculate_C_Grid::Calculate_C_Grid()
 
 	Set_Author(_TL("Copyright (c) 2017, Johan Van de Wauw"));
 
-	Set_Version("1.7.1");
+	Set_Version(VERSION);
 
 	Set_Description(_TW(
 		"Berekening van de C kaart op basis van de percelenkaart. "
