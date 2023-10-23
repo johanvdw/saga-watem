@@ -9,7 +9,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        os: [debian:bullseye, debian:bookworm, ubuntu:focal]
+        os: ["debian:bullseye", "debian:bookworm", "ubuntu:focal"]
     container:
       image: ghcr.io/johanvdw/saga-watem-build-${{ matrix.os }}
       options: --user 1001
