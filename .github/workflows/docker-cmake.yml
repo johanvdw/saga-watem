@@ -19,12 +19,15 @@ jobs:
     steps:
     - uses: actions/checkout@v3
     - name: run cmake
+      shell: bash
       run: |
         mkdir build
         cd build
         cmake ..
         make
-        zip "{{ matrix.os }}.zip" $(find . -name *.so) -j
+        IFS=':' read -r os release <<< '${{ matrix.os }}'
+        version=$(git describe --tags)~$release
+        zip "saga_watem_$version.zip" $(find . -name *.so) -j
     - name: run tests
       run: |
         pytest-3 -vv || true
