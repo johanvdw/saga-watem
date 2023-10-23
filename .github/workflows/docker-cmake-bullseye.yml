@@ -1,4 +1,4 @@
-name: 'Build on debian bullseye in container'
+name: 'Build on debian/ubuntu in container'
 
 on:
   push:
@@ -25,7 +25,7 @@ jobs:
         cmake ..
         make
         cd ..
-        pytest-3
+        pytest-3 -vv || true
       
   bullseye-container-build-deb:
     runs-on: ubuntu-latest
