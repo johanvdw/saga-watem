@@ -24,7 +24,6 @@ jobs:
         cd ..
         pytest-3
       
-jobs:
   bullseye-container-build-deb:
     runs-on: ubuntu-latest
     container:
