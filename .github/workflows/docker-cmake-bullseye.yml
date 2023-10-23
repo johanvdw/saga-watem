@@ -40,10 +40,10 @@ jobs:
         password: ${{ secrets.PRIVATE_ACCESS_TOKEN }}
     steps:
     - uses: actions/checkout@v3
+      with:
+        fetch-tags: true
     - name: run cmake
       run: |
-        git pull
-        git fetch --tags
         dch --newversion $(git describe --tags)  "autobuild $(git describe --tags)"
         debuild -b
 
