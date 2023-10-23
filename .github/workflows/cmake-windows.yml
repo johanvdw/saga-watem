@@ -63,7 +63,7 @@ jobs:
         -DCMAKE_C_COMPILER=${{ matrix.c_compiler }} `
         -DCMAKE_BUILD_TYPE=${{ matrix.build_type }} `
         -S ${{ github.workspace }}
-        7z a -tzip saga_watem.zip -r .\watem\watem\Release\*.dll .\network\topology\Release\*.dll .\network\line_direction\Release\*.dll 
+        7z a -tzip saga_watem.zip -r .build\watem\watem\Release\*.dll .\build\network\topology\Release\*.dll .\build\network\line_direction\Release\*.dll 
 
 
 
