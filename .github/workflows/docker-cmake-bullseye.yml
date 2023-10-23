@@ -17,10 +17,27 @@ jobs:
     - uses: actions/checkout@v3
     - name: run cmake
       run: |
-        git config --global --add safe.directory /__w/saga-watem/saga-watem
         mkdir build
         cd build
         cmake ..
         make
         cd ..
         pytest-3
+      
+jobs:
+  bullseye-container-build-deb:
+    runs-on: ubuntu-latest
+    container:
+      image: ghcr.io/johanvdw/saga-watem-build-bullseye
+      options: --user 1001
+      credentials:
+        username: ${{ github.actor }}
+        password: ${{ secrets.PRIVATE_ACCESS_TOKEN }}
+    steps:
+    - uses: actions/checkout@v3
+    - name: run cmake
+      run: |
+        git pull --tags
+        dch --newversion $(git describe --tags)  "autobuild $(git describe --tags)" -r
+        debuild -b
+
