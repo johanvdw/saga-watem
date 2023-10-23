@@ -52,11 +52,12 @@ jobs:
         fetch-depth: 0
     - name: build deb packages
       run: |
-        dch --newversion $(git describe --tags)  "autobuild $(git describe --tags)"
+        "IFS=: read -r os release<<<\"${{ matrix.os }}\""
+        dch --newversion $(git describe --tags)~$release  "autobuild $(git describe --tags)"
         fakeroot debian/rules binary
         mv ../*.deb .
     - name: 'Upload Artifact'
       uses: actions/upload-artifact@v3
       with:
-        name: Release deb files
+        name: ${{ matrix.os }} deb
         Path: "*.deb"
