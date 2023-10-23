@@ -68,7 +68,7 @@ jobs:
       run: |
         cmake --build ${{ steps.strings.outputs.build-output-dir }} --config ${{ matrix.build_type }}
         cmake --install install
-        7z a -tzip saga_watem.zip install\*.dll
+        7z a -tzip saga_watem.zip -r .\build\*.dll
     - name: 'Upload Artifact'
       uses: actions/upload-artifact@v3
       with:
