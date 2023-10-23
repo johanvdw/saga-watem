@@ -48,3 +48,8 @@ jobs:
       run: |
         dch --newversion $(git describe --tags)  "autobuild $(git describe --tags)"
         fakeroot debian/rules binary
+    - name: 'Upload Artifact'
+      uses: actions/upload-artifact@v3
+      with:
+        name: Release de files
+        Path: ../*.deb
