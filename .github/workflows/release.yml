@@ -1,4 +1,4 @@
-on:
+on
   push:
     tags:
 
@@ -7,6 +7,8 @@ name: Create Release
 jobs:
   build-linux:
     uses: ./.github/workflows/cmake-linux.yml
+    secrets:
+      PRIVATE_ACCESS_TOKEN: ${{ secrets.PRIVATE_ACCESS_TOKEN }}
   build-windows:
     uses: ./.github/workflows/cmake-windows.yml
   create_release:
@@ -17,7 +19,7 @@ jobs:
         id: create_release
         uses: actions/create-release@latest
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # This token is provided by Actions, you do not need to create your own token
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           tag_name: ${{ github.ref }}
           release_name: Release ${{ github.ref }}
