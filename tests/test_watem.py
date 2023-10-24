@@ -140,6 +140,7 @@ def test_watem_c_parcel(tmpdir):
 
     assert c.shape == (1, 735, 1134)
 
+@pytest.mark.xfail(reason="only supported in newer saga versions, eg bookworm")
 def test_watem_c_parcel_tiff(tmpdir):
     args = {
         "PARCEL_SHAPES": data_dir / "Adpe768698.shp",

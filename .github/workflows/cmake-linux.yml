@@ -33,7 +33,7 @@ jobs:
         zip "saga_watem_$release.zip" $(find . -name *.so) -j
     - name: run tests
       run: |
-        pytest-3 -vv || true
+        pytest-3 -vv
     - name: 'Upload Artifact'
       uses: actions/upload-artifact@v3
       with:
