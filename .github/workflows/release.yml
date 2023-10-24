@@ -23,18 +23,21 @@ jobs:
         with:
           title: Release ${{ github.ref }}
       - name: fetch linux builds (zip)
-        uses: actions/download-artifact@master
+        uses: dawidd6/action-download-artifact@v2
         with:
+          workflow: cmake-linux.yml
           name: Release zip files
           path: linux
       - name: fetch linux builds (deb)
-        uses: actions/download-artifact@master
+        uses: dawidd6/action-download-artifact@v2
         with:
+          workflow: cmake-linux.yml
           name: debian package
           path: deb
       - name: fetch windows builds
-        uses: actions/download-artifact@master
+        uses: dawidd6/action-download-artifact@v2
         with:
+          workflow: cmake-windows.yml
           name: "Release dll files"
           path: dll
       - name: Upload Release Asset
