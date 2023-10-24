@@ -68,10 +68,10 @@ jobs:
         cmake --build ${{ steps.strings.outputs.build-output-dir }} --config ${{ matrix.build_type }}
         mkdir built
         cp build/*/*/*/*.dll built
-        7z a -tzip saga_watem.zip -r .\built\*.dll
+        7z a -tzip saga_watem_windows.zip -r .\built\*.dll
 
     - name: 'Upload Artifact'
       uses: actions/upload-artifact@v3
       with:
         name: Release dll files
-        Path: saga_watem.zip
+        Path: saga_watem_windows.zip
