@@ -7,8 +7,7 @@ name: Create Release
 jobs:
   build-linux:
     uses: ./.github/workflows/cmake-linux.yml
-    secrets:
-      PRIVATE_ACCESS_TOKEN: ${{ secrets.PRIVATE_ACCESS_TOKEN }}
+    secrets: inherit
   build-windows:
     uses: ./.github/workflows/cmake-windows.yml
   create_release:
