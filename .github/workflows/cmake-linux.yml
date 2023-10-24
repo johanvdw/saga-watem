@@ -1,55 +1,70 @@
-# This starter workflow is for a CMake project running on multiple platforms. There is a different starter workflow if you just want a single platform.
-# See: https://github.com/actions/starter-workflows/blob/main/ci/cmake-single-platform.yml
-name: CMake Ubuntu
+name: 'Build on debian/ubuntu in container'
 
 on:
   push:
-    branches: [ "main","gha" ]
-  pull_request:
-    branches: [ "main" ]
+    branches: [main, gha]
+  workflow_call:
+    secrets:
+      PRIVATE_ACCESS_TOKEN:
+        required: true
 
 jobs:
-  build:
-    runs-on: ${{ matrix.os }}
-
+  bullseye-container-test:
+    runs-on: ubuntu-latest
     strategy:
-      # Set fail-fast to false to ensure that feedback is delivered for all matrix combinations. Consider changing this to true when your workflow is stable.
-      fail-fast: false
-
       matrix:
-        os: [ubuntu-latest]
-        build_type: [Release]
-        c_compiler: [gcc]
-        cpp_compiler: [g++]
-
+        os: ["debian:bullseye", "debian:bookworm", "ubuntu:focal", "ubuntu:jammy"]
+    container:
+      image: ghcr.io/johanvdw/saga-watem-build-${{ matrix.os }}
+      options: --user 1001
+      credentials:
+        username: ${{ github.actor }}
+        password: ${{ secrets.PRIVATE_ACCESS_TOKEN }}
     steps:
     - uses: actions/checkout@v3
-
-    - name: Set reusable strings
-      # Turn repeated input strings (such as the build output directory) into step outputs. These step outputs can be used throughout the workflow file.
-      id: strings
+    - name: run cmake
       shell: bash
       run: |
-        echo "build-output-dir=${{ github.workspace }}/build" >> "$GITHUB_OUTPUT"
-    - name: install saga api
-      run: sudo apt-get install libsaga-dev
-
-    - name: Configure CMake
-      # Configure CMake in a 'build' subdirectory. `CMAKE_BUILD_TYPE` is only required if you are using a single-configuration generator such as make.
-      # See https://cmake.org/cmake/help/latest/variable/CMAKE_BUILD_TYPE.html?highlight=cmake_build_type
-      run: >
-        cmake -B ${{ steps.strings.outputs.build-output-dir }}
-        -DCMAKE_CXX_COMPILER=${{ matrix.cpp_compiler }}
-        -DCMAKE_C_COMPILER=${{ matrix.c_compiler }}
-        -DCMAKE_BUILD_TYPE=${{ matrix.build_type }}
-        -S ${{ github.workspace }}
-
-    - name: Build
-      # Build your program with the given configuration. Note that --config is needed because the default Windows generator is a multi-config generator (Visual Studio generator).
-      run: cmake --build ${{ steps.strings.outputs.build-output-dir }} --config ${{ matrix.build_type }}
-
-    - name: Install test dependencies
-      run: sudo apt install python3-pytest python3-rasterio python3-geopandas saga
-        
-    - name: Test
-      run: pytest-3
+        mkdir build
+        cd build
+        cmake ..
+        make
+        IFS=':' read -r os release <<< '${{ matrix.os }}'
+        zip "saga_watem_$release.zip" $(find . -name *.so) -j
+    - name: run tests
+      run: |
+        pytest-3 -vv
+    - name: 'Upload Artifact'
+      uses: actions/upload-artifact@v3
+      with:
+        name: Release zip files
+        Path: build/*.zip
+      
+  bullseye-container-build-deb:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        os: ["debian:bullseye", "debian:bookworm", "ubuntu:focal", "ubuntu:jammy"]
+    container:
+      image: ghcr.io/johanvdw/saga-watem-build-${{ matrix.os }}
+      options: --user 1001
+      credentials:
+        username: ${{ github.actor }}
+        password: ${{ secrets.PRIVATE_ACCESS_TOKEN }}
+    steps:
+    - uses: actions/checkout@v3
+      with:
+        fetch-tags: true
+        fetch-depth: 0
+    - name: build deb packages
+      shell: bash
+      run: |
+        IFS=':' read -r os release <<< '${{ matrix.os }}'
+        dch --newversion $(git describe --tags)~$release  "autobuild $(git describe --tags)"
+        fakeroot debian/rules binary
+        mv ../*.deb .
+    - name: 'Upload Artifact'
+      uses: actions/upload-artifact@v3
+      with:
+        name: debian package
+        Path: "*.deb"

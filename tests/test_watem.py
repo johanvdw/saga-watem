@@ -89,7 +89,7 @@ def test_watem_ls(tmpdir):
     run_saga("watem", "5", args)
 
     # test with optional slope
-    args = args | {"SLOPE": tmpdir / "slope.sgrd"}
+    args = {**args,"SLOPE": tmpdir / "slope.sgrd"}
     run_saga("watem", "5", args)
 
     with rio.open(str(tmpdir / "slope.sdat")) as slope_file:
@@ -140,6 +140,7 @@ def test_watem_c_parcel(tmpdir):
 
     assert c.shape == (1, 735, 1134)
 
+@pytest.mark.xfail(reason="only supported in newer saga versions, eg bookworm")
 def test_watem_c_parcel_tiff(tmpdir):
     args = {
         "PARCEL_SHAPES": data_dir / "Adpe768698.shp",

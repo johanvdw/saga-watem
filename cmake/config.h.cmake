@@ -6,7 +6,7 @@
  */
 
 /* Version number of package */
-#cmakedefine VERSION @SAGA_VERSION_STRING@
+#cmakedefine VERSION "@SAGA_WATEM_VERSION_STRING@"
 
 /* build with GUI and interactive tools */
 #cmakedefine WITH_GUI

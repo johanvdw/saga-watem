@@ -8,7 +8,7 @@ Create_Parcel_Grid::Create_Parcel_Grid()
 
 	Set_Author("Johan Van de Wauw (2017)");
 
-	Set_Version("1.7.1");
+	Set_Version(VERSION);
 
 	Set_Description(_TW(
 		"Maakt percelengridkaart aan die vereist is voor het gebruik in de berekening van de erosiekaart. "

@@ -1,0 +1,43 @@
+on:
+  push:
+    tags:
+    - '*'
+
+name: Create Release
+
+jobs:
+  build-linux:
+    uses: ./.github/workflows/cmake-linux.yml
+    secrets: inherit
+  build-windows:
+    uses: ./.github/workflows/cmake-windows.yml
+  create_release:
+    name: Create Release
+    runs-on: ubuntu-latest
+    needs:
+    - build-linux
+    - build-windows
+    steps:
+      - uses: actions/checkout@v3
+      - name: fetch linux builds (zip)
+        uses: dawidd6/action-download-artifact@v2
+        with:
+          workflow: cmake-linux.yml
+          name: Release zip files
+          path: linux
+      - name: fetch linux builds (deb)
+        uses: dawidd6/action-download-artifact@v2
+        with:
+          workflow: cmake-linux.yml
+          name: debian package
+          path: deb
+      - name: fetch windows builds
+        uses: dawidd6/action-download-artifact@v2
+        with:
+          workflow: cmake-windows.yml
+          name: "Release dll files"
+          path: dll
+      - uses: ncipollo/release-action@v1
+        with:
+          artifacts: "dll/*,linux/*,deb/*"
+          omitBody: true

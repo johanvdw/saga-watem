@@ -1,0 +1,10 @@
+build
+# macOS tmp file
+.DS_Store*
+debian/.debhelper/
+debian/files
+debian/saga-vpo.debhelper.log
+debian/saga-vpo.substvars
+debian/saga-vpo/
+
+tests/__pycache__

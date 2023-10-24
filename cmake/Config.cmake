@@ -1,7 +1,7 @@
 # translate some cmake variables to config.h variables
 macro(Config)
 	# define VERSION string
-	if (SAGA_VERSION_STRING)
+	if (SAGA_WATEM_VERSION_STRING)
 		set(VERSION ON)
 	endif()
 

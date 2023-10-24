@@ -9,7 +9,7 @@ CCalculate_Uparea::CCalculate_Uparea()
 {
 	Set_Name(_TL("3.1. Uparea berekening"));
 
-	Set_Version("1.7.1");
+	Set_Version(VERSION);
 
 	Set_Author(_TL("Copyright (c) 2006 - 2016 by KULeuven. Converted to SAGA/C++ by Johan Van de Wauw"));
 

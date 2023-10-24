@@ -6,7 +6,7 @@ Complete::Complete()
 
 	Set_Author("Based on Watem (KULeuven). Converted to SAGA by Johan Van de Wauw (2016-2017)");
 
-	Set_Version("1.7.1");
+	Set_Version(VERSION);
 
 	Set_Description(_TW(
 		"Volledige berekening erosiekaart in één stap. Deze module voert volgende stappen uit: Berekening upslope area, berekening LS factor, berekening C, "

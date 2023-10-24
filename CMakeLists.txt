@@ -61,8 +61,8 @@ include(shared_cmake/scripts/windows_version_info.cmake)
 # create windows resouce file
 set(windows_version_rc "${CMAKE_BINARY_DIR}/win_version_info.rc")
 gen_win_version_resource("${PROJECT_NAME}" "${windows_version_rc}"
-	${SAGA_VERSION_MAJOR} ${SAGA_VERSION_MINOR} ${SAGA_VERSION_PATCH} ${GIT_COUNT}
-	${SAGA_VERSION_FULL_STRING})
+	${SAGA_WATEM_VERSION_MAJOR} ${SAGA_WATEM_VERSION_MINOR} ${SAGA_WATEM_VERSION_PATCH} ${GIT_COUNT}
+	${SAGA_WATEM_VERSION_FULL_STRING})
 
 # include the generated header files
 include_directories("${PROJECT_BINARY_DIR}")
