@@ -3,7 +3,7 @@ name: 'Build on debian/ubuntu in container'
 on:
   push:
     branches: [main, gha]
-  workflow_dispatch:
+  workflow_call:
 
 jobs:
   bullseye-container-test:
