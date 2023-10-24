@@ -25,7 +25,7 @@ jobs:
       - name: fetch linux builds (zip)
         uses: actions/download-artifact@master
         with:
-          name: conda-output
+          name: Release zip files
           path: linux
       - name: fetch linux builds (deb)
         uses: actions/download-artifact@master
